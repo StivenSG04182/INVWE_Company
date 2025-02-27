@@ -72,6 +72,9 @@ export function Header() {
                             <Link href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
                                 Privacy
                             </Link>
+                            <Link href="/enterprise" className="text-muted-foreground hover:text-foreground transition-colors">
+                                Enterprise
+                            </Link>
                         </div>
                     </div>
 
@@ -84,7 +87,7 @@ export function Header() {
                                 appearance={{
                                     elements: {
                                         avatarBox: "h-8 w-8"
-                                    }
+                                    } 
                                 }}
                             />
                         </SignedIn>

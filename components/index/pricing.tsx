@@ -57,14 +57,31 @@ export function Pricing() {
                                 stores: 10
                             },
                             isPaid: true
+                        },
+                        {
+                            name: "ENTERPRISE",
+                            price: "Custom",
+                            description: "Plan perfecto para armar tu plan",
+                            features: [
+                                "Enpleados Ilimitados",
+                                "Facturas Ilimitadas",
+                                "Creación hasta 10 Sucursales diferentes"
+                            ],
+                            limits: {
+                                workers: "custom",
+                                invoices: "custon",
+                                stores: "custon"
+                            },
+                            isPaid: true
                         }
                     ].map((plan, index) => (
                         <Card
                             key={index}
                             className={`border bg-gradient-to-b ${index === 1
-                                ? "from-primary/20 to-purple-500/20 shadow-lg scale-105 lg:scale-110"
+                                ? ""
                                 : "from-card/50 to-card/80"
                                 } backdrop-blur-xl p-8 transition-all hover:scale-105`}
+
                         >
                             <div className="flex flex-col h-full justify-between">
                                 <div>
