@@ -1,12 +1,9 @@
 "use client"
 
-import React from "react";
+import Cuestionario from "@/components/index/questionnaire";
 
 export default function Page() {
     return (
-        <div>
-            <h1>pandequeso</h1>
-            <h2>hola2</h2>
-        </div>
+        <Cuestionario />
     );
 }
