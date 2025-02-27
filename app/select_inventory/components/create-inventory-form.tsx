@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import axios from "axios"
-import { toast } from "sonner"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import axios from "axios";
+import { toast } from "sonner";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const formSchema = z.object({
     nombreEmpresa: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
@@ -18,21 +18,11 @@ const formSchema = z.object({
     address: z.string().min(5, "La dirección debe tener al menos 5 caracteres"),
     phone: z.string().min(7, "El teléfono debe tener al menos 7 caracteres"),
     email: z.string().email("Debe ser un email válido"),
-    logoEmpresa: z.instanceof(FileList).transform(list => list.item(0))
-        .refine((file) => file !== null, "La imagen es requerida")
-        .refine(
-            (file) => file && file.size <= 5 * 1024 * 1024,
-            "La imagen debe ser menor a 5MB"
-        )
-        .refine(
-            (file) => file && ['image/jpeg', 'image/png', 'image/gif'].includes(file.type),
-            "Solo se permiten archivos JPG, PNG y GIF"
-        )
-})
+});
 
 export function CreateInventoryForm() {
-    const router = useRouter()
-    const [isLoading, setIsLoading] = useState(false)
+    const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -43,43 +33,27 @@ export function CreateInventoryForm() {
             address: "",
             phone: "",
             email: "",
-            logoEmpresa: undefined
-        }
-    })
+        },
+    });
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
-            setIsLoading(true)
-            
-            const formData = new FormData()
-            formData.append('nombreEmpresa', values.nombreEmpresa)
-            formData.append('nit', values.nit)
-            formData.append('businessName', values.businessName)
-            formData.append('address', values.address)
-            formData.append('phone', values.phone)
-            formData.append('email', values.email)
-            formData.append('logoEmpresa', values.logoEmpresa as File)
+            setIsLoading(true);
+            const response = await axios.post("/api/inventory/create", values);
 
-            const response = await axios.post("/api/inventory/create", formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                },
-                withCredentials: true
-            })
-            
             if (response.data.companyName && response.data.storeId) {
-                router.push(`/${response.data.companyName}/${response.data.storeId}`)
-                toast.success("Empresa registrada exitosamente")
+                router.push(`/inventory/${response.data.companyName}/dashboard/${response.data.storeId}`);
+                toast.success("Empresa registrada exitosamente");
             } else {
-                throw new Error("Invalid response format")
+                throw new Error("Invalid response format");
             }
         } catch (error: any) {
-            console.error("Error creating inventory:", error)
-            toast.error(error.response?.data || "Error al registrar la empresa")
+            console.error("Error creating inventory:", error);
+            toast.error(error.response?.data || "Error al registrar la empresa");
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
-    }
+    };
 
     return (
         <Form {...form}>
@@ -156,29 +130,7 @@ export function CreateInventoryForm() {
                         <FormItem>
                             <FormLabel>Email</FormLabel>
                             <FormControl>
-                                <Input 
-                                    type="email" 
-                                    placeholder="empresa@ejemplo.com" 
-                                    {...field} 
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="logoEmpresa"
-                    render={({ field: { onChange, value, ...field } }) => (
-                        <FormItem>
-                            <FormLabel>Logo de la Empresa</FormLabel>
-                            <FormControl>
-                                <Input 
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => onChange(e.target.files)}
-                                    {...field}
-                                />
+                                <Input type="email" placeholder="empresa@ejemplo.com" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -189,5 +141,5 @@ export function CreateInventoryForm() {
                 </Button>
             </form>
         </Form>
-    )
+    );
 }

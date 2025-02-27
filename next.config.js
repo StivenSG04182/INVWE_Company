@@ -1,14 +1,28 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-        pathname: '/**',
-      }
-    ]
-  }
-};
+    experimental: {
+        turbo: {
+            rules: {
+                // Configuración específica para Turbopack
+                options: {
+                    resolve: {
+                        fallback: {
+                            punycode: false
+                        }
+                    }
+                }
+            }
+        }
+    },
+    webpack: (config, { isServer }) => {
+        if (!isServer) {
+            config.resolve.fallback = {
+                ...config.resolve.fallback,
+                punycode: false
+            }
+        }
+        return config
+    }
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

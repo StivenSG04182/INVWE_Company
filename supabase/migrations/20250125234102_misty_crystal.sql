@@ -10,10 +10,11 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- Tabla: companies
 CREATE TABLE IF NOT EXISTS companies (
   id             uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id     text         NOT NULL UNIQUE,  -- MongoDB company ID
   name           text         NOT NULL,
   nit            text         NOT NULL UNIQUE,
+  mongodb_id     text,
   security_code  text         NOT NULL,
-  mongodb_id     text         NOT NULL,
   logo_url       text,
   business_name  text         NOT NULL,
   tax_id         text         NOT NULL UNIQUE,
@@ -29,7 +30,7 @@ CREATE TABLE IF NOT EXISTS companies (
 CREATE TABLE IF NOT EXISTS users_companies (
   id                 uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id            text         NOT NULL,
-  company_id         uuid         NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  company_id         uuid         NOT NULL REFERENCES companies(id),  -- Supabase UUID reference
   role               text         NOT NULL CHECK (role IN ('ADMIN', 'ADMINISTRATOR', 'EMPLOYEE')),
   nombres_apellidos  text         NOT NULL,       
   correo_electronico text         NOT NULL,         
@@ -185,13 +186,16 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 -- Tabla: stores
 CREATE TABLE IF NOT EXISTS stores (
   id          uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id  uuid         NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  company_id  uuid         NOT NULL REFERENCES companies(id),
+  store_id    text         NOT NULL,  
+  mongodb_store_id text,
   name        text         NOT NULL,
   address     text,
   phone       text,
-  created_by  text         NOT NULL,
+  created_by  text         NOT NULL,  
   created_at  timestamptz  DEFAULT now(),
-  updated_at  timestamptz  DEFAULT now()
+  updated_at  timestamptz  DEFAULT now(),
+  UNIQUE(store_id)
 );
 
 -- Tabla: app_statistics (para estadísticas de la aplicación)
@@ -211,7 +215,7 @@ CREATE TABLE IF NOT EXISTS app_statistics (
 -- 3. CREACIÓN DE FUNCIONES
 --------------------------------------------------------------------------------
 -- Función para actualizar la columna updated_at
-CREATE OR REPLACE FUNCTION update_updated_at_column()
+CREATE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
   NEW.updated_at = NOW();
@@ -232,7 +236,8 @@ BEGIN
     total_active_subscriptions = (SELECT COUNT(*) FROM subscriptions WHERE status = 'active'),
     total_invoices             = (SELECT COUNT(*) FROM invoices WHERE status = 'paid'),
     total_revenue              = (SELECT COALESCE(SUM(total), 0) FROM invoices WHERE status = 'paid'),
-    updated_at                 = NOW();
+    updated_at                 = NOW()
+  WHERE id = (SELECT id FROM app_statistics LIMIT 1);
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -254,66 +259,26 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Función auxiliar para verificar roles (disponible en políticas o lógica adicional)
--- Primero, modificar la tabla users_companies
-ALTER TABLE users_companies 
-ALTER COLUMN user_id TYPE uuid USING user_id::uuid;
-
--- Modificar la tabla subscriptions
-ALTER TABLE subscriptions 
-ALTER COLUMN user_id TYPE uuid USING user_id::uuid;
-
--- Modificar la tabla stores
-ALTER TABLE stores 
-ALTER COLUMN created_by TYPE uuid USING created_by::uuid;
-
--- Ahora las políticas ya no necesitarán el cast explícito
-CREATE POLICY "companies_insert_policy" 
-ON companies
-FOR INSERT 
-WITH CHECK (true);  
-
-CREATE POLICY "companies_select_policy" 
-ON companies
-FOR SELECT
-USING (
-  EXISTS (
-    SELECT 1 FROM users_companies
-    WHERE users_companies.company_id = companies.id
-      AND users_companies.user_id = auth.uid()::uuid
-  )
-);
-
-CREATE POLICY "companies_update_delete_policy" 
-ON companies
-FOR ALL 
-USING (
-  EXISTS (
-    SELECT 1 FROM users_companies
-    WHERE users_companies.company_id = companies.id
-      AND users_companies.user_id = auth.uid()::uuid
-      AND users_companies.role IN ('ADMIN', 'ADMINISTRATOR')
-  )
-);
-
--- Actualizar la función check_user_role
-CREATE OR REPLACE FUNCTION check_user_role(company_uuid uuid, required_role text)
-RETURNS boolean AS $$
+-- Función para asignar el rol de ADMINISTRATOR
+CREATE OR REPLACE FUNCTION assign_administrator_role()
+RETURNS TRIGGER AS $$
 BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM users_companies
-    WHERE company_id = company_uuid
-      AND user_id = auth.uid()::uuid
-      AND (
-        CASE 
-          WHEN required_role = 'ADMIN' THEN role = 'ADMIN'
-          WHEN required_role = 'ADMINISTRATOR' THEN role IN ('ADMIN', 'ADMINISTRATOR')
-          WHEN required_role = 'EMPLOYEE' THEN role IN ('ADMIN', 'ADMINISTRATOR', 'EMPLOYEE')
-        END
-      )
-  );
+  IF NEW.role IS NULL THEN
+    NEW.role := 'ADMINISTRATOR';
+  END IF;
+  RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
+
+-- Función para asignar una suscripción gratuita
+CREATE OR REPLACE FUNCTION assign_free_subscription()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO subscriptions (company_id, user_id, plan_name, worker_limit, invoice_limit, store_limit, status)
+  VALUES (NEW.company_id, NEW.user_id, 'Free Plan', 5, 50, 1, 'active');
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
 --------------------------------------------------------------------------------
 -- 4. CREACIÓN DE ÍNDICES
@@ -357,29 +322,20 @@ CREATE INDEX IF NOT EXISTS idx_stores_company_id ON stores(company_id);
 -- Tabla: companies
 ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
 
--- Modificar las políticas para incluir el cast a UUID
--- Primero eliminar la política existente
-DROP POLICY IF EXISTS "companies_select_policy" ON companies;
+-- Modify companies table RLS policies
+DROP POLICY IF EXISTS "companies_insert_policy" ON companies;
 
--- Luego crear la nueva política
-CREATE POLICY "companies_select_policy" 
+CREATE POLICY "companies_insert_policy"
   ON companies
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM users_companies
-      WHERE users_companies.company_id = companies.id
-        AND users_companies.user_id = auth.uid()::uuid
-    )
-  );
+  FOR INSERT
+  WITH CHECK (true);  -- Allow initial company creation
 
 CREATE POLICY "admin_full_access_policy" 
   ON companies
   FOR ALL 
   USING (
-    EXISTS (
-      SELECT 1 FROM users_companies
-      WHERE users_companies.user_id = auth.uid()::uuid
+    EXISTS (SELECT 1 FROM users_companies
+      WHERE users_companies.user_id = auth.uid()::text
         AND users_companies.role = 'ADMIN'
     )
   );
@@ -389,10 +345,9 @@ CREATE POLICY "clients_select_policy"
   ON clients
   FOR SELECT
   USING (
-    EXISTS (
-      SELECT 1 FROM users_companies
+    EXISTS (SELECT 1 FROM users_companies
       WHERE users_companies.company_id = clients.company_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -402,10 +357,9 @@ CREATE POLICY "clients_insert_policy"
   ON clients
   FOR INSERT
   WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM users_companies
+    EXISTS (SELECT 1 FROM users_companies
       WHERE users_companies.company_id = clients.company_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -418,10 +372,9 @@ CREATE POLICY "clients_delete_policy"
   ON clients
   FOR DELETE
   USING (
-    EXISTS (
-      SELECT 1 FROM users_companies
+    EXISTS (SELECT 1 FROM users_companies
       WHERE users_companies.company_id = clients.company_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
 );
 
@@ -429,10 +382,9 @@ CREATE POLICY "clients_update_policy"
   ON clients
   FOR UPDATE
   USING (
-    EXISTS (
-      SELECT 1 FROM users_companies
+    EXISTS (SELECT 1 FROM users_companies
       WHERE users_companies.company_id = clients.company_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
 );
 
@@ -443,10 +395,9 @@ CREATE POLICY "products_select_policy"
   ON products
   FOR SELECT
   USING (
-    EXISTS (
-      SELECT 1 FROM users_companies
+    EXISTS (SELECT 1 FROM users_companies
       WHERE users_companies.company_id = products.company_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -454,10 +405,9 @@ CREATE POLICY "products_insert_policy"
   ON products
   FOR INSERT
   WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM users_companies
+    EXISTS (SELECT 1 FROM users_companies
       WHERE users_companies.company_id = products.company_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -465,10 +415,9 @@ CREATE POLICY "products_delete_policy"
   ON products
   FOR DELETE
   USING (
-    EXISTS (
-      SELECT 1 FROM users_companies
+    EXISTS (SELECT 1 FROM users_companies
       WHERE users_companies.company_id = products.company_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
 );
 
@@ -476,10 +425,9 @@ CREATE POLICY "products_update_policy"
   ON products
   FOR UPDATE
   USING (
-    EXISTS (
-      SELECT 1 FROM users_companies
+    EXISTS (SELECT 1 FROM users_companies
       WHERE users_companies.company_id = products.company_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
 );
 
@@ -490,12 +438,11 @@ CREATE POLICY "invoices_select_policy"
   ON invoices
   FOR SELECT
   USING (
-    EXISTS (
-      SELECT 1
+    EXISTS (SELECT 1
       FROM clients
       JOIN users_companies ON users_companies.company_id = clients.company_id
       WHERE clients.id = invoices.client_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -503,12 +450,11 @@ CREATE POLICY "invoices_insert_policy"
   ON invoices
   FOR INSERT
   WITH CHECK (
-    EXISTS (
-      SELECT 1
+    EXISTS (SELECT 1
       FROM clients
       JOIN users_companies ON users_companies.company_id = clients.company_id
       WHERE clients.id = invoices.client_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -516,12 +462,11 @@ CREATE POLICY "invoices_update_policy"
   ON invoices
   FOR UPDATE
   USING (
-    EXISTS (
-      SELECT 1
+    EXISTS (SELECT 1
       FROM clients
       JOIN users_companies ON users_companies.company_id = clients.company_id
       WHERE clients.id = invoices.client_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -529,12 +474,11 @@ CREATE POLICY "invoices_delete_policy"
   ON invoices
   FOR DELETE
   USING (
-    EXISTS (
-      SELECT 1
+    EXISTS (SELECT 1
       FROM clients
       JOIN users_companies ON users_companies.company_id = clients.company_id
       WHERE clients.id = invoices.client_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -545,13 +489,12 @@ CREATE POLICY "invoice_items_select_policy"
   ON invoice_items
   FOR SELECT
   USING (
-    EXISTS (
-      SELECT 1
+    EXISTS (SELECT 1
       FROM invoices
       JOIN clients ON clients.id = invoices.client_id
       JOIN users_companies ON users_companies.company_id = clients.company_id
       WHERE invoices.id = invoice_items.invoice_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -559,13 +502,12 @@ CREATE POLICY "invoice_items_insert_policy"
   ON invoice_items
   FOR INSERT
   WITH CHECK (
-    EXISTS (
-      SELECT 1
+    EXISTS (SELECT 1
       FROM invoices
       JOIN clients ON clients.id = invoices.client_id
       JOIN users_companies ON users_companies.company_id = clients.company_id
       WHERE invoices.id = invoice_items.invoice_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -573,13 +515,12 @@ CREATE POLICY "invoice_items_delete_policy"
   ON invoice_items
   FOR DELETE
   USING (
-    EXISTS (
-      SELECT 1
+    EXISTS (SELECT 1
       FROM invoices
       JOIN clients ON clients.id = invoices.client_id
       JOIN users_companies ON users_companies.company_id = clients.company_id
       WHERE invoices.id = invoice_items.invoice_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -587,13 +528,12 @@ CREATE POLICY "invoice_items_update_policy"
   ON invoice_items
   FOR UPDATE
   USING (
-    EXISTS (
-      SELECT 1
+    EXISTS (SELECT 1
       FROM invoices
       JOIN clients ON clients.id = invoices.client_id
       JOIN users_companies ON users_companies.company_id = clients.company_id
       WHERE invoices.id = invoice_items.invoice_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -604,13 +544,12 @@ CREATE POLICY "credit_notes_select_policy"
   ON credit_notes
   FOR SELECT
   USING (
-    EXISTS (
-      SELECT 1
+    EXISTS (SELECT 1
       FROM invoices
       JOIN clients ON clients.id = invoices.client_id
       JOIN users_companies ON users_companies.company_id = clients.company_id
       WHERE invoices.id = credit_notes.invoice_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -618,13 +557,12 @@ CREATE POLICY "credit_notes_insert_policy"
   ON credit_notes
   FOR INSERT
   WITH CHECK (
-    EXISTS (
-      SELECT 1
+    EXISTS (SELECT 1
       FROM invoices
       JOIN clients ON clients.id = invoices.client_id
       JOIN users_companies ON users_companies.company_id = clients.company_id
       WHERE invoices.id = credit_notes.invoice_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -632,13 +570,12 @@ CREATE POLICY "credit_notes_update_policy"
   ON credit_notes
   FOR UPDATE
   USING (
-    EXISTS (
-      SELECT 1
+    EXISTS (SELECT 1
       FROM invoices
       JOIN clients ON clients.id = invoices.client_id
       JOIN users_companies ON users_companies.company_id = clients.company_id
       WHERE invoices.id = credit_notes.invoice_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -646,13 +583,12 @@ CREATE POLICY "credit_notes_delete_policy"
   ON credit_notes
   FOR DELETE
   USING (
-    EXISTS (
-      SELECT 1
+    EXISTS (SELECT 1
       FROM invoices
       JOIN clients ON clients.id = invoices.client_id
       JOIN users_companies ON users_companies.company_id = clients.company_id
       WHERE invoices.id = credit_notes.invoice_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -663,13 +599,12 @@ CREATE POLICY "debit_notes_select_policy"
   ON debit_notes
   FOR SELECT
   USING (
-    EXISTS (
-      SELECT 1
+    EXISTS (SELECT 1
       FROM invoices
       JOIN clients ON clients.id = invoices.client_id
       JOIN users_companies ON users_companies.company_id = clients.company_id
       WHERE invoices.id = debit_notes.invoice_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -677,13 +612,12 @@ CREATE POLICY "debit_notes_insert_policy"
   ON debit_notes
   FOR INSERT
   WITH CHECK (
-    EXISTS (
-      SELECT 1
+    EXISTS (SELECT 1
       FROM invoices
       JOIN clients ON clients.id = invoices.client_id
       JOIN users_companies ON users_companies.company_id = clients.company_id
       WHERE invoices.id = debit_notes.invoice_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -691,13 +625,12 @@ CREATE POLICY "debit_notes_update_policy"
   ON debit_notes
   FOR UPDATE
   USING (
-    EXISTS (
-      SELECT 1
+    EXISTS (SELECT 1
       FROM invoices
       JOIN clients ON clients.id = invoices.client_id
       JOIN users_companies ON users_companies.company_id = clients.company_id
       WHERE invoices.id = debit_notes.invoice_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -705,13 +638,12 @@ CREATE POLICY "debit_notes_delete_policy"
   ON debit_notes
   FOR DELETE
   USING (
-    EXISTS (
-      SELECT 1
+    EXISTS (SELECT 1
       FROM invoices
       JOIN clients ON clients.id = invoices.client_id
       JOIN users_companies ON users_companies.company_id = clients.company_id
       WHERE invoices.id = debit_notes.invoice_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -722,10 +654,9 @@ CREATE POLICY "dian_config_select_policy"
   ON dian_config
   FOR SELECT
   USING (
-    EXISTS (
-      SELECT 1 FROM users_companies
+    EXISTS (SELECT 1 FROM users_companies
       WHERE users_companies.company_id = dian_config.company_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -733,10 +664,9 @@ CREATE POLICY "dian_config_insert_policy"
   ON dian_config
   FOR INSERT
   WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM users_companies
+    EXISTS (SELECT 1 FROM users_companies
       WHERE users_companies.company_id = dian_config.company_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -744,10 +674,9 @@ CREATE POLICY "dian_config_update_policy"
   ON dian_config
   FOR UPDATE
   USING (
-    EXISTS (
-      SELECT 1 FROM users_companies
+    EXISTS (SELECT 1 FROM users_companies
       WHERE users_companies.company_id = dian_config.company_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -755,47 +684,38 @@ CREATE POLICY "dian_config_delete_policy"
   ON dian_config
   FOR DELETE
   USING (
-    EXISTS (
-      SELECT 1 FROM users_companies
+    EXISTS (SELECT 1 FROM users_companies
       WHERE users_companies.company_id = dian_config.company_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
 -- Tabla: subscriptions
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "administrator_manage_subscriptions_policy" 
+CREATE POLICY "users_manage_own_subscriptions_policy" 
   ON subscriptions
   FOR ALL 
   USING (
-    EXISTS (
-      SELECT 1 FROM users_companies
+    auth.uid()::text = user_id OR
+    EXISTS (SELECT 1 FROM users_companies
       WHERE users_companies.company_id = subscriptions.company_id
-        AND users_companies.user_id = auth.uid()::uuid
-        AND users_companies.role = 'ADMINISTRATOR'
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
 CREATE POLICY "subscriptions_insert_policy" 
   ON subscriptions
   FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM users_companies
-      WHERE users_companies.company_id = subscriptions.company_id
-        AND users_companies.user_id = auth.uid()::uuid
-    )
-  );
+  WITH CHECK (true);
 
 CREATE POLICY "subscriptions_delete_policy" 
   ON subscriptions
   FOR DELETE
   USING (
-    EXISTS (
-      SELECT 1 FROM users_companies
+    EXISTS (SELECT 1 FROM users_companies
       WHERE users_companies.company_id = subscriptions.company_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
 
@@ -803,58 +723,57 @@ CREATE POLICY "subscriptions_update_policy"
   ON subscriptions
   FOR UPDATE
   USING (
-    EXISTS (
-      SELECT 1 FROM users_companies
+    EXISTS (SELECT 1 FROM users_companies
       WHERE users_companies.company_id = subscriptions.company_id
-        AND users_companies.user_id = auth.uid()::uuid
+        AND users_companies.user_id = auth.uid()::text
     )
   );
+
 -- Tabla: stores
-ALTER TABLE stores ENABLE ROW LEVEL SECURITY;
+alter table "public"."stores" enable row level security;
 
-CREATE POLICY "stores_select_policy" 
-  ON stores
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM users_companies
-      WHERE users_companies.company_id = stores.company_id
-        AND users_companies.user_id = auth.uid()::uuid
-    )
-  );
+CREATE POLICY "stores_insert_policy"
+ON stores
+FOR INSERT
+WITH CHECK (
+  EXISTS (SELECT 1 FROM users_companies
+    WHERE users_companies.company_id = stores.company_id
+      AND users_companies.user_id = auth.uid()::text
+      AND users_companies.role IN ('ADMIN', 'ADMINISTRATOR', 'EMPLOYEE')
+  )
+);
 
-CREATE POLICY "stores_insert_policy" 
-  ON stores
-  FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM users_companies
-      WHERE users_companies.company_id = stores.company_id
-        AND users_companies.user_id = auth.uid()::uuid
-    )
-  );
+CREATE POLICY "stores_select_policy"
+ON stores
+FOR SELECT
+USING (
+  EXISTS (SELECT 1 FROM users_companies
+    WHERE users_companies.company_id = stores.company_id
+      AND users_companies.user_id = auth.uid()::text
+  )
+);
 
-CREATE POLICY "stores_update_policy" 
-  ON stores
-  FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM users_companies
-      WHERE users_companies.company_id = stores.company_id
-        AND users_companies.user_id = auth.uid()::uuid
-    )
-  );
+CREATE POLICY "stores_update_policy"
+ON stores
+FOR UPDATE
+USING (
+  EXISTS (SELECT 1 FROM users_companies
+    WHERE users_companies.company_id = stores.company_id
+      AND users_companies.user_id = auth.uid()::text
+      AND users_companies.role IN ('ADMIN', 'ADMINISTRATOR')
+  )
+);
 
-CREATE POLICY "stores_delete_policy" 
-  ON stores
-  FOR DELETE
-  USING (
-    EXISTS (
-      SELECT 1 FROM users_companies
-      WHERE users_companies.company_id = stores.company_id
-        AND users_companies.user_id = auth.uid()::uuid
-    )
-  );
+CREATE POLICY "stores_delete_policy"
+ON stores
+FOR DELETE
+USING (
+  EXISTS (SELECT 1 FROM users_companies
+    WHERE users_companies.company_id = stores.company_id
+      AND users_companies.user_id = auth.uid()::text
+      AND users_companies.role IN ('ADMIN', 'ADMINISTRATOR')
+  )
+);
 
 -- Tabla: app_statistics
 ALTER TABLE app_statistics ENABLE ROW LEVEL SECURITY;
@@ -863,9 +782,8 @@ CREATE POLICY "admin_statistics_policy"
   ON app_statistics
   FOR ALL 
   USING (
-    EXISTS (
-      SELECT 1 FROM users_companies
-      WHERE users_companies.user_id = auth.uid()::uuid
+    EXISTS (SELECT 1 FROM users_companies
+      WHERE users_companies.user_id = auth.uid()::text
         AND users_companies.role = 'ADMIN'
     )
   );
@@ -874,115 +792,79 @@ CREATE POLICY "admin_statistics_policy"
 -- 6. CREACIÓN DE TRIGGERS
 --------------------------------------------------------------------------------
 -- Triggers para actualizar la columna updated_at
--- companies
-DROP TRIGGER IF EXISTS trg_update_updated_at ON companies;
+-- invoice_items
+DROP TRIGGER IF EXISTS trg_update_updated_at ON invoice_items;
 CREATE TRIGGER trg_update_updated_at
-BEFORE UPDATE ON companies
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- users_companies
-DROP TRIGGER IF EXISTS trg_update_updated_at ON users_companies;
-CREATE TRIGGER trg_update_updated_at
-BEFORE UPDATE ON users_companies
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- clients
-DROP TRIGGER IF EXISTS trg_update_updated_at ON clients;
-CREATE TRIGGER trg_update_updated_at
-BEFORE UPDATE ON clients
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- products
-DROP TRIGGER IF EXISTS trg_update_updated_at ON products;
-CREATE TRIGGER trg_update_updated_at
-BEFORE UPDATE ON products
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- invoices
-DROP TRIGGER IF EXISTS trg_update_updated_at ON invoices;
-CREATE TRIGGER trg_update_updated_at
-BEFORE UPDATE ON invoices
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- credit_notes
-DROP TRIGGER IF EXISTS trg_update_updated_at ON credit_notes;
-CREATE TRIGGER trg_update_updated_at
-BEFORE UPDATE ON credit_notes
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- debit_notes
-DROP TRIGGER IF EXISTS trg_update_updated_at ON debit_notes;
-CREATE TRIGGER trg_update_updated_at
-BEFORE UPDATE ON debit_notes
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- dian_config
-DROP TRIGGER IF EXISTS trg_update_updated_at ON dian_config;
-CREATE TRIGGER trg_update_updated_at
-BEFORE UPDATE ON dian_config
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- subscriptions
-DROP TRIGGER IF EXISTS trg_update_updated_at ON subscriptions;
-CREATE TRIGGER trg_update_updated_at
-BEFORE UPDATE ON subscriptions
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- stores
-DROP TRIGGER IF EXISTS trg_update_updated_at ON stores;
-CREATE TRIGGER trg_update_updated_at
-BEFORE UPDATE ON stores
+BEFORE UPDATE ON invoice_items
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Triggers para actualizar estadísticas
-DROP TRIGGER IF EXISTS trg_update_statistics_companies ON companies;
-CREATE TRIGGER trg_update_statistics_companies
-AFTER INSERT OR UPDATE OR DELETE ON companies
+DROP TRIGGER IF EXISTS trg_update_statistics_users_companies ON users_companies;
+CREATE TRIGGER trg_update_statistics_users_companies
+AFTER INSERT OR UPDATE OR DELETE ON users_companies
 FOR EACH STATEMENT EXECUTE FUNCTION update_app_statistics();
 
-DROP TRIGGER IF EXISTS trg_update_statistics_invoices ON invoices;
-CREATE TRIGGER trg_update_statistics_invoices
-AFTER INSERT OR UPDATE OR DELETE ON invoices
+DROP TRIGGER IF EXISTS trg_update_statistics_clients ON clients;
+CREATE TRIGGER trg_update_statistics_clients
+AFTER INSERT OR UPDATE OR DELETE ON clients
 FOR EACH STATEMENT EXECUTE FUNCTION update_app_statistics();
 
--- Trigger para validar límites de suscripción en users_companies
-DROP TRIGGER IF EXISTS check_subscription_limits_trigger ON users_companies;
-CREATE TRIGGER check_subscription_limits_trigger
-BEFORE INSERT OR UPDATE ON users_companies
-FOR EACH ROW
-EXECUTE FUNCTION check_subscription_limits();
+DROP TRIGGER IF EXISTS trg_update_statistics_products ON products;
+CREATE TRIGGER trg_update_statistics_products
+AFTER INSERT OR UPDATE OR DELETE ON products
+FOR EACH STATEMENT EXECUTE FUNCTION update_app_statistics();
 
--- Restricción para asegurar que solo haya un ADMINISTRATOR por empresa
+DROP TRIGGER IF EXISTS trg_update_statistics_stores ON stores;
+CREATE TRIGGER trg_update_statistics_stores
+AFTER INSERT OR UPDATE OR DELETE ON stores
+FOR EACH STATEMENT EXECUTE FUNCTION update_app_statistics();
+
+-- Trigger para asignar el rol de ADMINISTRATOR
+DROP TRIGGER IF EXISTS trg_assign_administrator_role ON users_companies;
+CREATE TRIGGER trg_assign_administrator_role
+BEFORE INSERT ON users_companies
+FOR EACH ROW EXECUTE FUNCTION assign_administrator_role();
+
+-- Trigger para asignar una suscripción gratuita
+DROP TRIGGER IF EXISTS trg_assign_free_subscription ON users_companies;
+CREATE TRIGGER trg_assign_free_subscription
+AFTER INSERT ON users_companies
+FOR EACH ROW EXECUTE FUNCTION assign_free_subscription();
+
+-- Asegurar que solo haya un ADMINISTRATOR por empresa
 ALTER TABLE users_companies
 ADD CONSTRAINT one_administrator_per_company 
 EXCLUDE USING btree (company_id WITH =) 
 WHERE (role = 'ADMINISTRATOR');
 
--- Eliminar todas las políticas y bucket existentes
-DROP POLICY IF EXISTS "allow_all_logos" ON storage.objects;
-DROP POLICY IF EXISTS "logos_select_policy" ON storage.objects;
-DROP POLICY IF EXISTS "logos_insert_policy" ON storage.objects;
-DROP POLICY IF EXISTS "logos_update_policy" ON storage.objects;
-DROP POLICY IF EXISTS "logos_delete_policy" ON storage.objects;
+-- Asegurar que el usuario tenga un rol válido
+ALTER TABLE users_companies
+ADD CONSTRAINT valid_user_role CHECK (role IN ('ADMIN', 'ADMINISTRATOR', 'EMPLOYEE'));
 
--- Limpiar completamente el bucket
-DELETE FROM storage.objects WHERE bucket_id = 'logos';
-DELETE FROM storage.buckets WHERE id = 'logos';
+-- Asegurar que el estado de la suscripción sea válido
+ALTER TABLE subscriptions
+ADD CONSTRAINT valid_subscription_status CHECK (status IN ('active', 'inactive'));
 
--- Deshabilitar temporalmente RLS para storage.objects
-ALTER TABLE storage.objects DISABLE ROW LEVEL SECURITY;
+-- Asegurar que el estado de la factura sea válido
+ALTER TABLE invoices
+ADD CONSTRAINT valid_invoice_status CHECK (status IN ('draft', 'sent', 'paid', 'cancelled'));
 
--- Crear el bucket con configuración básica
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('logos', 'logos', true);
+-- Asegurar que el estado de la nota de crédito sea válido
+ALTER TABLE credit_notes
+ADD CONSTRAINT valid_credit_note_status CHECK (status IN ('draft', 'final'));
 
--- Habilitar RLS nuevamente
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- Asegurar que el estado de la nota de débito sea válido
+ALTER TABLE debit_notes
+ADD CONSTRAINT valid_debit_note_status CHECK (status IN ('draft', 'final'));
 
--- Crear una única política super permisiva sin restricciones
-CREATE POLICY "unrestricted_storage_policy"
-ON storage.objects
-FOR ALL
-TO public
-USING (true)
-WITH CHECK (true);
+-- Asegurar que el tipo de cliente sea válido
+ALTER TABLE clients
+ADD CONSTRAINT valid_client_type CHECK (client_type IN ('company', 'individual'));
+
+-- Asegurar que el tipo de producto sea válido
+ALTER TABLE products
+ADD CONSTRAINT valid_product_type CHECK (product_type IN ('product', 'service'));
+
+-- Asegurar que la medida de unidad sea válida
+ALTER TABLE products
+ADD CONSTRAINT valid_unit_measure CHECK (unit_measure IN ('unit', 'kg', 'litre', 'piece'));

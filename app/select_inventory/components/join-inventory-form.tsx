@@ -40,10 +40,17 @@ export function JoinInventoryForm({ companies = [], isLoading }: JoinInventoryFo
         try {
             setLoading(true)
             const response = await axios.post("/api/inventory/join", values)
-            router.push(`/${values.nombreEmpresa}/${response.data.storeId}`)
+            router.push(`/inventory/${values.nombreEmpresa}/dashboard/${response.data.storeId}`)
             toast.success("Te has unido al inventario exitosamente")
-        } catch (error) {
-            toast.error("Error al unirse al inventario")
+        } catch (error: any) {
+            console.error("Error joining inventory:", error)
+            if (error.response?.data?.errors) {
+                error.response.data.errors.forEach((err: any) => {
+                    toast.error(`${err.field}: ${err.message}`)
+                })
+            } else {
+                toast.error(error.response?.data || "Error al unirse al inventario")
+            }
         } finally {
             setLoading(false)
         }
