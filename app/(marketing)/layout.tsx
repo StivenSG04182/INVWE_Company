@@ -10,10 +10,14 @@ export default function MarketingLayout({
 }) {
     return (
         <main className="min-h-screen relative">
-            <div className="relative z-10">
+            <div className="relative z-10 ">
                 <Header />
-                {children}
-                <Footer />
+                <section className="py-24 relative">
+                    <div className="container mx-auto px-6 text-center">
+                        {children}
+                        <Footer />
+                    </div>
+                </section>
             </div>
         </main>
     );

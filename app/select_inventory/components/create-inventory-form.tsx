@@ -65,7 +65,7 @@ export function CreateInventoryForm() {
                         <FormItem>
                             <FormLabel>Nombre de la Empresa</FormLabel>
                             <FormControl>
-                                <Input placeholder="Mi Empresa S.A." {...field} />
+                                <Input placeholder="Empresa" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -78,7 +78,7 @@ export function CreateInventoryForm() {
                         <FormItem>
                             <FormLabel>NIT</FormLabel>
                             <FormControl>
-                                <Input placeholder="900123456-7" {...field} />
+                                <Input placeholder="************-*" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -91,7 +91,7 @@ export function CreateInventoryForm() {
                         <FormItem>
                             <FormLabel>Razón Social</FormLabel>
                             <FormControl>
-                                <Input placeholder="Mi Empresa S.A.S." {...field} />
+                                <Input placeholder="Razon social" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -99,12 +99,12 @@ export function CreateInventoryForm() {
                 />
                 <FormField
                     control={form.control}
-                    name="address"
+                    name="adress"
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Dirección</FormLabel>
                             <FormControl>
-                                <Input placeholder="Calle 123 #45-67" {...field} />
+                                <Input placeholder="Dirección" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -117,7 +117,7 @@ export function CreateInventoryForm() {
                         <FormItem>
                             <FormLabel>Teléfono</FormLabel>
                             <FormControl>
-                                <Input placeholder="3001234567" {...field} />
+                                <Input placeholder="Telefono" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -130,7 +130,7 @@ export function CreateInventoryForm() {
                         <FormItem>
                             <FormLabel>Email</FormLabel>
                             <FormControl>
-                                <Input type="email" placeholder="empresa@ejemplo.com" {...field} />
+                                <Input type="email" placeholder="example@asc.com" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
