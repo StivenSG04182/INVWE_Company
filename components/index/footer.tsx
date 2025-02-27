@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { CuboidIcon as Cube } from "lucide-react"
 
+
 export function Footer() {
     const footerLinks = [
         {
@@ -34,9 +35,9 @@ export function Footer() {
                 <div className="grid md:grid-cols-4 gap-12">
                     <div>
                         <Link href="/" className="flex items-center space-x-2">
-                            <Cube className="h-8 w-8 text-primary" />
+                            <Cube className="h-8 w-8 text-primary" /> 
                             <span className="text-xl font-bold">INVWE</span>
-                        </Link>
+                         </Link>
                         <p className="text-muted-foreground mt-4">
                             Next-generation inventory management platform for modern businesses.
                         </p>
