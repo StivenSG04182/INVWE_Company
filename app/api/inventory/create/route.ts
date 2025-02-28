@@ -22,7 +22,7 @@ async function validateCompanyData(values: any): Promise<ValidationResponse> {
     const { data: existingData, error } = await supabase
         .from("companies")
         .select("nit, name, email, phone, address")
-        .or(`nit.eq.${values.nit},name.eq.${values.nombreEmpresa},email.eq.${values.email},phone.eq.${values.phone}`);
+        .or('nit.eq.' + values.nit + ',name.eq.' + values.nombreEmpresa + ',email.eq.' + values.email + ',phone.eq.' + values.phone);
 
     if (error) {
         console.error("Error checking existing company:", error);
@@ -146,8 +146,7 @@ export async function POST(req: Request) {
             address: address,
             phone: phone,
             email: email,
-            dian_registered: false,
-            company_id: mongoCompany.insertedId.toString(),
+            dian_registered: false
         });
         if (createCompanyError) {
             // Rollback en MongoDB
@@ -163,7 +162,24 @@ export async function POST(req: Request) {
             role: "ADMINISTRATOR",
             nombres_apellidos: nombreEmpresa,
             correo_electronico: email,
+            is_default_inventory: true
         });
+
+        if (relationsError) {
+            // Rollback en MongoDB y en la tabla companies de Supabase
+            await db.collection("companies").deleteOne({ _id: mongoCompany.insertedId });
+            await db.collection("stores").deleteOne({ _id: mongoStore.insertedId });
+            await supabase.from("companies").delete().eq("id", companyId);
+            throw relationsError;
+        }
+        // Actualizar otros registros del usuario para que no sean predeterminados
+        if (!relationsError) {
+            await supabase
+                .from("users_companies")
+                .update({ is_default_inventory: false })
+                .eq("user_id", userId)
+                .neq("company_id", companyId);
+        }
         if (relationsError) {
             // Rollback en MongoDB y en la tabla companies de Supabase
             await db.collection("companies").deleteOne({ _id: mongoCompany.insertedId });
@@ -201,10 +217,11 @@ export async function POST(req: Request) {
             throw subscriptionResult.error || storeResult.error;
         }
 
-        // Redirigir al dashboard utilizando el nombre de la empresa y el id de la tienda (MongoDB)
+        // Redirigir al dashboard utilizando el nombre de la empresa
         return NextResponse.json({
             companyName: nombreEmpresa,
             storeId: mongoStore.insertedId.toString(),
+            redirectUrl: `/inventory/${encodeURIComponent(nombreEmpresa)}/dashboard`
         });
     } catch (error: any) {
         console.error("Detailed Error:", {

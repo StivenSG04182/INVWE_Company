@@ -10,11 +10,10 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- Tabla: companies
 CREATE TABLE IF NOT EXISTS companies (
   id             uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id     text         NOT NULL UNIQUE,  -- MongoDB company ID
   name           text         NOT NULL,
   nit            text         NOT NULL UNIQUE,
-  mongodb_id     text,
   security_code  text         NOT NULL,
+  mongodb_id     text,
   logo_url       text,
   business_name  text         NOT NULL,
   tax_id         text         NOT NULL UNIQUE,
@@ -30,7 +29,7 @@ CREATE TABLE IF NOT EXISTS companies (
 CREATE TABLE IF NOT EXISTS users_companies (
   id                 uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id            text         NOT NULL,
-  company_id         uuid         NOT NULL REFERENCES companies(id),  -- Supabase UUID reference
+  company_id         uuid         NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   role               text         NOT NULL CHECK (role IN ('ADMIN', 'ADMINISTRATOR', 'EMPLOYEE')),
   nombres_apellidos  text         NOT NULL,       
   correo_electronico text         NOT NULL,         
@@ -38,6 +37,8 @@ CREATE TABLE IF NOT EXISTS users_companies (
   fecha_nacimiento   date,
   genero             text,
   direccion          text,
+  mongodb_id         text,  -- Added column for MongoDB ID
+  is_default_inventory boolean DEFAULT false,  -- Flag to indicate if this is the default inventory
   created_at         timestamptz  DEFAULT now(),
   updated_at         timestamptz  DEFAULT now(),
   UNIQUE(user_id, company_id)
@@ -186,16 +187,14 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 -- Tabla: stores
 CREATE TABLE IF NOT EXISTS stores (
   id          uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id  uuid         NOT NULL REFERENCES companies(id),
-  store_id    text         NOT NULL,  
-  mongodb_store_id text,
+  company_id  uuid         NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  mongodb_store_id  text,
   name        text         NOT NULL,
   address     text,
   phone       text,
-  created_by  text         NOT NULL,  
+  created_by  text         NOT NULL,
   created_at  timestamptz  DEFAULT now(),
-  updated_at  timestamptz  DEFAULT now(),
-  UNIQUE(store_id)
+  updated_at  timestamptz  DEFAULT now()
 );
 
 -- Tabla: app_statistics (para estadísticas de la aplicación)
@@ -728,52 +727,7 @@ CREATE POLICY "subscriptions_update_policy"
         AND users_companies.user_id = auth.uid()::text
     )
   );
-
--- Tabla: stores
-alter table "public"."stores" enable row level security;
-
-CREATE POLICY "stores_insert_policy"
-ON stores
-FOR INSERT
-WITH CHECK (
-  EXISTS (SELECT 1 FROM users_companies
-    WHERE users_companies.company_id = stores.company_id
-      AND users_companies.user_id = auth.uid()::text
-      AND users_companies.role IN ('ADMIN', 'ADMINISTRATOR', 'EMPLOYEE')
-  )
-);
-
-CREATE POLICY "stores_select_policy"
-ON stores
-FOR SELECT
-USING (
-  EXISTS (SELECT 1 FROM users_companies
-    WHERE users_companies.company_id = stores.company_id
-      AND users_companies.user_id = auth.uid()::text
-  )
-);
-
-CREATE POLICY "stores_update_policy"
-ON stores
-FOR UPDATE
-USING (
-  EXISTS (SELECT 1 FROM users_companies
-    WHERE users_companies.company_id = stores.company_id
-      AND users_companies.user_id = auth.uid()::text
-      AND users_companies.role IN ('ADMIN', 'ADMINISTRATOR')
-  )
-);
-
-CREATE POLICY "stores_delete_policy"
-ON stores
-FOR DELETE
-USING (
-  EXISTS (SELECT 1 FROM users_companies
-    WHERE users_companies.company_id = stores.company_id
-      AND users_companies.user_id = auth.uid()::text
-      AND users_companies.role IN ('ADMIN', 'ADMINISTRATOR')
-  )
-);
+-- Stores policies are managed in 20240101000002_stores_policies.sql
 
 -- Tabla: app_statistics
 ALTER TABLE app_statistics ENABLE ROW LEVEL SECURITY;

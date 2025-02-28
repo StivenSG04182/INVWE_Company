@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const formSchema = z.object({
     nombreEmpresa: z.string().min(1, "Debe seleccionar una empresa"),
-    nit: z.string().min(9, "El NIT debe tener al menos 9 caracteres"),
+    nit: z.string().min(9, "El NIT debe tener al menos 9 caracteres").regex(/^\d{9}-\d$/, "El NIT debe tener el formato: 900123456-7"),
     codigoSeguridad: z.string().min(6, "El código debe tener al menos 6 caracteres")
 })
 
@@ -27,7 +27,7 @@ export function JoinInventoryForm({ companies = [], isLoading }: JoinInventoryFo
     const router = useRouter()
     const [loading, setLoading] = useState(false)
 
-    const form = useForm<z.infer<typeof formSchema>>({
+    const form = useForm<z.infer<typeof formSchema>>({        
         resolver: zodResolver(formSchema),
         defaultValues: {
             nombreEmpresa: "",
@@ -39,17 +39,39 @@ export function JoinInventoryForm({ companies = [], isLoading }: JoinInventoryFo
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             setLoading(true)
-            const response = await axios.post("/api/inventory/join", values)
-            router.push(`/inventory/${values.nombreEmpresa}/dashboard/${response.data.storeId}`)
-            toast.success("Te has unido al inventario exitosamente")
+
+            console.log("Submitting values:", values); // Debugging line
+
+            const response = await axios.post("/api/inventory/join", {
+                nombreEmpresa: values.nombreEmpresa.trim(),
+                nit: values.nit.trim(),
+                codigoSeguridad: values.codigoSeguridad.trim()
+            })
+            
+            if (response.data?.storeId) {
+                router.push(`/inventory/${values.nombreEmpresa}/dashboard/${response.data.storeId}`)
+                toast.success("Te has unido al inventario exitosamente")
+            } else {
+                throw new Error("Respuesta inválida del servidor")
+            }
         } catch (error: any) {
             console.error("Error joining inventory:", error)
-            if (error.response?.data?.errors) {
-                error.response.data.errors.forEach((err: any) => {
-                    toast.error(`${err.field}: ${err.message}`)
-                })
+            if (error.response?.data) {
+                if (typeof error.response.data === 'string') {
+                    toast.error(error.response.data)
+                } else if (error.response.data.errors) {
+                    error.response.data.errors.forEach((err: any) => {
+                        toast.error(`${err.field}: ${err.message}`)
+                    })
+                } else if (error.response.data.message) {
+                    toast.error(error.response.data.message)
+                } else {
+                    toast.error("Error al unirse al inventario")
+                }
+            } else if (error.message) {
+                toast.error(error.message)
             } else {
-                toast.error(error.response?.data || "Error al unirse al inventario")
+                toast.error("Error de conexión con el servidor")
             }
         } finally {
             setLoading(false)
@@ -76,11 +98,17 @@ export function JoinInventoryForm({ companies = [], isLoading }: JoinInventoryFo
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {Array.isArray(companies) && companies.map((company) => (
-                                        <SelectItem key={company._id} value={company.name}>
-                                            {company.name}
+                                    {Array.isArray(companies) && companies.length > 0 ? (
+                                        companies.map((company) => (
+                                            <SelectItem key={company._id} value={company.name}>
+                                                {company.name}
+                                            </SelectItem>
+                                        ))
+                                    ) : (
+                                        <SelectItem value="" disabled>
+                                            No hay empresas disponibles
                                         </SelectItem>
-                                    ))}
+                                    )}
                                 </SelectContent>
                             </Select>
                             <FormMessage />
@@ -94,7 +122,7 @@ export function JoinInventoryForm({ companies = [], isLoading }: JoinInventoryFo
                         <FormItem>
                             <FormLabel>NIT</FormLabel>
                             <FormControl>
-                                <Input placeholder="900123456-7" {...field} />
+                                <Input placeholder="*********-*" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -107,14 +135,14 @@ export function JoinInventoryForm({ companies = [], isLoading }: JoinInventoryFo
                         <FormItem>
                             <FormLabel>Código de Seguridad</FormLabel>
                             <FormControl>
-                                <Input type="password" {...field} />
+                                <Input type="password" placeholder="Ingrese el código de 6+ caracteres" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
                 />
                 <Button type="submit" disabled={loading} className="w-full">
-                    Unirse al Inventario
+                    {loading ? "Procesando..." : "Unirse al Inventario"}
                 </Button>
             </form>
         </Form>

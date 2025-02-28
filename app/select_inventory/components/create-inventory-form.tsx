@@ -42,7 +42,7 @@ export function CreateInventoryForm() {
             const response = await axios.post("/api/inventory/create", values);
 
             if (response.data.companyName && response.data.storeId) {
-                router.push(`/inventory/${response.data.companyName}/dashboard/${response.data.storeId}`);
+                router.push(`/inventory/${response.data.companyName}/dashboard`);
                 toast.success("Empresa registrada exitosamente");
             } else {
                 throw new Error("Invalid response format");
@@ -99,7 +99,7 @@ export function CreateInventoryForm() {
                 />
                 <FormField
                     control={form.control}
-                    name="adress"
+                    name="address"
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Dirección</FormLabel>
@@ -143,3 +143,4 @@ export function CreateInventoryForm() {
         </Form>
     );
 }
+

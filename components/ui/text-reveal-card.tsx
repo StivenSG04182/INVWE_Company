@@ -7,10 +7,12 @@ export const TextRevealCard = ({
     text,
     revealText,
     className,
+    textAlign = "left",
 }: {
     text: string
     revealText: string
     className?: string
+    textAlign?: "left" | "center" | "right"
 }) => {
     const [isHovered, setIsHovered] = useState(false)
 
@@ -23,8 +25,8 @@ export const TextRevealCard = ({
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            <motion.div initial={{ opacity: 1 }} animate={{ opacity: isHovered ? 0 : 1 }} transition={{ duration: 0.2 }}>
-                <h2 className="text-2xl font-bold text-neutral-800">{text}</h2>
+            <motion.div initial={{ opacity: 1 }} animate={{ opacity: isHovered ? 0 : 1 }} transition={{ duration: 0.5 }}>
+                <h2 className={`text-2xl font-bold text-neutral-800 text-${textAlign}`}>{text}</h2>
             </motion.div>
             <motion.div
                 initial={{ opacity: 0 }}
@@ -32,7 +34,7 @@ export const TextRevealCard = ({
                 transition={{ duration: 0.2 }}
                 className="absolute inset-0 flex items-center justify-center bg-white"
             >
-                <h2 className="text-2xl font-bold text-neutral-800">{revealText}</h2>
+                <h2 className={`text-2xl font-bold text-neutral-800 text-${textAlign}`}>{revealText}</h2>
             </motion.div>
         </div>
     )
