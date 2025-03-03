@@ -18,17 +18,15 @@ interface ValidationResponse {
 async function validateCompanyData(values: any): Promise<ValidationResponse> {
     const errors: ValidationError[] = [];
     
-    // Check for existing company in Supabase
     const { data: existingData, error } = await supabase
         .from("companies")
         .select("nit, name, email, phone, address")
-        .or('nit.eq.' + values.nit + ',name.eq.' + values.nombreEmpresa + ',email.eq.' + values.email + ',phone.eq.' + values.phone);
-
+        .or(`nit.eq.${values.nit.replace(/[^0-9-]/g, '')},name.eq.${values.nombreEmpresa.replace(/'/g, "''")}`);
     if (error) {
         console.error("Error checking existing company:", error);
         throw error;
     }
-
+    
     if (existingData && existingData.length > 0) {
         existingData.forEach(company => {
             if (company.nit === values.nit) {
@@ -36,12 +34,6 @@ async function validateCompanyData(values: any): Promise<ValidationResponse> {
             }
             if (company.name === values.nombreEmpresa) {
                 errors.push({ field: "nombreEmpresa", message: "Este nombre de empresa ya está registrado" });
-            }
-            if (company.email === values.email) {
-                errors.push({ field: "email", message: "Este email ya está registrado" });
-            }
-            if (company.phone === values.phone) {
-                errors.push({ field: "phone", message: "Este teléfono ya está registrado" });
             }
         });
     }
@@ -65,9 +57,24 @@ export async function POST(req: Request) {
         }
 
         const values = await req.json();
+
+        // Validate required fields
+        const requiredFields = [
+            'nombreEmpresa', 'nit', 'businessName', 'address', 'phone', 'email',
+            'nombres_apellidos', 'correo_electronico', 'telefono_usuario', 'direccion_usuario'
+        ];
+        const missingFields = requiredFields.filter(field => !values[field]);
+        if (missingFields.length > 0) {
+            return NextResponse.json({
+                errors: missingFields.map(field => ({
+                    field,
+                    message: `El campo ${field} es requerido`
+                }))
+            }, { status: 400 });
+        }
+
         const companyId = uuidv4();
         const securityCode = generateSecurityCode(8);
-        const { nombreEmpresa, nit, businessName, address, phone, email } = values;
 
         // Validar datos de la empresa
         const validation = await validateCompanyData(values);
@@ -84,72 +91,91 @@ export async function POST(req: Request) {
         db = client.db(process.env.MONGODB_DB);
         session = client.startSession();
 
-        await session.withTransaction(async () => {
-            // Verificar si ya existe la empresa en MongoDB
-            const existingCompany = await db.collection("companies").findOne({ nit: nit });
-            if (existingCompany) {
-                throw new Error("Company already exists in MongoDB");
+        let transactionResult = null;
+        try {
+            transactionResult = await session.withTransaction(async () => {
+                // Verificar si ya existe la empresa en MongoDB
+                const existingCompany = await db.collection("companies").findOne({ nit: values.nit });
+                if (existingCompany) {
+                    throw new Error("Company already exists in MongoDB");
+                }
+
+                mongoCompany = await db.collection("companies").insertOne(
+                    {
+                        name: values.nombreEmpresa,
+                        nit: values.nit,
+                        businessName: values.businessName,
+                        address: values.address,
+                        phone: values.phone,
+                        email: values.email,
+                        createdBy: userId,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        clerkUserId: userId,
+                        metadata: {
+                            supabaseId: companyId,
+                            securityCode: securityCode,
+                            status: "active",
+                            dianRegistered: false
+                        }
+                    },
+                    { session }
+                );
+
+                if (!mongoCompany.insertedId) {
+                    throw new Error("Failed to create company in MongoDB");
+                }
+
+                mongoStore = await db.collection("stores").insertOne(
+                    {
+                        companyId: mongoCompany.insertedId,
+                        name: values.store_name || "Tienda Principal",
+                        address: values.store_address,
+                        phone: values.store_phone,
+                        createdBy: userId,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                    { session }
+                );
+
+                if (!mongoStore.insertedId) {
+                    throw new Error("Failed to create store in MongoDB");
+                }
+
+                return true;
+            });
+        } catch (error) {
+            if (session) {
+                await session.abortTransaction();
             }
-
-            mongoCompany = await db.collection("companies").insertOne(
-                {
-                    name: nombreEmpresa,
-                    nit: nit,
-                    businessName: businessName,
-                    address: address,
-                    phone: phone,
-                    email: email,
-                    createdBy: userId,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    clerkUserId: userId,
-                    metadata: {
-                        supabaseId: companyId,
-                        securityCode: securityCode,
-                        status: "active",
-                        dianRegistered: false
-                    }
-                },
-                { session }
-            );
-
-            if (!mongoCompany.insertedId) {
-                throw new Error("Failed to create company in MongoDB");
+            throw error;
+        } finally {
+            if (session) {
+                session.endSession();
             }
+        }
 
-            mongoStore = await db.collection("stores").insertOne(
-                {
-                    companyId: mongoCompany.insertedId,
-                    name: "Tienda Principal",
-                    createdBy: userId,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                },
-                { session }
-            );
+        if (!transactionResult) {
+            throw new Error("MongoDB transaction failed");
+        }
 
-            if (!mongoStore.insertedId) {
-                throw new Error("Failed to create store in MongoDB");
-            }
-        });
-        session.endSession();
-
-        // Operaciones en Supabase
         // Crear registro de la empresa en Supabase
         const { error: createCompanyError } = await supabase.from("companies").insert({
             id: companyId,
-            name: nombreEmpresa,
-            nit: nit,
-            tax_id: nit,
+            name: values.nombreEmpresa,
+            nit: values.nit,
             security_code: securityCode,
-            business_name: businessName,
-            address: address,
-            phone: phone,
-            email: email,
-            dian_registered: false
+            business_name: values.businessName,
+            address: values.address,
+            phone: values.phone,
+            email: values.email,
+            dian_registered: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
         });
+
         if (createCompanyError) {
-            // Rollback en MongoDB
             await db.collection("companies").deleteOne({ _id: mongoCompany.insertedId });
             await db.collection("stores").deleteOne({ _id: mongoStore.insertedId });
             throw createCompanyError;
@@ -160,35 +186,31 @@ export async function POST(req: Request) {
             user_id: userId,
             company_id: companyId,
             role: "ADMINISTRATOR",
-            nombres_apellidos: nombreEmpresa,
-            correo_electronico: email,
-            is_default_inventory: true
+            nombres_apellidos: values.nombres_apellidos,
+            correo_electronico: values.correo_electronico,
+            telefono: values.telefono_usuario,
+            fecha_nacimiento: values.fecha_nacimiento,
+            direccion: values.direccion_usuario,
+            is_default_inventory: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
         });
 
         if (relationsError) {
-            // Rollback en MongoDB y en la tabla companies de Supabase
-            await db.collection("companies").deleteOne({ _id: mongoCompany.insertedId });
-            await db.collection("stores").deleteOne({ _id: mongoStore.insertedId });
-            await supabase.from("companies").delete().eq("id", companyId);
-            throw relationsError;
-        }
-        // Actualizar otros registros del usuario para que no sean predeterminados
-        if (!relationsError) {
-            await supabase
-                .from("users_companies")
-                .update({ is_default_inventory: false })
-                .eq("user_id", userId)
-                .neq("company_id", companyId);
-        }
-        if (relationsError) {
-            // Rollback en MongoDB y en la tabla companies de Supabase
             await db.collection("companies").deleteOne({ _id: mongoCompany.insertedId });
             await db.collection("stores").deleteOne({ _id: mongoStore.insertedId });
             await supabase.from("companies").delete().eq("id", companyId);
             throw relationsError;
         }
 
-        // Crear suscripción y tienda en Supabase en paralelo
+        // Actualizar otros registros del usuario para que no sean predeterminados
+        await supabase
+            .from("users_companies")
+            .update({ is_default_inventory: false })
+            .eq("user_id", userId)
+            .neq("company_id", companyId);
+
+        // Crear suscripción y tienda en Supabase
         const [subscriptionResult, storeResult] = await Promise.all([
             supabase.from("subscriptions").insert({
                 company_id: companyId,
@@ -198,18 +220,22 @@ export async function POST(req: Request) {
                 invoice_limit: 1000,
                 store_limit: 3,
                 status: "active",
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             }),
             supabase.from("stores").insert({
                 company_id: companyId,
-                name: "Tienda Principal",
+                name: values.store_name || "Tienda Principal",
+                address: values.store_address,
+                phone: values.store_phone,
                 created_by: userId,
                 mongodb_store_id: mongoStore.insertedId.toString(),
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             }).select(),
         ]);
+
         if (subscriptionResult.error || storeResult.error) {
-            // Rollback en ambas bases de datos
             await db.collection("companies").deleteOne({ _id: mongoCompany.insertedId });
             await db.collection("stores").deleteOne({ _id: mongoStore.insertedId });
             await supabase.from("companies").delete().eq("id", companyId);
@@ -217,12 +243,12 @@ export async function POST(req: Request) {
             throw subscriptionResult.error || storeResult.error;
         }
 
-        // Redirigir al dashboard utilizando el nombre de la empresa
         return NextResponse.json({
-            companyName: nombreEmpresa,
+            companyName: values.nombreEmpresa,
             storeId: mongoStore.insertedId.toString(),
-            redirectUrl: `/inventory/${encodeURIComponent(nombreEmpresa)}/dashboard`
+            redirectUrl: `/inventory/${encodeURIComponent(values.nombreEmpresa)}/dashboard`
         });
+
     } catch (error: any) {
         console.error("Detailed Error:", {
             message: error.message,
@@ -231,23 +257,14 @@ export async function POST(req: Request) {
             hint: error.hint,
         });
 
-        // Rollback en MongoDB en caso de error
+        // Cleanup in case of error
         if (db && mongoCompany?.insertedId) {
             await db.collection("companies").deleteOne({ _id: mongoCompany.insertedId });
             if (mongoStore?.insertedId) {
                 await db.collection("stores").deleteOne({ _id: mongoStore.insertedId });
             }
         }
-        if (session) {
-            await session.endSession();
-        }
 
-        if (error.message?.includes("UPDATE requires a WHERE clause")) {
-            return new NextResponse(
-                "Error creating company. Please try again later.",
-                { status: 400 }
-            );
-        }
         if (error.code === '23505') {
             const errorMessage = error.message?.includes('companies_nit_key')
                 ? { field: "nit", message: "Este NIT ya está registrado" }
@@ -262,14 +279,10 @@ export async function POST(req: Request) {
                 { status: 500 }
             );
         }
-        return new NextResponse(
-            error.message || "Internal Server Error",
-            {
-                status: error.status || 500,
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            }
+
+        return NextResponse.json(
+            { errors: [{ field: "general", message: error.message || "Error interno del servidor" }] },
+            { status: error.status || 500 }
         );
     }
 }

@@ -82,14 +82,14 @@ export async function POST(req: Request) {
                 // Update this relationship to be default
                 await supabase
                     .from("users_companies")
-                    .update({ is_default_inventory: true })
+                    .update({ is_default_inventory: true, updated_at: new Date().toISOString() })
                     .eq("user_id", userId)
                     .eq("company_id", supabaseCompany.id)
 
                 // Update other relationships to not be default
                 await supabase
                     .from("users_companies")
-                    .update({ is_default_inventory: false })
+                    .update({ is_default_inventory: false, updated_at: new Date().toISOString() })
                     .eq("user_id", userId)
                     .neq("company_id", supabaseCompany.id)
             }
@@ -101,7 +101,9 @@ export async function POST(req: Request) {
                 role: "EMPLOYEE",
                 nombres_apellidos: supabaseCompany.name,
                 correo_electronico: supabaseCompany.email,
-                is_default_inventory: true
+                is_default_inventory: true,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             })
 
             if (relationError) {
@@ -114,7 +116,7 @@ export async function POST(req: Request) {
             // Update other user-company relationships to not be default
             await supabase
                 .from("users_companies")
-                .update({ is_default_inventory: false })
+                .update({ is_default_inventory: false, updated_at: new Date().toISOString() })
                 .eq("user_id", userId)
                 .neq("company_id", supabaseCompany.id)
 

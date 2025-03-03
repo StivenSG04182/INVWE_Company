@@ -15,8 +15,6 @@ CREATE TABLE IF NOT EXISTS companies (
   security_code  text         NOT NULL,
   mongodb_id     text,
   logo_url       text,
-  business_name  text         NOT NULL,
-  tax_id         text         NOT NULL UNIQUE,
   address        text         NOT NULL,
   phone          text,
   email          text         NOT NULL,
@@ -48,15 +46,13 @@ CREATE TABLE IF NOT EXISTS users_companies (
 CREATE TABLE IF NOT EXISTS clients (
   id            uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id    uuid         NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-  business_name text         NOT NULL,
-  tax_id        text         NOT NULL,
   address       text         NOT NULL,
   phone         text,
   email         text,
   client_type   text         NOT NULL DEFAULT 'company',
   created_at    timestamptz  DEFAULT now(),
   updated_at    timestamptz  DEFAULT now(),
-  UNIQUE(company_id, tax_id)
+  UNIQUE(company_id)
 );
 
 -- Tabla: products
@@ -207,7 +203,175 @@ CREATE TABLE IF NOT EXISTS app_statistics (
   total_active_subscriptions integer      NOT NULL DEFAULT 0,
   total_invoices             integer      NOT NULL DEFAULT 0,
   total_revenue              numeric(15,2) NOT NULL DEFAULT 0,
+  total_ecommerce_orders     integer      NOT NULL DEFAULT 0,
+  total_ecommerce_revenue    numeric(15,2) NOT NULL DEFAULT 0,
   updated_at                 timestamptz  DEFAULT now()
+);
+
+-- Tabla: store_inventory (para manejar el inventario por tienda)
+CREATE TABLE IF NOT EXISTS store_inventory (
+  id            uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+  store_id      uuid         NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+  product_id    uuid         NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  quantity      integer      NOT NULL DEFAULT 0,
+  min_stock     integer      NOT NULL DEFAULT 5,
+  max_stock     integer      NOT NULL DEFAULT 100,
+  mongodb_inventory_id text,
+  created_at    timestamptz  DEFAULT now(),
+  updated_at    timestamptz  DEFAULT now(),
+  UNIQUE(store_id, product_id)
+);
+
+-- Tabla: inventory_movements (para registrar movimientos de inventario)
+CREATE TABLE IF NOT EXISTS inventory_movements (
+  id                uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+  store_id          uuid         NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+  product_id        uuid         NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  movement_type     text         NOT NULL CHECK (movement_type IN ('entry', 'exit', 'transfer', 'adjustment')),
+  quantity          integer      NOT NULL,
+  previous_quantity integer      NOT NULL,
+  new_quantity      integer      NOT NULL,
+  reference_id      uuid,
+  reference_type    text,
+  notes             text,
+  created_by        text         NOT NULL,
+  created_at        timestamptz  DEFAULT now()
+);
+
+-- Tabla: ecommerce_stores (para configuración de tiendas online)
+CREATE TABLE IF NOT EXISTS ecommerce_stores (
+  id                uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+  store_id          uuid         NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+  domain            text         UNIQUE,
+  subdomain         text         UNIQUE,
+  theme             text         NOT NULL DEFAULT 'default',
+  logo_url          text,
+  banner_url        text,
+  primary_color     text         DEFAULT '#3B82F6',
+  secondary_color   text         DEFAULT '#1E40AF',
+  is_active         boolean      NOT NULL DEFAULT true,
+  mongodb_store_id  text,
+  created_at        timestamptz  DEFAULT now(),
+  updated_at        timestamptz  DEFAULT now(),
+  UNIQUE(store_id)
+);
+
+-- Tabla: ecommerce_categories (para categorías de productos en tiendas online)
+CREATE TABLE IF NOT EXISTS ecommerce_categories (
+  id                uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+  ecommerce_store_id uuid        NOT NULL REFERENCES ecommerce_stores(id) ON DELETE CASCADE,
+  name              text         NOT NULL,
+  slug              text         NOT NULL,
+  description       text,
+  image_url         text,
+  parent_id         uuid         REFERENCES ecommerce_categories(id) ON DELETE SET NULL,
+  is_featured       boolean      NOT NULL DEFAULT false,
+  display_order     integer      NOT NULL DEFAULT 0,
+  mongodb_category_id text,
+  created_at        timestamptz  DEFAULT now(),
+  updated_at        timestamptz  DEFAULT now(),
+  UNIQUE(ecommerce_store_id, slug)
+);
+
+-- Tabla: product_categories (relación muchos a muchos entre productos y categorías)
+CREATE TABLE IF NOT EXISTS product_categories (
+  id                uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id        uuid         NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  category_id       uuid         NOT NULL REFERENCES ecommerce_categories(id) ON DELETE CASCADE,
+  created_at        timestamptz  DEFAULT now(),
+  UNIQUE(product_id, category_id)
+);
+
+-- Tabla: ecommerce_orders (para pedidos en tiendas online)
+CREATE TABLE IF NOT EXISTS ecommerce_orders (
+  id                uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+  ecommerce_store_id uuid        NOT NULL REFERENCES ecommerce_stores(id) ON DELETE CASCADE,
+  order_number      text         NOT NULL,
+  client_id         uuid         REFERENCES clients(id) ON DELETE SET NULL,
+  customer_name     text         NOT NULL,
+  customer_email    text         NOT NULL,
+  customer_phone    text,
+  shipping_address  text         NOT NULL,
+  billing_address   text,
+  subtotal          numeric(15,2) NOT NULL DEFAULT 0,
+  tax_total         numeric(15,2) NOT NULL DEFAULT 0,
+  shipping_cost     numeric(15,2) NOT NULL DEFAULT 0,
+  discount_amount   numeric(15,2) NOT NULL DEFAULT 0,
+  total             numeric(15,2) NOT NULL DEFAULT 0,
+  status            text         NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'shipped', 'delivered', 'cancelled')),
+  payment_status    text         NOT NULL DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'failed', 'refunded')),
+  payment_method    text,
+  payment_reference text,
+  notes             text,
+  mongodb_order_id  text,
+  created_at        timestamptz  DEFAULT now(),
+  updated_at        timestamptz  DEFAULT now(),
+  UNIQUE(ecommerce_store_id, order_number)
+);
+
+-- Tabla: ecommerce_order_items (para items de pedidos en tiendas online)
+CREATE TABLE IF NOT EXISTS ecommerce_order_items (
+  id                uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id          uuid         NOT NULL REFERENCES ecommerce_orders(id) ON DELETE CASCADE,
+  product_id        uuid         NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  quantity          numeric(15,2) NOT NULL DEFAULT 1,
+  unit_price        numeric(15,2) NOT NULL,
+  tax_rate          numeric(5,2)  NOT NULL,
+  tax_amount        numeric(15,2) NOT NULL,
+  discount_amount   numeric(15,2) NOT NULL DEFAULT 0,
+  subtotal          numeric(15,2) NOT NULL,
+  total             numeric(15,2) NOT NULL,
+  created_at        timestamptz  DEFAULT now()
+);
+
+-- Tabla: ecommerce_coupons (para cupones de descuento)
+CREATE TABLE IF NOT EXISTS ecommerce_coupons (
+  id                uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+  ecommerce_store_id uuid        NOT NULL REFERENCES ecommerce_stores(id) ON DELETE CASCADE,
+  code              text         NOT NULL,
+  discount_type     text         NOT NULL CHECK (discount_type IN ('percentage', 'fixed')),
+  discount_value    numeric(15,2) NOT NULL,
+  min_purchase      numeric(15,2),
+  max_discount      numeric(15,2),
+  start_date        timestamptz  NOT NULL,
+  end_date          timestamptz  NOT NULL,
+  usage_limit       integer,
+  usage_count       integer      NOT NULL DEFAULT 0,
+  is_active         boolean      NOT NULL DEFAULT true,
+  created_at        timestamptz  DEFAULT now(),
+  updated_at        timestamptz  DEFAULT now(),
+  UNIQUE(ecommerce_store_id, code)
+);
+
+-- Tabla: ecommerce_customers (para clientes registrados en tiendas online)
+CREATE TABLE IF NOT EXISTS ecommerce_customers (
+  id                uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+  ecommerce_store_id uuid        NOT NULL REFERENCES ecommerce_stores(id) ON DELETE CASCADE,
+  client_id         uuid         REFERENCES clients(id) ON DELETE SET NULL,
+  email             text         NOT NULL,
+  name              text         NOT NULL,
+  phone             text,
+  password_hash     text,
+  shipping_address  text,
+  billing_address   text,
+  is_active         boolean      NOT NULL DEFAULT true,
+  mongodb_customer_id text,
+  created_at        timestamptz  DEFAULT now(),
+  updated_at        timestamptz  DEFAULT now(),
+  UNIQUE(ecommerce_store_id, email)
+);
+
+-- Tabla: mongodb_sync_log (para registrar sincronizaciones con MongoDB)
+CREATE TABLE IF NOT EXISTS mongodb_sync_log (
+  id                uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+  entity_type       text         NOT NULL,
+  entity_id         uuid         NOT NULL,
+  mongodb_id        text,
+  operation_type    text         NOT NULL CHECK (operation_type IN ('insert', 'update', 'delete')),
+  status            text         NOT NULL CHECK (status IN ('pending', 'success', 'failed')),
+  error_message     text,
+  created_at        timestamptz  DEFAULT now(),
+  updated_at        timestamptz  DEFAULT now()
 );
 
 --------------------------------------------------------------------------------
@@ -235,6 +399,8 @@ BEGIN
     total_active_subscriptions = (SELECT COUNT(*) FROM subscriptions WHERE status = 'active'),
     total_invoices             = (SELECT COUNT(*) FROM invoices WHERE status = 'paid'),
     total_revenue              = (SELECT COALESCE(SUM(total), 0) FROM invoices WHERE status = 'paid'),
+    total_ecommerce_orders     = (SELECT COUNT(*) FROM ecommerce_orders WHERE payment_status = 'paid'),
+    total_ecommerce_revenue    = (SELECT COALESCE(SUM(total), 0) FROM ecommerce_orders WHERE payment_status = 'paid'),
     updated_at                 = NOW()
   WHERE id = (SELECT id FROM app_statistics LIMIT 1);
   RETURN NEW;
@@ -279,8 +445,209 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Función para actualizar el inventario de la tienda cuando se realiza un movimiento
+CREATE OR REPLACE FUNCTION update_store_inventory()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Actualizar el inventario de la tienda
+  UPDATE store_inventory
+  SET quantity = NEW.new_quantity,
+      updated_at = NOW()
+  WHERE store_id = NEW.store_id AND product_id = NEW.product_id;
+  
+  -- Si no existe un registro para esta tienda y producto, crearlo
+  IF NOT FOUND THEN
+    INSERT INTO store_inventory (store_id, product_id, quantity)
+    VALUES (NEW.store_id, NEW.product_id, NEW.new_quantity);
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Función para registrar cambios para sincronización con MongoDB
+CREATE OR REPLACE FUNCTION log_mongodb_sync()
+RETURNS TRIGGER AS $$
+DECLARE
+  entity_type_val text;
+  entity_id_val uuid;
+BEGIN
+  -- Determinar el tipo de entidad basado en la tabla
+  IF TG_TABLE_NAME = 'companies' THEN
+    entity_type_val := 'company';
+    entity_id_val := NEW.id;
+  ELSIF TG_TABLE_NAME = 'stores' THEN
+    entity_type_val := 'store';
+    entity_id_val := NEW.id;
+  ELSIF TG_TABLE_NAME = 'store_inventory' THEN
+    entity_type_val := 'inventory';
+    entity_id_val := NEW.id;
+  ELSIF TG_TABLE_NAME = 'ecommerce_stores' THEN
+    entity_type_val := 'ecommerce_store';
+    entity_id_val := NEW.id;
+  ELSIF TG_TABLE_NAME = 'products' THEN
+    entity_type_val := 'product';
+    entity_id_val := NEW.id;
+  END IF;
+  
+  -- Registrar la operación para sincronización
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO mongodb_sync_log (entity_type, entity_id, operation_type, status)
+    VALUES (entity_type_val, entity_id_val, 'insert', 'pending');
+  ELSIF TG_OP = 'UPDATE' THEN
+    INSERT INTO mongodb_sync_log (entity_type, entity_id, operation_type, status)
+    VALUES (entity_type_val, entity_id_val, 'update', 'pending');
+  ELSIF TG_OP = 'DELETE' THEN
+    INSERT INTO mongodb_sync_log (entity_type, entity_id, operation_type, status)
+    VALUES (entity_type_val, entity_id_val, 'delete', 'pending');
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 --------------------------------------------------------------------------------
--- 4. CREACIÓN DE ÍNDICES
+-- 4. CREACIÓN DE TRIGGERS
+--------------------------------------------------------------------------------
+-- Triggers para actualizar updated_at en todas las tablas
+CREATE TRIGGER update_companies_updated_at BEFORE UPDATE ON companies
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_users_companies_updated_at BEFORE UPDATE ON users_companies
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_clients_updated_at BEFORE UPDATE ON clients
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_invoices_updated_at BEFORE UPDATE ON invoices
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_credit_notes_updated_at BEFORE UPDATE ON credit_notes
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_debit_notes_updated_at BEFORE UPDATE ON debit_notes
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_dian_config_updated_at BEFORE UPDATE ON dian_config
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_subscriptions_updated_at BEFORE UPDATE ON subscriptions
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_stores_updated_at BEFORE UPDATE ON stores
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_store_inventory_updated_at BEFORE UPDATE ON store_inventory
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_ecommerce_stores_updated_at BEFORE UPDATE ON ecommerce_stores
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_ecommerce_categories_updated_at BEFORE UPDATE ON ecommerce_categories
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_ecommerce_orders_updated_at BEFORE UPDATE ON ecommerce_orders
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_ecommerce_coupons_updated_at BEFORE UPDATE ON ecommerce_coupons
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_ecommerce_customers_updated_at BEFORE UPDATE ON ecommerce_customers
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_mongodb_sync_log_updated_at BEFORE UPDATE ON mongodb_sync_log
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Triggers para actualizar estadísticas de la aplicación
+CREATE TRIGGER update_stats_on_company_change AFTER INSERT OR UPDATE OR DELETE ON companies
+  FOR EACH STATEMENT EXECUTE FUNCTION update_app_statistics();
+
+CREATE TRIGGER update_stats_on_user_company_change AFTER INSERT OR UPDATE OR DELETE ON users_companies
+  FOR EACH STATEMENT EXECUTE FUNCTION update_app_statistics();
+
+CREATE TRIGGER update_stats_on_store_change AFTER INSERT OR UPDATE OR DELETE ON stores
+  FOR EACH STATEMENT EXECUTE FUNCTION update_app_statistics();
+
+CREATE TRIGGER update_stats_on_subscription_change AFTER INSERT OR UPDATE OR DELETE ON subscriptions
+  FOR EACH STATEMENT EXECUTE FUNCTION update_app_statistics();
+
+CREATE TRIGGER update_stats_on_invoice_change AFTER INSERT OR UPDATE OR DELETE ON invoices
+  FOR EACH STATEMENT EXECUTE FUNCTION update_app_statistics();
+
+CREATE TRIGGER update_stats_on_ecommerce_order_change AFTER INSERT OR UPDATE OR DELETE ON ecommerce_orders
+  FOR EACH STATEMENT EXECUTE FUNCTION update_app_statistics();
+
+-- Triggers para validar límites de suscripción
+CREATE TRIGGER check_subscription_limits_on_insert BEFORE INSERT ON users_companies
+  FOR EACH ROW EXECUTE FUNCTION check_subscription_limits();
+
+CREATE TRIGGER check_subscription_limits_on_update BEFORE UPDATE ON users_companies
+  FOR EACH ROW EXECUTE FUNCTION check_subscription_limits();
+
+-- Triggers para asignar roles y suscripciones
+CREATE TRIGGER assign_administrator_role_on_insert BEFORE INSERT ON users_companies
+  FOR EACH ROW EXECUTE FUNCTION assign_administrator_role();
+
+CREATE TRIGGER assign_free_subscription_on_insert AFTER INSERT ON users_companies
+  FOR EACH ROW
+  WHEN (NEW.role = 'ADMINISTRATOR')
+  EXECUTE FUNCTION assign_free_subscription();
+
+-- Triggers para actualizar inventario
+CREATE TRIGGER update_store_inventory_on_movement AFTER INSERT ON inventory_movements
+  FOR EACH ROW EXECUTE FUNCTION update_store_inventory();
+
+-- Triggers para sincronización con MongoDB
+CREATE TRIGGER log_mongodb_sync_on_company_insert AFTER INSERT ON companies
+  FOR EACH ROW EXECUTE FUNCTION log_mongodb_sync();
+
+CREATE TRIGGER log_mongodb_sync_on_company_update AFTER UPDATE ON companies
+  FOR EACH ROW EXECUTE FUNCTION log_mongodb_sync();
+
+CREATE TRIGGER log_mongodb_sync_on_company_delete BEFORE DELETE ON companies
+  FOR EACH ROW EXECUTE FUNCTION log_mongodb_sync();
+
+CREATE TRIGGER log_mongodb_sync_on_store_insert AFTER INSERT ON stores
+  FOR EACH ROW EXECUTE FUNCTION log_mongodb_sync();
+
+CREATE TRIGGER log_mongodb_sync_on_store_update AFTER UPDATE ON stores
+  FOR EACH ROW EXECUTE FUNCTION log_mongodb_sync();
+
+CREATE TRIGGER log_mongodb_sync_on_store_delete BEFORE DELETE ON stores
+  FOR EACH ROW EXECUTE FUNCTION log_mongodb_sync();
+
+CREATE TRIGGER log_mongodb_sync_on_inventory_insert AFTER INSERT ON store_inventory
+  FOR EACH ROW EXECUTE FUNCTION log_mongodb_sync();
+
+CREATE TRIGGER log_mongodb_sync_on_inventory_update AFTER UPDATE ON store_inventory
+  FOR EACH ROW EXECUTE FUNCTION log_mongodb_sync();
+
+CREATE TRIGGER log_mongodb_sync_on_inventory_delete BEFORE DELETE ON store_inventory
+  FOR EACH ROW EXECUTE FUNCTION log_mongodb_sync();
+
+CREATE TRIGGER log_mongodb_sync_on_ecommerce_store_insert AFTER INSERT ON ecommerce_stores
+  FOR EACH ROW EXECUTE FUNCTION log_mongodb_sync();
+
+CREATE TRIGGER log_mongodb_sync_on_ecommerce_store_update AFTER UPDATE ON ecommerce_stores
+  FOR EACH ROW EXECUTE FUNCTION log_mongodb_sync();
+
+CREATE TRIGGER log_mongodb_sync_on_ecommerce_store_delete BEFORE DELETE ON ecommerce_stores
+  FOR EACH ROW EXECUTE FUNCTION log_mongodb_sync();
+
+CREATE TRIGGER log_mongodb_sync_on_product_insert AFTER INSERT ON products
+  FOR EACH ROW EXECUTE FUNCTION log_mongodb_sync();
+
+CREATE TRIGGER log_mongodb_sync_on_product_update AFTER UPDATE ON products
+  FOR EACH ROW EXECUTE FUNCTION log_mongodb_sync();
+
+CREATE TRIGGER log_mongodb_sync_on_product_delete BEFORE DELETE ON products
+  FOR EACH ROW EXECUTE FUNCTION log_mongodb_sync();
+
+--------------------------------------------------------------------------------
+-- 5. CREACIÓN DE ÍNDICES
 --------------------------------------------------------------------------------
 -- Índices en users_companies
 CREATE INDEX IF NOT EXISTS idx_users_companies_user_id ON users_companies(user_id);
@@ -302,6 +669,58 @@ CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice_id ON invoice_items(invoice
 
 -- Índices en credit_notes
 CREATE INDEX IF NOT EXISTS idx_credit_notes_invoice_id ON credit_notes(invoice_id);
+
+-- Índices en debit_notes
+CREATE INDEX IF NOT EXISTS idx_debit_notes_invoice_id ON debit_notes(invoice_id);
+
+-- Índices en dian_config
+CREATE INDEX IF NOT EXISTS idx_dian_config_company_id ON dian_config(company_id);
+
+-- Índices en subscriptions
+CREATE INDEX IF NOT EXISTS idx_subscriptions_company_id ON subscriptions(company_id);
+
+-- Índices en stores
+CREATE INDEX IF NOT EXISTS idx_stores_company_id ON stores(company_id);
+
+-- Índices en store_inventory
+CREATE INDEX IF NOT EXISTS idx_store_inventory_store_id ON store_inventory(store_id);
+CREATE INDEX IF NOT EXISTS idx_store_inventory_product_id ON store_inventory(product_id);
+
+-- Índices en inventory_movements
+CREATE INDEX IF NOT EXISTS idx_inventory_movements_store_id ON inventory_movements(store_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_movements_product_id ON inventory_movements(product_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_movements_created_at ON inventory_movements(created_at);
+
+-- Índices en ecommerce_stores
+CREATE INDEX IF NOT EXISTS idx_ecommerce_stores_store_id ON ecommerce_stores(store_id);
+
+-- Índices en ecommerce_categories
+CREATE INDEX IF NOT EXISTS idx_ecommerce_categories_store_id ON ecommerce_categories(ecommerce_store_id);
+
+-- Índices en product_categories
+CREATE INDEX IF NOT EXISTS idx_product_categories_product_id ON product_categories(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_categories_category_id ON product_categories(category_id);
+
+-- Índices en ecommerce_orders
+CREATE INDEX IF NOT EXISTS idx_ecommerce_orders_store_id ON ecommerce_orders(ecommerce_store_id);
+CREATE INDEX IF NOT EXISTS idx_ecommerce_orders_client_id ON ecommerce_orders(client_id);
+CREATE INDEX IF NOT EXISTS idx_ecommerce_orders_status ON ecommerce_orders(status);
+CREATE INDEX IF NOT EXISTS idx_ecommerce_orders_payment_status ON ecommerce_orders(payment_status);
+
+-- Índices en ecommerce_order_items
+CREATE INDEX IF NOT EXISTS idx_ecommerce_order_items_order_id ON ecommerce_order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_ecommerce_order_items_product_id ON ecommerce_order_items(product_id);
+
+-- Índices en ecommerce_coupons
+CREATE INDEX IF NOT EXISTS idx_ecommerce_coupons_store_id ON ecommerce_coupons(ecommerce_store_id);
+
+-- Índices en ecommerce_customers
+CREATE INDEX IF NOT EXISTS idx_ecommerce_customers_store_id ON ecommerce_customers(ecommerce_store_id);
+CREATE INDEX IF NOT EXISTS idx_ecommerce_customers_client_id ON ecommerce_customers(client_id);
+
+-- Índices en mongodb_sync_log
+CREATE INDEX IF NOT EXISTS idx_mongodb_sync_log_entity_type ON mongodb_sync_log(entity_type);
+CREATE INDEX IF NOT EXISTS idx_mongodb_sync_log_status ON mongodb_sync_log(status);
 
 -- Índices en debit_notes
 CREATE INDEX IF NOT EXISTS idx_debit_notes_invoice_id ON debit_notes(invoice_id);

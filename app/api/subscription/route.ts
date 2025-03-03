@@ -79,14 +79,33 @@ export async function GET(req: Request) {
         }
 
         // Get companies from Supabase where the user has access
-        const { data: userCompanies, error } = await supabase
-            .from('users_companies')
-            .select('company_id')
-            .eq('user_id', userId.toString())
+        let userCompanies;
+        try {
+            // First check if the table exists
+            const { data: tables } = await supabase
+                .from('information_schema.tables')
+                .select('table_name')
+                .eq('table_name', 'users_companies')
+                .single()
 
-        if (error) {
+            if (!tables) {
+                console.log("Table 'users_companies' does not exist")
+                return NextResponse.json([])
+            }
+
+            const { data, error } = await supabase
+                .from('users_companies')
+                .select('company_id')
+                .eq('user_id', userId.toString())
+
+            if (error) {
+                console.error("Supabase Error:", error)
+                return NextResponse.json([])
+            }
+            userCompanies = data
+        } catch (error) {
             console.error("Supabase Error:", error)
-            throw error
+            return NextResponse.json([])
         }
 
         if (!userCompanies || userCompanies.length === 0) {
