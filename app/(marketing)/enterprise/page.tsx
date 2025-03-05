@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { toast } from "sonner"
+import axios from "axios"
 
 export default function Page() {
     const [formData, setFormData] = useState({
@@ -30,10 +32,28 @@ export default function Page() {
         setFormData(prev => ({ ...prev, [name]: value }))
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        console.log("Form submitted:", formData)
-        // Here you would typically send the data to your backend
+        try {
+            const response = await axios.post('/api/enterprise', formData)
+            if (response.status === 201) {
+                toast.success('Formulario enviado correctamente')
+                setFormData({
+                    companyName: "",
+                    firstName: "",
+                    lastName: "",
+                    email: "",
+                    companySize: "",
+                    phoneNumber: "",
+                    timezone: "",
+                    referralSource: "",
+                    additionalDetails: ""
+                })
+            }
+        } catch (error) {
+            console.error('Error submitting form:', error)
+            toast.error(error.response?.data?.error || 'Error al enviar el formulario')
+        }
     }
 
     return (

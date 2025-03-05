@@ -62,6 +62,14 @@ const config: Config = {
 					'4': 'hsl(var(--chart-4))',
 					'5': 'hsl(var(--chart-5))',
 				},
+				'container-border': {
+					light: '#5080ce',
+					dark: '#ce9e50',
+				},
+			},
+			boxShadow: {
+				'container-light': '0 0 0 1px #5080ce, 0 2px 4px 0 rgba(80, 128, 206, 0.1)',
+				'container-dark': '0 0 0 1px #ce9e50, 0 2px 4px 0 rgba(206, 158, 80, 0.1)',
 			},
 			keyframes: {
 				'accordion-down': {

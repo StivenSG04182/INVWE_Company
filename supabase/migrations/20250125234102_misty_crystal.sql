@@ -1241,3 +1241,362 @@ ADD CONSTRAINT valid_product_type CHECK (product_type IN ('product', 'service'))
 -- Asegurar que la medida de unidad sea válida
 ALTER TABLE products
 ADD CONSTRAINT valid_unit_measure CHECK (unit_measure IN ('unit', 'kg', 'litre', 'piece'));
+
+-- Modify the database structure for better e-commerce and inventory management
+
+-- 1. Create users table
+CREATE TABLE IF NOT EXISTS users (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  clerk_id text NOT NULL UNIQUE,
+  email text NOT NULL UNIQUE,
+  name text NOT NULL,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- Enable RLS on users table
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+-- 2. Modify users_companies to inherit from users
+ALTER TABLE users_companies
+  ADD COLUMN IF NOT EXISTS clerk_id text REFERENCES users(clerk_id) ON DELETE CASCADE,
+  DROP COLUMN IF EXISTS user_id;
+
+-- 3. Modify clients table to focus on e-commerce customers
+ALTER TABLE clients
+  ADD COLUMN IF NOT EXISTS clerk_id text REFERENCES users(clerk_id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS shipping_address text,
+  ADD COLUMN IF NOT EXISTS billing_address text;
+
+-- 4. Create sales_transactions table for in-store sales
+CREATE TABLE IF NOT EXISTS sales_transactions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  store_id uuid NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+  client_id uuid REFERENCES clients(id) ON DELETE SET NULL,
+  seller_id text NOT NULL REFERENCES users(clerk_id) ON DELETE RESTRICT,
+  transaction_number text NOT NULL,
+  subtotal numeric(15,2) NOT NULL DEFAULT 0,
+  tax_total numeric(15,2) NOT NULL DEFAULT 0,
+  discount_amount numeric(15,2) NOT NULL DEFAULT 0,
+  total numeric(15,2) NOT NULL DEFAULT 0,
+  payment_method text NOT NULL CHECK (payment_method IN ('cash', 'card', 'transfer')),
+  status text NOT NULL DEFAULT 'completed' CHECK (status IN ('pending', 'completed', 'cancelled')),
+  notes text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  UNIQUE(transaction_number)
+);
+
+-- Create sales_transaction_items table
+CREATE TABLE IF NOT EXISTS sales_transaction_items (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  transaction_id uuid NOT NULL REFERENCES sales_transactions(id) ON DELETE CASCADE,
+  product_id uuid NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
+  quantity integer NOT NULL CHECK (quantity > 0),
+  unit_price numeric(15,2) NOT NULL,
+  discount_amount numeric(15,2) NOT NULL DEFAULT 0,
+  tax_amount numeric(15,2) NOT NULL DEFAULT 0,
+  total_amount numeric(15,2) NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Enable RLS on new tables
+ALTER TABLE sales_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sales_transaction_items ENABLE ROW LEVEL SECURITY;
+
+-- Add policies for sales_transactions
+CREATE POLICY "sales_transactions_select_policy" ON sales_transactions
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM users_companies
+      WHERE users_companies.clerk_id = auth.uid()
+        AND users_companies.company_id = (
+          SELECT company_id FROM stores WHERE id = sales_transactions.store_id
+        )
+    )
+  );
+
+CREATE POLICY "sales_transactions_insert_policy" ON sales_transactions
+  FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM users_companies
+      WHERE users_companies.clerk_id = auth.uid()
+        AND users_companies.company_id = (
+          SELECT company_id FROM stores WHERE id = sales_transactions.store_id
+        )
+    )
+  );
+
+CREATE POLICY "sales_transactions_update_policy" ON sales_transactions
+  FOR UPDATE USING (
+    EXISTS (SELECT 1 FROM users_companies
+      WHERE users_companies.clerk_id = auth.uid()
+        AND users_companies.company_id = (
+          SELECT company_id FROM stores WHERE id = sales_transactions.store_id
+        )
+    )
+  );
+
+-- Add policies for sales_transaction_items
+CREATE POLICY "sales_transaction_items_select_policy" ON sales_transaction_items
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM sales_transactions st
+      JOIN stores s ON s.id = st.store_id
+      JOIN users_companies uc ON uc.company_id = s.company_id
+      WHERE st.id = sales_transaction_items.transaction_id
+        AND uc.clerk_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "sales_transaction_items_insert_policy" ON sales_transaction_items
+  FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM sales_transactions st
+      JOIN stores s ON s.id = st.store_id
+      JOIN users_companies uc ON uc.company_id = s.company_id
+      WHERE st.id = sales_transaction_items.transaction_id
+        AND uc.clerk_id = auth.uid()
+    )
+  );
+
+-- Drop ecommerce_customers table as it's now redundant
+DROP TABLE IF EXISTS ecommerce_customers;
+
+-- Update existing functions and triggers to use clerk_id instead of user_id
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS trigger AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Add updated_at triggers for new tables
+CREATE TRIGGER set_updated_at
+  BEFORE UPDATE ON sales_transactions
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at();
+
+-- Add indexes and update remaining policies for the modified database structure
+
+-- Update remaining policies for clients to use clerk_id
+CREATE OR REPLACE POLICY "clients_update_policy" ON clients
+  FOR UPDATE USING (
+    EXISTS (SELECT 1 FROM users_companies
+      WHERE users_companies.company_id = clients.company_id
+        AND users_companies.clerk_id = auth.uid()
+    )
+  );
+
+CREATE OR REPLACE POLICY "clients_delete_policy" ON clients
+  FOR DELETE USING (
+    EXISTS (SELECT 1 FROM users_companies
+      WHERE users_companies.company_id = clients.company_id
+        AND users_companies.clerk_id = auth.uid()
+    )
+  );
+
+-- Add indexes to improve query performance
+CREATE INDEX IF NOT EXISTS idx_sales_transactions_store_id ON sales_transactions(store_id);
+CREATE INDEX IF NOT EXISTS idx_sales_transactions_client_id ON sales_transactions(client_id);
+CREATE INDEX IF NOT EXISTS idx_sales_transactions_seller_id ON sales_transactions(seller_id);
+CREATE INDEX IF NOT EXISTS idx_sales_transaction_items_transaction_id ON sales_transaction_items(transaction_id);
+CREATE INDEX IF NOT EXISTS idx_sales_transaction_items_product_id ON sales_transaction_items(product_id);
+CREATE INDEX IF NOT EXISTS idx_users_companies_clerk_id ON users_companies(clerk_id);
+CREATE INDEX IF NOT EXISTS idx_clients_clerk_id ON clients(clerk_id);
+
+-- Add function to handle inventory when a sales transaction is cancelled
+CREATE OR REPLACE FUNCTION restore_inventory_after_cancelled_sale()
+RETURNS trigger AS $$
+BEGIN
+  -- Only process when status changes to cancelled
+  IF NEW.status = 'cancelled' AND OLD.status != 'cancelled' THEN
+    -- Create inventory movement records for each item
+    INSERT INTO inventory_movements (
+      store_id,
+      product_id,
+      movement_type,
+      quantity,
+      previous_quantity,
+      new_quantity,
+      reference_id,
+      reference_type,
+      notes,
+      created_by
+    )
+    SELECT 
+      NEW.store_id,
+      sti.product_id,
+      'entry',
+      sti.quantity,
+      COALESCE((SELECT quantity FROM store_inventory WHERE store_id = NEW.store_id AND product_id = sti.product_id), 0),
+      COALESCE((SELECT quantity FROM store_inventory WHERE store_id = NEW.store_id AND product_id = sti.product_id), 0) + sti.quantity,
+      NEW.id,
+      'cancelled_transaction',
+      'Cancelled sale transaction',
+      NEW.seller_id
+    FROM sales_transaction_items sti
+    WHERE sti.transaction_id = NEW.id;
+    
+    -- Update inventory quantities
+    UPDATE store_inventory si
+    SET quantity = si.quantity + sti.quantity,
+        updated_at = now()
+    FROM sales_transaction_items sti
+    WHERE sti.transaction_id = NEW.id
+      AND si.store_id = NEW.store_id
+      AND si.product_id = sti.product_id;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER restore_inventory_after_cancelled_sale_trigger
+  AFTER UPDATE ON sales_transactions
+  FOR EACH ROW
+  EXECUTE FUNCTION restore_inventory_after_cancelled_sale();
+
+-- Add comments to tables for better documentation
+COMMENT ON TABLE users IS 'Stores user information from Clerk authentication';
+COMMENT ON TABLE users_companies IS 'Links users to companies with specific roles';
+COMMENT ON TABLE clients IS 'Stores e-commerce customer information';
+COMMENT ON TABLE sales_transactions IS 'Records in-store sales transactions';
+COMMENT ON TABLE sales_transaction_items IS 'Records individual items in sales transactions';
+
+-- Additional policies and triggers for the updated database structure
+
+-- Add delete policy for sales_transactions
+CREATE POLICY "sales_transactions_delete_policy" ON sales_transactions
+  FOR DELETE USING (
+    EXISTS (SELECT 1 FROM users_companies
+      WHERE users_companies.clerk_id = auth.uid()
+        AND users_companies.company_id = (
+          SELECT company_id FROM stores WHERE id = sales_transactions.store_id
+        )
+        AND users_companies.role IN ('ADMIN', 'ADMINISTRATOR')
+    )
+  );
+
+-- Add delete policy for sales_transaction_items
+CREATE POLICY "sales_transaction_items_delete_policy" ON sales_transaction_items
+  FOR DELETE USING (
+    EXISTS (SELECT 1 FROM sales_transactions st
+      JOIN stores s ON s.id = st.store_id
+      JOIN users_companies uc ON uc.company_id = s.company_id
+      WHERE st.id = sales_transaction_items.transaction_id
+        AND uc.clerk_id = auth.uid()
+        AND uc.role IN ('ADMIN', 'ADMINISTRATOR')
+    )
+  );
+
+-- Add update policy for sales_transaction_items
+CREATE POLICY "sales_transaction_items_update_policy" ON sales_transaction_items
+  FOR UPDATE USING (
+    EXISTS (SELECT 1 FROM sales_transactions st
+      JOIN stores s ON s.id = st.store_id
+      JOIN users_companies uc ON uc.company_id = s.company_id
+      WHERE st.id = sales_transaction_items.transaction_id
+        AND uc.clerk_id = auth.uid()
+    )
+  );
+
+-- Add trigger for sales_transaction_items to update inventory
+CREATE OR REPLACE FUNCTION update_inventory_after_sale()
+RETURNS trigger AS $$
+BEGIN
+  -- Create inventory movement record
+  INSERT INTO inventory_movements (
+    store_id,
+    product_id,
+    movement_type,
+    quantity,
+    previous_quantity,
+    new_quantity,
+    reference_id,
+    reference_type,
+    notes,
+    created_by
+  )
+  SELECT 
+    st.store_id,
+    NEW.product_id,
+    'exit',
+    NEW.quantity,
+    COALESCE((SELECT quantity FROM store_inventory WHERE store_id = st.store_id AND product_id = NEW.product_id), 0),
+    COALESCE((SELECT quantity FROM store_inventory WHERE store_id = st.store_id AND product_id = NEW.product_id), 0) - NEW.quantity,
+    NEW.transaction_id,
+    'sales_transaction',
+    'Sale transaction',
+    st.seller_id
+  FROM sales_transactions st
+  WHERE st.id = NEW.transaction_id;
+  
+  -- Update inventory quantity
+  UPDATE store_inventory
+  SET quantity = quantity - NEW.quantity,
+      updated_at = now()
+  WHERE store_id = (SELECT store_id FROM sales_transactions WHERE id = NEW.transaction_id)
+    AND product_id = NEW.product_id;
+    
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_inventory_after_sale_trigger
+  AFTER INSERT ON sales_transaction_items
+  FOR EACH ROW
+  EXECUTE FUNCTION update_inventory_after_sale();
+
+-- Add trigger for sales_transaction_items to update transaction totals
+CREATE OR REPLACE FUNCTION update_transaction_totals()
+RETURNS trigger AS $$
+BEGIN
+  -- Update transaction totals
+  UPDATE sales_transactions
+  SET 
+    subtotal = (SELECT SUM(unit_price * quantity) FROM sales_transaction_items WHERE transaction_id = NEW.transaction_id),
+    tax_total = (SELECT SUM(tax_amount) FROM sales_transaction_items WHERE transaction_id = NEW.transaction_id),
+    discount_amount = (SELECT SUM(discount_amount) FROM sales_transaction_items WHERE transaction_id = NEW.transaction_id),
+    total = (SELECT SUM(total_amount) FROM sales_transaction_items WHERE transaction_id = NEW.transaction_id),
+    updated_at = now()
+  WHERE id = NEW.transaction_id;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_transaction_totals_trigger
+  AFTER INSERT OR UPDATE OR DELETE ON sales_transaction_items
+  FOR EACH ROW
+  EXECUTE FUNCTION update_transaction_totals();
+
+-- Add trigger for sales_transaction_items updated_at
+CREATE TRIGGER set_updated_at_sales_transaction_items
+  BEFORE UPDATE ON sales_transaction_items
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at();
+
+-- Add RLS policy for users table
+CREATE POLICY "users_select_policy" ON users
+  FOR SELECT USING (true);
+
+CREATE POLICY "users_insert_policy" ON users
+  FOR INSERT WITH CHECK (auth.uid() = clerk_id);
+
+CREATE POLICY "users_update_policy" ON users
+  FOR UPDATE USING (auth.uid() = clerk_id);
+
+-- Update existing policies for clients to use clerk_id
+CREATE OR REPLACE POLICY "clients_select_policy" ON clients
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM users_companies
+      WHERE users_companies.company_id = clients.company_id
+        AND users_companies.clerk_id = auth.uid()
+    )
+  );
+
+CREATE OR REPLACE POLICY "clients_insert_policy" ON clients
+  FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM users_companies
+      WHERE users_companies.company_id = clients.company_id
+        AND users_companies.clerk_id = auth.uid()
+    )
+  );

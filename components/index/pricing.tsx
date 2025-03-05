@@ -120,7 +120,7 @@ export function Pricing() {
                 </div>
 
                 {/* Pricing Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
                     {[
                         {
                             name: "Gratis",
@@ -189,34 +189,27 @@ export function Pricing() {
                     ].map((plan, index) => (
                         <Card
                             key={index}
-                            className={`border bg-gradient-to-b from-card/50 to-card/80 backdrop-blur-xl p-6 transition-all hover:scale-105 
-                                       dark:shadow-[0_0_15px_rgba(206,158,80,0.3)] shadow-[0_0_15px_rgba(80,128,206,0.3)]`}
+                            className="p-8 border bg-card/50 backdrop-blur-xl transition-all duration-300 hover:shadow-xl"
                         >
                             <div className="flex flex-col h-full justify-between">
                                 <div>
-                                    <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-                                    <div className="text-3xl font-bold mb-4">
-                                        {plan.price}
-                                        <span className="text-sm text-muted-foreground">/mes</span>
-                                    </div>
-                                    <p className="text-muted-foreground mb-4 text-sm">{plan.description}</p>
-                                    <ul className="space-y-3 mb-6">
+                                    <h3 className="text-2xl font-bold">{plan.name}</h3>
+                                    <p className="text-3xl font-bold mt-4">{plan.price}</p>
+                                    <ul className="mt-6 space-y-4">
                                         {plan.features.map((feature, featureIndex) => (
-                                            <li key={featureIndex} className="flex items-center text-sm">
-                                                <Check className="h-4 w-4 text-primary mr-2 flex-shrink-0" />
+                                            <li key={featureIndex} className="flex items-center gap-2">
+                                                <Check className="h-5 w-5 text-green-500" />
                                                 <span>{feature}</span>
                                             </li>
                                         ))}
                                     </ul>
                                 </div>
-                                <Link href="/sign-in" className="mt-auto">
-                                    <Button
-                                        className="w-full bg-custom-blue hover:bg-custom-blue/90 dark:bg-custom-gold dark:hover:bg-custom-gold/90 dark:text-black"
-                                        size="lg"
-                                    >
-                                        Comenzar
-                                    </Button>
-                                </Link>
+                                <Button
+                                    className="w-full mt-8"
+                                    size="lg"
+                                >
+                                    Seleccionar Plan
+                                </Button>
                             </div>
                         </Card>
                     ))}
