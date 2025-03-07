@@ -215,6 +215,7 @@ CREATE TABLE IF NOT EXISTS products (
   tax_rate             numeric(5,2)  NOT NULL DEFAULT 0,
   product_type         text         NOT NULL DEFAULT 'product' CHECK (product_type IN ('product', 'service')),
   unit_measure         text         NOT NULL DEFAULT 'unit',
+  total_values         float NOT NULL DEFAULT 0,
   created_at           timestamptz  DEFAULT now(),
   updated_at           timestamptz  DEFAULT now()
 );
@@ -339,24 +340,30 @@ CREATE TABLE IF NOT EXISTS ecommerce_customers (
   created_at        timestamptz  DEFAULT now(),
   updated_at        timestamptz  DEFAULT now()
 );
+CREATE TABLE IF NOT EXISTS ecommerce_payments (
+  id                uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id          uuid         NOT NULL REFERENCES ecommerce_orders(id) ON DELETE CASCADE,
+  payment_method    text         NOT NULL,
+  payment_status    text         NOT NULL CHECK (payment_status IN ('pending', 'paid', 'failed','refunded')),
+  payment_reference text,
+  amount            numeric(15,2) NOT NULL,
+  notes             text,
+  created_at        timestamptz  DEFAULT now()
+);
 
-CREATE TABLE IF NOT EXISTS app_statistics (
-  id                         uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
-  total_companies            integer      NOT NULL DEFAULT 0,
-  total_administrators       integer      NOT NULL DEFAULT 0,
-  total_employees            integer      NOT NULL DEFAULT 0,
-  total_stores               integer      NOT NULL DEFAULT 0,
-  total_active_subscriptions integer      NOT NULL DEFAULT 0,
-  total_invoices             integer      NOT NULL DEFAULT 0,
-  total_revenue              numeric(15,2) NOT NULL DEFAULT 0,
-  total_ecommerce_orders     integer      NOT NULL DEFAULT 0,
-  total_ecommerce_revenue    numeric(15,2) NOT NULL DEFAULT 0,
-  updated_at                 timestamptz  DEFAULT now()
+CREATE TABLE IF NOT EXISTS ecommerce_shipping_methods (
+  id                uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+  ecommerce_store_id uuid        NOT NULL REFERENCES ecommerce_stores(id) ON DELETE CASCADE,
+  name              text         NOT NULL,
+  description       text,
+  cost              numeric(15,2) NOT NULL,
+  is_active         boolean      NOT NULL DEFAULT true,
+  created_at        timestamptz  DEFAULT now(),
+  updated_at        timestamptz  DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS contacts (
   id                          uuid      PRIMARY KEY DEFAULT gen_random_uuid(),
-  app_statistics_id           uuid      NOT NULL REFERENCES app_statistics(id) ON DELETE CASCADE,
   name                        text      NOT NULL,
   email                       text      NOT NULL,
   phone                       text      NOT NULL,
@@ -365,7 +372,6 @@ CREATE TABLE IF NOT EXISTS contacts (
 
 CREATE TABLE IF NOT EXISTS faq (
   id uuid                     PRIMARY KEY DEFAULT gen_random_uuid(),
-  app_statistics_id           uuid      NOT NULL REFERENCES app_statistics(id) ON DELETE CASCADE,
   question                    text      NOT NULL,
   answer                      text      NOT NULL
 );
@@ -382,6 +388,50 @@ CREATE TABLE IF NOT EXISTS enterprise (
   message                     text      NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS events (
+  id                          uuid      PRIMARY KEY DEFAULT gen_random_uuid(),
+  title                       text      NOT NULL,
+  date                        timestamptz NOT NULL,
+  type                        text      NOT NULL,
+  created_at                  timestamptz NOT NULL DEFAULT now(),
+  updated_at                  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS sales (
+  id                         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  amount                     numeric(15,2) NOT NULL,
+  date                       timestamptz NOT NULL,
+  created_at                 timestamptz NOT NULL DEFAULT now(),
+  updated_at                 timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS app_statistics (
+  id                         uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+  total_companies            integer      NOT NULL DEFAULT 0,
+  total_administrators       integer      NOT NULL DEFAULT 0,
+  total_employees            integer      NOT NULL DEFAULT 0,
+  total_stores               integer      NOT NULL DEFAULT 0,
+  total_active_subscriptions integer      NOT NULL DEFAULT 0,
+  total_invoices             integer      NOT NULL DEFAULT 0,
+  total_revenue              numeric(15,2) NOT NULL DEFAULT 0,
+  total_ecommerce_orders     integer      NOT NULL DEFAULT 0,
+  total_ecommerce_revenue    numeric(15,2) NOT NULL DEFAULT 0,
+  contact_id                 uuid         REFERENCES contacts(id) ON DELETE CASCADE,
+  faq_id                     uuid         REFERENCES faq(id) ON DELETE CASCADE,
+  enterprise_id              uuid         REFERENCES enterprise(id) ON DELETE CASCADE,
+  events_id                  uuid         REFERENCES events(id) ON DELETE CASCADE,
+  sales_id                   uuid         REFERENCES sales(id) ON DELETE CASCADE,
+  created_at                 timestamptz  DEFAULT now(),
+  updated_at                 timestamptz  DEFAULT now()
+);
+
 --------------------------------------------------------------------------------
 -- 3. Creación de INDEX
 --------------------------------------------------------------------------------
+
+
+
+--------------------------------------------------------------------------------
+-- 4. Creación de Vistas
+--------------------------------------------------------------------------------
+
