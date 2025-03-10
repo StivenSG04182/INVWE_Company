@@ -17,8 +17,8 @@ export async function GET(req: Request) {
             // First check if the table exists
             const { data: tables } = await supabase
                 .from('information_schema.tables')
-                .select('table_name')
-                .eq('table_name', 'users_companies')
+                .select('name')
+                .eq('name', 'users_companies')
                 .single()
 
             if (!tables) {
@@ -28,7 +28,7 @@ export async function GET(req: Request) {
 
             const { data, error } = await supabase
                 .from('users_companies')
-                .select('company_id, role, nombres_apellidos, correo_electronico')
+                .select('company_id, role, name, last_name, email')
                 .eq('user_id', userId)
 
             if (error) {

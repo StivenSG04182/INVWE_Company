@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS companies (
     dian_registered   boolean       DEFAULT false,
     mongo_id          text,
     logo_url          text,
+    security          text          NOT NULL,
     created_at        timestamptz   NOT NULL DEFAULT now(),
     updated_at        timestamptz   NOT NULL DEFAULT now()
 );
@@ -53,7 +54,6 @@ CREATE TABLE IF NOT EXISTS users_companies (
   is_default_inventory boolean      DEFAULT false,
   created_at           timestamptz  NOT NULL DEFAULT now(),
   updated_at           timestamptz  NOT NULL DEFAULT now(),
-  UNIQUE(user_id, company_id)
 );
 
 CREATE TABLE IF NOT EXISTS subscriptions (

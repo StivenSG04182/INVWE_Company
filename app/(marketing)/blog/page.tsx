@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export default function Page() {
     return (
@@ -17,10 +18,12 @@ export default function Page() {
                 <h2>
                     te contamos como va el desarrollo de nuestro inventario interactivo
                 </h2>
-                <button>
-                    <Button>Ver Inventario</Button>
-                </button>
+                <Link rel="stylesheet" href="/nots">
+                    <button>
+                        <Button>Ver Inventario</Button>
+                    </button>
+                </Link>
             </div>
-        </section>
+        </section >
     );
 }
