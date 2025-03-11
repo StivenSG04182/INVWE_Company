@@ -2,7 +2,7 @@
 
 import React from "react";
 import InventoryInfo from "./inventoryInfo";
-import ThreeScene from "./ThreeScene";
+import ThreeScene from "./ThreeScene_scroll";
 
 export default function Inventory() {
     return (
