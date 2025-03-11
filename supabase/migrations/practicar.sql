@@ -47,13 +47,12 @@ CREATE TABLE IF NOT EXISTS stores (
 
 CREATE TABLE IF NOT EXISTS users_companies (
   id                   uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id              text         NOT NULL,
+  user_id              uuid         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   company_id           uuid         NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   role                 text         NOT NULL CHECK (role IN ('ADMIN', 'ADMINISTRATOR', 'EMPLOYEE')),
   is_default_inventory boolean      DEFAULT false,
   created_at           timestamptz  NOT NULL DEFAULT now(),
   updated_at           timestamptz  NOT NULL DEFAULT now(),
-  UNIQUE(user_id, company_id)
 );
 
 CREATE TABLE IF NOT EXISTS subscriptions (
