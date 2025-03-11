@@ -94,7 +94,7 @@ export async function POST(req: Request) {
                     .neq("company_id", supabaseCompany.id)
             }
         } else {
-            // Create new user-company relationship with is_default_inventory set to true
+            // Create new user-company relationship with is_default_inventory set to true and status pending
             const { error: relationError } = await supabase.from("users_companies").insert({
                 user_id: userId,
                 company_id: supabaseCompany.id,
@@ -102,6 +102,7 @@ export async function POST(req: Request) {
                 nombres_apellidos: supabaseCompany.name,
                 correo_electronico: supabaseCompany.email,
                 is_default_inventory: true,
+                status: "pending",
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             })
@@ -144,6 +145,16 @@ export async function POST(req: Request) {
             }, { status: 404 })
         }
 
+        // If the user's status is pending, return that information
+        if (existingRelation?.status === 'pending' || (!existingRelation && mongoCompany)) {
+            return NextResponse.json({ 
+                companyName: mongoCompany.name,
+                status: 'pending',
+                message: 'Tu solicitud está pendiente de aprobación por un administrador'
+            }, { status: 200 })
+        }
+        
+        // Otherwise return normal success response
         return NextResponse.json({ 
             companyName: mongoCompany.name,
             storeId: store._id.toString(),

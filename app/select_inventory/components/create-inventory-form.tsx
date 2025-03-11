@@ -14,43 +14,42 @@ import { Progress } from "@/components/ui/progress";
 
 const formSchema = z.object({
     // User Information
-    nombres_apellidos: z.string().min(3, "El nombre completo debe tener al menos 3 caracteres"),
-    correo_electronico: z.string().email("Debe ser un email válido"),
-    telefono_usuario: z.string().min(7, "El teléfono debe tener al menos 7 caracteres"),
-    fecha_nacimiento: z.string().optional(),
-    direccion_usuario: z.string().min(5, "La dirección debe tener al menos 5 caracteres"),
+    name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
+    last_name: z.string().min(3, "El apellido debe tener al menos 3 caracteres"),
+    email: z.string().email("Debe ser un email válido"),
+    phone: z.string().min(7, "El teléfono debe tener al menos 7 caracteres"),
+    date_of_birth: z.string().min(1, "La fecha de nacimiento es requerida"),
 
     // Company Information
-    nombreEmpresa: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
-    nit: z.string().min(9, "El NIT debe tener al menos 9 caracteres").regex(/^[0-9-]+$/, "El NIT solo debe contener números y guiones"),
-    address: z.string().min(5, "La dirección debe tener al menos 5 caracteres"),
-    phone: z.string().min(7, "El teléfono debe tener al menos 7 caracteres").regex(/^[0-9+]+$/, "El teléfono solo debe contener números"),
-    email: z.string().email("Debe ser un email válido"),
+    nit: z.string().min(1, "El NIT es requerido"),
+    company_name: z.string().min(3, "El nombre de la empresa debe tener al menos 3 caracteres"),
+    company_address: z.string().min(5, "La dirección debe tener al menos 5 caracteres"),
+    company_phone: z.string()
+        .min(7, "El teléfono debe tener al menos 7 caracteres")
+        .regex(/^[0-9+]+$/, "El teléfono solo debe contener números"),
+    company_email: z.string().email("Debe ser un email válido"),
 
     // Store Information
     store_name: z.string().min(3, "El nombre de la tienda debe tener al menos 3 caracteres"),
     store_address: z.string().min(5, "La dirección de la tienda debe tener al menos 5 caracteres"),
-    store_phone: z.string().min(7, "El teléfono de la tienda debe tener al menos 7 caracteres").regex(/^[0-9+]+$/, "El teléfono solo debe contener números"),
+    store_phone: z.string()
+        .min(7, "El teléfono de la tienda debe tener al menos 7 caracteres")
+        .regex(/^[0-9+]+$/, "El teléfono solo debe contener números"),
 });
 
 const formSteps = [
     {
         title: "Información del Usuario",
-        fields: ["nombres_apellidos", "correo_electronico", "telefono_usuario", "fecha_nacimiento", "direccion_usuario"]
+        fields: ["name", "last_name", "email", "phone", "date_of_birth"]
     },
     {
         title: "Información de la Empresa",
-        fields: ["nombreEmpresa", "nit", "address", "phone", "email"]
+        // Se agrega el campo "nit" junto a los demás datos de la empresa
+        fields: ["nit", "company_name", "company_address", "company_phone", "company_email"]
     },
     {
         title: "Configuración de la Tienda",
         fields: ["store_name", "store_address", "store_phone"]
-    },
-    {
-        title: "Configuración DIAN",
-        fields: ["modo_prueba", "certificado", "clave_tecnica", "id_software", "pin_software",
-            "numero_resolucion", "fecha_resolucion", "fecha_inicio_resolucion", "fecha_fin_resolucion",
-            "prefijo_resolucion", "desde_resolucion", "hasta_resolucion"]
     }
 ];
 
@@ -62,17 +61,17 @@ export function CreateInventoryForm() {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            nombres_apellidos: "",
-            correo_electronico: "",
-            telefono_usuario: "",
-            fecha_nacimiento: "",
-            direccion_usuario: "",
-            nombreEmpresa: "",
-            nit: "",
-            address: "",
-            phone: "",
+            name: "",
+            last_name: "",
             email: "",
-            store_name: "Tienda Principal",
+            phone: "",
+            date_of_birth: "",
+            nit: "",
+            company_name: "",
+            company_address: "",
+            company_phone: "",
+            company_email: "",
+            store_name: "",
             store_address: "",
             store_phone: "",
         },
@@ -89,10 +88,10 @@ export function CreateInventoryForm() {
                 router.push(`/inventory/${response.data.companyName}/dashboard`);
                 toast.success("Empresa registrada exitosamente");
             } else {
-                throw new Error("Invalid response format");
+                throw new Error("Formato de respuesta inválido");
             }
         } catch (error: any) {
-            console.error("Error creating inventory:", error);
+            console.error("Error creando inventario:", error);
             toast.error(error.response?.data || "Error al registrar la empresa");
         } finally {
             setIsLoading(false);
@@ -137,26 +136,21 @@ export function CreateInventoryForm() {
                 name={fieldName}
                 render={({ field }) => (
                     <FormItem>
-                        <FormLabel>{fieldName.replace(/_/g, " ").charAt(0).toUpperCase() + fieldName.slice(1).replace(/_/g, " ")}</FormLabel>
+                        <FormLabel>
+                            {fieldName.replace(/_/g, " ").charAt(0).toUpperCase() +
+                                fieldName.slice(1).replace(/_/g, " ")}
+                        </FormLabel>
                         <FormControl>
                             <Input
-                                type={fieldName.includes("fecha") ? "date" :
-                                    fieldName === "modo_prueba" ? "checkbox" :
-                                        fieldName.includes("resolucion") && fieldName.startsWith("desde") ? "number" :
-                                            fieldName.includes("resolucion") && fieldName.startsWith("hasta") ? "number" :
-                                                "text"}
+                                type={
+                                    fieldName === "date_of_birth" || fieldName.includes("fecha")
+                                        ? "date"
+                                        : "text"
+                                }
                                 placeholder={`Ingrese ${fieldName.replace(/_/g, " ")}`}
                                 {...field}
-                                value={fieldName === "modo_prueba" ? field.value : field.value || ""}
-                                onChange={e => {
-                                    if (fieldName === "modo_prueba") {
-                                        field.onChange(e.target.checked);
-                                    } else if (fieldName.includes("resolucion") && (fieldName.startsWith("desde") || fieldName.startsWith("hasta"))) {
-                                        field.onChange(e.target.value ? parseInt(e.target.value) : "");
-                                    } else {
-                                        field.onChange(e.target.value);
-                                    }
-                                }}
+                                value={field.value || ""}
+                                onChange={e => field.onChange(e.target.value)}
                             />
                         </FormControl>
                         <FormMessage />
@@ -199,4 +193,3 @@ export function CreateInventoryForm() {
         </Form>
     );
 }
-

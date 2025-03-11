@@ -1,96 +1,72 @@
-import { auth } from "@clerk/nextjs/server"
-import { NextResponse } from "next/server"
-import clientPromise from "@/lib/mongodb"
-import { supabase } from "@/lib/supabase"
+import { NextResponse } from 'next/server';
+import clientPromise from '@/lib/mongodb';
+import { auth } from '@clerk/nextjs/server';
+import { ObjectId } from 'mongodb';
 
-export async function GET(req: Request) {
+export const runtime = 'nodejs';
+
+export async function GET(request: Request) {
     try {
-        const { userId } = await auth()
-
+        // Get userId from Clerk authentication
+        const { userId } = await auth();
         if (!userId) {
-            return new NextResponse("Unauthorized", { status: 401 })
+            return NextResponse.json({ isValid: false, error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Get companies from Supabase where the user has access
-        let userCompanies;
-        try {
-            // First check if the table exists
-            const { data: tables } = await supabase
-                .from('information_schema.tables')
-                .select('table_name')
-                .eq('table_name', 'users_companies')
-                .single()
+        const client = await clientPromise;
+        const db = client.db(process.env.MONGODB_DB);
 
-            if (!tables) {
-                console.log("Table 'users_companies' does not exist")
-                return NextResponse.json([])
-            }
+        // First check if user is a creator of any company
+        const ownedCompany = await db.collection("companies").findOne({
+            $or: [
+                { clerkUserId: userId },
+                { createdBy: userId }
+            ]
+        });
 
-            const { data, error } = await supabase
-                .from('users_companies')
-                .select('company_id, role, nombres_apellidos, correo_electronico')
-                .eq('user_id', userId)
-
-            if (error) {
-                console.error("Supabase Error:", error)
-                return NextResponse.json([])
-            }
-            userCompanies = data
-        } catch (dbError) {
-            console.error("Database Error:", dbError)
-            return NextResponse.json([])
+        if (ownedCompany) {
+            return NextResponse.json({
+                isValid: true,
+                data: { company: ownedCompany }
+            });
         }
 
-        if (!userCompanies || userCompanies.length === 0) {
-            return NextResponse.json([])
+        // If not a creator, check if user is associated with any company
+        const userCompany = await db.collection("users_companies").findOne({ userId });
+        
+        if (!userCompany) {
+            return NextResponse.json({ isValid: false, error: "No inventory associated" });
         }
 
-        const companyIds = userCompanies.map(uc => uc.company_id)
+        // Get the associated company details
+        const associatedCompany = await db.collection("companies").findOne({
+            _id: typeof userCompany.companyId === 'string' ? 
+                new ObjectId(userCompany.companyId) : 
+                userCompany.companyId
+        });
 
-        // Get company details from Supabase
-        const { data: companies, error: companiesError } = await supabase
-            .from('companies')
-            .select('id, name, nit, business_name, address, phone, email')
-            .in('id', companyIds)
-
-        if (companiesError) {
-            console.error("Supabase Companies Error:", companiesError)
-            return NextResponse.json([])
+        if (!associatedCompany) {
+            return NextResponse.json({ isValid: false, error: "Associated company not found" });
         }
 
-        // Enrich with MongoDB data if available
-        try {
-            const client = await clientPromise
-            const db = client.db(process.env.MONGODB_DB)
-            const companiesCollection = db.collection("companies")
-
-            // Find companies in MongoDB using the Supabase IDs
-            const mongoCompanies = await companiesCollection
-                .find({ "metadata.supabaseId": { $in: companyIds } })
-                .project({ _id: 1, name: 1, metadata: 1 })
-                .toArray()
-
-            // Merge data from both sources
-            const enrichedCompanies = companies.map(company => {
-                const mongoCompany = mongoCompanies.find(mc => 
-                    mc.metadata?.supabaseId === company.id
-                )
-                
-                return {
-                    ...company,
-                    mongoId: mongoCompany?._id?.toString() || null,
-                    userRole: userCompanies.find(uc => uc.company_id === company.id)?.role || 'EMPLOYEE'
-                }
-            })
-
-            return NextResponse.json(enrichedCompanies)
-        } catch (mongoError) {
-            console.error("MongoDB Error:", mongoError)
-            // Return just the Supabase data if MongoDB fails
-            return NextResponse.json(companies)
+        // Check if the user's association is approved
+        if (userCompany.status === 'pending') {
+            return NextResponse.json({
+                isValid: false,
+                error: "Your association with this company is pending approval"
+            });
         }
-    } catch (error) {
-        console.error("GET_COMPANIES_ERROR:", error)
-        return new NextResponse("Internal Server Error", { status: 500 })
+
+        return NextResponse.json({
+            isValid: true,
+            data: { company: associatedCompany }
+        });
+
+    } catch (error: any) {
+        console.error("Error validating inventory:", error);
+        return NextResponse.json({
+            isValid: false,
+            error: error.message || "Error validating inventory"
+        }, { status: 500 });
     }
 }

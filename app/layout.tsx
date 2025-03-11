@@ -26,8 +26,8 @@ export default function RootLayout({
         <body className={`${inter.className} flex flex-col min-h-screen`}>
           <ThemeProvider
             attribute="class"
-            defaultTheme="dark"
-            enableSystem
+            defaultTheme="light"
+            enableSystem={false}
             disableTransitionOnChange
             storageKey="invwe-theme">
             <div className="flex-grow">{children}</div>

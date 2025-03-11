@@ -48,7 +48,10 @@ export function JoinInventoryForm({ companies = [], isLoading }: JoinInventoryFo
                 codigoSeguridad: values.codigoSeguridad.trim()
             })
             
-            if (response.data?.storeId) {
+            if (response.data?.status === 'pending') {
+                toast.success("Solicitud enviada exitosamente. Esperando aprobación del administrador.")
+                router.push('/pending-approval')
+            } else if (response.data?.storeId) {
                 router.push(`/inventory/${values.nombreEmpresa}/dashboard/${response.data.storeId}`)
                 toast.success("Te has unido al inventario exitosamente")
             } else {

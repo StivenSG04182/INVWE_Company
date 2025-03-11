@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS companies (
     dian_registered   boolean       DEFAULT false,
     mongo_id          text,
     logo_url          text,
+    security_code     text          NOT NULL,
     created_at        timestamptz   NOT NULL DEFAULT now(),
     updated_at        timestamptz   NOT NULL DEFAULT now()
 );
@@ -25,7 +26,6 @@ CREATE TABLE IF NOT EXISTS users (
     name              text          NOT NULL,
     last_name         text          NOT NULL,
     email             text          NOT NULL UNIQUE,
-    password          text          NOT NULL,
     phone             text          NOT NULL,
     date_of_birth     date          NOT NULL,
     clerk             text,
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS stores (
 
 CREATE TABLE IF NOT EXISTS users_companies (
   id                   uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id              uuid         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id              text         NOT NULL,
   company_id           uuid         NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   role                 text         NOT NULL CHECK (role IN ('ADMIN', 'ADMINISTRATOR', 'EMPLOYEE')),
   is_default_inventory boolean      DEFAULT false,

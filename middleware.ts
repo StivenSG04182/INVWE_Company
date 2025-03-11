@@ -1,6 +1,5 @@
-import { supabase } from "./lib/supabase";
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
-import { NextResponse } from 'next/server'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 
 const isPublicRoute = createRouteMatcher([
     "/",
@@ -16,77 +15,63 @@ const isPublicRoute = createRouteMatcher([
     "/terms",
     "/sign-in(.*)",
     "/sign-up(.*)"
-])
+]);
 
 export default clerkMiddleware(async (auth, request) => {
     if (auth.userId) {
         const userId = auth.userId;
-        let userCompanyData = null;
-        let error = null;
+        console.log("Clerk user id:", userId);
+        let isAdmin = false;
 
         try {
-            // First check if the table exists
-            const { data: tables } = await supabase
-                .from('information_schema.tables')
-                .select('table_name')
-                .eq('table_name', 'users_companies')
-                .single()
+            const { publicMetadata } = auth.sessionClaims;
+            isAdmin = publicMetadata?.role === 'ADMIN';
 
-            if (tables) {
-                const response = await supabase
-                    .from("users_companies")
-                    .select(`
-                        id,
-                        company_id,
-                        role,
-                        nombres_apellidos,
-                        correo_electronico,
-                        is_default_inventory,
-                        empresas (id, nombre, nit, direccion, telefono, correo)
-                    `)
-                    .eq("user_id", userId)
-                    .eq("is_default_inventory", true)
-                    .single()
-                
-                userCompanyData = response.data
-                error = response.error
+            if (isAdmin) {
+                if (!request.nextUrl.pathname.startsWith('/admin')) {
+                    return NextResponse.redirect(new URL('/admin', request.url));
+                }
+                return NextResponse.next();
             }
+
+            // Llamada al endpoint de validación en MongoDB
+            const validateUrl = new URL(`/api/companies?userId=${userId}`, request.url);
+            const res = await fetch(validateUrl.toString());
+            const result = await res.json();
+
+            if (!result.isValid) {
+                const debugMessage = result.error || "No inventory associated";
+                console.log("Error validando inventario en MongoDB:", debugMessage);
+                if (!request.nextUrl.pathname.startsWith("/select-company")) {
+                    return NextResponse.redirect(new URL(`/select-company?debug=${encodeURIComponent(debugMessage)}`, request.url));
+                }
+                return NextResponse.next();
+            }
+
+            // Redirige al dashboard usando el campo "company_name" del documento en MongoDB
+            const companyNameEncoded = encodeURIComponent(result.data.company.company_name);
+            const dashboardUrl = `/inventory/${companyNameEncoded}/dashboard`;
+            if (!request.nextUrl.pathname.startsWith(`/inventory/${companyNameEncoded}`)) {
+                return NextResponse.redirect(new URL(dashboardUrl, request.url));
+            }
+
+            return NextResponse.next();
         } catch (e) {
-            error = e
-            console.error('Error checking users_companies table:', e)
+            console.error("Error en middleware:", e);
+            return NextResponse.redirect(new URL("/select-company", request.url));
         }
-
-        // Si ocurre un error o el usuario no tiene empresa asociada, redirigir a selección de empresa
-        if (error || !userCompanyData) {
-            if (!request.nextUrl.pathname.startsWith("/select-company")) {
-                return NextResponse.redirect(new URL("/select-company", request.url))
-            }
-            return NextResponse.next()
-        }
-
-        // Si el usuario YA tiene empresa, construir la URL de su dashboard
-        const companyNameEncoded = encodeURIComponent(userCompanyData.companies.name)
-        const dashboardUrl = `/inventory/${companyNameEncoded}/dashboard`
-        if (!request.nextUrl.pathname.startsWith(`/inventory/${companyNameEncoded}`)) {
-            return NextResponse.redirect(new URL(dashboardUrl, request.url))
-        }
-
-        return NextResponse.next()
     } else {
-        // Si el usuario no está autenticado:
-        // Permitir el acceso a rutas públicas
         if (isPublicRoute(request)) {
-            return NextResponse.next()
+            return NextResponse.next();
         }
-        // Para rutas privadas, proteger con Clerk
-        await auth.protect()
-        return NextResponse.next()
+        await auth.protect();
+        return NextResponse.next();
     }
-})
+});
 
 export const config = {
     matcher: [
         '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
         '/(api|trpc)(.*)',
     ],
-}
+};
