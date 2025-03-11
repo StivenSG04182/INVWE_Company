@@ -3,12 +3,11 @@
 import { useState, useEffect } from "react"
 import { useUser } from "@clerk/nextjs"
 import { TextRevealCard } from "@/components/ui/text-reveal-card"
-/* import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs" */
 import { CreateInventoryForm } from "./components/create-inventory-form"
 import { JoinInventoryForm } from "./components/join-inventory-form"
 import axios from "axios"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, /* CardDescription, */ CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft } from "lucide-react"
 
 export default function SelectDashboardInventory() {

@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { generateSecurityCode } from "@/lib/utils";
@@ -33,8 +33,7 @@ async function validateCompanyData(values: any): Promise<ValidationResponse> {
 
     if (error) {
         console.error("Error checking existing company:", error);
-        errors.push({ field: "database", message: "Error al verificar la empresa" });
-        return { isValid: false, errors };
+        throw error;
     }
 
     if (existingData && existingData.length > 0) {
@@ -66,19 +65,13 @@ export async function POST(req: Request) {
         // Obtener los datos enviados en el body
         const values = await req.json();
 
-        // Validar campos requeridos para el usuario
-        const requiredUserFields = ['name', 'last_name', 'email', 'phone', 'date_of_birth'];
-        const missingUserFields = requiredUserFields.filter(field => !values[field]);
-        if (missingUserFields.length > 0) {
-            return NextResponse.json({
-                errors: missingUserFields.map(field => ({ field, message: `El campo ${field} es requerido` }))
-            }, { status: 400 });
-        }
-
-        // Validar campos requeridos para la empresa
-        const requiredCompanyFields = ['nit', 'company_name', 'company_address', 'company_phone', 'company_email'];
-        const missingCompanyFields = requiredCompanyFields.filter(field => !values[field]);
-        if (missingCompanyFields.length > 0) {
+        // Validate required fields
+        const requiredFields = [
+            'nombreEmpresa', 'nit', 'businessName', 'address', 'phone', 'email',
+            'nombres_apellidos', 'correo_electronico', 'telefono_usuario', 'direccion_usuario'
+        ];
+        const missingFields = requiredFields.filter(field => !values[field]);
+        if (missingFields.length > 0) {
             return NextResponse.json({
                 errors: missingCompanyFields.map(field => ({ field, message: `El campo ${field} es requerido` }))
             }, { status: 400 });
@@ -116,7 +109,7 @@ export async function POST(req: Request) {
         const securityCode = generateSecurityCode(8);
         const validation = await validateCompanyData(values);
         if (!validation.isValid) {
-            return NextResponse.json({ errors: validation.errors }, { status: 402 });
+            return NextResponse.json({ errors: validation.errors }, { status: 400 });
         }
 
         // Operaciones en MongoDB con transacción
@@ -132,31 +125,33 @@ export async function POST(req: Request) {
             transactionResult = await session.withTransaction(async () => {
                 const existingCompany = await db.collection("companies").findOne({ nit: values.nit });
                 if (existingCompany) {
-                    throw new Error("Company already exists in MongoDB");
+                    throw new Error("Empresa existente en MongoDB");
                 }
 
-                mongoCompany = await db.collection("companies").insertOne({
-                    company_name: values.company_name,
-                    name: values.name,
-                    last_name: values.last_name,
-                    nit: values.nit,
-                    address: values.company_address,
-                    phone: values.company_phone,
-                    email: values.company_email,
-                    createdBy: internalUserId,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    clerkUserId: internalUserId,
-                    metadata: {
-                        supabaseId: companyId,
-                        securityCode: securityCode,
-                        status: "active",
-                        dianRegistered: false
-                    }
-                }, { session });
+                mongoCompany = await db.collection("companies").insertOne(
+                    {
+                        name: values.nombreEmpresa,
+                        nit: values.nit,
+                        businessName: values.businessName,
+                        address: values.address,
+                        phone: values.phone,
+                        email: values.email,
+                        createdBy: userId,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        clerkUserId: userId,
+                        metadata: {
+                            supabaseId: companyId,
+                            securityCode: securityCode,
+                            status: "active",
+                            dianRegistered: false
+                        }
+                    },
+                    { session }
+                );
 
                 if (!mongoCompany.insertedId) {
-                    throw new Error("Failed to create company in MongoDB");
+                    throw new Error("Falle en creación de empresa en MongoDB");
                 }
 
                 mongoStore = await db.collection("stores").insertOne({
@@ -170,7 +165,7 @@ export async function POST(req: Request) {
                 }, { session });
 
                 if (!mongoStore.insertedId) {
-                    throw new Error("Failed to create store in MongoDB");
+                    throw new Error("Fallo en creación de tienda en MongoDB");
                 }
 
                 return true;
@@ -183,7 +178,7 @@ export async function POST(req: Request) {
         }
 
         if (!transactionResult) {
-            throw new Error("MongoDB transaction failed");
+            throw new Error("Transicción fallida MongoDB");
         }
 
         // Insertar la empresa en Supabase usando el UUID interno para evitar el error de sintaxis
@@ -197,6 +192,11 @@ export async function POST(req: Request) {
             dian_registered: false,
             mongo_id: mongoCompany.insertedId.toString(),
             security_code: securityCode,
+            business_name: values.businessName,
+            address: values.address,
+            phone: values.phone,
+            email: values.email,
+            dian_registered: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         });
@@ -207,11 +207,40 @@ export async function POST(req: Request) {
             throw createCompanyError;
         }
 
-        // Insertar registros relacionados usando el UUID interno del usuario
-        const [subscriptionResult, storeResult, userCompanyResult] = await Promise.all([
+        // Crear la relación usuario-empresa en Supabase
+        const { error: relationsError } = await supabase.from("users_companies").insert({
+            user_id: userId,
+            company_id: companyId,
+            role: "ADMINISTRATOR",
+            nombres_apellidos: values.nombres_apellidos,
+            correo_electronico: values.correo_electronico,
+            telefono: values.telefono_usuario,
+            fecha_nacimiento: values.fecha_nacimiento,
+            direccion: values.direccion_usuario,
+            is_default_inventory: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        });
+
+        if (relationsError) {
+            await db.collection("companies").deleteOne({ _id: mongoCompany.insertedId });
+            await db.collection("stores").deleteOne({ _id: mongoStore.insertedId });
+            await supabase.from("companies").delete().eq("id", companyId);
+            throw relationsError;
+        }
+
+        // Actualizar otros registros del usuario para que no sean predeterminados
+        await supabase
+            .from("users_companies")
+            .update({ is_default_inventory: false })
+            .eq("user_id", userId)
+            .neq("company_id", companyId);
+
+        // Crear suscripción y tienda en Supabase
+        const [subscriptionResult, storeResult] = await Promise.all([
             supabase.from("subscriptions").insert({
-                user_id: internalUserId,
-                plan_id: "free",
+                company_id: companyId,
+                user_id: userId,
                 plan_name: "Gratis",
                 worker_limit: 10,
                 invoice_limit: 1000,
