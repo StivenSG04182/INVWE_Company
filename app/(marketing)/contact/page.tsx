@@ -56,12 +56,11 @@ export default function Questionnaire() {
                         <form onSubmit={handleSubmit}>
                             <div className="space-y-4">
                                 <div>
-                                    <label htmlFor="name" className="block font-medium mb-1">Nombre</label>
+                                    <label htmlFor="name" className="flex block font-medium mb-1">Nombre</label>
                                     <Input 
                                         id="name"
                                         name="name"
                                         type="text" 
-                                        placeholder="Nombre" 
                                         value={formData.name}
                                         onChange={handleChange}
                                         required
@@ -70,12 +69,11 @@ export default function Questionnaire() {
                                 </div>
                                 
                                 <div>
-                                    <label htmlFor="email" className="block font-medium mb-1">Email</label>
+                                    <label htmlFor="email" className="flex block font-medium mb-1">Email</label>
                                     <Input 
                                         id="email"
                                         name="email"
                                         type="email" 
-                                        placeholder="Email" 
                                         value={formData.email}
                                         onChange={handleChange}
                                         required
@@ -84,12 +82,11 @@ export default function Questionnaire() {
                                 </div>
                                 
                                 <div>
-                                    <label htmlFor="phone" className="block font-medium mb-1">Teléfono</label>
+                                    <label htmlFor="phone" className="flex block font-medium mb-1">Teléfono</label>
                                     <Input 
                                         id="phone"
                                         name="phone"
                                         type="tel" 
-                                        placeholder="Teléfono" 
                                         value={formData.phone}
                                         onChange={handleChange}
                                         className="bg-white/70 dark:bg-gray-700/70 border-gray-300 dark:border-gray-600"
@@ -97,11 +94,10 @@ export default function Questionnaire() {
                                 </div>
                                 
                                 <div>
-                                    <label htmlFor="message" className="block font-medium mb-1">Mensaje</label>
+                                    <label htmlFor="message" className="flex block font-medium mb-1">Mensaje</label>
                                     <Textarea 
                                         id="message"
                                         name="message"
-                                        placeholder="Mensaje" 
                                         rows={4}
                                         value={formData.message}
                                         onChange={handleChange}
