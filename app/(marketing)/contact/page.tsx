@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Facebook, Twitter, Instagram, Linkedin, Youtube, Mail } from "lucide-react";
+import {  X, Instagram, Linkedin, Mail, Phone } from "lucide-react";
 import { useTheme } from "next-themes";
 
 export default function Questionnaire() {
@@ -29,11 +29,10 @@ export default function Questionnaire() {
 
     // Social media links
     const socialLinks = [
-        { icon: <Facebook className="h-6 w-6" />, href: "https://facebook.com/invwe", label: "Facebook" },
-        { icon: <Twitter className="h-6 w-6" />, href: "https://twitter.com/invwe", label: "Twitter" },
+        { icon: <X className="h-6 w-6" />, href: "https://twitter.com/invwe", label: "X" },
+        { icon: <Phone className="h-6 w-6" />, href: "https://api.whatsapp.com/send?phone=573233453782", label: "Whatsapp" },
         { icon: <Instagram className="h-6 w-6" />, href: "https://instagram.com/invwe", label: "Instagram" },
         { icon: <Linkedin className="h-6 w-6" />, href: "https://linkedin.com/company/invwe", label: "LinkedIn" },
-        { icon: <Youtube className="h-6 w-6" />, href: "https://youtube.com/c/invwe", label: "YouTube" },
         { icon: <Mail className="h-6 w-6" />, href: "mailto:info@invwe.com", label: "Email" },
     ];
 
@@ -126,18 +125,15 @@ export default function Questionnaire() {
                             ¡Hola! siempre puedes encontrarnos en nuestras redes sociales.
                         </h2>
                         
-                        <div className="space-y-4 mb-6">
-                            <div className="bg-white/80 dark:bg-gray-600/80 backdrop-blur-lg p-3 rounded-xl shadow-sm border border-gray-300 dark:border-gray-500">
-                                <p className="font-bold">SMS/Whatsapp</p>
-                                <p>+57 323 3453782</p>
-                            </div>
-                            
-                            <div className="bg-white/80 dark:bg-gray-600/80 backdrop-blur-lg p-3 rounded-xl shadow-sm border border-gray-300 dark:border-gray-500">
-                                <p className="font-bold">Email</p>
-                                <p>info@invwe.com</p>
-                            </div>
+                        <div className="space-y-2 mb-6">
+                            <p className="text-gray-800 dark:text-gray-200">
+                                Si tienes alguna consulta o simplemente quieres saludarnos, no dudes en contactarnos a través de nuestras redes sociales.
+                            </p>
+                            <p className="text-gray-800 dark:text-gray-200">
+                                ¡Estamos siempre activos y encantados de responderte!
+                            </p>
                         </div>
-                        
+
                         {/* Social Media Icons */}
                         <div className="mt-6">
                             <h3 className="font-medium mb-3">Síguenos en redes sociales</h3>
