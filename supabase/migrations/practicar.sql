@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS users_companies (
   role                 text         NOT NULL CHECK (role IN ('ADMIN', 'ADMINISTRATOR', 'EMPLOYEE')),
   is_default_inventory boolean      DEFAULT false,
   created_at           timestamptz  NOT NULL DEFAULT now(),
-  updated_at           timestamptz  NOT NULL DEFAULT now(),
+  updated_at           timestamptz  NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS subscriptions (
@@ -67,6 +67,20 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   created_at           timestamptz  DEFAULT now(),
   updated_at           timestamptz  DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS inventory_requests (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES users(id) ON DELETE CASCADE,
+  company_id uuid REFERENCES companies(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  last_name text NOT NULL,
+  email text NOT NULL,
+  phone text NOT NULL,
+  status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
 
 CREATE TABLE IF NOT EXISTS sales_transactions (
   id                   uuid           PRIMARY KEY DEFAULT gen_random_uuid(),

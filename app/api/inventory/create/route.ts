@@ -1,4 +1,4 @@
-import { auth, clerkMiddleware } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { generateSecurityCode } from "@/lib/utils";
@@ -17,7 +17,12 @@ interface ValidationResponse {
 
 async function validateCompanyData(values: any): Promise<ValidationResponse> {
     const errors: ValidationError[] = [];
-    const nit = values?.nit ? values.nit.replace(/[^0-9-]/g, '') : '';
+    // Se usa values.company_name, que se habrá definido previamente
+    const nit = values?.nit ? values.nit.trim() : '';
+    if (!nit.match(/^\d{9}-\d$/)) {
+        errors.push({ field: "nit", message: "El NIT debe tener el formato: 900123456-7" });
+        return { isValid: false, errors };
+    }
     const companyName = values?.company_name ? values.company_name.trim() : '';
 
     if (!nit || !companyName) {
@@ -64,20 +69,50 @@ export async function POST(req: Request) {
 
         // Obtener los datos enviados en el body
         const values = await req.json();
+        console.log("Request body:", values);
 
-        // Validate required fields
+        // Mapear los campos del formulario a los nombres esperados
+        values.company_name = values.company_name || values.nombreEmpresa;
+        values.company_address = values.company_address || values.address;
+        values.company_phone = values.company_phone || values.phone_company;
+        values.company_email = values.company_email || values.email_company;
+
+        // Validar campos requeridos (ajustados a los nombres usados en el formulario)
         const requiredFields = [
-            'nombreEmpresa', 'nit', 'businessName', 'address', 'phone', 'email',
-            'nombres_apellidos', 'correo_electronico', 'telefono_usuario', 'direccion_usuario'
+            'name', 'last_name', 'email', 'phone'
         ];
+        
+        // Verificar que existan los campos de empresa, ya sea con nombres en inglés o español
+        if (!values.company_name && !values.nombreEmpresa) {
+            requiredFields.push('company_name');
+        }
+        if (!values.nit) {
+            requiredFields.push('nit');
+        }
+        if (!values.company_address && !values.address) {
+            requiredFields.push('company_address');
+        }
+        if (!values.company_phone && !values.phone_company) {
+            requiredFields.push('company_phone');
+        }
+        if (!values.company_email && !values.email_company) {
+            requiredFields.push('company_email');
+        }
+        
         const missingFields = requiredFields.filter(field => !values[field]);
         if (missingFields.length > 0) {
             return NextResponse.json({
-                errors: missingCompanyFields.map(field => ({ field, message: `El campo ${field} es requerido` }))
+                errors: missingFields.map(field => ({ field, message: `El campo ${field} es requerido` }))
             }, { status: 400 });
         }
 
-        // Buscar en la tabla users el registro asociado al usuario de Clerk
+        // Si no se envían, se asignan los equivalentes para Supabase
+        values.company_name = values.company_name || values.nombreEmpresa;
+        values.company_address = values.company_address || values.address;
+        values.company_phone = values.company_phone || values.phone;
+        values.company_email = values.company_email || values.email;
+
+        // Buscar en la tabla "users" el registro asociado al usuario de Clerk
         let internalUserId: string;
         const { data: userData, error: userError } = await supabase
             .from("users")
@@ -104,7 +139,7 @@ export async function POST(req: Request) {
             internalUserId = userData.id;
         }
 
-        // Validar duplicidad de la empresa
+        // Validar duplicidad de la empresa usando los datos normalizados
         const companyId = uuidv4();
         const securityCode = generateSecurityCode(8);
         const validation = await validateCompanyData(values);
@@ -130,12 +165,12 @@ export async function POST(req: Request) {
 
                 mongoCompany = await db.collection("companies").insertOne(
                     {
-                        name: values.nombreEmpresa,
+                        name: values.company_name || values.nombreEmpresa,
                         nit: values.nit,
-                        businessName: values.businessName,
-                        address: values.address,
-                        phone: values.phone,
-                        email: values.email,
+                        address: values.company_address || values.address,
+                        phone: values.company_phone || values.phone_company,
+                        email: values.company_email || values.email_company,
+                        security_code: securityCode,
                         createdBy: userId,
                         createdAt: new Date(),
                         updatedAt: new Date(),
@@ -181,7 +216,7 @@ export async function POST(req: Request) {
             throw new Error("Transicción fallida MongoDB");
         }
 
-        // Insertar la empresa en Supabase usando el UUID interno para evitar el error de sintaxis
+        // Insertar la empresa en Supabase usando el UUID interno para evitar error de sintaxis
         const { error: createCompanyError } = await supabase.from("companies").insert({
             id: companyId,
             name: values.company_name,
@@ -192,11 +227,6 @@ export async function POST(req: Request) {
             dian_registered: false,
             mongo_id: mongoCompany.insertedId.toString(),
             security_code: securityCode,
-            business_name: values.businessName,
-            address: values.address,
-            phone: values.phone,
-            email: values.email,
-            dian_registered: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         });
@@ -207,16 +237,11 @@ export async function POST(req: Request) {
             throw createCompanyError;
         }
 
-        // Crear la relación usuario-empresa en Supabase
+        // Corregido: Añadido user_id en la inserción de users_companies
         const { error: relationsError } = await supabase.from("users_companies").insert({
-            user_id: userId,
+            user_id: internalUserId,
             company_id: companyId,
             role: "ADMINISTRATOR",
-            nombres_apellidos: values.nombres_apellidos,
-            correo_electronico: values.correo_electronico,
-            telefono: values.telefono_usuario,
-            fecha_nacimiento: values.fecha_nacimiento,
-            direccion: values.direccion_usuario,
             is_default_inventory: true,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -233,14 +258,15 @@ export async function POST(req: Request) {
         await supabase
             .from("users_companies")
             .update({ is_default_inventory: false })
-            .eq("user_id", userId)
+            .eq("user_id", internalUserId)
             .neq("company_id", companyId);
 
-        // Crear suscripción y tienda en Supabase
+        // Crear suscripción, tienda y una relación adicional en Supabase en paralelo
+        // Corregido: Añadido plan_id y corregida la sintaxis de Promise.all
         const [subscriptionResult, storeResult] = await Promise.all([
             supabase.from("subscriptions").insert({
-                company_id: companyId,
-                user_id: userId,
+                user_id: internalUserId,
+                plan_id: "free", // Añadido plan_id requerido
                 plan_name: "Gratis",
                 worker_limit: 10,
                 invoice_limit: 1000,
@@ -252,36 +278,23 @@ export async function POST(req: Request) {
             supabase.from("stores").insert({
                 company_id: companyId,
                 name: values.store_name || "Tienda Principal",
-                address: values.store_address,
-                phone: values.store_phone,
+                address: values.store_address || values.company_address,
+                phone: values.store_phone || values.company_phone,
                 created_by: internalUserId,
                 mongodb_store_id: mongoStore.insertedId.toString(),
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            }),
-            supabase.from("users_companies").insert({
-                user_id: internalUserId,
-                company_id: companyId,
-                role: "ADMINISTRATOR",
-                is_default_inventory: true,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             })
         ]);
 
-        if (subscriptionResult.error || storeResult.error || userCompanyResult.error) {
+        // Corregido: Verificar solo los errores de las promesas que se ejecutaron
+        if (subscriptionResult.error || storeResult.error) {
             await db.collection("companies").deleteOne({ _id: mongoCompany.insertedId });
             await db.collection("stores").deleteOne({ _id: mongoStore.insertedId });
             await supabase.from("companies").delete().eq("id", companyId);
             await supabase.from("users_companies").delete().eq("company_id", companyId);
-            throw subscriptionResult.error || storeResult.error || userCompanyResult.error;
+            throw subscriptionResult.error || storeResult.error;
         }
-
-        // Actualizar otros registros para que no sean la empresa predeterminada
-        await supabase.from("users_companies")
-            .update({ is_default_inventory: false })
-            .eq("user_id", internalUserId)
-            .neq("company_id", companyId);
 
         return NextResponse.json({
             companyName: values.company_name,
@@ -295,6 +308,7 @@ export async function POST(req: Request) {
             code: error.code,
             details: error.details,
             hint: error.hint,
+            stack: error.stack
         });
 
         if (db && mongoCompany?.insertedId) {

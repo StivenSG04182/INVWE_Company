@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
+// Definimos las rutas públicas (páginas de prelogin)
 const isPublicRoute = createRouteMatcher([
     "/",
     "/enterprise",
@@ -19,60 +20,31 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
-    if (auth.userId) {
-        const userId = auth.userId;
-        console.log("Clerk user id:", userId);
-        let isAdmin = false;
+    console.log("[Middleware] Request URL:", request.url);
 
-        try {
-            const { publicMetadata } = auth.sessionClaims;
-            isAdmin = publicMetadata?.role === 'ADMIN';
+    // Si la petición es para una ruta API, no hacemos nada (se deja pasar)
+    if (request.nextUrl.pathname.startsWith('/api')) {
+        return NextResponse.next();
+    }
 
-            if (isAdmin) {
-                if (!request.nextUrl.pathname.startsWith('/admin')) {
-                    return NextResponse.redirect(new URL('/admin', request.url));
-                }
-                return NextResponse.next();
-            }
-
-            // Llamada al endpoint de validación en MongoDB
-            const validateUrl = new URL(`/api/companies?userId=${userId}`, request.url);
-            const res = await fetch(validateUrl.toString());
-            const result = await res.json();
-
-            if (!result.isValid) {
-                const debugMessage = result.error || "No inventory associated";
-                console.log("Error validando inventario en MongoDB:", debugMessage);
-                if (!request.nextUrl.pathname.startsWith("/select-company")) {
-                    return NextResponse.redirect(new URL(`/select-company?debug=${encodeURIComponent(debugMessage)}`, request.url));
-                }
-                return NextResponse.next();
-            }
-
-            // Redirige al dashboard usando el campo "company_name" del documento en MongoDB
-            const companyNameEncoded = encodeURIComponent(result.data.company.company_name);
-            const dashboardUrl = `/inventory/${companyNameEncoded}/dashboard`;
-            if (!request.nextUrl.pathname.startsWith(`/inventory/${companyNameEncoded}`)) {
-                return NextResponse.redirect(new URL(dashboardUrl, request.url));
-            }
-
-            return NextResponse.next();
-        } catch (e) {
-            console.error("Error en middleware:", e);
-            return NextResponse.redirect(new URL("/select-company", request.url));
-        }
-    } else {
+    // Si el usuario no está autenticado y se accede a una ruta pública, se permite el acceso.
+    if (!auth.userId) {
         if (isPublicRoute(request)) {
+            console.log("[Middleware] Ruta pública sin autenticación, permitiendo acceso");
             return NextResponse.next();
         }
+        // Para rutas privadas, podemos protegerlas (esto se adapta a tu lógica)
         await auth.protect();
         return NextResponse.next();
     }
+
+    // Para rutas protegidas (no aplicamos redirecciones para /select_inventory, ya que la lógica se hará en el cliente)
+    return NextResponse.next();
 });
 
 export const config = {
     matcher: [
-        '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-        '/(api|trpc)(.*)',
+        // Se aplicará a todas las páginas que no sean archivos estáticos
+        '/((?!_next|trpc|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)'
     ],
 };

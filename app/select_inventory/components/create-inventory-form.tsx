@@ -21,7 +21,7 @@ const formSchema = z.object({
     date_of_birth: z.string().min(1, "La fecha de nacimiento es requerida"),
 
     // Company Information
-    nit: z.string().min(1, "El NIT es requerido"),
+    nit: z.string().min(9, "El NIT debe tener al menos 9 caracteres").regex(/^\d{9}-\d$/, "El NIT debe tener el formato: 900123456-7"),
     company_name: z.string().min(3, "El nombre de la empresa debe tener al menos 3 caracteres"),
     company_address: z.string().min(5, "La dirección debe tener al menos 5 caracteres"),
     company_phone: z.string()
@@ -82,17 +82,48 @@ export function CreateInventoryForm() {
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             setIsLoading(true);
-            const response = await axios.post("/api/inventory/create", values);
+            // Construir el objeto para el API sin duplicar claves
+            const apiValues = {
+                // Datos del usuario
+                name: values.name.trim(),
+                last_name: values.last_name.trim(),
+                email: values.email.trim(),
+                phone: values.phone.trim(),
+                date_of_birth: values.date_of_birth,
+
+                // Datos de la empresa
+                nombreEmpresa: values.company_name.trim(),
+                nit: values.nit.trim(),
+                address: values.company_address.trim(),
+                phone_company: values.company_phone.trim(),
+                email_company: values.company_email.trim(),
+
+                // Datos para la relación usuario-empresa
+                nombres_apellidos: `${values.name} ${values.last_name}`.trim(),
+                correo_electronico: values.email.trim(),
+                telefono_usuario: values.phone.trim(),
+                direccion_usuario: values.company_address.trim(),
+
+                // Datos de la tienda
+                store_name: values.store_name.trim(),
+                store_address: values.store_address.trim(),
+                store_phone: values.store_phone.trim()
+            };
+
+            const response = await axios.post("/api/inventory/create", apiValues);
 
             if (response.data.companyName && response.data.storeId) {
-                router.push(`/inventory/${response.data.companyName}/dashboard`);
+                router.push(`/inventory/${encodeURIComponent(response.data.companyName)}/dashboard`);
                 toast.success("Empresa registrada exitosamente");
             } else {
                 throw new Error("Formato de respuesta inválido");
             }
         } catch (error: any) {
             console.error("Error creando inventario:", error);
-            toast.error(error.response?.data || "Error al registrar la empresa");
+            toast.error(
+                error.response?.data?.errors?.[0]?.message ||
+                "Error al registrar la empresa"
+            );
         } finally {
             setIsLoading(false);
         }

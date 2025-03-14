@@ -1,46 +1,78 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useUser } from "@clerk/nextjs"
-import { TextRevealCard } from "@/components/ui/text-reveal-card"
-import { CreateInventoryForm } from "./components/create-inventory-form"
-import { JoinInventoryForm } from "./components/join-inventory-form"
-import axios from "axios"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft } from "lucide-react"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useUser, useAuth } from "@clerk/nextjs";
+import axios from "axios";
+import { TextRevealCard } from "@/components/ui/text-reveal-card";
+import { CreateInventoryForm } from "./components/create-inventory-form";
+import { JoinInventoryForm } from "./components/join-inventory-form";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft } from "lucide-react";
 
-export default function SelectDashboardInventory() {
-    const { user } = useUser()
-    const [companies, setCompanies] = useState([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [selectedOption, setSelectedOption] = useState<string | null>(null)
+export default function SelectInventoryPage() {
+    const router = useRouter();
+    const { user } = useUser();
+    const { isLoaded, isSignedIn } = useAuth();
+    const [companies, setCompanies] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
+    // Primer useEffect: Verificar si el usuario ya tiene asociación
+    useEffect(() => {
+        if (!isLoaded) return;
+        if (!isSignedIn) return;
+
+        const checkUserAssociation = async () => {
+            try {
+                const res = await fetch("/api/companies", {
+                    method: "GET",
+                    headers: { "Content-Type": "application/json" },
+                    cache: "no-store",
+                });
+                if (!res.ok) {
+                    console.error("Error fetching user association:", res.statusText);
+                    return;
+                }
+                const data = await res.json();
+                console.log("Respuesta de /api/companies:", data);
+                if (data.isValid && data.data?.company?.name) {
+                    const companyNameEncoded = encodeURIComponent(data.data.company.name);
+                    // Redirige al dashboard de la empresa
+                    router.push(`/inventory/${companyNameEncoded}/dashboard`);
+                }
+            } catch (error) {
+                console.error("Error en checkUserAssociation:", error);
+            }
+        };
+
+        checkUserAssociation();
+    }, [isLoaded, isSignedIn, router]);
+
+    // Segundo useEffect: Cargar las empresas para el formulario de "unirse"
     useEffect(() => {
         const fetchCompanies = async () => {
             try {
-                setIsLoading(true)
-                const response = await axios.get("/api/companies")
-                setCompanies(response.data || []) // Ensure we always set an array
+                setIsLoading(true);
+                const response = await axios.get("/api/companies");
+                setCompanies(response.data || []); // Aseguramos que sea un array
             } catch (error) {
-                console.error("Error fetching companies:", error)
-                setCompanies([]) // Set empty array on error
+                console.error("Error fetching companies:", error);
+                setCompanies([]); // En caso de error, se asigna un array vacío
             } finally {
-                setIsLoading(false)
+                setIsLoading(false);
             }
-        }
-        fetchCompanies()
-    }, [])
+        };
+        fetchCompanies();
+    }, []);
 
     const handleBackClick = () => {
-        setSelectedOption(null)
-    }
+        setSelectedOption(null);
+    };
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-            {/* Background will be added later */}
-            {/* <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-purple-400 via-pink-500 to-red-500"> */}
-            
             <TextRevealCard
                 text="INVWE_Company"
                 revealText="Únete o Crea uno Nuevo"
@@ -50,7 +82,7 @@ export default function SelectDashboardInventory() {
 
             {selectedOption === null ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
-                    <Card 
+                    <Card
                         className="cursor-pointer hover:shadow-xl transition-shadow duration-300"
                         onClick={() => setSelectedOption("create")}
                     >
@@ -58,7 +90,6 @@ export default function SelectDashboardInventory() {
                             <CardTitle className="text-center">Crear Inventario</CardTitle>
                         </CardHeader>
                         <CardContent className="h-64 overflow-hidden">
-                            {/* Image carousel will be added here */}
                             <div className="h-full bg-gray-100 flex items-center justify-center">
                                 <p className="text-gray-500">Carrusel de imágenes</p>
                             </div>
@@ -68,7 +99,7 @@ export default function SelectDashboardInventory() {
                         </CardFooter>
                     </Card>
 
-                    <Card 
+                    <Card
                         className="cursor-pointer hover:shadow-xl transition-shadow duration-300"
                         onClick={() => setSelectedOption("join")}
                     >
@@ -76,7 +107,6 @@ export default function SelectDashboardInventory() {
                             <CardTitle className="text-center">Unirse a Inventario</CardTitle>
                         </CardHeader>
                         <CardContent className="h-64 overflow-hidden">
-                            {/* Image carousel will be added here */}
                             <div className="h-full bg-gray-100 flex items-center justify-center">
                                 <p className="text-gray-500">Carrusel de imágenes</p>
                             </div>
@@ -89,19 +119,14 @@ export default function SelectDashboardInventory() {
             ) : (
                 <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
                     <div className="flex items-center mb-4">
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={handleBackClick}
-                            className="mr-2"
-                        >
+                        <Button variant="ghost" size="icon" onClick={handleBackClick} className="mr-2">
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
                         <h2 className="text-xl font-bold">
                             {selectedOption === "create" ? "Crear Inventario" : "Unirse a Inventario"}
                         </h2>
                     </div>
-                    
+
                     {selectedOption === "create" ? (
                         <CreateInventoryForm />
                     ) : (
@@ -110,5 +135,5 @@ export default function SelectDashboardInventory() {
                 </div>
             )}
         </div>
-    )
+    );
 }

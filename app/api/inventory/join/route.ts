@@ -1,170 +1,189 @@
-import { auth } from "@clerk/nextjs/server"
-import { NextResponse } from "next/server"
-import clientPromise from "@/lib/mongodb"
-import { supabase } from "@/lib/supabase"
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import clientPromise from "@/lib/mongodb";
+import { supabase } from "@/lib/supabase";
 
 export async function POST(req: Request) {
     try {
-        const { userId } = await auth()
-        const body = await req.json()
-
-        if (!userId) {
-            return new NextResponse("Unauthorized", { status: 401 })
+        // Obtener datos de autenticación de Clerk
+        const { userId: clerkUserId } = await auth();
+        if (!clerkUserId) {
+            console.error("Unauthorized access: no userId");
+            return new NextResponse("Unauthorized", { status: 401 });
         }
 
-        const { nombreEmpresa, nit, codigoSeguridad } = body
+        // Obtener detalles completos del usuario desde Clerk
+        const clerkUser = await currentUser();
+        if (!clerkUser) {
+            console.error("No se pudo obtener el usuario de Clerk");
+            return NextResponse.json({
+                error: "User not found",
+                message: "No se encontró el usuario en Clerk",
+            }, { status: 401 });
+        }
+
+        // Leer datos enviados en el body
+        const body = await req.json();
+        console.log("Request body:", body);
+        const { nombreEmpresa, nit, codigoSeguridad } = body;
 
         if (!nombreEmpresa || !nit || !codigoSeguridad) {
-            return NextResponse.json({ 
+            console.error("Missing required fields", { nombreEmpresa, nit, codigoSeguridad });
+            return NextResponse.json({
                 error: "Missing required fields",
                 errors: [
                     !nombreEmpresa && { field: "nombreEmpresa", message: "Nombre de empresa es requerido" },
                     !nit && { field: "nit", message: "NIT es requerido" },
-                    !codigoSeguridad && { field: "codigoSeguridad", message: "Código de seguridad es requerido" }
-                ].filter(Boolean)
-            }, { status: 400 })
+                    !codigoSeguridad && { field: "codigoSeguridad", message: "Código de seguridad es requerido" },
+                ].filter(Boolean),
+            }, { status: 400 });
         }
 
-        // First check MongoDB for company by NIT
-        const client = await clientPromise
-        const db = client.db(process.env.MONGODB_DB)
-        const companiesCollection = db.collection("companies")
-        
-        const mongoCompany = await companiesCollection.findOne({ nit: nit })
+        if (!process.env.MONGODB_DB) {
+            console.error("MONGODB_DB environment variable is not set");
+            return NextResponse.json({
+                error: "Configuration error",
+                message: "MONGODB_DB is not configured",
+            }, { status: 500 });
+        }
 
+        // Conexión a MongoDB y búsqueda de la empresa por NIT
+        const client = await clientPromise;
+        const db = client.db(process.env.MONGODB_DB);
+        const companiesCollection = db.collection("companies");
+        const mongoCompany = await companiesCollection.findOne({ nit: nit });
         if (!mongoCompany) {
+            console.error("Company not found in MongoDB for NIT:", nit);
             return NextResponse.json({
                 error: "Company not found",
-                message: "No se encontró una empresa con el NIT proporcionado"
-            }, { status: 401 })
+                message: "No se encontró una empresa con el NIT proporcionado",
+            }, { status: 401 });
         }
 
-        // Then verify in Supabase using the supabaseId from MongoDB
+        // Consultar la empresa en Supabase utilizando el campo mongo_id
         const { data: supabaseCompany, error: companyError } = await supabase
             .from("companies")
             .select("id, name, nit, email, security_code")
-            .eq("id", mongoCompany.metadata.supabaseId)
-            .single()
+            .eq("mongo_id", mongoCompany._id.toString())
+            .single();
 
         if (companyError || !supabaseCompany) {
+            console.error("Error fetching company from Supabase", companyError);
             return NextResponse.json({
                 error: "Company not found",
-                message: "Error al verificar la empresa"
-            }, { status: 401 })
+                message: "Error al verificar la empresa en Supabase",
+            }, { status: 401 });
         }
 
-        // Verify security code - normalize both codes for comparison (trim whitespace and convert to lowercase)
+        // Comparar el código de seguridad (normalizando los valores)
         const normalizedDbCode = supabaseCompany.security_code?.trim().toLowerCase();
         const normalizedInputCode = codigoSeguridad?.trim().toLowerCase();
-        
         if (!normalizedDbCode || !normalizedInputCode || normalizedDbCode !== normalizedInputCode) {
-            console.log("Security code mismatch:", { 
+            console.error("Security code mismatch", {
                 stored: supabaseCompany.security_code,
-                provided: codigoSeguridad 
+                provided: codigoSeguridad,
             });
             return NextResponse.json({
                 error: "Invalid security code",
-                message: "El código de seguridad es incorrecto"
-            }, { status: 401 })
+                message: "El código de seguridad es incorrecto",
+            }, { status: 401 });
         }
 
-        // Check if user is already associated with the company
-        const { data: existingRelation } = await supabase
-            .from("users_companies")
-            .select("*")
-            .eq("user_id", userId)
-            .eq("company_id", supabaseCompany.id)
-            .single()
+        // Verificar si el usuario ya existe en Supabase (tabla users) usando el id de Clerk en la columna 'clerk'
+        let { data: supabaseUser, error: userError } = await supabase
+            .from("users")
+            .select("id, name, last_name, email, phone")
+            .eq("clerk", clerkUserId)
+            .single();
 
-        if (existingRelation) {
-            // If user is already associated, just ensure this is their default inventory
-            if (!existingRelation.is_default_inventory) {
-                // Update this relationship to be default
-                await supabase
-                    .from("users_companies")
-                    .update({ is_default_inventory: true, updated_at: new Date().toISOString() })
-                    .eq("user_id", userId)
-                    .eq("company_id", supabaseCompany.id)
+        // Si no existe, crear el registro en la tabla 'users'
+        if (userError || !supabaseUser) {
+            // Extraer datos básicos de Clerk
+            const name = clerkUser.firstName || "SinNombre";
+            const lastName = clerkUser.lastName || "SinApellido";
+            const email =
+                clerkUser.emailAddresses && clerkUser.emailAddresses[0]?.emailAddress
+                    ? clerkUser.emailAddresses[0].emailAddress
+                    : "sinemail@example.com";
+            const phone = clerkUser.phoneNumber || "0000000000";
+            const date_of_birth = "1970-01-01"; // valor por defecto
 
-                // Update other relationships to not be default
-                await supabase
-                    .from("users_companies")
-                    .update({ is_default_inventory: false, updated_at: new Date().toISOString() })
-                    .eq("user_id", userId)
-                    .neq("company_id", supabaseCompany.id)
-            }
-        } else {
-            // Create new user-company relationship with is_default_inventory set to true and status pending
-            const { error: relationError } = await supabase.from("users_companies").insert({
-                user_id: userId,
-                company_id: supabaseCompany.id,
-                role: "EMPLOYEE",
-                nombres_apellidos: supabaseCompany.name,
-                correo_electronico: supabaseCompany.email,
-                is_default_inventory: true,
-                status: "pending",
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            })
+            const { data: newUser, error: insertUserError } = await supabase
+                .from("users")
+                .insert({
+                    name,
+                    last_name: lastName,
+                    email,
+                    phone,
+                    date_of_birth,
+                    clerk: clerkUserId,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                })
+                .select("id, name, last_name, email, phone")
+                .single();
 
-            if (relationError) {
+            if (insertUserError || !newUser) {
+                console.error("Error inserting new user:", insertUserError);
                 return NextResponse.json({
-                    error: "Error creating relationship",
-                    message: "Error al crear la relación usuario-empresa"
-                }, { status: 500 })
+                    error: "Error creating user",
+                    message: "Error al crear el registro de usuario",
+                }, { status: 500 });
             }
-
-            // Update other user-company relationships to not be default
-            await supabase
-                .from("users_companies")
-                .update({ is_default_inventory: false, updated_at: new Date().toISOString() })
-                .eq("user_id", userId)
-                .neq("company_id", supabaseCompany.id)
-
-            // Add user to company's users collection in MongoDB
-            const usersCollection = db.collection("users_companies")
-            await usersCollection.insertOne({
-                userId,
-                companyId: mongoCompany._id,
-                role: "EMPLOYEE",
-                createdAt: new Date(),
-                updatedAt: new Date()
-            })
+            supabaseUser = newUser;
         }
 
-        // Get the main store for this company
-        const storesCollection = db.collection("stores")
-        const store = await storesCollection.findOne({
-            companyId: mongoCompany._id
-        })
+        const supabaseUserId = supabaseUser.id;
 
-        if (!store) {
+        // Verificar si ya existe una solicitud en inventory_join_requests para este usuario y empresa
+        const { data: existingRequest, error: requestFetchError } = await supabase
+            .from("inventory_join_requests")
+            .select("*")
+            .eq("user_id", supabaseUserId)
+            .eq("company_id", supabaseCompany.id)
+            .single();
+
+        if (existingRequest) {
+            // Si ya existe la solicitud, se retorna el mensaje de pendiente
             return NextResponse.json({
-                error: "Store not found",
-                message: "No se encontró la tienda principal"
-            }, { status: 404 })
+                companyName: mongoCompany.name,
+                status: "pending",
+                message: "Tu solicitud ya está pendiente de aprobación por un administrador",
+            }, { status: 200 });
+        } else {
+            // Insertar la nueva solicitud en inventory_join_requests
+            const { error: insertError } = await supabase.from("inventory_requests").insert({
+                user_id: supabaseUserId,
+                company_id: supabaseCompany.id,
+                name: supabaseUser.name,
+                last_name: supabaseUser.last_name,
+                email: supabaseUser.email,
+                phone: supabaseUser.phone,
+                status: "pending", // Estado inicial pendiente
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            });
+
+            if (insertError) {
+                console.error("Error inserting new join request:", insertError);
+                return NextResponse.json({
+                    error: "Error creating join request",
+                    message: "Error al crear la solicitud de unión al inventario",
+                }, { status: 500 });
+            }
         }
 
-        // If the user's status is pending, return that information
-        if (existingRelation?.status === 'pending' || (!existingRelation && mongoCompany)) {
-            return NextResponse.json({ 
-                companyName: mongoCompany.name,
-                status: 'pending',
-                message: 'Tu solicitud está pendiente de aprobación por un administrador'
-            }, { status: 200 })
-        }
-        
-        // Otherwise return normal success response
-        return NextResponse.json({ 
+        // Respuesta indicando que la solicitud está pendiente
+        return NextResponse.json({
             companyName: mongoCompany.name,
-            storeId: store._id.toString(),
-            redirectUrl: `/inventory/${encodeURIComponent(mongoCompany.name)}/dashboard`
-        }, { status: 200 })
+            status: "pending",
+            message: "Tu solicitud está pendiente de aprobación por un administrador",
+        }, { status: 200 });
     } catch (error) {
-        console.error("JOIN_INVENTORY_ERROR:", error)
+        console.error("JOIN_INVENTORY_ERROR:", error);
         return NextResponse.json({
             error: "Internal server error",
-            message: "Error interno del servidor"
-        }, { status: 500 })
+            message: "Error interno del servidor",
+        }, { status: 500 });
     }
 }
