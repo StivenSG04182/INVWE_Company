@@ -8,15 +8,15 @@ export default function SelectInventoryLayout({
     children: React.ReactNode
 }) {
     return (
-        <ThemeProvider
-            attribute="class"
-            defaultTheme="light"
-            forcedTheme="light"
-            enableSystem={false}
-            disableTransitionOnChange
-            storageKey="invwe-select-inventory-theme"
-        >
-            {children}
-        </ThemeProvider>
+            <ThemeProvider
+                attribute="class"
+                defaultTheme="light"
+                forcedTheme="light"
+                enableSystem={false}
+                disableTransitionOnChange
+                storageKey="invwe-select-inventory-theme"
+            >
+                {children}
+            </ThemeProvider>
     )
 }

@@ -6,11 +6,11 @@ export const menuSections: MenuSection[] = [
         items: [
             {
                 icon: Home,
-                label: "Overview",
+                label: "Overview",  /* David */
                 submenu: [
                     { icon: BarChart, label: "Dashboard", href: "/inventory/[companyName]/dashboard" },
                     { icon: TrendingUp, label: "Análisis", href: "/inventory/[companyName]/analytics" },
-                    { icon: Archive, label: "Actividad", href: "/inventory/[companyName]/activity" },
+                    { icon: Archive, label: "Actividad", href: "/inventory/[companyName]/activity" },  
                 ],
             },
         ],
@@ -32,7 +32,7 @@ export const menuSections: MenuSection[] = [
         items: [
             {
                 icon: ShoppingCart,
-                label: "Inventario",
+                label: "Inventario",  /* Mateo */
                 submenu: [
                     { icon: ShoppingCart, label: "Productos", href: "/inventory/[companyName]/products" },
                     { icon: Archive, label: "Stock", href: "/inventory/[companyName]/stock" },
@@ -46,7 +46,7 @@ export const menuSections: MenuSection[] = [
         items: [
             {
                 icon: BarChart,
-                label: "Ventas & Facturación",
+                label: "Ventas & Facturación", 
                 submenu: [
                     { icon: BarChart, label: "Transacciones", href: "/inventory/[companyName]/sales" },
                     { icon: FileText, label: "Facturas", href: "/inventory/[companyName]/facturas" },
@@ -62,7 +62,7 @@ export const menuSections: MenuSection[] = [
         items: [
             {
                 icon: Users,
-                label: "Personal & RRHH",
+                label: "Personal & RRHH",  /* David */
                 submenu: [
                     { icon: Users, label: "Empleados", href: "/inventory/[companyName]/employees" },
                     { icon: UserCog, label: "Horarios & Nómina", href: "/inventory/[companyName]/schedule" },
@@ -74,7 +74,7 @@ export const menuSections: MenuSection[] = [
         items: [
             {
                 icon: Users,
-                label: "Clientes & CRM",
+                label: "Clientes & CRM", /* David */
                 submenu: [
                     { icon: Users, label: "Clientes", href: "/inventory/[companyName]/clients" },
                     { icon: Mail, label: "CRM", href: "/inventory/[companyName]/crm" },
@@ -86,7 +86,7 @@ export const menuSections: MenuSection[] = [
         items: [
             {
                 icon: FileText,
-                label: "Reportes & Analíticas",
+                label: "Reportes & Analíticas",  /* David */
                 submenu: [
                     { icon: BarChart, label: "Ventas", href: "/inventory/[companyName]/reports/sales" },
                     { icon: PieChart, label: "Inventario", href: "/inventory/[companyName]/reports/inventory" },
@@ -112,12 +112,13 @@ export const menuSections: MenuSection[] = [
         items: [
             {
                 icon: Settings,
-                label: "Configuración & Administración",
+                label: "Configuración & Administración", /* Mateo */
                 submenu: [
                     { icon: Settings, label: "Empresa", href: "/inventory/[companyName]/company" },
                     { icon: UserCog, label: "Usuarios y Roles", href: "/inventory/[companyName]/users" },
                     { icon: KeyRound, label: "Subscripciones", href: "/inventory/[companyName]/subscriptions" },
                     { icon: Layout, label: "Integraciones", href: "/inventory/[companyName]/integrations" },
+
                 ],
             },
         ],

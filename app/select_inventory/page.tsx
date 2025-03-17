@@ -8,132 +8,169 @@ import { TextRevealCard } from "@/components/ui/text-reveal-card";
 import { CreateInventoryForm } from "./components/create-inventory-form";
 import { JoinInventoryForm } from "./components/join-inventory-form";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
+import { Boxes } from "@/components/ui/background-boxes";
+import { BorderBeam } from "@/components/magicui/border-beam";
+import { CardContainer, CardBody, CardItem } from "@/components/ui/3d-card";
+import Image from "next/image";
+import Link from "next/link";
 
 export default function SelectInventoryPage() {
-    const router = useRouter();
-    const { user } = useUser();
-    const { isLoaded, isSignedIn } = useAuth();
-    const [companies, setCompanies] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const router = useRouter();
+  const { isLoaded, isSignedIn } = useAuth();
+  const [companies, setCompanies] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
-    // Primer useEffect: Verificar si el usuario ya tiene asociación
-    useEffect(() => {
-        if (!isLoaded) return;
-        if (!isSignedIn) return;
+  // Verifica si el usuario ya tiene asociación
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+    (async () => {
+      try {
+        const res = await fetch("/api/companies", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          console.error("Error fetching user association:", res.statusText);
+          return;
+        }
+        const data = await res.json();
+        if (data.isValid && data.data?.company?.name) {
+          router.push(`/inventory/${encodeURIComponent(data.data.company.name)}/dashboard`);
+        }
+      } catch (error) {
+        console.error("Error en checkUserAssociation:", error);
+      }
+    })();
+  }, [isLoaded, isSignedIn, router]);
 
-        const checkUserAssociation = async () => {
-            try {
-                const res = await fetch("/api/companies", {
-                    method: "GET",
-                    headers: { "Content-Type": "application/json" },
-                    cache: "no-store",
-                });
-                if (!res.ok) {
-                    console.error("Error fetching user association:", res.statusText);
-                    return;
-                }
-                const data = await res.json();
-                console.log("Respuesta de /api/companies:", data);
-                if (data.isValid && data.data?.company?.name) {
-                    const companyNameEncoded = encodeURIComponent(data.data.company.name);
-                    // Redirige al dashboard de la empresa
-                    router.push(`/inventory/${companyNameEncoded}/dashboard`);
-                }
-            } catch (error) {
-                console.error("Error en checkUserAssociation:", error);
-            }
-        };
+  // Cargar empresas para el formulario de "unirse"
+  useEffect(() => {
+    (async () => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get("/api/companies");
+        setCompanies(response.data || []);
+      } catch (error) {
+        console.error("Error fetching companies:", error);
+        setCompanies([]);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, []);
 
-        checkUserAssociation();
-    }, [isLoaded, isSignedIn, router]);
+  const handleBackClick = () => {
+    setSelectedOption(null);
+  };
 
-    // Segundo useEffect: Cargar las empresas para el formulario de "unirse"
-    useEffect(() => {
-        const fetchCompanies = async () => {
-            try {
-                setIsLoading(true);
-                const response = await axios.get("/api/companies");
-                setCompanies(response.data || []); // Aseguramos que sea un array
-            } catch (error) {
-                console.error("Error fetching companies:", error);
-                setCompanies([]); // En caso de error, se asigna un array vacío
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchCompanies();
-    }, []);
+  return (
+    <div className="h-screen relative w-full overflow-hidden bg-slate-900 flex flex-col items-center justify-center rounded-lg">
+      {/* Fondo y efectos */}
+      <div className="absolute inset-0 w-full h-full bg-slate-900 z-20 [mask-image:radial-gradient(transparent,white)] pointer-events-none" />
+      <Boxes />
+      <BorderBeam duration={8} size={100} className="absolute inset-0 pointer-events-none" />
 
-    const handleBackClick = () => {
-        setSelectedOption(null);
-    };
+      <div className="relative flex flex-col items-center justify-center">
+        <TextRevealCard
+          text="INVWE_Company"
+          revealText="Únete o Crea uno Nuevo"
+          className="w-full max-w-md mb-8"
+          textAlign="center"
+        />
 
-    return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-            <TextRevealCard
-                text="INVWE_Company"
-                revealText="Únete o Crea uno Nuevo"
-                className="w-full max-w-md mb-8"
-                textAlign="center"
-            />
-
-            {selectedOption === null ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
-                    <Card
-                        className="cursor-pointer hover:shadow-xl transition-shadow duration-300"
-                        onClick={() => setSelectedOption("create")}
+        {selectedOption === null ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+            {/* Tarjeta 3D para "Crear Inventario" */}
+            <div onClick={() => setSelectedOption("create")} className="cursor-pointer">
+              <CardContainer className="group/card">
+                <CardBody className="bg-gray-50 dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-80 h-80 rounded-xl p-6 border">
+                  <CardItem translateZ="50" className="text-xl font-bold text-neutral-600 dark:text-white">
+                    Crear Inventario
+                  </CardItem>
+                  <CardItem
+                    as="p"
+                    translateZ="60"
+                    className="text-neutral-500 text-sm mt-2 dark:text-neutral-300"
+                  >
+                  </CardItem>
+                  <CardItem translateZ="100" className="w-full mt-4">
+                    <Image
+                      src=""
+                      width={1000}
+                      height={1000}
+                      alt="Crear Inventario"
+                      className="h-40 w-full object-cover rounded-xl group-hover/card:shadow-xl"
+                    />
+                  </CardItem>
+                  <div className="flex justify-center mt-8">
+                    <CardItem
+                      translateZ={20}
+                      as="button"
+                      className="px-4 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-xs font-bold"
                     >
-                        <CardHeader>
-                            <CardTitle className="text-center">Crear Inventario</CardTitle>
-                        </CardHeader>
-                        <CardContent className="h-64 overflow-hidden">
-                            <div className="h-full bg-gray-100 flex items-center justify-center">
-                                <p className="text-gray-500">Carrusel de imágenes</p>
-                            </div>
-                        </CardContent>
-                        <CardFooter className="flex justify-center">
-                            <Button>Seleccionar</Button>
-                        </CardFooter>
-                    </Card>
+                      Seleccionar
+                    </CardItem>
+                  </div>
+                </CardBody>
+              </CardContainer>
+            </div>
 
-                    <Card
-                        className="cursor-pointer hover:shadow-xl transition-shadow duration-300"
-                        onClick={() => setSelectedOption("join")}
+            {/* Tarjeta 3D para "Unirse a Inventario" */}
+            <div onClick={() => setSelectedOption("join")} className="cursor-pointer">
+              <CardContainer className="group/card">
+                <CardBody className="bg-gray-50 dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-80 h-80 rounded-xl p-6 border">
+                  <CardItem translateZ="50" className="text-xl font-bold text-neutral-600 dark:text-white">
+                    Unirse a Inventario
+                  </CardItem>
+                  <CardItem
+                    as="p"
+                    translateZ="60"
+                    className="text-neutral-500 text-sm mt-2 dark:text-neutral-300"
+                  >
+                  </CardItem>
+                  <CardItem translateZ="100" className="w-full mt-4">
+                    <Image
+                      src=""
+                      width={1000}
+                      height={1000}
+                      alt="Unirse a Inventario"
+                      className="h-40 w-full object-cover rounded-xl group-hover/card:shadow-xl"
+                    />
+                  </CardItem>
+                  <div className="flex justify-center mt-8">
+                    <CardItem
+                      translateZ={20}
+                      as="button"
+                      className="px-4 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-xs font-bold"
                     >
-                        <CardHeader>
-                            <CardTitle className="text-center">Unirse a Inventario</CardTitle>
-                        </CardHeader>
-                        <CardContent className="h-64 overflow-hidden">
-                            <div className="h-full bg-gray-100 flex items-center justify-center">
-                                <p className="text-gray-500">Carrusel de imágenes</p>
-                            </div>
-                        </CardContent>
-                        <CardFooter className="flex justify-center">
-                            <Button>Seleccionar</Button>
-                        </CardFooter>
-                    </Card>
-                </div>
+                      Seleccionar
+                    </CardItem>
+                  </div>
+                </CardBody>
+              </CardContainer>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+            <div className="flex items-center mb-4">
+              <Button variant="ghost" size="icon" onClick={handleBackClick} className="mr-2">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h2 className="text-xl font-bold">
+                {selectedOption === "create" ? "Crear Inventario" : "Unirse a Inventario"}
+              </h2>
+            </div>
+            {selectedOption === "create" ? (
+              <CreateInventoryForm />
             ) : (
-                <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-                    <div className="flex items-center mb-4">
-                        <Button variant="ghost" size="icon" onClick={handleBackClick} className="mr-2">
-                            <ArrowLeft className="h-5 w-5" />
-                        </Button>
-                        <h2 className="text-xl font-bold">
-                            {selectedOption === "create" ? "Crear Inventario" : "Unirse a Inventario"}
-                        </h2>
-                    </div>
-
-                    {selectedOption === "create" ? (
-                        <CreateInventoryForm />
-                    ) : (
-                        <JoinInventoryForm companies={companies} isLoading={isLoading} />
-                    )}
-                </div>
+              <JoinInventoryForm companies={companies} isLoading={isLoading} />
             )}
-        </div>
-    );
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
