@@ -179,7 +179,7 @@ export async function POST(req: Request) {
         }
 
         // Insertar notificación para que el administrador revise la solicitud
-        const adminUserId = process.env.ADMIN_USER_ID; // Debe definirse en tus variables de entorno
+        const adminUserId = process.env.ADMIN_USER_ID; // Define ADMIN_USER_ID en tu .env
         if (adminUserId) {
             const notifMessage = `El usuario ${userData.name} ${userData.last_name} (${userData.email}) ha solicitado unirse a la empresa ${nombreEmpresa}. Revisa y decide aprobar o rechazar la solicitud.`;
             const { error: notifError } = await supabase
@@ -188,12 +188,13 @@ export async function POST(req: Request) {
                     type: "alert",
                     title: "Nueva solicitud de unión",
                     message: notifMessage,
-                    user_id: adminUserId,
-                    created_by: clerkUserId,
+                    user_id: adminUserId, // Destinatario: administrador
+                    created_by: clerkUserId, // Quien generó la solicitud
+                    // Puedes agregar otros campos si los necesitas (p.ej.: created_at se asigna automáticamente)
                 });
             if (notifError) {
                 console.error("Error inserting notification:", notifError);
-                // No se retorna error para la solicitud, solo se registra el fallo en la notificación
+                // No se retorna error al usuario, solo se registra el fallo en la notificación
             }
         } else {
             console.warn("ADMIN_USER_ID no está definido. No se insertó notificación.");

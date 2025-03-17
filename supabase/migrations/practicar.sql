@@ -68,9 +68,20 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   updated_at           timestamptz  DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS inventory_requests (
+CREATE TABLE IF NOT EXISTS notifications (
+  id                   uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+  type                 text         NOT NULL CHECK (type IN ('message', 'alert')),
+  title                text         NOT NULL,
+  message              text         NOT NULL,
+  created_at           timestamptz  WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL,
+  read                 boolean      DEFAULT false NOT NULL,
+  user_id              uuid         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_by           uuid         REFERENCES auth.users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS inventory_join_requests (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES users(id) ON DELETE CASCADE,
+  user_id text NOT NULL,
   company_id uuid REFERENCES companies(id) ON DELETE CASCADE,
   name text NOT NULL,
   last_name text NOT NULL,
