@@ -14,6 +14,7 @@ import { BorderBeam } from "@/components/magicui/border-beam";
 import { CardContainer, CardBody, CardItem } from "@/components/ui/3d-card";
 import Image from "next/image";
 import Link from "next/link";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 
 export default function SelectInventoryPage() {
   const router = useRouter();
@@ -67,7 +68,7 @@ export default function SelectInventoryPage() {
   };
 
   return (
-    <div className="h-screen relative w-full overflow-hidden bg-slate-900 flex flex-col items-center justify-center rounded-lg">
+    <div className="min-h-screen relative w-full overflow-hidden bg-slate-900 flex flex-col items-center justify-center rounded-lg">
       {/* Fondo y efectos */}
       <div className="absolute inset-0 w-full h-full bg-slate-900 z-20 [mask-image:radial-gradient(transparent,white)] pointer-events-none" />
       <Boxes />
@@ -84,9 +85,10 @@ export default function SelectInventoryPage() {
         {selectedOption === null ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
             {/* Tarjeta 3D para "Crear Inventario" */}
-            <div onClick={() => setSelectedOption("create")} className="cursor-pointer">
-              <CardContainer className="group/card">
-                <CardBody className="bg-gray-50 dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-80 h-80 rounded-xl p-6 border">
+            <div onClick={() => setSelectedOption("create")} className="relative h-60 flex-1">
+              <CardContainer className="group/card relative h-full cursor-pointer">
+                <CardBody  className="bg-gray-50/100 dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-full h-full rounded-xl p-6 border flex flex-col">
+                  <BorderBeam duration={4} size={50} className="z-10" />
                   <CardItem translateZ="50" className="text-xl font-bold text-neutral-600 dark:text-white">
                     Crear Inventario
                   </CardItem>
@@ -97,13 +99,50 @@ export default function SelectInventoryPage() {
                   >
                   </CardItem>
                   <CardItem translateZ="100" className="w-full mt-4">
-                    <Image
-                      src=""
-                      width={1000}
-                      height={1000}
-                      alt="Crear Inventario"
-                      className="h-40 w-full object-cover rounded-xl group-hover/card:shadow-xl"
-                    />
+                    <Carousel className="w-full" opts={{ loop: true, align: "start", duration: 3000 }}>
+                      <CarouselContent>
+                        <CarouselItem>
+                          <Image
+                            src="/carousel/create-inventory.svg"
+                            width={400}
+                            height={400}
+                            alt="Crear Inventario"
+                            className="h-40 w-full object-contain rounded-xl group-hover/card:shadow-xl"
+                            priority
+                          />
+                        </CarouselItem>
+                        <CarouselItem>
+                          <Image
+                            src="/carousel/create-inventory-2.svg"
+                            width={400}
+                            height={400}
+                            alt="Crear Inventario"
+                            className="h-40 w-full object-contain rounded-xl group-hover/card:shadow-xl"
+                            priority
+                          />
+                        </CarouselItem>
+                        <CarouselItem>
+                          <Image
+                            src="/carousel/create-inventory-3.svg"
+                            width={400}
+                            height={400}
+                            alt="Crear Inventario"
+                            className="h-40 w-full object-contain rounded-xl group-hover/card:shadow-xl"
+                            priority
+                          />
+                        </CarouselItem>
+                        <CarouselItem>
+                          <Image
+                            src="/carousel/create-inventory-4.svg"
+                            width={400}
+                            height={400}
+                            alt="Crear Inventario"
+                            className="h-40 w-full object-contain rounded-xl group-hover/card:shadow-xl"
+                            priority
+                          />
+                        </CarouselItem>
+                      </CarouselContent>
+                    </Carousel>
                   </CardItem>
                   <div className="flex justify-center mt-8">
                     <CardItem
@@ -119,26 +158,64 @@ export default function SelectInventoryPage() {
             </div>
 
             {/* Tarjeta 3D para "Unirse a Inventario" */}
-            <div onClick={() => setSelectedOption("join")} className="cursor-pointer">
-              <CardContainer className="group/card">
-                <CardBody className="bg-gray-50 dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-80 h-80 rounded-xl p-6 border">
-                  <CardItem translateZ="50" className="text-xl font-bold text-neutral-600 dark:text-white">
+            <div  onClick={() => setSelectedOption("join")} className="relative h-full ">
+              <CardContainer className="group/card relative z-20 h-full cursor-pointer">
+                <CardBody className="bg-white/100 w-full h-full rounded-xl p-6 border flex flex-col">
+                  <BorderBeam duration={4} size={50} className="z-10" />
+                  <CardItem translateZ="50" className="text-xl font-bold  dark:text-white">
                     Unirse a Inventario
                   </CardItem>
                   <CardItem
                     as="p"
                     translateZ="60"
-                    className="text-neutral-500 text-sm mt-2 dark:text-neutral-300"
+                    className=" text-sm mt-2 dark:text-neutral-300"
                   >
                   </CardItem>
                   <CardItem translateZ="100" className="w-full mt-4">
-                    <Image
-                      src=""
-                      width={1000}
-                      height={1000}
-                      alt="Unirse a Inventario"
-                      className="h-40 w-full object-cover rounded-xl group-hover/card:shadow-xl"
-                    />
+                    <Carousel className="w-full" opts={{ loop: true, align: "start", duration: 3000 }}>
+                      <CarouselContent>
+                        <CarouselItem>
+                          <Image
+                            src="/carousel/join-inventory.svg"
+                            width={400}
+                            height={400}
+                            alt="Unirse a Inventario"
+                            className="h-40 w-full object-contain rounded-xl group-hover/card:shadow-xl"
+                            priority
+                          />
+                        </CarouselItem>
+                        <CarouselItem>
+                          <Image
+                            src="/carousel/join-inventory-2.svg"
+                            width={400}
+                            height={400}
+                            alt="Unirse a Inventario"
+                            className="h-40 w-full object-contain rounded-xl group-hover/card:shadow-xl"
+                            priority
+                          />
+                        </CarouselItem>
+                        <CarouselItem>
+                          <Image
+                            src="/carousel/join-inventory-3.svg"
+                            width={400}
+                            height={400}
+                            alt="Unirse a Inventario"
+                            className="h-40 w-full object-contain rounded-xl group-hover/card:shadow-xl"
+                            priority
+                          />
+                        </CarouselItem>
+                        <CarouselItem>
+                          <Image
+                            src="/carousel/join-inventory-4.svg"
+                            width={400}
+                            height={400}
+                            alt="Unirse a Inventario"
+                            className="h-40 w-full object-contain rounded-xl group-hover/card:shadow-xl"
+                            priority
+                          />
+                        </CarouselItem>
+                      </CarouselContent>
+                    </Carousel>
                   </CardItem>
                   <div className="flex justify-center mt-8">
                     <CardItem

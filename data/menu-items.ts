@@ -118,7 +118,6 @@ export const menuSections: MenuSection[] = [
                     { icon: UserCog, label: "Usuarios y Roles", href: "/inventory/[companyName]/users" },
                     { icon: KeyRound, label: "Subscripciones", href: "/inventory/[companyName]/subscriptions" },
                     { icon: Layout, label: "Integraciones", href: "/inventory/[companyName]/integrations" },
-
                 ],
             },
         ],
