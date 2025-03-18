@@ -12,7 +12,7 @@ export default function Page() {
                     dark:text-white">
                         ¿Quienes Somos?
                     </h2>
-                    <p className="px-10 md:px-15 lg:px-20"> 
+                    <p className="px-5 md:px-15 lg:px-20"> 
                     Nos especializamos en desarrollar sistemas de gestión empresarial innovadores. 
                     Combinamos experiencia en liderazgo con perspectivas frescas para crear plataformas adaptables a diversos entornos de negocio. 
                     Nuestra pasión es transformar datos en herramientas estratégicas, definiendo nuestro trabajo colaborativo y los resultados excepcionales que entregamos.
@@ -21,13 +21,13 @@ export default function Page() {
                 <p className="my-[6rem] text-3xl font-bold mb-4 text-gray-800 dark:text-white">
                     Equipo de Desarrollo
                 </p>
-                <div id="devs" className="my-[3rem] flex flex-col gap-[2rem]">
+                <div id="devs" className="my-[3rem] flex flex-col gap-[2rem] ">
                 
-                    <div className="flex justify-between container mx-auto px-4 py-8 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md max-w-6xl transition transform hover:scale-105 duration-300 ease-in-out">
-                        <div className="relative ml-4 md:ml-10 lg:ml-20">
+                    <div className="flex flex-col md:flex-row justify-center md:justify-between container mx-auto px-4 py-8 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md max-w-6xl transition transform hover:scale-105 duration-300 ease-in-out">
+                        <div className="relative ml-0 md:ml-10 lg:ml-20 mb-4 md:mb-0">
                             <Image
                                 src="/dev1.png"
-                                width={160}
+                                width={150}
                                 height={160}
                                 alt=""
                                 className="rounded-lg"
@@ -35,7 +35,7 @@ export default function Page() {
                         </div>
 
                         <div className="relative ml-4 md:ml-10 lg:ml-20 pt-1.5 md:pt-3 lg:pt-6 pr-2.5 md:pr-5 lg:pr-10">
-                            <h1 className="text-2xl font-bold mb-2 text-gray-800 dark:text-white">
+                            <h1 className="text-xl md:text-2xl font-bold mb-2 text-gray-800 dark:text-white">
                                 Stiven Sanchez
                             </h1>
                             <p className="text-gray-400 max-w-2xl mx-auto">
@@ -44,21 +44,21 @@ export default function Page() {
                         </div>
                     </div>
 
-                    <div className="flex justify-between container mx-auto px-4 py-8 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md max-w-6xl transition transform hover:scale-105 duration-300 ease-in-out">
+                    <div className="flex flex-col md:flex-row-reverse justify-center md:justify-between container mx-auto px-4 py-8 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md max-w-6xl transition transform hover:scale-105 duration-300 ease-in-out">
 
-                        <div className="relative ml-4 md:ml-10 lg:ml-20 pt-1.5 md:pt-3 lg:pt-6 pr-2.5 md:pr-5 lg:pr-10">
-                            <h1 className="text-2xl font-bold mb-2 text-gray-800 dark:text-white">
+                        <div className="relative ml-4 md:ml-10 lg:ml-20 pt-1.5 md:pt-3 lg:pt-6 pr-2.5 md:pr-5 lg:pr-10 mb-4 md:mb-0">
+                            <h1 className="text-xl md:text-2xl font-bold mb-2 text-gray-800 dark:text-white">
                                 David Piedrahita
                             </h1>
-                            <p className="text-gray-400 max-w-2xl mx-auto">
+                            <p className="text-gray-400 max-w-2xl mx-auto ">
                             Desarrollador junior responsable del módulo de interfaz de usuario, destacando por su meticulosa atención al detalle y capacidad para implementar diseños intuitivos.
                             </p>
                         </div>
         
-                        <div className="relative mr-4 md:mr-10 lg:mr-20">
+                        <div className="relative mr-0 md:mr-10 lg:mr-20">
                             <Image
                                 src="/dev2.png"
-                                width={160}
+                                width={150}
                                 height={160}
                                 alt=""
                                 className="rounded-lg"
@@ -66,19 +66,19 @@ export default function Page() {
                         </div>
                     </div>
 
-                    <div className="flex justify-between container mx-auto px-4 py-8 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md max-w-6xl transition transform hover:scale-105 duration-300 ease-in-out">
-                        <div className="relative ml-4 md:ml-10 lg:ml-20">
+                    <div className="flex flex-col md:flex-row justify-center md:justify-between container mx-auto px-4 py-8 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md max-w-6xl transition transform hover:scale-105 duration-300 ease-in-out">
+                        <div className="relative ml-0 md:ml-10 lg:ml-20 mb-4 md:mb-0">
                             <Image
                                 src="/dev3.png"
-                                width={160}
+                                width={150}
                                 height={160}
                                 alt=""
                                 className="rounded-lg"
                             />
                         </div>
 
-                        <div className="relative ml-4 md:ml-10 lg:ml-20 pt-1.5 md:pt-3 lg:pt-6 pr-2.5 md:pr-5 lg:pr-10">
-                            <h1 className="text-2xl font-bold mb-2 text-gray-800 dark:text-white">
+                        <div className="relative ml-4 md:ml-10 lg:ml-20 pt-1.5 md:pt-3 lg:pt-6 pr-2.5 md:pr-5 lg:pr-10 ">
+                            <h1 className="text-xl md:text-2xl font-bold mb-2 text-gray-800 dark:text-white">
                                 Mateo Rios
                             </h1>
                             <p className="text-gray-400 max-w-2xl mx-auto">

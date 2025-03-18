@@ -58,7 +58,7 @@ export default function Page() {
                     const {question} = faq;
                     const {answer} = faqData2[index];
                     return (
-                        <Card key={index} className="w-[50rem] p-4 border rounded-lg shadow-md">
+                        <Card key={index} className="w-full md:w-[40rem] lg:w-[50rem] p-4 border rounded-lg shadow-md">
                             <button
                                 onClick={()=>toggleAnswer(index)}
                                 className={`w-full text-left transition-all hover:translate-x-5 ${
