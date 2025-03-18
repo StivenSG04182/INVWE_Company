@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 const isPublicRoute = createRouteMatcher([
     "/",
     "/about",
+    "/notes",
     "/blog",
     "/contact",
     "/faq",
