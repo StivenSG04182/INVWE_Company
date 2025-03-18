@@ -20,7 +20,7 @@ export default function Page() {
             <div className="flex gap-4 justify-center">
                 <div className="w-full right max-w-20xl mw-full right-0 max-w-sm mx-auto bg-white/200 backdrop-blur-lg p-4 rounded-xl shadow-md border border-gray-300x-auto text-center bg-white/200 backdrop-blur-lg p-25 rounded-xl shadow-md border border-gray-300">
                     <p>Te contamos como va el desarrollo de nuestro inventario interactivo</p>
-                    <Link rel="stylesheet" href="notes">
+                    <Link rel="stylesheet" href="/notes">
                     <Button>Ver Nota</Button>
                     </Link>
                </div>
