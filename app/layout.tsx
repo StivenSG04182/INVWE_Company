@@ -4,8 +4,6 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import type React from 'react'
 import { ThemeProvider } from "@/components/index/theme-provider"
-/* import { ModalProvider } from '@/providers/modal-provider'
-import { ToastProvider } from '@/providers/toast-provider' */
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -21,22 +19,19 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="es" suppressHydrationWarning>
+      <html lang="es" suppressHydrationWarning className="h-full">
         <head>
           <title>INVWE</title>
         </head>
-        <body className={inter.className}>
+        <body className={`${inter.className} flex flex-col min-h-screen`}>
           <ThemeProvider
             attribute="class"
-            defaultTheme="system"
-            enableSystem
+            defaultTheme="light"
+            enableSystem={false}
             disableTransitionOnChange
-            storageKey="invwe-theme"
-          >
-            {children}
+            storageKey="invwe-theme">
+            <div className="flex-grow">{children}</div>
           </ThemeProvider>
-          {/* <ModalProvider />
-          <ToastProvider /> */}
         </body>
       </html>
     </ClerkProvider>

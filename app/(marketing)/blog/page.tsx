@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import Link from "next/link"
 
 export default function Page() {
     return (
@@ -32,7 +33,17 @@ export default function Page() {
                     <p></p>
                     <Button>Ver Nota</Button>
                 </div> 
+            <div className="w-full right
+             max-w-20xl mx-auto text-center bg-white/200 backdrop-blur-lg p-25 rounded-xl shadow-md border border-gray-300">
+                <h2>
+                    te contamos como va el desarrollo de nuestro inventario interactivo
+                </h2>
+                <Link rel="stylesheet" href="/nots">
+                    <button>
+                        <Button>Ver Inventario</Button>
+                    </button>
+                </Link>
             </div>
-        </section>
+        </section >
     );
 }

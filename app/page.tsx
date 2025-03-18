@@ -3,6 +3,7 @@
 import React from "react";
 import ThreeBackground from "@/components/index/ThreeBackground";
 import { Header } from "@/components/index/header";
+import { ThereeAnimation } from "@/components/index/three-animation";
 import { Hero } from "@/components/index/hero";
 import { Features } from "@/components/index/features";
 import { Pricing } from "@/components/index/pricing";
@@ -16,6 +17,7 @@ export default function Page() {
       <ThreeBackground />
       <div className="relative z-10">
         <Header />
+        <ThereeAnimation />
         <Hero />
         <Features />
         <Inventory />

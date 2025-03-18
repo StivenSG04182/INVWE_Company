@@ -1,14 +1,19 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { toast } from "sonner"
+import axios from "axios"
+import { useSearchParams } from "next/navigation"
 
 export default function Page() {
+    const searchParams = useSearchParams()
+    const [planData, setPlanData] = useState(null)
     const [formData, setFormData] = useState({
         companyName: "",
         firstName: "",
@@ -21,6 +26,18 @@ export default function Page() {
         additionalDetails: ""
     })
 
+    useEffect(() => {
+        const planParam = searchParams.get('plan')
+        if (planParam) {
+            try {
+                const parsedPlan = JSON.parse(planParam)
+                setPlanData(parsedPlan)
+            } catch (error) {
+                console.error('Error parsing plan data:', error)
+            }
+        }
+    }, [searchParams])
+
     const handleChange = (e) => {
         const { name, value } = e.target
         setFormData(prev => ({ ...prev, [name]: value }))
@@ -30,10 +47,31 @@ export default function Page() {
         setFormData(prev => ({ ...prev, [name]: value }))
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        console.log("Form submitted:", formData)
-        // Here you would typically send the data to your backend
+        try {
+            // Include plan data in the submission if available
+            const dataToSubmit = planData ? { ...formData, planDetails: planData } : formData
+            
+            const response = await axios.post('/api/enterprise', dataToSubmit)
+            if (response.status === 201) {
+                toast.success('Formulario enviado correctamente')
+                setFormData({
+                    companyName: "",
+                    firstName: "",
+                    lastName: "",
+                    email: "",
+                    companySize: "",
+                    phoneNumber: "",
+                    timezone: "",
+                    referralSource: "",
+                    additionalDetails: ""
+                })
+            }
+        } catch (error) {
+            console.error('Error submitting form:', error)
+            toast.error(error.response?.data?.error || 'Error al enviar el formulario')
+        }
     }
 
     return (
@@ -53,6 +91,27 @@ export default function Page() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
+                    {planData && (
+                        <div className="mb-6 p-4 bg-muted/50 rounded-lg">
+                            <h3 className="text-lg font-semibold mb-3">Plan Personalizado Seleccionado</h3>
+                            <div className="space-y-2">
+                                {Object.keys(planData.selectedOptions).map((key) => (
+                                    <div key={key} className="flex justify-between">
+                                        <span>{planData.selectedOptions[key].name}:</span>
+                                        <div className="flex gap-4">
+                                            <span>{planData.selectedOptions[key].value}</span>
+                                            <span>{planData.selectedOptions[key].price.toLocaleString()} COP</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-border flex justify-between items-center">
+                                <span className="font-medium">Total Mensual:</span>
+                                <span className="font-bold text-lg">{planData.totalPrice.toLocaleString()} COP</span>
+                            </div>
+                        </div>
+                    )}
+                    
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-2">
                             <Label htmlFor="companyName" className="required">Nombre de la Empresa</Label>

@@ -1,80 +1,70 @@
 "use client"
 
 import React, { useState } from "react";
-
 import { Card } from "@/components/ui/card";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Page() {
-    interface FAQquestions {
-        question: string;
-    }
-    interface FAQanswers {
-        answer: string;
-    }
+    const [faqs, setFaqs] = useState<{ question: string; answer: string; isOpen: boolean }[]>([]);
 
-    const faqData: FAQquestions[] = [
-        {question:"¿Cómo garantiza la precisión del inventario en tiempo real?"},
-        {question:"¿Qué nivel de capacitación requieren los empleados para usar el sistema?"},
-        {question:"¿Es compatible con nuestros sistemas actuales?"},
-        {question:"¿Cómo maneja las fluctuaciones estacionales de inventario?"},
-        {question:"¿Cúal es el tiempo promedio de implementación?"},
-        {question:"¿Incluye pronósticos automatizados de demanda?"},
-        {question:"¿Qué medidas de seguridad protegen nuestros datos?"},
-        {question:"¿Ofrece visualizaciones personalizables?"},
-        {question:"¿Funciona sin conexión a internet?"},
-        {question:"¿Cómo se maneja el soporte técnico y actualizaciones?"}
-    ]
+    React.useEffect(() => {
+        setFaqs([
+            { question: "¿Cómo garantiza la precisión del inventario en tiempo real?", answer: "Nuestro sistema utiliza tecnología de sincronización en tiempo real y validación automática para mantener la precisión del inventario. Además, implementamos verificaciones periódicas y alertas automáticas.", isOpen: false },
+            { question: "¿Qué nivel de capacitación requieren los empleados para usar el sistema?", answer: "El sistema es intuitivo y fácil de usar. Ofrecemos capacitación inicial de 2-3 horas y recursos de aprendizaje en línea. La mayoría de los usuarios dominan las funciones básicas en la primera semana.", isOpen: false },
+            { question: "¿Es compatible con nuestros sistemas actuales?", answer: "Sí, nuestro sistema está diseñado para integrarse con la mayoría de los sistemas empresariales comunes. Ofrecemos APIs y conectores para facilitar la integración con ERP, CRM y otros sistemas.", isOpen: false },
+            { question: "¿Cómo maneja las fluctuaciones estacionales de inventario?", answer: "El sistema incluye herramientas de planificación estacional y análisis predictivo para ayudar a gestionar las fluctuaciones. Permite ajustes automáticos basados en patrones históricos.", isOpen: false },
+            { question: "¿Cúal es el tiempo promedio de implementación?", answer: "El tiempo promedio de implementación es de 2-4 semanas, dependiendo de la complejidad de su operación y los requisitos de integración específicos.", isOpen: false },
+            { question: "¿Incluye pronósticos automatizados de demanda?", answer: "Sí, el sistema incluye capacidades de pronóstico automatizado utilizando algoritmos de aprendizaje automático que consideran datos históricos, tendencias y factores estacionales.", isOpen: false },
+            { question: "¿Qué medidas de seguridad protegen nuestros datos?", answer: "Implementamos encriptación de extremo a extremo, autenticación de dos factores, y cumplimos con los estándares de seguridad más recientes. Realizamos auditorías regulares de seguridad.", isOpen: false },
+            { question: "¿Ofrece visualizaciones personalizables?", answer: "Sí, el sistema incluye un conjunto completo de herramientas de visualización personalizables, incluyendo dashboards, gráficos y reportes que pueden adaptarse a sus necesidades específicas.", isOpen: false },
+            { question: "¿Funciona sin conexión a internet?", answer: "Sí, el sistema tiene capacidades offline que permiten continuar operando durante interrupciones de internet. Los datos se sincronizan automáticamente cuando se restablece la conexión.", isOpen: false },
+            { question: "¿Cómo se maneja el soporte técnico y actualizaciones?", answer: "Ofrecemos soporte técnico 24/7 a través de múltiples canales. Las actualizaciones son automáticas y programadas durante horas de bajo uso para minimizar interrupciones.", isOpen: false }
+        ]);
+    }, []);
 
-    const faqData2: FAQanswers[] = [
-        {answer:"La precisión del inventario en tiempo real se garantiza mediante varios sistemas y procesos integrados, incluyendo escáneres de códigos de barras y tecnología RFID, actualizaciones automáticas de stock al realizar ventas o recepciones, y auditorías periódicas para verificar la exactitud."},
-        {answer:"Los empleados reciben una capacitación inicial completa sobre el sistema, que se complementa con manuales y tutoriales. Además, ofrecemos sesiones de actualización según sea necesario."},
-        {answer:"El sistema está diseñado para integrarse fácilmente con una variedad de plataformas, incluyendo sistemas ERP, CRM y contables. Ofrecemos asistencia para configurar y probar las integraciones para asegurar una transición sin problemas."},
-        {answer:"El sistema está diseñado para adaptarse a las fluctuaciones estacionales mediante algoritmos que analizan tendencias históricas y patrones de demanda, permitiendo ajustes dinámicos en los niveles de inventario."},
-        {answer:"Nuestro tiempo promedio de implementación es de 4 a 6 semanas, dependiendo de la complejidad de la integración y la cantidad de datos a migrar. Este plazo incluye configuraciones, pruebas y la capacitación del personal."},
-        {answer:"Sí, el sistema incluye algoritmos de pronóstico de demanda que, utilizando datos históricos y patrones de consumo, predicen la demanda futura y optimizan los niveles de stock."},
-        {answer:"Implementamos cifrado de datos, autenticación de usuarios de múltiples factores y auditorías de seguridad periódicas para garantizar la seguridad de la información."},
-        {answer:"Sí, el sistema permite generar informes y dashboards personalizados para visualizar los datos de inventario de la manera más útil para cada usuario."},
-        {answer:"Aunque el sistema está diseñado para funcionar de manera óptima con conexión a internet, se pueden activar las funciones básicas de control de stock sin conexión. Al restablecer la conexión, todos los datos se sincronizan automáticamente."},
-        {answer:"Ofrecemos soporte técnico continuo y actualizaciones regulares del sistema. El soporte se puede obtener a través de correo electrónico, teléfono o chat en vivo, y las actualizaciones se implementan de forma remota."},
-
-    ]
-    const [openAnswer, setOpenAnswer] = useState<number | null>(null);
-
-    const toggleAnswer = (index: number) => {
-        if (openAnswer === index) {
-            setOpenAnswer(null);
-        } else {
-            setOpenAnswer(index);
-        }
+    const toggleFAQ = (index: number) => {
+        setFaqs(faqs.map((faq, i) => {
+            if (i === index) {
+                return { ...faq, isOpen: !faq.isOpen };
+            }
+            return faq;
+        }));
     };
 
     return (
-        <div className="text-left">
-            <h2 className="text-5xl font-bold mt-10 mb-20">
+        <div className="text-left px-4 md:px-8 lg:px-16 max-w-7xl mx-auto">
+            <h2 className="text-5xl font-bold mt-10 mb-20 text-center">
                 PREGUNTAS FRECUENTES
             </h2>
-            <div className="space-y-4 mb-20">
-                {faqData.map((faq, index) => {
-                    const {question} = faq;
-                    const {answer} = faqData2[index];
-                    return (
-                        <Card key={index} className="w-full md:w-[40rem] lg:w-[50rem] p-4 border rounded-lg shadow-md">
-                            <button
-                                onClick={()=>toggleAnswer(index)}
-                                className={`w-full text-left transition-all hover:translate-x-5 ${
-                                    openAnswer === index ? 'translate-x-5' : ''
-                                }`}>
-                                <h3 className="text-lg cursor-pointer">{question}</h3>
-                            </button>
-                            {openAnswer === index && (
-                                <div className="text-sm mt-2 overflow-hidden transition-all duration-300 ease-in-out animate-slide-down">
-                                    {answer}
-                                </div>
+            <ul className="space-y-4">
+                {faqs.map((faq, index) => (
+                    <Card 
+                        key={index} 
+                        className="w-full md:w-[50rem] mx-auto p-4 border rounded-lg shadow-md cursor-pointer transition-all duration-300 ease-in-out hover:shadow-lg"
+                        onClick={() => toggleFAQ(index)}
+                    >
+                        <h3 className="text-lg font-semibold">{faq.question}</h3>
+                        <AnimatePresence>
+                            {faq.isOpen && (
+                                <motion.div 
+                                    initial={{ x: 100, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    exit={{ x: -100, opacity: 0 }}
+                                    transition={{ 
+                                        type: "spring",
+                                        stiffness: 100,
+                                        damping: 20,
+                                        duration: 0.8
+                                    }}
+                                    className="mt-4"
+                                >
+                                    <p className="text-gray-600">{faq.answer}</p>
+                                </motion.div>
                             )}
-                        </Card>
-                    )
-                })}
-            </div>
+                        </AnimatePresence>
+                    </Card>
+                ))}
+            </ul>
         </div>
     );
 }
