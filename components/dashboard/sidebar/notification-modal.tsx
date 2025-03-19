@@ -1,16 +1,11 @@
 "use client";
-
+import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
-interface NotificationProps {
-    hasNewNotification?: boolean;
-    hasNewMessage?: boolean;
-}
-
-export function NotificationBell({ hasNewNotification = false, hasNewMessage = false }: NotificationProps) {
+export function NotificationBell({ hasNewNotification = false, hasNewMessage = false }) {
     return (
         <div className="relative">
             <Bell className="h-4 w-4" />
@@ -25,36 +20,60 @@ export function NotificationBell({ hasNewNotification = false, hasNewMessage = f
 }
 
 export function NotificationPanel() {
+    const [notifications, setNotifications] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchNotifications() {
+            try {
+                const res = await fetch("/api/notifications?category=all");
+                const data = await res.json();
+                if (data.notifications) setNotifications(data.notifications);
+            } catch (error) {
+                console.error("Error fetching notifications:", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchNotifications();
+    }, []);
+
     return (
         <Dialog>
             <DialogTrigger asChild>
                 <button className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100">
-                    <NotificationBell />
+                    <NotificationBell hasNewNotification={notifications.length > 0} />
                 </button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="w-full max-w-3xl p-4 h-auto min-h-[450px] overflow-y-auto" closeButton={false}>
                 <DialogTitle className="sr-only">Notifications</DialogTitle>
-                <Tabs defaultValue="all" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="all">All</TabsTrigger>
-                        <TabsTrigger value="messages">Messages</TabsTrigger>
-                        <TabsTrigger value="alerts">Alerts</TabsTrigger>
+                <Tabs defaultValue="all" className="w-full h-full flex flex-col">
+                    <TabsList className="flex w-full items-center justify-between space-x-2 shrink-0">
+                        <TabsTrigger value="all">Todo</TabsTrigger>
+                        <TabsTrigger value="messages">Mensajes</TabsTrigger>
+                        <TabsTrigger value="alerts">Empleados</TabsTrigger>
+                        <TabsTrigger value="store">Inventario</TabsTrigger>
+                        <TabsTrigger value="invoices">Facturación</TabsTrigger>
+                        <TabsTrigger value="email">Correo</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="all" className="space-y-4">
-                        <div className="text-sm text-muted-foreground">
-                            No new notifications
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="messages" className="space-y-4">
-                        <div className="text-sm text-muted-foreground">
-                            No new messages
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="alerts" className="space-y-4">
-                        <div className="text-sm text-muted-foreground">
-                            No new alerts
-                        </div>
-                    </TabsContent>
+                    <div className="flex-grow overflow-y-auto border-t pb-6 pt-2 mt-4">
+                        <TabsContent value="all" className="space-y-4 h-full">
+                            {loading ? (
+                                <div className="text-sm text-muted-foreground">Cargando notificaciones...</div>
+                            ) : notifications.length > 0 ? (
+                                notifications.map((notif) => (
+                                    <div key={notif.id} className="p-2 border-b">
+                                        <p className="font-medium">{notif.title}</p>
+                                        <p className="text-sm">{notif.message}</p>
+                                        <span className="text-xs text-gray-500">{new Date(notif.created_at).toLocaleString()}</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-sm text-muted-foreground">No hay notificaciones nuevas</div>
+                            )}
+                        </TabsContent>
+                        {/* Puedes agregar lógicas similares en los otros TabsContent filtrando por categoría */}
+                    </div>
                 </Tabs>
             </DialogContent>
         </Dialog>

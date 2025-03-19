@@ -188,16 +188,16 @@ export async function POST(req: Request) {
                     type: "alert",
                     title: "Nueva solicitud de unión",
                     message: notifMessage,
-                    user_id: adminUserId,
-                    created_by: clerkUserId,
+                    users_companies_id: supabaseCompany.id,  
+                    created_by: clerkUserId,           
                 });
             if (notifError) {
                 console.error("Error inserting notification:", notifError);
-                // No se retorna error para la solicitud, solo se registra el fallo en la notificación
             }
         } else {
             console.warn("ADMIN_USER_ID no está definido. No se insertó notificación.");
         }
+
 
         // Respuesta indicando que la solicitud está pendiente
         return NextResponse.json(

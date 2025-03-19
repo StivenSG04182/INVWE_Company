@@ -15,8 +15,8 @@ export default function Page() {
   return (
     <main className="min-h-screen relative">
       <ThreeBackground />
-      <div className="relative z-10">
-        <Header />
+      <Header />
+      <div className="relative z-10 space-y-20 py-16">
         <ThereeAnimation />
         <Hero />
         <Features />

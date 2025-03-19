@@ -73,10 +73,11 @@ CREATE TABLE IF NOT EXISTS notifications (
   type                 text         NOT NULL CHECK (type IN ('message', 'alert')),
   title                text         NOT NULL,
   message              text         NOT NULL,
-  created_at           timestamptz  WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL,
+  created_at           timestamptz  DEFAULT timezone('utc', now()) NOT NULL,
+  updated_at           timestamptz  NOT NULL DEFAULT now(),
   read                 boolean      DEFAULT false NOT NULL,
-  user_id              uuid         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  created_by           uuid         REFERENCES auth.users(id) ON DELETE SET NULL
+  users_companies_id   uuid         NOT NULL REFERENCES users_companies(id) ON DELETE CASCADE,
+  created_by           text         REFERENCES auth.users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS inventory_join_requests (

@@ -37,7 +37,7 @@ export function Footer() {
                         <Link href="/" className="flex items-center space-x-2">
                             <Cube className="h-8 w-8 text-primary" /> 
                             <span className="text-xl font-bold">INVWE</span>
-                         </Link>
+                        </Link>
                         <p className="text-muted-foreground mt-4">
                             Next-generation inventory management platform for modern businesses.
                         </p>

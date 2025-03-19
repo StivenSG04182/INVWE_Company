@@ -1,221 +1,91 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import clientPromise from "@/lib/mongodb";
 import { supabase } from "@/lib/supabase";
 
-export async function POST(req: Request) {
+export async function GET(req: Request) {
     try {
-        // Obtener datos de autenticación de Clerk
+        // Autenticación del usuario vía Clerk
         const { userId: clerkUserId } = await auth();
+        console.log("Authenticated Clerk userId:", clerkUserId);
         if (!clerkUserId) {
-            console.error("Unauthorized access: no userId");
+            console.error("No userId found in authentication");
             return NextResponse.json(
-                { error: "Unauthorized", message: "No se encontró un usuario autenticado" },
+                { error: "Unauthorized", message: "Usuario no autenticado" },
                 { status: 401 }
             );
         }
 
-        // Obtener detalles completos del usuario desde Clerk
         const clerkUser = await currentUser();
+        console.log("Clerk user data:", clerkUser);
         if (!clerkUser) {
-            console.error("No se pudo obtener el usuario de Clerk");
+            console.error("Clerk user not found");
             return NextResponse.json(
                 { error: "User not found", message: "No se encontró el usuario en Clerk" },
                 { status: 401 }
             );
         }
 
-        // Leer datos enviados en el body
-        const body = await req.json();
-        console.log("Request body:", body);
-        const { nombreEmpresa, nit, codigoSeguridad } = body;
+        // Leer parámetro de consulta para filtrar por categoría; default "all"
+        const { searchParams } = new URL(req.url);
+        const category = searchParams.get("category") || "all";
+        console.log("Category filter:", category);
 
-        if (!nombreEmpresa || !nit || !codigoSeguridad) {
-            console.error("Missing required fields", { nombreEmpresa, nit, codigoSeguridad });
+        // Consultar la tabla de mapeo para verificar que el usuario tenga rol ADMIN o ADMINISTRATOR
+        const { data: mappingRecords, error: mappingError } = await supabase
+            .from("users_companies")
+            .select("id")
+            .eq("user_id", clerkUserId)
+            .in("role", ["ADMIN", "ADMINISTRATOR"]);
+
+        console.log("Mapping records (users_companies):", mappingRecords);
+        if (mappingError || !mappingRecords || mappingRecords.length === 0) {
+            console.error("Mapping error or no admin mapping found:", mappingError);
             return NextResponse.json(
-                {
-                    error: "Missing required fields",
-                    errors: [
-                        !nombreEmpresa && { field: "nombreEmpresa", message: "Nombre de empresa es requerido" },
-                        !nit && { field: "nit", message: "NIT es requerido" },
-                        !codigoSeguridad && { field: "codigoSeguridad", message: "Código de seguridad es requerido" },
-                    ].filter(Boolean),
-                },
-                { status: 400 }
+                { error: "Unauthorized", message: "No tienes permisos de administrador en ningún inventario" },
+                { status: 403 }
             );
         }
 
-        if (!process.env.MONGODB_DB) {
-            console.error("MONGODB_DB environment variable is not set");
+        // Extraer los IDs de las relaciones (users_companies)
+        const mappingIds = mappingRecords.map((record) => record.id);
+        console.log("Mapping IDs:", mappingIds);
+
+        // Construir la consulta para obtener las notificaciones que pertenezcan a los mappingIds del admin
+        let query = supabase
+            .from("notifications")
+            .select("*")
+            .in("users_companies_id", mappingIds)
+            .order("created_at", { ascending: false });
+        console.log("Query inicial para notificaciones configurada");
+
+        if (category === "messages") {
+            query = query.eq("type", "message");
+            console.log("Aplicado filtro: messages");
+        } else if (category === "alerts") {
+            query = query.eq("type", "alert");
+            console.log("Aplicado filtro: alerts");
+        } else if (["store", "invoices", "email"].includes(category)) {
+            query = query.ilike("title", `%${category}%`);
+            console.log(`Aplicado filtro en título para la categoría: ${category}`);
+        }
+
+        // Ejecutar la consulta
+        const { data: notifications, error: notifError } = await query;
+        console.log("Resultado de notificaciones:", notifications);
+        if (notifError) {
+            console.error("Error fetching notifications:", notifError);
             return NextResponse.json(
-                { error: "Configuration error", message: "MONGODB_DB is not configured" },
+                { error: "Error fetching notifications", message: notifError.message },
                 { status: 500 }
             );
         }
 
-        // Conexión a MongoDB y búsqueda de la empresa por NIT
-        const client = await clientPromise;
-        const db = client.db(process.env.MONGODB_DB);
-        const companiesCollection = db.collection("companies");
-        const mongoCompany = await companiesCollection.findOne({ nit: nit });
-        if (!mongoCompany) {
-            console.error("Company not found in MongoDB for NIT:", nit);
-            return NextResponse.json(
-                { error: "Company not found", message: "No se encontró una empresa con el NIT proporcionado" },
-                { status: 401 }
-            );
-        }
-
-        // Consultar la empresa en Supabase utilizando el campo mongo_id
-        const { data: supabaseCompany, error: companyError } = await supabase
-            .from("companies")
-            .select("id, name, nit, email, security_code")
-            .eq("mongo_id", mongoCompany._id.toString())
-            .single();
-
-        if (companyError || !supabaseCompany) {
-            console.error("Error fetching company from Supabase", companyError);
-            return NextResponse.json(
-                { error: "Company not found", message: "Error al verificar la empresa en Supabase" },
-                { status: 401 }
-            );
-        }
-
-        // Comparar el código de seguridad (normalizando los valores)
-        const normalizedDbCode = supabaseCompany.security_code?.trim().toLowerCase();
-        const normalizedInputCode = codigoSeguridad?.trim().toLowerCase();
-        if (!normalizedDbCode || !normalizedInputCode || normalizedDbCode !== normalizedInputCode) {
-            console.error("Security code mismatch", {
-                stored: supabaseCompany.security_code,
-                provided: codigoSeguridad,
-            });
-            return NextResponse.json(
-                { error: "Invalid security code", message: "El código de seguridad es incorrecto" },
-                { status: 401 }
-            );
-        }
-
-        // Se utiliza la información de Clerk para poblar los datos del usuario
-        const userData = {
-            id: clerkUserId,
-            name: clerkUser.firstName || "SinNombre",
-            last_name: clerkUser.lastName || "SinApellido",
-            email:
-                clerkUser.emailAddresses && clerkUser.emailAddresses[0]?.emailAddress
-                    ? clerkUser.emailAddresses[0].emailAddress
-                    : "sinemail@example.com",
-            phone: clerkUser.phoneNumber || "0000000000",
-        };
-
-        // Verificar si existe una solicitud rechazada en las últimas 24 horas
-        const { data: rejectedRequest } = await supabase
-            .from("inventory_join_requests")
-            .select("created_at")
-            .eq("user_id", clerkUserId)
-            .eq("company_id", supabaseCompany.id)
-            .eq("status", "rejected")
-            .single();
-
-        if (rejectedRequest) {
-            const requestDate = new Date(rejectedRequest.created_at);
-            const now = new Date();
-            const diffMs = now.getTime() - requestDate.getTime();
-            const diffHours = diffMs / (1000 * 60 * 60);
-            if (diffHours < 24) {
-                return NextResponse.json(
-                    {
-                        error: "Solicitud rechazada recientemente",
-                        message:
-                            "No puedes solicitar unirte a una empresa hasta que hayan pasado 24 horas desde tu última solicitud rechazada.",
-                    },
-                    { status: 400 }
-                );
-            }
-        }
-
-        // Verificar si ya existe una solicitud pendiente para este usuario y empresa
-        const { data: existingRequest } = await supabase
-            .from("inventory_join_requests")
-            .select("*")
-            .eq("user_id", clerkUserId)
-            .eq("company_id", supabaseCompany.id)
-            .single();
-
-        if (existingRequest) {
-            return NextResponse.json(
-                {
-                    companyName: mongoCompany.name,
-                    status: "pending",
-                    message: "Ya tienes una solicitud pendiente de aprobación. Por favor, espera a que se resuelva tu solicitud.",
-                },
-                { status: 200 }
-            );
-        } else {
-            // Insertar la nueva solicitud en inventory_join_requests
-            const { error: insertError } = await supabase
-                .from("inventory_join_requests")
-                .insert({
-                    user_id: clerkUserId,
-                    company_id: supabaseCompany.id,
-                    name: userData.name,
-                    last_name: userData.last_name,
-                    email: userData.email,
-                    phone: userData.phone,
-                    status: "pending", // Estado inicial pendiente
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                });
-
-            if (insertError) {
-                console.error("Error inserting new join request:", insertError);
-                return NextResponse.json(
-                    {
-                        error: "Error creating join request",
-                        message: "Error al crear la solicitud de unión al inventario",
-                    },
-                    { status: 500 }
-                );
-            }
-        }
-
-        // Insertar notificación para que el administrador revise la solicitud
-        const adminUserId = process.env.ADMIN_USER_ID; // Define ADMIN_USER_ID en tu .env
-        if (adminUserId) {
-            const notifMessage = `El usuario ${userData.name} ${userData.last_name} (${userData.email}) ha solicitado unirse a la empresa ${nombreEmpresa}. Revisa y decide aprobar o rechazar la solicitud.`;
-            const { error: notifError } = await supabase
-                .from("notifications")
-                .insert({
-                    type: "alert",
-                    title: "Nueva solicitud de unión",
-                    message: notifMessage,
-                    user_id: adminUserId, // Destinatario: administrador
-                    created_by: clerkUserId, // Quien generó la solicitud
-                    // Puedes agregar otros campos si los necesitas (p.ej.: created_at se asigna automáticamente)
-                });
-            if (notifError) {
-                console.error("Error inserting notification:", notifError);
-                // No se retorna error al usuario, solo se registra el fallo en la notificación
-            }
-        } else {
-            console.warn("ADMIN_USER_ID no está definido. No se insertó notificación.");
-        }
-
-        // Respuesta indicando que la solicitud está pendiente
-        return NextResponse.json(
-            {
-                companyName: mongoCompany.name,
-                status: "pending",
-                message: "Tu solicitud está pendiente de aprobación por un administrador.",
-            },
-            { status: 200 }
-        );
+        // Devolver las notificaciones encontradas
+        return NextResponse.json({ notifications }, { status: 200 });
     } catch (error) {
-        console.error("JOIN_INVENTORY_ERROR:", error);
+        console.error("GET_NOTIFICATIONS_ERROR:", error);
         return NextResponse.json(
-            {
-                error: "Internal server error",
-                message: "Error interno del servidor",
-            },
+            { error: "Internal server error", message: "Error interno del servidor" },
             { status: 500 }
         );
     }

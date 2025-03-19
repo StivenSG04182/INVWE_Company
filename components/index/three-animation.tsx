@@ -27,18 +27,6 @@ export function ThereeAnimation() {
                     </Button>
                 </div>
             </div>
-
-            <div className="absolute bottom-0 w-full py-8">
-                <div className="container mx-auto px-6">
-                    <div className="flex justify-center items-center gap-12 grayscale opacity-50">
-                        {["Amazon", "Walmart", "Target", "Nike", "Adidas"].map((brand) => (
-                            <div key={brand} className="font-semibold">
-                                {brand}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
         </section>
     )
 }

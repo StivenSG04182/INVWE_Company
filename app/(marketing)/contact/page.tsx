@@ -116,31 +116,44 @@ export default function Questionnaire() {
                     </div>
 
                     {/* Contact Info Section */}
-                    <div className="flex-1 bg-white/80 dark:bg-gray-700/80 backdrop-blur-lg p-6 rounded-xl shadow-md border border-gray-300 dark:border-gray-600">
+                    <div className="flex-1 bg-white/80 dark:bg-gray-700/80 backdrop-blur-lg p-8 rounded-xl shadow-md border border-gray-300 dark:border-gray-600">
                         <h2 className="text-xl font-bold mb-4">
                             ¡Hola! siempre puedes encontrarnos en nuestras redes sociales.
                         </h2>
                         
                         <div className="space-y-2 mb-6">
-                            <p className="text-gray-800 dark:text-gray-200">
-                                Si tienes alguna consulta o simplemente quieres saludarnos, no dudes en contactarnos a través de nuestras redes sociales.
-                            </p>
-                            <p className="text-gray-800 dark:text-gray-200">
-                                ¡Estamos siempre activos y encantados de responderte!
-                            </p>
+                            <div className="bg-white/70 dark:bg-gray-700/70 rounded-lg p-4 h-[300px] overflow-y-auto border border-gray-300 dark:border-gray-600 mb-4">
+                                <div className="text-sm text-gray-500 dark:text-gray-400 text-center">
+                                    Los mensajes de WhatsApp aparecerán aquí
+                                </div>
+                                {/* Messages will be rendered here */}
+                            </div>
+                            <div className="flex gap-2">
+                                <Input
+                                    type="text"
+                                    placeholder="Escribe tu mensaje..."
+                                    className="bg-white/70 dark:bg-gray-700/70 border-gray-300 dark:border-gray-600"
+                                />
+                                <Button
+                                    type="button"
+                                    className="bg-green-500 hover:bg-green-600 text-white dark:text-white"
+                                >
+                                    Enviar
+                                </Button>
+                            </div>
                         </div>
 
                         {/* Social Media Icons */}
-                        <div className="mt-6">
-                            <h3 className="font-medium mb-3">Síguenos en redes sociales</h3>
-                            <div className="flex flex-wrap gap-4">
+                        <div className="mt-8">
+                            <h3 className="font-medium mb-4 text-center">Síguenos en redes sociales</h3>
+                            <div className="flex flex-wrap justify-center gap-6">
                                 {socialLinks.map((social, index) => (
                                     <a 
                                         key={index}
                                         href={social.href}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="p-2 bg-white dark:bg-gray-600 rounded-full shadow-sm hover:shadow-md transition-all border border-gray-200 dark:border-gray-500 hover:scale-110 text-gray-800 dark:text-white"
+                                        className="p-3 bg-white dark:bg-gray-600 rounded-full shadow-sm hover:shadow-md transition-all border border-gray-200 dark:border-gray-500 hover:scale-110 text-gray-800 dark:text-white"
                                         aria-label={social.label}
                                     >
                                         {social.icon}

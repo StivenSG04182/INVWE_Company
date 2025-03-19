@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import type React from 'react'
 import { ThemeProvider } from "@/components/index/theme-provider"
+import { CookieConsentProvider } from "@/components/cookie-consent/cookie-provider"
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -31,6 +32,7 @@ export default function RootLayout({
             disableTransitionOnChange
             storageKey="invwe-theme">
             <div className="flex-grow">{children}</div>
+            <CookieConsentProvider />
           </ThemeProvider>
         </body>
       </html>

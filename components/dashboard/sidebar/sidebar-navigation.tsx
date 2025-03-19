@@ -53,7 +53,7 @@ export default function SidebarNavigation() {
     
     const handleItemClick = (label: string) => {
         startTransition(() => {
-            setActiveItem(activeItem === label ? null : label)
+            setActiveItem(label)
             setIsExpanded(true)
         })
     }

@@ -27,29 +27,29 @@ export default function Page() {
             if (i === index) {
                 return { ...faq, isOpen: !faq.isOpen };
             }
-            return faq;
+            return { ...faq, isOpen: false };
         }));
     };
 
     return (
         <div className="text-left px-4 md:px-8 lg:px-16 max-w-7xl mx-auto">
-            <h2 className="text-5xl font-bold mt-10 mb-20 text-center">
+            <h2 className="text-5xl font-bold mt-10 mb-20 text-center text-foreground">
                 PREGUNTAS FRECUENTES
             </h2>
-            <ul className="space-y-4">
+            <ul className="space-y-4 mb-8">
                 {faqs.map((faq, index) => (
                     <Card 
                         key={index} 
-                        className="w-full md:w-[50rem] mx-auto p-4 border rounded-lg shadow-md cursor-pointer transition-all duration-300 ease-in-out hover:shadow-lg"
+                        className="w-full md:w-[50rem] mx-auto p-4 border rounded-lg shadow-md cursor-pointer transition-all duration-300 ease-in-out hover:shadow-lg bg-card hover:bg-accent/10"
                         onClick={() => toggleFAQ(index)}
                     >
-                        <h3 className="text-lg font-semibold">{faq.question}</h3>
+                        <h3 className="text-lg font-semibold text-foreground">{faq.question}</h3>
                         <AnimatePresence>
                             {faq.isOpen && (
                                 <motion.div 
-                                    initial={{ x: 100, opacity: 0 }}
+                                    initial={{ x: -100, opacity: 0 }}
                                     animate={{ x: 0, opacity: 1 }}
-                                    exit={{ x: -100, opacity: 0 }}
+                                    exit={{ x: 100, opacity: 0 }}
                                     transition={{ 
                                         type: "spring",
                                         stiffness: 100,
@@ -58,7 +58,7 @@ export default function Page() {
                                     }}
                                     className="mt-4"
                                 >
-                                    <p className="text-gray-600">{faq.answer}</p>
+                                    <p className="text-muted-foreground">{faq.answer}</p>
                                 </motion.div>
                             )}
                         </AnimatePresence>
