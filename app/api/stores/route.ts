@@ -26,6 +26,7 @@ export const POST = async (req: Request) => {
             _id: new ObjectId(),
             name,
             userId,
+            companyId: new ObjectId(body.companyId),
             createdAt: new Date(),
             updatedAt: new Date(),
         });

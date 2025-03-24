@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useMemo, useEffect, useRef, useTransition } from "react"
-import { MenuIcon, Search, Bell } from "lucide-react"
+import { MenuIcon, Search } from "lucide-react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
@@ -12,35 +12,35 @@ import { UserButton, useUser } from "@clerk/nextjs"
 import { LogoUploadModal } from "./logo-upload-modal"
 import { useCompany } from "@/hooks/use-company"
 import { SettingsModal } from "./settings-modal"
-import { NotificationPanel } from "./notification-modal"
 import { useActiveMenu } from "@/hooks/use-active-menu"
+import { SelectorStores } from "./selectStores"
 
 export default function SidebarNavigation() {
     const [isExpanded, setIsExpanded] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [activeItem, setActiveItem] = useActiveMenu("Overview")
     const [isLogoModalOpen, setIsLogoModalOpen] = useState(false)
-    const [isNotificationOpen, setIsNotificationOpen] = useState(false)
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-    const { user } = useUser()
     const { company, loading } = useCompany()
     const params = useParams()
     const companyName = typeof params.companyName === "string" ? params.companyName : ""
     const [isPending, startTransition] = useTransition()
-
     const iconSidebarRef = useRef<HTMLDivElement>(null)
     const expandablePanelRef = useRef<HTMLDivElement>(null)
+    const selectorStoresRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (
-                isExpanded &&
-                iconSidebarRef.current &&
-                expandablePanelRef.current &&
-                !iconSidebarRef.current.contains(event.target as Node) &&
-                !expandablePanelRef.current.contains(event.target as Node)
-            ) {
-                setIsExpanded(false)
+            const target = event.target as Node;
+            const selectElement = target.parentElement?.closest('[role="combobox"], [role="listbox"], [role="option"]');
+            const isClickInside = 
+                iconSidebarRef.current?.contains(target) ||
+                expandablePanelRef.current?.contains(target) ||
+                selectorStoresRef.current?.contains(target) ||
+                selectElement !== null;
+
+            if (isExpanded && !isClickInside) {
+                setIsExpanded(false);
             }
         }
 
@@ -50,7 +50,7 @@ export default function SidebarNavigation() {
         }
     }, [isExpanded])
 
-    
+
     const handleItemClick = (label: string) => {
         startTransition(() => {
             setActiveItem(label)
@@ -62,49 +62,20 @@ export default function SidebarNavigation() {
         setIsExpanded(!isExpanded)
     }
 
-    // Obtener todos los items del menú y sus subopciones para la búsqueda
-    const allMenuItems = useMemo(() => {
-        const items: Array<{
-            mainOption: string
-            icon: React.ElementType
-            label: string
-            href?: string
-        }> = []
-
-        menuSections.forEach((section) => {
-            section.items.forEach((menuItem) => {
-                // Agregar item principal
-                items.push({
-                    mainOption: menuItem.label,
-                    icon: menuItem.icon,
-                    label: menuItem.label,
-                    href: menuItem.href?.replace("[companyName]", companyName),
-                })
-                // Agregar submenús
-                if (menuItem.submenu) {
-                    menuItem.submenu.forEach((subItem) => {
-                        items.push({
-                            mainOption: menuItem.label,
-                            icon: subItem.icon,
-                            label: subItem.label,
-                            href: subItem.href?.replace("[companyName]", companyName),
-                        })
-                    })
-                }
-            })
-        })
-        return items
-    }, [companyName])
-
     // Filtrar los items basándose en el query de búsqueda
     const filteredItems = useMemo(() => {
         if (!searchQuery) return []
-        return allMenuItems.filter(
-            ({ label, mainOption }) =>
-                label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                mainOption.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-    }, [searchQuery, allMenuItems])
+        return menuSections
+            .flatMap(section => section.items)
+            .filter(item =>
+                item.label.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+            .map(item => ({
+                label: item.label,
+                icon: item.icon,
+                mainOption: item.submenu?.[0]?.label || ''
+            }))
+    }, [searchQuery, menuSections])
 
     // Obtener el item activo para mostrar sus subopciones
     const activeMenuItem = menuSections
@@ -171,7 +142,6 @@ export default function SidebarNavigation() {
 
                     {/* Iconos de configuración y perfil (excepción: no ocultan el sidebar) */}
                     <div className="flex flex-col items-center py-4 space-y-2">
-                        <NotificationPanel />
                         {settingsSection.items.map((item) => (
                             <button
                                 key={item.label}
@@ -184,14 +154,11 @@ export default function SidebarNavigation() {
                                 <item.icon className="h-5 w-5" />
                             </button>
                         ))}
-
-
                         <div className="relative h-10 w-6.5">
                             <UserButton afterSignOutUrl="/" />
                         </div>
                     </div>
                 </div>
-
                 {/* Panel de contenido expandible */}
                 <div
                     ref={expandablePanelRef}
@@ -209,7 +176,6 @@ export default function SidebarNavigation() {
                                 <MenuIcon className="h-5 w-5" />
                             </button>
                         </div>
-
                         {/* Búsqueda global */}
                         <div className="px-4 py-3">
                             <div className="relative">
@@ -222,6 +188,11 @@ export default function SidebarNavigation() {
                                     className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-500 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
                                 />
                             </div>
+                        </div>
+
+                        {/* selector de tiendas */}
+                        <div ref={selectorStoresRef}>
+                            <SelectorStores />
                         </div>
 
                         {/* Menú de navegación con subopciones */}
@@ -268,7 +239,6 @@ export default function SidebarNavigation() {
                         </nav>
                     </div>
                 </div>
-
                 {/* Área de contenido */}
                 <div className="flex-1 overflow-y-auto p-3">
                     <div>
