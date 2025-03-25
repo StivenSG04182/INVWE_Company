@@ -17,7 +17,7 @@ export function InvoiceForm() {
 
   return (
     <div className="space-y-6 md:space-y-4">
-      <Card className="p-4 md:p-6">
+      <Card className="p-4 md:p-6 border-t-2 border-b-2  border-solid border-gray-500">
         <h3 className="text-lg font-semibold mb-4">Información del Cliente</h3>
         <div className="space-y-4">
           <div className="w-full">
@@ -46,7 +46,7 @@ export function InvoiceForm() {
         </div>
       </Card>
 
-      <Card className="p-4 md:p-6">
+      <Card className="p-4 md:p-6 ">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-4 gap-4 sm:gap-0">
           <h3 className="text-lg font-semibold">Items</h3>
           <Button
@@ -63,7 +63,7 @@ export function InvoiceForm() {
 
         <div className="space-y-6 md:space-y-4">
           {fields.map((field, index) => (
-            <div key={field.id} className="bg-white rounded-lg p-4 space-y-4 lg:space-y-0 lg:grid lg:grid-cols-12 lg:gap-4 lg:items-end">
+            <div key={field.id} className="border-t-2 border-dashed border-gray-500 bg-white rounded-lg p-4 space-y-4 lg:space-y-0 lg:grid lg:grid-cols-12 lg:gap-4 lg:items-end">
               <div className="lg:col-span-4 space-y-2">
                 <Label className="block text-sm font-medium">Producto/Servicio</Label>
                 <Select {...register(`items.${index}.productId`)}>

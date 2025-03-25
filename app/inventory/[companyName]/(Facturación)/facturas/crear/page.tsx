@@ -7,7 +7,7 @@ import * as z from 'zod'
 import { Form } from '@/components/ui/form'
 import { Button } from '@/components/ui/button'
 import { InvoiceForm } from '@/components/dashboard/invoices/invoice-form'
-import { InvoicePreview } from '@/components/dashboard/invoices/invoice-preview'
+import InvoicePreview from '@/components/dashboard/invoices/invoice-preview'
 import { useToast } from '@/hooks/use-toast'
 import { Undo2 } from "lucide-react"
 import  Link  from 'next/link'

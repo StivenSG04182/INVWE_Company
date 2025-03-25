@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+/* import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { getAuth } from '@clerk/nextjs/server';
 import { ObjectId } from 'mongodb';
@@ -194,4 +194,105 @@ export async function GET(request: Request) {
             error: error.message || "Error validating inventory"
         }, { status: 500 });
     }
+}
+ */
+
+// app/api/companies/route.ts
+import { NextResponse } from 'next/server';
+import { getAuth } from '@clerk/nextjs/server';
+import { ObjectId } from 'mongodb';
+import clientPromise from '@/lib/mongodb';
+import { supabase } from '@/lib/supabase';
+import { getMongoDB, validateCompany, normalizeCompanyId } from '@/app/services/(endPoints)/companiesService';
+import { getUserCompanyFromSupabase } from '@/app/services/(endPoints)/supabaseService';
+
+export const runtime = 'nodejs';
+
+export async function GET(request: Request) {
+  console.log("[API/Companies] Petición recibida en /api/companies");
+  try {
+    // Autenticación usando Clerk
+    const { userId, sessionClaims } = getAuth(request);
+    console.log("[API/Companies] userId:", userId);
+    if (!userId) {
+      console.error("[API/Companies] Usuario no autenticado");
+      return NextResponse.json({ isValid: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const isAdmin = sessionClaims?.publicMetadata?.role === 'ADMIN';
+    console.log("[API/Companies] Rol del usuario:", sessionClaims?.publicMetadata?.role);
+    if (isAdmin) {
+      return NextResponse.json({ isValid: true, isAdmin: true, redirectUrl: '/admin' });
+    }
+
+    // Conectar a la BD de MongoDB
+    const db = await getMongoDB();
+    console.log("[API/Companies] Conectado a la base de datos:", process.env.MONGODB_DB);
+
+    // Buscar si el usuario es creador de alguna empresa
+    const ownedCompany = await db.collection("companies").findOne({
+      $or: [
+        { clerkUserId: userId },
+        { createdBy: userId }
+      ]
+    });
+
+    if (ownedCompany) {
+      console.log("[API/Companies] Empresa propia encontrada:", JSON.stringify(ownedCompany, null, 2));
+      let companyData: any;
+      if (ownedCompany.name) {
+        companyData = { name: ownedCompany.name, _id: ownedCompany._id };
+      } else {
+        companyData = await validateCompany(ownedCompany, supabase);
+      }
+      if (!companyData) {
+        return NextResponse.json({ isValid: false, error: "Company name not found" });
+      }
+      return NextResponse.json({ isValid: true, data: { company: companyData } });
+    }
+
+    // Si no es creador, buscar asociación en MongoDB
+    const userCompany = await db.collection("users_companies").findOne({ userId });
+    console.log("[API/Companies] Resultado en users_companies:", userCompany);
+
+    if (!userCompany) {
+      // Buscar asociación en Supabase
+      const supabaseCompany = await getUserCompanyFromSupabase(userId);
+      if (supabaseCompany) {
+        return NextResponse.json({ isValid: true, data: { company: { name: supabaseCompany.name } } });
+      }
+      return NextResponse.json({ isValid: false, error: "No inventory associated" });
+    }
+
+    // Obtener empresa asociada en MongoDB
+    const associatedCompany = await db.collection("companies").findOne({
+      _id: normalizeCompanyId(userCompany.companyId)
+    });
+    console.log("[API/Companies] Empresa asociada encontrada:", associatedCompany);
+
+    if (!associatedCompany) {
+      console.error("[API/Companies] Empresa asociada no encontrada");
+      return NextResponse.json({ isValid: false, error: "Associated company not found" });
+    }
+
+    if (userCompany.status === 'pending') {
+      console.warn("[API/Companies] Asociación pendiente");
+      return NextResponse.json({
+        isValid: false,
+        error: "Your association with this company is pending approval"
+      });
+    }
+
+    const companyData = await validateCompany(associatedCompany, supabase);
+    if (!companyData) {
+      return NextResponse.json({ isValid: false, error: "Company name not found" });
+    }
+
+    console.log("[API/Companies] Empresa validada y asociada:", companyData);
+    return NextResponse.json({ isValid: true, data: { company: companyData } });
+
+  } catch (error: any) {
+    console.error("[API/Companies] Error:", error);
+    return NextResponse.json({ isValid: false, error: error.message || "Error validating inventory" }, { status: 500 });
+  }
 }
