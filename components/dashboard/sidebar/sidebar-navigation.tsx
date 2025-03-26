@@ -64,10 +64,17 @@ export default function SidebarNavigation() {
 
         fetchCompanies();
 
-        // Función para detectar clics fuera del contenedor (por ejemplo, para cerrar el select)
-        const handleClickOutside = (event) => {
-            if (containerRef.current && !containerRef.current.contains(event.target)) {
-                console.log("Se hizo clic fuera del select");
+        // Función para detectar clics fuera del sidebar y cerrarlo
+        const handleClickOutside = (event: MouseEvent) => {
+            // Verificar si el clic fue fuera del sidebar de iconos y del panel expandible
+            if (
+                iconSidebarRef.current && 
+                !iconSidebarRef.current.contains(event.target as Node) &&
+                expandablePanelRef.current &&
+                !expandablePanelRef.current.contains(event.target as Node)
+            ) {
+                // Si el clic fue fuera de ambos elementos, colapsar el sidebar
+                setIsExpanded(false);
             }
         };
 

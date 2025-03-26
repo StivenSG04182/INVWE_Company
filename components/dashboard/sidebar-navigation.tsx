@@ -4,22 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import Image from "next/image"
-import {
-    Home,
-    Store,
-    Mail,
-    FileText,
-    User2,
-    Settings,
-    Search,
-    Plus,
-    LogOut,
-    KeyRound,
-    RefreshCw,
-    X,
-    ExternalLink,
-    MenuIcon,
-} from "lucide-react"
+import { Home, Store, Mail, FileText, User2, Settings, Search, Plus, LogOut, KeyRound, RefreshCw, X, ExternalLink, MenuIcon, } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface MenuItem {
@@ -55,9 +40,45 @@ export default function SidebarNavigation() {
     const [searchQuery, setSearchQuery] = useState("")
     const [activeItem, setActiveItem] = useState<string | null>("Store")
     const [isProfileOpen, setIsProfileOpen] = useState(false)
+    const iconSidebarRef = useRef<HTMLDivElement>(null)
+    const expandablePanelRef = useRef<HTMLDivElement>(null)
+    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024)
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                iconSidebarRef.current && 
+                !iconSidebarRef.current.contains(event.target as Node) &&
+                expandablePanelRef.current &&
+                !expandablePanelRef.current.contains(event.target as Node) &&
+                !(event.target as Element).closest('button[data-exclude-close]')
+            ) {
+                setIsExpanded(false)
+            }
+        }
+
+        const handleResize = () => {
+            setWindowWidth(window.innerWidth)
+            if (window.innerWidth < 768) {
+                setIsExpanded(false)
+            } else {
+                setIsExpanded(true)
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside)
+        window.addEventListener('resize', handleResize)
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+            window.removeEventListener('resize', handleResize)
+        }
+    }, [])
 
     const handleItemClick = (label: string) => {
-        setActiveItem(activeItem === label ? null : label)
+        setActiveItem(prev => prev === label ? null : label)
+        if (label !== 'Settings' && windowWidth >= 768) {
+            setIsExpanded(true)
+        }
     }
 
     const filteredItems = [...menuItems, ...settingsItems].filter((item) =>
@@ -67,7 +88,7 @@ export default function SidebarNavigation() {
     return (
         <div className="flex h-screen">
             {/* Icon sidebar - always visible */}
-            <div className="flex h-full w-16 flex-col justify-between border-r bg-white">
+            <div ref={iconSidebarRef} className="flex h-full w-16 flex-col justify-between border-r bg-white">
                 <div>
                     {/* Logo area */}
                     <div className="flex h-16 items-center justify-center border-b">
@@ -105,14 +126,25 @@ export default function SidebarNavigation() {
                             {item.icon}
                         </button>
                     ))}
-                    <button className="relative mb-2 h-8 w-8" onClick={() => setIsProfileOpen(!isProfileOpen)}>
+                    <button 
+                    data-exclude-close
+                    className="relative mb-2 h-8 w-8" 
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                >
                         <Image src="/placeholder.svg" alt="Profile" width={32} height={32} className="rounded-lg" />
                     </button>
                 </div>
             </div>
 
             {/* Expandable content panel */}
-            <div className={cn("w-64 border-r bg-white transition-all duration-300", !isExpanded && "w-0 overflow-hidden")}>
+            <div 
+                ref={expandablePanelRef}
+                className={cn(
+                    "w-64 border-r bg-white transition-all duration-300",
+                    !isExpanded && "w-0 overflow-hidden",
+                    windowWidth < 768 && "fixed left-16 z-50 h-full"
+                )}
+            >
                 <div className="flex h-full flex-col">
                     {/* Header */}
                     <div className="flex h-16 items-center justify-between border-b px-4">
