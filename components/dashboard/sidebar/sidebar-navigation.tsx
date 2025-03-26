@@ -68,7 +68,7 @@ export default function SidebarNavigation() {
         const handleClickOutside = (event: MouseEvent) => {
             // Verificar si el clic fue fuera del sidebar de iconos y del panel expandible
             if (
-                iconSidebarRef.current && 
+                iconSidebarRef.current &&
                 !iconSidebarRef.current.contains(event.target as Node) &&
                 expandablePanelRef.current &&
                 !expandablePanelRef.current.contains(event.target as Node)
@@ -156,81 +156,76 @@ export default function SidebarNavigation() {
                 {/* Sidebar de iconos - siempre visible */}
                 <div
                     ref={iconSidebarRef}
-                    className="flex h-full w-16 flex-col justify-between bg-white shadow-md"
+                    className="flex h-full w-16 flex-col bg-white shadow-md"
                 >
-                    <div className="flex flex-col">
-                        {/* Logo de la compañía */}
-                        <div
-                            className="flex h-16 items-center justify-center cursor-pointer hover:bg-gray-50"
-                            onClick={() => setIsLogoModalOpen(true)}
-                        >
-                            <Avatar className="h-8 w-8">
-                                <AvatarImage src="/placeholder.svg" alt="Company Logo" />
-                                <AvatarFallback>CN</AvatarFallback>
-                            </Avatar>
-                        </div>
-                        <LogoUploadModal
-                            isOpen={isLogoModalOpen}
-                            onClose={() => setIsLogoModalOpen(false)}
-                            onUpload={async (file) => {
-                                // Implementar funcionalidad de subida del logo
-                                console.log("Uploading file:", file);
-                            }}
-                            companyName="Company"
-                        />
+                    {/* Contenedor de íconos principales */}
+                    <div className="flex flex-col flex-1 justify-between min-h-screen">
+                        {/* Contenedor interno para logo, búsqueda e íconos */}
+                        <div className="flex flex-col h-full">
+                            <div
+                                className="flex items-center justify-center md:p-3 cursor-pointer hover:bg-gray-50"
+                                onClick={() => setIsLogoModalOpen(true)}
+                            >
+                                <Avatar className="h-8 w-8 md:h-10 md:w-10">
+                                    <AvatarImage src="/placeholder.svg" alt="Company Logo" />
+                                    <AvatarFallback>CN</AvatarFallback>
+                                </Avatar>
+                            </div>
 
-                        {/* Icono de búsqueda cuando el sidebar está colapsado */}
-                        <div className="flex h-16 items-center justify-center">
-                            {!isExpanded && (
-                                <button
-                                    onClick={() => setIsExpanded(true)}
-                                    className="rounded-lg p-2 text-gray-700 hover:bg-gray-100"
-                                >
-                                    <Search className="h-5 w-5" />
-                                </button>
-                            )}
-                        </div>
+                            <div className="flex items-center justify-center h-10">
+                                {!isExpanded && (
+                                    <button
+                                        onClick={() => setIsExpanded(true)}
+                                        className="rounded-lg p-2 text-gray-700 hover:bg-gray-100"
+                                    >
+                                        <Search className="h-5 w-5" />
+                                    </button>
+                                )}
+                            </div>
 
-                        {/* Iconos del menú principal */}
-                        <div className="flex flex-1 flex-col items-center justify-center py-4 mt-[35vh] -translate-y-1/2">
-                            {mainMenuItems.map((section) =>
-                                section.items.map((item) => (
+                            {/* Menú principal */}
+                            <div className="flex flex-col items-center justify-center flex-grow ">
+                                {mainMenuItems.map((section) =>
+                                    section.items.map((item) => (
+                                        <button
+                                            key={item.label}
+                                            onClick={() => handleItemClick(item.label)}
+                                            className={cn(
+                                                "mb-2 flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100",
+                                                activeItem === item.label
+                                                    ? "bg-gray-100 font-semibold text-gray-900"
+                                                    : "text-gray-700"
+                                            )}
+                                        >
+                                            <item.icon className="h-5 w-5" />
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+
+                            {/* Iconos de configuración, perfil y notificaciones */}
+                            <div className="flex flex-col items-center justify-center pb-2 space-y-1">
+                                <NotificationPanel />
+                                {settingsSection.items.map((item) => (
                                     <button
                                         key={item.label}
-                                        onClick={() => handleItemClick(item.label)}
+                                        onClick={() => setIsSettingsOpen(true)}
                                         className={cn(
-                                            "mb-2 flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100",
-                                            activeItem === item.label
-                                                ? "bg-gray-100 font-semibold text-gray-900"
-                                                : "text-gray-700"
+                                            "flex h-10 w-10 mx-auto items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100",
+                                            isSettingsOpen && "bg-gray-100 font-semibold text-gray-900"
                                         )}
                                     >
-                                        <item.icon className="h-5 w-5" />
+                                        <item.icon className="h-5 w-5 " />
                                     </button>
-                                ))
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Iconos de configuración y perfil */}
-                    <div className="flex flex-col items-center py-4 space-y-2">
-                        {settingsSection.items.map((item) => (
-                            <button
-                                key={item.label}
-                                onClick={() => setIsSettingsOpen(true)}
-                                className={cn(
-                                    "flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100",
-                                    isSettingsOpen && "bg-gray-100 font-semibold text-gray-900"
-                                )}
-                            >
-                                <item.icon className="h-5 w-5" />
-                            </button>
-                        ))}
-                        <div className="relative h-10 w-6.5">
-                            <UserButton afterSignOutUrl="/" />
+                                ))}
+                                <div className="relative h-10 w-10 mx-auto flex justify-center">
+                                    <UserButton afterSignOutUrl="/" />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
                 {/* Panel de contenido expandible */}
                 <div
                     ref={expandablePanelRef}

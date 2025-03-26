@@ -27,6 +27,8 @@ interface InvoicePreviewProps {
       address: string
       phone: string
       email: string
+      paymentMethod: string
+      paymentType: string
     }
   }
   loading: boolean
@@ -85,25 +87,25 @@ const formData = useWatch({ control });
               <div className="flex items-center">
                 <p className="w-24 text-sm text-gray-500">Nombre:</p>
                 <p className="font-medium text-gray-900">
-                  {loading ? "Loading..." : formData.customer?.name || "Nombre del cliente"}
+                  {loading ? "Loading..." : company?.name || "Nombre de la empresa"}
                 </p>
               </div>
               <div className="flex items-center">
                 <p className="w-24 text-sm text-gray-500">NIT:</p>
                 <p className="font-medium text-gray-900">
-                  {loading ? "Loading..." : company?.nit || "Company NIT"}
+                  {loading ? "Loading..." : company?.nit || "NIT de la empresa"}
                 </p>
               </div>
               <div className="flex items-center">
                 <p className="w-24 text-sm text-gray-500">Teléfono:</p>
                 <p className="font-medium text-gray-900">
-                  {loading ? "Loading..." : company?.phone || "Company Phone"}
+                  {loading ? "Loading..." : company?.phone || "Teléfono de la empresa"}
                 </p>
               </div>
               <div className="flex items-center">
                 <p className="w-24 text-sm text-gray-500">Dirección:</p>
                 <p className="font-medium text-gray-900">
-                  {loading ? "Loading..." : company?.address || "Company Address"}
+                  {loading ? "Loading..." : company?.address || "Dirección de la empresa"}
                 </p>
               </div>
             </div>
@@ -131,13 +133,19 @@ const formData = useWatch({ control });
               <div className="flex items-center">
                 <p className="w-24 text-sm text-gray-500">Teléfono:</p>
                 <p className="font-medium text-gray-900">
-                  {loading ? "Loading..." : company?.phone || "Company Phone"}
+                  {loading ? "Loading..." : formData.customer?.phone || "Teléfono"}
                 </p>
               </div>
               <div className="flex items-center">
                 <p className="w-24 text-sm text-gray-500">Email:</p>
                 <p className="font-medium text-gray-900">
-                  {loading ? "Loading..." : company?.email || "users Email"}
+                  {loading ? "Loading..." : formData.customer?.email || "Correo electrónico"}
+                </p>
+              </div>
+              <div className="flex items-center">
+                <p className="w-24 text-sm text-gray-500">Dirección:</p>
+                <p className="font-medium text-gray-900">
+                  {loading ? "Loading..." : formData.customer?.address || "Dirección"}
                 </p>
               </div>
             </div>
@@ -214,8 +222,10 @@ const formData = useWatch({ control });
             <div>
               <h4 className="font-semibold mb-2">Información de Pago</h4>
               <div className="space-y-1 text-sm">
-                <p><span className="font-medium">Método de Pago:</span> {formData.paymentMethod || 'No especificado'}</p>
-                <p><span className="font-medium">Tipo de Pago:</span> {formData.paymentType || 'No especificado'}</p>
+                <p><span className="font-medium">Método de Pago:</span> 
+                {loading ? "Loading..." : formData.customer?.paymentMethod || 'No especificado'}</p>
+                <p><span className="font-medium">Tipo de Pago:</span> 
+                {loading ? "Loading..." : formData.customer?.paymentType || 'No especificado'}</p>
                 <p><span className="font-medium">Vendedor:</span> {formData.seller || 'No especificado'}</p>
               </div>
             </div>

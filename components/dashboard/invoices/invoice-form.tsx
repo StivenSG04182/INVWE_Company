@@ -34,7 +34,7 @@ export function InvoiceForm() {
       setValue("customer.phone", "")
       setValue("customer.email", "")
       setValue("customer.address", "")
-      clearErrors(["customer.name", "customer.phone", "customer.email", "customer.address"])
+      clearErrors(["customer.name", "customer.phone", "customer.email", "customer.address", "customer.paymentMethod", "customer.paymentType"])
     } else {
       setValue("clientId", "")
       clearErrors("clientId")
@@ -108,10 +108,6 @@ export function InvoiceForm() {
               <Label htmlFor="invoiceDate" className="block mb-2">Fecha de Emisión</Label>
               <Input type="date" {...register("invoiceDate")} className="w-full" />
             </div>
-            <div>
-              <Label htmlFor="dueDate" className="block mb-2">Fecha de Vencimiento</Label>
-              <Input type="date" {...register("dueDate")} className="w-full" />
-            </div>
           </div>
 
 
@@ -127,6 +123,8 @@ export function InvoiceForm() {
                   <SelectItem value="efectivo">Efectivo</SelectItem>
                   <SelectItem value="tarjeta">Tarjeta</SelectItem>
                   <SelectItem value="transferencia">Transferencia</SelectItem>
+                  <Input {...register("customer.paymentType", { required: isManualClient ? "" : false })} className="w-full" />
+                  {errors.customer?.paymentType && <p className="text-sm text-red-500 mt-1">{errors.customer.paymentType.message as string}</p>}
                 </SelectContent>
               </Select>
             </div>
@@ -139,12 +137,10 @@ export function InvoiceForm() {
                 <SelectContent>
                   <SelectItem value="contado">Contado</SelectItem>
                   <SelectItem value="credito">Crédito</SelectItem>
+                  <Input {...register("customer.paymentMethod", { required: isManualClient ? "" : false })} className="w-full" />
+                  {errors.customer?.paymentMethod && <p className="text-sm text-red-500 mt-1">{errors.customer.paymentMethod.message as string}</p>}
                 </SelectContent>
               </Select>
-            </div>
-            <div>
-              <Label htmlFor="seller" className="block mb-2">Vendedor</Label>
-              <Input {...register("seller")} className="w-full" />
             </div>
           </div>
         </div>
