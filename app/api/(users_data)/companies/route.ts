@@ -14,6 +14,7 @@ export async function GET(request: Request) {
         // Verificar rol ADMIN desde Clerk
         const isAdmin = sessionClaims?.publicMetadata?.role === 'ADMIN';
         if (isAdmin) {
+            console.log(JSON.stringify(user, null, 2));
             return NextResponse.json({ isValid: true, isAdmin: true, redirectUrl: '/admin' });
         }
         // Conectar a la BD de MongoDB (una sola vez)

@@ -12,7 +12,7 @@ import { menuSections } from "@/data/menu-items";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { LogoUploadModal } from "./logo-upload-modal";
 import { useCompany } from "@/hooks/use-company";
-import { SettingsModal } from "./settings-modal";
+import { SettingsPanel } from "./settings-modal";
 import { NotificationPanel } from "./notification-modal";
 import { useActiveMenu } from "@/hooks/use-active-menu";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue, } from "@/components/ui/select";
@@ -208,17 +208,7 @@ export default function SidebarNavigation() {
                             {/* Sección inferior con notificaciones y configuraciones */}
                             <div className="flex flex-col items-center justify-center pb-2 space-y-1">
                                 <NotificationPanel />
-                                {settingsSection.items.map((item) => (
-                                    <button
-                                        key={item.label}
-                                        onClick={() => setIsSettingsOpen(true)}
-                                        className={cn(
-                                            "flex h-10 w-10 mx-auto items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100",
-                                            isSettingsOpen && "bg-gray-100 font-semibold text-gray-900"
-                                        )}>
-                                        <item.icon className="h-5 w-5 " />
-                                    </button>
-                                ))}
+                                <SettingsPanel />
                                 <div className="relative h-10 w-10 mx-auto flex justify-center">
                                     <UserButton afterSignOutUrl="/" />
                                 </div>
@@ -328,13 +318,7 @@ export default function SidebarNavigation() {
                     {/* Modal para subir el logo de la empresa */}
                     <LogoUploadModal
                         isOpen={isLogoModalOpen}
-                        onClose={() => setIsLogoModalOpen(false)}
-                    />
-                    {/* Modal de configuraciones */}
-                    <SettingsModal
-                        isOpen={isSettingsOpen}
-                        onClose={() => setIsSettingsOpen(false)}
-                    />
+                        onClose={() => setIsLogoModalOpen(false)}/>
                 </div>
             </div >
         </>
