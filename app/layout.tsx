@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { ClerkProvider } from '@clerk/nextjs'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import './responsive-zoom.css'
 import type React from 'react'
 import { ThemeProvider } from "@/components/index/theme-provider"
 import { CookieConsentProvider } from "@/components/cookie-consent/cookie-provider"
