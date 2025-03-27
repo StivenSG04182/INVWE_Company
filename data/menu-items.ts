@@ -1,12 +1,12 @@
 import { Home, Store, ShoppingCart, Users, Tag, KeyRound, Mail, Send, Inbox, Archive, CreditCard, FileText, BarChart, PieChart, TrendingUp, UserCog, Layout, Settings, FileChartColumn } from "lucide-react"
-import type { MenuSection } from "@/types/sidebar"
+import type { MenuSection } from "@/app/api/types/sidebar"
 
 export const menuSections: MenuSection[] = [
     {
         items: [
             {
                 icon: Home,
-                label: "Overview",  /* David */
+                label: "Dashboard",  /* David */
                 submenu: [
                     { icon: BarChart, label: "Dashboard", href: "/inventory/[companyName]/dashboard" },
                     { icon: TrendingUp, label: "Análisis", href: "/inventory/[companyName]/analytics" },
@@ -88,9 +88,9 @@ export const menuSections: MenuSection[] = [
                 icon: FileText,
                 label: "Reportes & Analíticas",  /* David */
                 submenu: [
-                    { icon: BarChart, label: "Ventas", href: "/inventory/[companyName]/reports/sales" },
-                    { icon: PieChart, label: "Inventario", href: "/inventory/[companyName]/reports/inventory" },
-                    { icon: TrendingUp, label: "Desempeño", href: "/inventory/[companyName]/reports/performance" },
+                    { icon: BarChart, label: "Ventas", href: "/inventory/[companyName]/sales" },
+                    { icon: PieChart, label: "Inventario", href: "/inventory/[companyName]/inventory" },
+                    { icon: TrendingUp, label: "Desempeño", href: "/inventory/[companyName]/performance" },
                 ],
             },
         ],
@@ -101,9 +101,9 @@ export const menuSections: MenuSection[] = [
                 icon: Mail,
                 label: "Emails",
                 submenu: [
-                    { icon: Send, label: "Campañas", href: "/inventory/[companyName]/emails/campaigns" },
-                    { icon: Inbox, label: "Bandeja de entrada", href: "/inventory/[companyName]/emails/inbox" },
-                    { icon: Archive, label: "Archivos", href: "/inventory/[companyName]/emails/archives" },
+                    { icon: Send, label: "Campañas", href: "/inventory/[companyName]/campaigns" },
+                    { icon: Inbox, label: "Bandeja de entrada", href: "/inventory/[companyName]/inbox" },
+                    { icon: Archive, label: "Archivos", href: "/inventory/[companyName]/archives" },
                 ],
             },
         ],
