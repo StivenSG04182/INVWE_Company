@@ -8,7 +8,7 @@ interface Product{
     id: number
     name: string
     type: string
-    stock: number
+    price: number
 }
 
 export default function ProductPage(){
@@ -17,13 +17,19 @@ export default function ProductPage(){
             id: 1,
             name: "Banano",
             type: "fruta",
-            stock: "50"
+            price: 100
+        },
+        {
+            id: 2,
+            name: "Manzana",
+            type: "fruta",
+            price: 100
         }
     ])
 
     return(
         <div className='p-6 max-w-4xl'>
-            <h1 className="text-2xl font-bold mb-4">Inventario</h1>
+            <h1 className="text-2xl font-bold mb-4">Inventory</h1>
             <div className="flex gap-4 mb-6">
                 <Input
                     placeholder="Search Product..."
@@ -34,16 +40,19 @@ export default function ProductPage(){
 
             <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
                 {products.map(Product => (
-                    <Card key={Product.id}>
+                    <Card key={Product.id} className='flex justify-items-center flex-col grid grid-cols-1'>
                         <CardHeader>
                             <CardTitle>{Product.name}</CardTitle>
                         </CardHeader>
                         <CardContent>
+                        <div className='max-w-relative h-32 bg-gray-200 rounded-md mb-4 p-4'>
+                            *imagen del producto *
+                        </div>
                             <p className="text-sm text-gray-600">
                                 type: {Product.type}
-                                <p>stock: {Product.stock}</p>
+                                <p>price: {Product.price}</p>
                             </p>
-                            <div className="flex gap-2 mt-4">
+                            <div className="grid grid-cols-2 gap-2 mt-4">
                                 <Button variant="outline" size="sm">Edit</Button>
                                 <Button variant="destructive" size="sm">Delete</Button>
                             </div>
