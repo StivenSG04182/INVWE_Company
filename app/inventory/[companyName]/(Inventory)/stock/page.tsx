@@ -8,6 +8,7 @@ interface Product{
     id: number
     name: string
     type: string
+    stock: number
     totalPrice: number
     description: string
 }
@@ -18,6 +19,7 @@ export default function ProductPage(){
             id: 1,
             name: "Banano",
             type: "fruta",
+            stock: 200,
             totalPrice: 100,
             description: "es un banano"
         },
@@ -25,6 +27,7 @@ export default function ProductPage(){
             id: 2,
             name: "Manzana",
             type: "fruta",
+            stock: 50,
             totalPrice: 102,
             description: "es una manzana"
         },
@@ -32,6 +35,7 @@ export default function ProductPage(){
             id: 3,
             name: "frutos secos",
             type: "pasabocas",
+            stock: 100,
             totalPrice: 300,
             description: "Diversa variedad de frutos secos"
         }
@@ -60,6 +64,7 @@ export default function ProductPage(){
                         </div>
                             <p className="text-sm text-gray-600">
                                 type: {Product.type}
+                                <p>stock: {Product.stock}</p>
                                 <p>totalPrice: {Product.totalPrice}</p>
                                 <p>description: {Product.description}</p>
                             </p>
