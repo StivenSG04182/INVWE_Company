@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 
 export default function SidebarNavigation() {
     // Estados para controlar la expansión y visibilidad del sidebar
-    const [isExpanded, setIsExpanded] = useState(true);
+    const [isExpanded, setIsExpanded] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeItem, setActiveItem] = useActiveMenu("Overview");
     

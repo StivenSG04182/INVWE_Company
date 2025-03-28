@@ -5,81 +5,113 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsTrigger, TabsList } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DataTable } from '@/components/ui/data-table';
+import { columns } from './components/columns';
 
 interface Movement {
-    id: number;
-    name: string;
-    date: Date;
-    description: string;
+  id: number;
+  name: string;
+  date: Date;
+  description: string;
 }
 
 export default function MovementsPage() {
-    const [movements, setMovements] = useState<Movement[]>([
-        {
-            id: 1,
-            name: 'se realiza cambios en el stock',
-            date: new Date(2025, 4, 24), // Correct format: year, monthIndex (0-11), day
-            description:
-                'se agrega un nuevo producto, y se realiza un cambio en el stock',
-        },
-        {
-            id: 2,
-            name: 'se realiza cambios en el stock',
-            date: new Date(2025, 4, 24), // Correct format: year, monthIndex (0-11), day"
-            description:
-                'se agrega un nuevo producto, y se realiza un cambio en el stock',
-        },
-    ]);
+  const [date, setDate] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: new Date(),
+  });
 
-    return (
-      <h1 className="text-2xl font-bold mb-4">Movements History</h1>
-    <Dialog>
-        <DialogTrigger asChild>
-    <div>
-      <div className="flex gap-4 mb-6">
-        <Input placeholder="Search movement..." className="max-w-sm" />
-        <Button>Filter</Button>
-      </div>
-        </DialogTrigger>
-        <DialogContent>
-            <DialogTitle>Filter Movements</DialogTitle>
-            <Tabs>
-                <TabsList>
-                    <TabsTrigger value='all'>All</TabsTrigger>
-                    <TabsTrigger value='today'>Today</TabsTrigger>
-                    <TabsTrigger value='week'>This Week</TabsTrigger>
-                    <TabsTrigger value='month'>This Month</TabsTrigger>
-                    <TabsTrigger value='year'>This Year</TabsTrigger>
-                </TabsList>
-                <TabsContent value='all'>
-                    
-                </TabsContent>
-            </Tabs>
-        </DialogContent>
-    </Dialog>
-      <div className="flex flex-col gap-4">
-        {movements.map((movement: Movement) => (
-          <Card key={movement.id} className="flex flex-col">
-            <CardHeader>
-              <CardTitle>{movement.name}</CardTitle>
-            </CardHeader>           
-            <CardContent>
-              <p className="text-sm text-gray-600">
-              date: {movement.date.toLocaleDateString()}
-                <p>description: {movement.description}</p>
-              </p>
-              <div className="grid grid-cols-2 gap-2 mt-4">
-                <Button variant="outline" size="sm">
-                  Edit
-                </Button>
-                <Button variant="destructive" size="sm">
-                  Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div >
+  const [filters, setFilters] = useState<Record<string, string[]>>({
+    stock: [],
+    productos: []
+  });
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('stock');
+
+  const movements: Movement[] = [
+    {
+      id: 1,
+      name: 'Ajuste de stock',
+      date: new Date(),
+      description: 'Ajuste inicial de inventario'
+    },
+    {
+      id: 2,
+      name: 'Traslado de productos',
+      date: new Date(),
+      description: 'Movimiento entre bodegas'
+    }
+  ];
+
+  const handleFilterChange = (filterType: string, isChecked: boolean) => {
+    setFilters(prev => {
+      const currentFilters = [...prev[activeTab]];
+      if (isChecked) {
+        currentFilters.push(filterType);
+      } else {
+        const index = currentFilters.indexOf(filterType);
+        if (index > -1) currentFilters.splice(index, 1);
+      }
+      return { ...prev, [activeTab]: currentFilters };
+    });
+  };
+
+  return (
+    <>
+      <Tabs defaultValue="stock" onValueChange={(tab) => {
+        setActiveTab(tab);
+        setFilters(prev => ({ ...prev, [tab]: [] }));
+      }}>
+        <div className="flex gap-4 mb-4">
+          <TabsList className="grid grid-cols-2">
+            <TabsTrigger value="stock">Movimientos de Stock</TabsTrigger>
+            <TabsTrigger value="productos">Movimientos de Productos</TabsTrigger>
+          </TabsList>
+          
+        </div>
+        <TabsContent value="stock">
+          <div className="flex items-center gap-4">
+            <DataTable
+              columns={columns}
+              data={movements.filter(m => m.name.includes('stock'))}
+              searchKey="name"
+              searchPlaceholder="Buscar movimientos..."
+            />
+            <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">Filtro</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogTitle>Filtrar por:</DialogTitle>
+                <div className="space-y-4">
+                  {/* Contenido de filtros existente */}
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </TabsContent>
+        <TabsContent value="productos">
+          <div className="flex items-center gap-4">
+            <DataTable
+              columns={columns}
+              data={movements}
+              searchKey="name"
+              searchPlaceholder="Buscar productos..."
+            />
+            <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">Filtro</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogTitle>Filtrar por:</DialogTitle>
+                <div className="space-y-4">
+                  {/* Contenido de filtros específico para productos */}
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </>
   );
 }

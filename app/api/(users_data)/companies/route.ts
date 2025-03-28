@@ -48,6 +48,13 @@ export async function GET(request: Request) {
             });
         }
         // Obtener empresa asociada en MongoDB
+        if (!/^[0-9a-fA-F]{24}$/.test(userCompany.companyId)) {
+            return NextResponse.json(
+                { error: 'Formato de ID de empresa inválido' },
+                { status: 400 }
+            );
+        }
+
         const associatedCompany = await db.collection("companies").findOne({
             _id: normalizeCompanyId(userCompany.companyId)
         });

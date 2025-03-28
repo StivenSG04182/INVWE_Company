@@ -4,7 +4,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import './responsive-zoom.css'
 import type React from 'react'
-import { ThemeProvider } from "@/components/index/theme-provider"
+import { PrivateThemeProvider } from "@/providers/private-theme-provider"
 import { CookieConsentProvider } from "@/components/cookie-consent/cookie-provider"
 
 const inter = Inter({ subsets: ['latin'] })
@@ -26,15 +26,10 @@ export default function RootLayout({
           <title>INVWE</title>
         </head>
         <body className={`${inter.className} flex flex-col min-h-screen`}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="light"
-            enableSystem={false}
-            disableTransitionOnChange
-            storageKey="invwe-theme">
+          <PrivateThemeProvider>
             <div className="flex-grow">{children}</div>
             <CookieConsentProvider />
-          </ThemeProvider>
+          </PrivateThemeProvider>
         </body>
       </html>
     </ClerkProvider>

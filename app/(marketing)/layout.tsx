@@ -1,5 +1,6 @@
 "use client"
 
+import { PublicThemeProvider } from "@/providers/public-theme-provider";
 import { Header } from "@/components/index/header";
 import { Footer } from "@/components/index/footer";
 
@@ -9,7 +10,8 @@ export default function MarketingLayout({
     children: React.ReactNode
 }) {
     return (
-        <main className="min-h-screen relative">
+        <PublicThemeProvider>
+    <main className="min-h-screen relative">
             <div className="relative z-10 ">
                 <Header />
                 <section className="py-24 relative">
@@ -20,5 +22,6 @@ export default function MarketingLayout({
                 </section>
             </div>
         </main>
+</PublicThemeProvider>
     );
 }

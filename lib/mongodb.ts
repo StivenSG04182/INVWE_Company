@@ -19,3 +19,7 @@ if (process.env.NODE_ENV === 'development') {
   clientPromise = client.connect();
 }
 export default clientPromise;
+
+export async function connectToMongoDB() {
+  return clientPromise;
+}
