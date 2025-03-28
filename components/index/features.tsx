@@ -1,13 +1,24 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { BarChart3, Package, TrendingUp, Users, Search, Bell, Settings, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import dynamic from 'next/dynamic';
+
+const UserButton = dynamic(
+    () => import("@clerk/nextjs").then((mod) => mod.UserButton),
+    {
+        ssr: false,
+        loading: () => <div className="w-8 h-8 rounded-full bg-secondary/20 animate-pulse" />
+    }
+);
+
 
 export function Features() {
+    const { isLoaded, isSignedIn, user } = useUser();
     const [inView, setInView] = useState(false);
     const [selectedTimeframe, setSelectedTimeframe] = useState("weekly");
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -20,7 +31,6 @@ export function Features() {
         inventoryCount: number;
         totalValue: number;
     }>>([]);
-    const { isLoaded, isSignedIn, user } = useUser();
 
     // Eventos de ejemplo - en una aplicación real, estos vendrían de una API
     const userEvents = {
@@ -146,7 +156,7 @@ export function Features() {
 
     // Obtener nombre del mes
     const getMonthName = (date: Date) => {
-        return date.toLocaleString('default', { month: 'long' });
+        return date.toLocaleString('en-US', { month: 'long' });
     };
 
     return (
@@ -194,7 +204,7 @@ export function Features() {
                     <Button variant="ghost" size="sm" className="h-7 w-7">
                         <Settings className="h-4 w-4" />
                     </Button>
-                    <UserButton afterSignOutUrl="/" />
+                    {isLoaded && <UserButton afterSignOutUrl="/" />}
                 </div>
             </div>
 
@@ -245,7 +255,7 @@ export function Features() {
                                                 style={{ height: `${heightPercentage}%` }}
                                             ></div>
                                             <div className="absolute opacity-0 group-hover:opacity-100 bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-background/90 p-1.5 rounded-md shadow-md text-xs transition-opacity duration-200 whitespace-nowrap z-10">
-                                                <p className="font-medium">${data.value.toLocaleString()}</p>
+                                                {/* <p className="font-medium">${data.value.toLocaleString()}</p> */}
                                                 <p className="text-muted-foreground">{data.users} users</p>
                                             </div>
                                         </div>
@@ -458,8 +468,8 @@ export function Features() {
                 </div>
 
 
-                                {/* Upcoming Features section (previously Recent Orders) */}
-                                <div className="col-span-2 row-span-5 col-start-7 row-start-2 bg-background/95 rounded-xl p-4 dark:shadow-container-dark shadow-container-light border dark:border-container-border-dark border-container-border-light">
+                {/* Upcoming Features section (previously Recent Orders) */}
+                <div className="col-span-2 row-span-5 col-start-7 row-start-2 bg-background/95 rounded-xl p-4 dark:shadow-container-dark shadow-container-light border dark:border-container-border-dark border-container-border-light">
                     <div className="flex items-center justify-between mb-3">
                         <h2 className="text-sm font-semibold">Próximas Funcionalidades</h2>
                         <Button variant="link" size="sm" className="text-xs text-primary p-0">
@@ -521,7 +531,7 @@ export function Features() {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             {/* Page 2 */}
                             <div className="min-w-full snap-center h-full">
                                 <div className="space-y-4 h-full overflow-y-auto pr-1 pb-2">
@@ -567,7 +577,7 @@ export function Features() {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             {/* Page 3 */}
                             <div className="min-w-full snap-center h-full">
                                 <div className="space-y-4 h-full overflow-y-auto pr-1 pb-2">
@@ -615,7 +625,7 @@ export function Features() {
                                 </div>
                             </div>
                         </div>
-                        
+
                         {/* Control Páginación */}
                         <div className="flex justify-center items-center mt-3 gap-1">
                             {/* Indicador de Página */}

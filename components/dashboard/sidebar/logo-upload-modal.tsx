@@ -5,18 +5,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { ImageIcon, Upload } from "lucide-react"
+import axios from "axios"
+import { useToast } from "@/components/ui/use-toast"
+import { useCompany } from "@/hooks/use-company"
 
 interface LogoUploadModalProps {
     isOpen: boolean
     onClose: () => void
-    onUpload: (file: File) => Promise<void>
-    companyName: string
 }
 
-export function LogoUploadModal({ isOpen, onClose, onUpload, companyName }: LogoUploadModalProps) {
+export function LogoUploadModal({ isOpen, onClose }: LogoUploadModalProps) {
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [uploadProgress, setUploadProgress] = useState(0)
     const [isUploading, setIsUploading] = useState(false)
+    const { toast } = useToast()
+    const { company, loading } = useCompany()
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]
@@ -26,13 +29,18 @@ export function LogoUploadModal({ isOpen, onClose, onUpload, companyName }: Logo
     }
 
     const handleUpload = async () => {
-        if (!selectedFile) return
+        if (!selectedFile || !company?._id) return
 
         setIsUploading(true)
         setUploadProgress(0)
 
         try {
-            // Simulate upload progress
+            // Configurar FormData para la carga
+            const formData = new FormData()
+            formData.append('file', selectedFile)
+            formData.append('companyId', company._id)
+
+            // Simular progreso de carga
             const interval = setInterval(() => {
                 setUploadProgress((prev) => {
                     if (prev >= 95) {
@@ -43,23 +51,45 @@ export function LogoUploadModal({ isOpen, onClose, onUpload, companyName }: Logo
                 })
             }, 100)
 
-            await onUpload(selectedFile)
+            // Enviar la imagen al servidor
+            const response = await axios.post('/api/(users_data)/companies/logo', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            })
+
             setUploadProgress(100)
+            
+            // Mostrar mensaje de éxito
+            toast({
+                title: "Logo actualizado",
+                description: "El logo de la empresa se ha actualizado correctamente",
+                variant: "default",
+            })
+
+            // Cerrar el modal después de un breve retraso
             setTimeout(() => {
                 onClose()
                 setSelectedFile(null)
                 setUploadProgress(0)
                 setIsUploading(false)
+                // Recargar la página para mostrar el nuevo logo
+                window.location.reload()
             }, 500)
         } catch (error) {
-            console.error("Upload failed:", error)
+            console.error("Error al subir el logo:", error)
+            toast({
+                title: "Error",
+                description: "No se pudo subir el logo. Inténtalo de nuevo.",
+                variant: "destructive",
+            })
             setIsUploading(false)
             setUploadProgress(0)
         }
     }
 
     const getInitialLetter = () => {
-        return companyName.charAt(0).toUpperCase()
+        return company?.name?.charAt(0).toUpperCase() || 'C'
     }
 
     return (
