@@ -1,4 +1,4 @@
-import { BaseService } from './base'
+/* import { BaseService } from './base'
 import { Client } from '@/types/entities'
 
 export class ClientService extends BaseService {
@@ -40,4 +40,4 @@ export class ClientService extends BaseService {
     // Implementar validación con API de la DIAN
     throw new Error('Método no implementado')
   }
-}
+} */

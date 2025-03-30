@@ -31,7 +31,7 @@ export const useCompany = () => {
                 } else if (data.error) {
                     setError(data.error);
                 }
-            } catch (err) {
+            } catch {
                 setError('Error fetching company data');
             } finally {
                 setLoading(false);

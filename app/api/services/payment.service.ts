@@ -1,4 +1,4 @@
-import { BaseService } from './base'
+/* import { BaseService } from './base'
 import { Payment, PaymentStatus } from '@/types/entities'
 
 export class PaymentService extends BaseService {
@@ -43,4 +43,4 @@ export class PaymentService extends BaseService {
     // Implementar procesamiento de pago con pasarela
     throw new Error('Método no implementado')
   }
-}
+} */

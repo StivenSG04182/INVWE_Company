@@ -2,10 +2,9 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useTheme } from "next-themes";
+import Image from 'next/image';
 
 export default function Page() {
-    const { theme } = useTheme();
     return (
         <section className="py-12 relative min-h-screen bg-gradient-to-b">
             {/* Sección de bienvenida */}
@@ -18,7 +17,7 @@ export default function Page() {
                 </div>
                 <div className="mt-8 md:mt-0 md:ml-8">
                     <div className="relative overflow-hidden rounded-2xl shadow-2xl transform transition-transform hover:scale-105">
-                        <img
+                        <Image
                             src="/imagen_blog.jpg"
                             alt="Imagen del blog"
                             className="w-80 h-48 object-cover"

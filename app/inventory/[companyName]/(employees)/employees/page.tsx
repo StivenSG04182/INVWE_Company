@@ -13,7 +13,15 @@ interface Employee {
 }
 
 export default function EmployeesPage() {
+<<<<<<< Updated upstream
     const [employees, setEmployees] = useState<Employee[]>([
+=======
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const openModal = () => setIsModalOpen(true);
+    const closeModal = () => setIsModalOpen(false);
+
+    const [employees,] = useState<Employee[]>([
+>>>>>>> Stashed changes
         {
             id: 1,
             name: "John Doe",

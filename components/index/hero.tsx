@@ -1,5 +1,7 @@
 import HeroVideoDialog from "@/components/magicui/hero-video-dialog";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import { Autoplay } from 'embla-carousel-autoplay';
+
 
 export function Hero() {
   const brands = ["Amazon", "Walmart", "Target", "Nike", "Adidas", "Apple", "Microsoft", "Google"];
@@ -35,9 +37,8 @@ export function Hero() {
               containScroll: "trimSnaps",
               duration: 30,
               startIndex: 1,
-              autoPlay: true,
-              interval: 2000
             }}
+            plugins={[Autoplay({ delay: 2000 })]}
           >
             <CarouselContent className="-ml-2 md:-ml-4">
               {brands.map((brand) => (

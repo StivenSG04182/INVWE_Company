@@ -1,4 +1,4 @@
-import type { IEntity } from "./base"
+/* import type { IEntity } from "./base"
 
 export interface ITheme extends IEntity {
     name: string
@@ -94,3 +94,4 @@ export enum TemplateStatus {
     ARCHIVED = "ARCHIVED",
 }
 
+ */

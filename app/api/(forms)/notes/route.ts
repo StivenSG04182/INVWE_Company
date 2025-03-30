@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import prismadb from "@/lib/prismadb";
+import { PrismaClient } from '@prisma/client';
+
+// Inicializando el cliente de Prisma para la base de datos principal
+const prismadb = new PrismaClient();
 
 // GET all notes
-export async function GET(req: NextRequest) {
+export async function GET() {
     try {
         const notes = await prismadb.note.findMany({
             orderBy: {

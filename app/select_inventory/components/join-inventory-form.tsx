@@ -24,9 +24,17 @@ const formSchema = z.object({
     codigoSeguridad: z.string().min(6, "El código debe tener al menos 6 caracteres"),
 });
 
-interface JoinInventoryFormProps { }
+type ApiError = {
+    response?: {
+        data?: {
+            message?: string;
+            errors?: Array<{ field: string; message: string }>;
+        };
+    };
+    message?: string;
+};
 
-export function JoinInventoryForm({ }: JoinInventoryFormProps) {
+export function JoinInventoryForm() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [feedback, setFeedback] = useState<string | null>(null);
@@ -78,32 +86,33 @@ export function JoinInventoryForm({ }: JoinInventoryFormProps) {
                 codigoSeguridad: values.codigoSeguridad.trim(),
             });
 
-            // En este flujo la respuesta debe indicar que la solicitud está en estado pending.
             if (response.data?.status === "pending") {
                 toast.success("Tu solicitud está pendiente de aprobación por un administrador.");
                 setFeedback("Tu solicitud está pendiente de aprobación por un administrador.");
                 setFeedbackType("success");
-                // Opcional: redirigir a una página de "pending-approval" o similar.
                 router.push("/pending-approval");
             } else {
                 throw new Error("Respuesta inválida del servidor");
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error joining inventory:", error);
             let errorMsg = "Error al enviar la solicitud";
-            if (error.response?.data) {
-                if (typeof error.response.data === "string") {
-                    errorMsg = error.response.data;
-                } else if (error.response.data.errors) {
-                    error.response.data.errors.forEach((err: any) => {
+            const apiError = error as ApiError;
+            
+            if (apiError.response?.data) {
+                if (typeof apiError.response.data === "string") {
+                    errorMsg = apiError.response.data;
+                } else if (apiError.response.data.errors) {
+                    apiError.response.data.errors.forEach((err) => {
                         errorMsg = `${err.field}: ${err.message}`;
                     });
-                } else if (error.response.data.message) {
-                    errorMsg = error.response.data.message;
+                } else if (apiError.response.data.message) {
+                    errorMsg = apiError.response.data.message;
                 }
-            } else if (error.message) {
-                errorMsg = error.message;
+            } else if (apiError.message) {
+                errorMsg = apiError.message;
             }
+            
             toast.error(errorMsg);
             setFeedback(errorMsg);
             setFeedbackType("error");

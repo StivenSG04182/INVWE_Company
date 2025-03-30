@@ -5,10 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {  X, Instagram, Linkedin, Mail, Phone } from "lucide-react";
-import { useTheme } from "next-themes";
 
 export default function Questionnaire() {
-    const { theme } = useTheme();
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -16,12 +14,12 @@ export default function Questionnaire() {
         message: ""
     });
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         e.preventDefault();
         console.log("Form submitted:", formData);
         // Here you would typically send the data to your backend
@@ -55,7 +53,7 @@ export default function Questionnaire() {
                         <form onSubmit={handleSubmit}>
                             <div className="space-y-4">
                                 <div>
-                                    <label htmlFor="name" className="flex block font-medium mb-1">Nombre</label>
+                                    <label htmlFor="name" className="block font-medium mb-1">Nombre</label>
                                     <Input 
                                         id="name"
                                         name="name"
@@ -68,7 +66,7 @@ export default function Questionnaire() {
                                 </div>
                                 
                                 <div>
-                                    <label htmlFor="email" className="flex block font-medium mb-1">Email</label>
+                                    <label htmlFor="email" className="block font-medium mb-1">Email</label>
                                     <Input 
                                         id="email"
                                         name="email"
@@ -81,7 +79,7 @@ export default function Questionnaire() {
                                 </div>
                                 
                                 <div>
-                                    <label htmlFor="phone" className="flex block font-medium mb-1">Teléfono</label>
+                                    <label htmlFor="phone" className="block font-medium mb-1">Teléfono</label>
                                     <Input 
                                         id="phone"
                                         name="phone"
@@ -93,7 +91,7 @@ export default function Questionnaire() {
                                 </div>
                                 
                                 <div>
-                                    <label htmlFor="message" className="flex block font-medium mb-1">Mensaje</label>
+                                    <label htmlFor="message" className="block font-medium mb-1">Mensaje</label>
                                     <Textarea 
                                         id="message"
                                         name="message"

@@ -20,7 +20,7 @@ const actionTypes = {
     UPDATE_TOAST: "UPDATE_TOAST",
     DISMISS_TOAST: "DISMISS_TOAST",
     REMOVE_TOAST: "REMOVE_TOAST",
-} as const
+} as const;
 
 let count = 0
 
@@ -73,7 +73,7 @@ const addToRemoveQueue = (toastId: string) => {
 
 export const reducer = (state: State, action: Action): State => {
     switch (action.type) {
-        case "ADD_TOAST":
+        case actionTypes.ADD_TOAST:
             return {
                 ...state,
                 toasts: [
@@ -82,7 +82,7 @@ export const reducer = (state: State, action: Action): State => {
                 ].slice(0, TOAST_LIMIT),
             }
 
-        case "UPDATE_TOAST":
+        case actionTypes.UPDATE_TOAST:
             return {
                 ...state,
                 toasts: state.toasts.map((t) =>
@@ -90,7 +90,7 @@ export const reducer = (state: State, action: Action): State => {
                 ),
             }
 
-        case "DISMISS_TOAST": {
+        case actionTypes.DISMISS_TOAST: {
             const { toastId } = action
 
             // ! Side effects ! - This could be extracted into a dismissToast() action,
@@ -115,7 +115,7 @@ export const reducer = (state: State, action: Action): State => {
                 ),
             }
         }
-        case "REMOVE_TOAST":
+        case actionTypes.REMOVE_TOAST:
             if (action.toastId === undefined) {
                 return {
                     ...state,

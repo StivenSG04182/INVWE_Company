@@ -2,7 +2,6 @@
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
 
 /**
  * Retorna la instancia de la base de datos Mongo.
@@ -16,12 +15,23 @@ export async function getMongoDB() {
  * Valida y normaliza el documento de una empresa.
  * Si no se encuentra el campo name, intenta obtenerlo desde otros campos o consulta a Supabase.
  */
-export async function validateCompany(company: any, supabaseClient: SupabaseClient): Promise<any> {
+export async function validateCompany(
+  company: {
+    values?: { nombreEmpresa?: string };
+    name?: string;
+    metadata?: { supabaseId?: string };
+  },
+  supabaseClient: SupabaseClient
+): Promise<{
+  values?: { nombreEmpresa?: string };
+  name: string;
+  metadata?: { supabaseId?: string };
+} | null> {
   if (!company) return null;
   if (company.values && company.values.nombreEmpresa) {
     return { ...company, name: company.values.nombreEmpresa };
   } else if (company.name) {
-    return company;
+    return { ...company, name: company.name! };
   } else if (company.metadata && company.metadata.supabaseId) {
     const { data: supabaseCompany, error } = await supabaseClient
       .from("companies")

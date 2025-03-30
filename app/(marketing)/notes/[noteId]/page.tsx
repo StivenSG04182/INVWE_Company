@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import Image from 'next/image';
 
 interface Note {
   id: string;
@@ -81,7 +82,7 @@ export default function NotePage() {
         
         {note.imageUrl && (
           <div className="my-6">
-            <img 
+            <Image 
               src={note.imageUrl} 
               alt={note.title} 
               className="w-full rounded-lg"

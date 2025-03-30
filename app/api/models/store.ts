@@ -1,4 +1,4 @@
-import type { IEntity } from "./base"
+/* import type { IEntity } from "./base"
 
 export interface IProduct extends IEntity {
     name: string
@@ -100,3 +100,4 @@ export enum LicenseStatus {
     REVOKED = "REVOKED",
 }
 
+ */

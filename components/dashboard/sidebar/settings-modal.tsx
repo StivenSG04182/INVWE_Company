@@ -9,7 +9,6 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import axios from "axios"
 import { toast } from "sonner"
-import Link from "next/link"
 
 const subscriptionPlans = [
     {
@@ -75,7 +74,7 @@ export function SettingsPage({ hasNewNotification = false, hasNewMessage = false
 
 export function SettingsPanel() {
     const [notifications, setNotifications] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [, setLoading] = useState(true);
     const router = useRouter();
     const searchParams = useSearchParams();
     const companyId = searchParams.get("companyId");
@@ -99,7 +98,7 @@ export function SettingsPanel() {
 
             router.push(`/${response.data.companyName}/${response.data.storeId}`)
             toast.success("Suscripción activada exitosamente")
-        } catch (error) {
+        } catch {
             toast.error("Error al activar la suscripción")
         } finally {
             setIsLoading(false)
@@ -148,7 +147,8 @@ export function SettingsPanel() {
                             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
                                 {subscriptionPlans.map((plan) => (
                                     <Card
-                                        className={`border-solid border-gray-400 border bg-gradient-to-b from-card/50 to-card/80 backdrop-blur-xl p-6 transition-all hover:scale-105 dark:shadow-[0_0_15px_rgba(206,158,80,0.3)] shadow-[0_0_15px_rgba(80,128,206,0.3)]`}>
+                                        key={plan.name}
+                                        className="border-solid border-gray-400 border bg-gradient-to-b from-card/50 to-card/80 backdrop-blur-xl p-6 transition-all hover:scale-105 dark:shadow-[0_0_15px_rgba(206,158,80,0.3)] shadow-[0_0_15px_rgba(80,128,206,0.3)]">
                                         <div className="flex flex-col h-full justify-between">
                                             <div>
                                                 <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
@@ -156,7 +156,6 @@ export function SettingsPanel() {
                                                     {plan.price}
                                                     <span className="text-sm text-muted-foreground">/mes</span>
                                                 </div>
-                                                <p className="text-muted-foreground mb-4 text-sm">{plan.description}</p>
                                                 <ul className="space-y-3 mb-6">
                                                     {plan.features.map((feature, featureIndex) => (
                                                         <li key={featureIndex} className="flex items-center text-sm">
@@ -166,14 +165,14 @@ export function SettingsPanel() {
                                                     ))}
                                                 </ul>
                                             </div>
-                                            <Link href="/sign-in" className="mt-auto">
-                                                <Button
-                                                    className="w-full bg-custom-blue hover:bg-custom-blue/90 dark:bg-custom-gold dark:hover:bg-custom-gold/90 dark:text-black"
-                                                    size="lg"
-                                                >
-                                                    Comenzar
-                                                </Button>
-                                            </Link>
+                                            <Button
+                                                className="w-full bg-custom-blue hover:bg-custom-blue/90 dark:bg-custom-gold dark:hover:bg-custom-gold/90 dark:text-black"
+                                                size="lg"
+                                                onClick={() => handleSubscription(plan)}
+                                                disabled={isLoading}
+                                            >
+                                                {isLoading ? 'Procesando...' : 'Comenzar'}
+                                            </Button>
                                         </div>
                                     </Card>
                                 ))}

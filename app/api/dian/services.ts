@@ -1,6 +1,6 @@
-/**
- * Servicios para la integración con la DIAN
- */
+/*
+  Servicios para la integración con la DIAN
+
 
 import { createHash } from 'crypto'
 import { DianDocument, DianResponse, CUFEParams, XMLSignParams } from './types'
@@ -23,10 +23,9 @@ export class DianService {
     this.technicalKey = config.technicalKey
   }
 
-  /**
-   * Genera el CUFE para un documento
-   * Implementación basada en la especificación técnica de la DIAN
-   */
+  //  Genera el CUFE para un documento
+  // Implementación basada en la especificación técnica de la DIAN
+
   async generateCUFE(params: CUFEParams): Promise<string> {
     const {
       invoiceNumber,
@@ -57,10 +56,8 @@ export class DianService {
     return hash.digest('hex')
   }
 
-  /**
-   * Genera el XML en formato UBL 2.1
-   * Implementación basada en las especificaciones de la DIAN
-   */
+  // Genera el XML en formato UBL 2.1
+  // Implementación basada en las especificaciones de la DIAN
   async generateXML(document: DianDocument): Promise<string> {
     const header = this.generateXMLHeader()
     const body = this.generateXMLBody(document)
@@ -149,18 +146,14 @@ ${body}`
       </cac:LegalMonetaryTotal>`
   }
 
-  /**
-   * Firma el XML con el certificado digital
-   */
+  // Firma el XML con el certificado digital
   async signXML(xml: string, certificate: string): Promise<string> {
     // Implementar firma digital XAdES-EPES
     // Esta es una implementación básica que debe expandirse
     return xml
   }
 
-  /**
-   * Envía el documento a la DIAN
-   */
+  // Envía el documento a la DIAN
   async sendDocument(xml: string): Promise<DianResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/validateDocument`, {
@@ -192,9 +185,7 @@ ${body}`
     }
   }
 
-  /**
-   * Consulta el estado de un documento
-   */
+  // Consulta el estado de un documento
   async getDocumentStatus(trackId: string): Promise<DianResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/documentStatus/${trackId}`, {
@@ -220,12 +211,12 @@ ${body}`
     }
   }
 
-  /**
-   * Genera la representación gráfica del documento (PDF)
-   */
+  // Genera la representación gráfica del documento (PDF)
+
   async generatePDF(document: DianDocument): Promise<Buffer> {
     // Implementar generación de PDF
     // Esta es una implementación básica que debe expandirse
     throw new Error('Método no implementado')
   }
 }
+*/

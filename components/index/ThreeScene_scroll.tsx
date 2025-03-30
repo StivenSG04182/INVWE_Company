@@ -9,6 +9,8 @@ export default function ThreeScene() {
     useEffect(() => {
         if (!mountRef.current) return;
 
+        const mountNode = mountRef.current;
+
         // 🛠 Crear escena, cámara y renderer
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -17,7 +19,7 @@ export default function ThreeScene() {
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
-        mountRef.current.appendChild(renderer.domElement);
+        mountNode.appendChild(renderer.domElement);
 
         // 💡 Luces
         const light = new THREE.AmbientLight(0xffffff, 0.5);
@@ -53,7 +55,7 @@ export default function ThreeScene() {
 
         // ♻️ Cleanup
         return () => {
-            mountRef.current?.removeChild(renderer.domElement);
+            mountNode.removeChild(renderer.domElement);
             renderer.dispose();
         };
     }, []);

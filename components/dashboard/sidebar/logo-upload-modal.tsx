@@ -8,6 +8,7 @@ import { ImageIcon, Upload } from "lucide-react"
 import axios from "axios"
 import { useToast } from "@/components/ui/use-toast"
 import { useCompany } from "@/hooks/use-company"
+import Image from 'next/image';
 
 interface LogoUploadModalProps {
     isOpen: boolean
@@ -19,7 +20,7 @@ export function LogoUploadModal({ isOpen, onClose }: LogoUploadModalProps) {
     const [uploadProgress, setUploadProgress] = useState(0)
     const [isUploading, setIsUploading] = useState(false)
     const { toast } = useToast()
-    const { company, loading } = useCompany()
+    const { company, } = useCompany()
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]
@@ -52,7 +53,7 @@ export function LogoUploadModal({ isOpen, onClose }: LogoUploadModalProps) {
             }, 100)
 
             // Enviar la imagen al servidor
-            const response = await axios.post('/api/(users_data)/companies/logo', formData, {
+            await axios.post('/api/(users_data)/companies/logo', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -101,7 +102,7 @@ export function LogoUploadModal({ isOpen, onClose }: LogoUploadModalProps) {
                 <div className="flex flex-col items-center justify-center space-y-4 p-4">
                     <div className="relative h-32 w-32 rounded-lg border-2 border-dashed border-gray-300 p-2">
                         {selectedFile ? (
-                            <img
+                            <Image
                                 src={URL.createObjectURL(selectedFile)}
                                 alt="Preview"
                                 className="h-full w-full rounded object-contain"

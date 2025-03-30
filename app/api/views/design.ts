@@ -1,4 +1,4 @@
-export interface ThemesView {
+/* export interface ThemesView {
     themes: {
         id: string
         name: string
@@ -42,3 +42,4 @@ export interface TemplatesView {
     }
 }
 
+ */

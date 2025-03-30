@@ -1,4 +1,4 @@
-export interface DashboardStats {
+/* export interface DashboardStats {
     totalRevenue: {
         value: number
         change: number
@@ -56,3 +56,4 @@ export interface AnalyticsData {
     }
 }
 
+ */

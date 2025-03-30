@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Form } from '@/components/ui/form'
 import { FormProvider } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { InvoiceForm } from '@/components/dashboard/invoices/invoice-form'
@@ -12,6 +11,8 @@ import InvoicePreview from '@/components/dashboard/invoices/invoice-preview'
 import { useToast } from '@/hooks/use-toast'
 import { Undo2 } from "lucide-react"
 import Link from 'next/link'
+import axios from 'axios'
+import { useRouter } from 'next/navigation'
 
 const invoiceSchema = z.object({
     clientId: z.string().uuid(),
@@ -36,16 +37,22 @@ export default function CreateInvoicePage() {
             items: [{ productId: '', quantity: 1, unitPrice: 0, taxRate: 0 }]
         }
     })
+    const router = useRouter()
 
     const onSubmit = async (data: InvoiceFormData) => {
         try {
             setIsSubmitting(true)
-            // TODO: Implementar lógica de creación de factura
+            
+            const response = await axios.post('/api/invoices', data)
+            
             toast({
                 title: "Factura creada",
-                description: "La factura se ha creado correctamente"
+                description: `Factura ${response.data.invoiceNumber} generada correctamente`
             })
+            
+            router.push(`./?refresh=${Date.now()}`)
         } catch (error) {
+            console.error('Error creating invoice:', error)
             toast({
                 title: "Error",
                 description: "No se pudo crear la factura",

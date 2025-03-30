@@ -1,4 +1,4 @@
-export interface CampaignsView {
+/* export interface CampaignsView {
     campaigns: {
         id: string
         name: string
@@ -64,3 +64,4 @@ export interface ArchivesView {
     }
 }
 
+ */

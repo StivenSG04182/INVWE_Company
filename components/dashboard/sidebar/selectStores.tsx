@@ -10,11 +10,7 @@ interface Store {
     companyId: string;
 }
 
-interface SelectorStoresProps {
-    items?: Company[];
-}
-
-export function SelectorStores({ items = [] }: SelectorStoresProps) {
+export function SelectorStores() {
     const params = useParams();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
@@ -41,11 +37,15 @@ export function SelectorStores({ items = [] }: SelectorStoresProps) {
         }
     }, [params.companyId]);
 
-    const onStoreSelect = (storeId: string) => {
-        setLoading(true);
-        router.push(`/${params.companyId}/stores/${storeId}`).finally(() => {
+    const onStoreSelect = async (storeId: string) => {
+        try {
+            setLoading(true);
+            router.push(`/${params.companyId}/stores/${storeId}`);
+        } catch (error) {
+            console.error('Error de navegación:', error);
+        } finally {
             setLoading(false);
-        });
+        }
     };
 
     return (

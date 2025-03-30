@@ -1,4 +1,4 @@
-import { BaseService } from "../base/BaseService"
+/* import { BaseService } from "../base/BaseService"
 import type { ITheme } from "@/types/models/design"
 
 export class ThemeService extends BaseService<ITheme> {
@@ -32,3 +32,4 @@ export class ThemeService extends BaseService<ITheme> {
     }
 }
 
+ */

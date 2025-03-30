@@ -2,11 +2,9 @@
 
 import { useState, useEffect, useRef } from "react"
 import SidebarNavigation from "@/components/dashboard/sidebar/sidebar-navigation"
-import { ContentView } from "@/components/dashboard/content-view"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-    const [currentPath, setCurrentPath] = useState("/overview/dashboard")
-    const [zoomLevel, setZoomLevel] = useState(1)
+    const [, setZoomLevel] = useState(1)
     const layoutRef = useRef<HTMLDivElement>(null)
 
     // Effect to handle zoom level changes through window resize events

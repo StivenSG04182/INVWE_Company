@@ -1,4 +1,5 @@
-import { useUser } from "@clerk/nextjs"
+"use client"
+
 import { BackgroundBeams } from "@/components/ui/background-beams"
 import { Card } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
@@ -10,8 +11,6 @@ const data = [
 ]
 
 export default function AdminDashboard() {
-    const { user } = useUser()
-
     return (
         <div className="relative min-h-screen bg-gray-100 p-8">
             <BackgroundBeams />

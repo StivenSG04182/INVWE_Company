@@ -1,4 +1,4 @@
-import { BaseService } from './base'
+/* import { BaseService } from './base'
 import { Invoice, InvoiceItem } from '@/types/entities'
 import { DianService } from '../dian/services'
 import { DianDocument } from '../dian/types'
@@ -91,4 +91,4 @@ export class InvoiceService extends BaseService {
     // Implementar la conversión del modelo de datos interno al formato DIAN
     throw new Error('Método no implementado')
   }
-}
+} */

@@ -1,4 +1,4 @@
-import { BaseService } from "../base/BaseService"
+/* import { BaseService } from "../base/BaseService"
 import type { IEmailCampaign } from "@/types/models/email"
 
 export class EmailCampaignService extends BaseService<IEmailCampaign> {
@@ -39,3 +39,4 @@ export class EmailCampaignService extends BaseService<IEmailCampaign> {
     }
 }
 
+ */

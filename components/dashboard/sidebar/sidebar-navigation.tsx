@@ -9,7 +9,7 @@ import Link from "next/link";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { menuSections } from "@/data/menu-items";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { UserButton } from "@clerk/nextjs";
 import { LogoUploadModal } from "./logo-upload-modal";
 import { useCompany } from "@/hooks/use-company";
 import { SettingsPanel } from "./settings-modal";
@@ -17,28 +17,30 @@ import { NotificationPanel } from "./notification-modal";
 import { useActiveMenu } from "@/hooks/use-active-menu";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue, } from "@/components/ui/select";
 
+interface Company {
+    _id?: string;
+    name?: string;
+    logo?: string;
+    stores?: Array<{ _id: string; name: string }>;
+}
+
 export default function SidebarNavigation() {
     // Estados para controlar la expansión y visibilidad del sidebar
     const [isExpanded, setIsExpanded] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeItem, setActiveItem] = useActiveMenu("Overview");
-    
     // Estados para controlar la visibilidad de los modales
     const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
-    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    
+
     // Hooks para acceder a la información del usuario y la compañía
-    const { user } = useUser();
     const { company, loading } = useCompany();
     const params = useParams();
     const companyName =
         typeof params.companyName === "string" ? params.companyName : "";
-    
+
     // Estado y refs para la gestión de la interfaz
-    const [isPending, startTransition] = useTransition();
-    const [stores, setStores] = useState([]);
-    const containerRef = useRef(null);
+    const [, startTransition] = useTransition();
+    const [stores, setStores] = useState<Array<{ _id: string, name: string }>>([]);
     const iconSidebarRef = useRef<HTMLDivElement>(null);
     const expandablePanelRef = useRef<HTMLDivElement>(null);
 
@@ -151,7 +153,6 @@ export default function SidebarNavigation() {
         .find((item) => item.label === activeItem);
 
     const mainMenuItems = menuSections.slice(0, -1);
-    const settingsSection = menuSections[menuSections.length - 1];
 
     return (
         <>
@@ -168,7 +169,7 @@ export default function SidebarNavigation() {
                                 onClick={() => setIsLogoModalOpen(true)}>
                                 <Avatar className="h-8 w-8 md:h-10 md:w-10">
                                     <AvatarImage
-                                        src={company?.logoUrl || "/placeholder.svg"}
+                                        src={(company as Company)?.logo || "/placeholder.svg"}
                                         alt="Company Logo"
                                     />
                                     <AvatarFallback>
@@ -260,7 +261,7 @@ export default function SidebarNavigation() {
                                             <SelectLabel>Tiendas</SelectLabel>
                                             {stores.map((store) => (
                                                 <SelectItem key={store._id} value={store._id} data-exclude-close="true">
-                                                    {store.name}
+                                                    {(store as { name?: string })?.name}
                                                 </SelectItem>
                                             ))}
                                         </SelectGroup>
@@ -318,7 +319,7 @@ export default function SidebarNavigation() {
                     {/* Modal para subir el logo de la empresa */}
                     <LogoUploadModal
                         isOpen={isLogoModalOpen}
-                        onClose={() => setIsLogoModalOpen(false)}/>
+                        onClose={() => setIsLogoModalOpen(false)} />
                 </div>
             </div >
         </>

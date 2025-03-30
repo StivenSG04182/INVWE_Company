@@ -1,5 +1,3 @@
-import { PageContent } from "@/app/api/types/content"
-
 const EmailArchivesPage = () => {
   return (
     <div>

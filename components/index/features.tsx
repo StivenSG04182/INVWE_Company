@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState, } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { BarChart3, Package, TrendingUp, Users, Search, Bell, Settings, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
@@ -18,14 +18,14 @@ const UserButton = dynamic(
 
 
 export function Features() {
-    const { isLoaded, isSignedIn, user } = useUser();
-    const [inView, setInView] = useState(false);
+    const { isLoaded, isSignedIn } = useUser();
+    const [, setInView] = useState(false);
     const [selectedTimeframe, setSelectedTimeframe] = useState("weekly");
-    const [currentDate, setCurrentDate] = useState(new Date());
+    const [currentDate,] = useState(new Date());
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [currentSlide, setCurrentSlide] = useState(0); // Para Social Media Analytics
     const [featuresSlide, setFeaturesSlide] = useState(0); // Nueva variable para Próximas Funcionalidades
-    const [companies, setCompanies] = useState<Array<{
+    const [companies,] = useState<Array<{
         name: string;
         email: string;
         inventoryCount: number;
@@ -145,8 +145,8 @@ export function Features() {
                     date.getDate() === currentDate.getDate() &&
                     date.getMonth() === currentDate.getMonth() &&
                     date.getFullYear() === currentDate.getFullYear(),
-                hasEvent: isSignedIn && userEvents[dateKey] ? true : false,
-                events: userEvents[dateKey] || [],
+                hasEvent: isSignedIn && dateKey in userEvents ? true : false,
+                events: dateKey in userEvents ? userEvents[dateKey as keyof typeof userEvents] : [],
                 dateKey
             });
         }
@@ -229,7 +229,7 @@ export function Features() {
 
                     <div className="mt-4">
                         <div className="text-3xl font-bold">{isSignedIn ? "3.6%" : "0%"}</div>
-                        <div className="text-xs text-muted-foreground">This week's Sales is higher than last week's</div>
+                        <div className="text-xs text-muted-foreground">This weeks Sales is higher than last weeks</div>
                     </div>
 
                     <div className="h-[calc(100%-8rem)] mt-4 relative">

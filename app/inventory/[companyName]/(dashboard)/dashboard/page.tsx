@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface Company {
@@ -10,7 +10,6 @@ interface Company {
 
 export default function DashboardPage() {
   const params = useParams();
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [company, setCompany] = useState<Company | null>(null);
   const [error, setError] = useState<string>("");
@@ -56,19 +55,21 @@ export default function DashboardPage() {
   
   return (
     <div className="p-4">
-      {/* Rest of your dashboard content */}
+      <h1 className="text-2xl font-bold mb-6">{company?.name || 'Dashboard'}</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-md shadow">
-          <h2 className="text-lg font-semibold mb-2">pendiente</h2>
-          <p>parrafo pero pendiente de momento...</p>
+          <h2 className="text-lg font-semibold mb-2">Información de la Empresa</h2>
+          <p>ID: {company?._id || 'No disponible'}</p>
+          <p>Nombre: {company?.name || 'No disponible'}</p>
         </div>
         <div className="bg-white p-4 rounded-md shadow">
-          <h2 className="text-lg font-semibold mb-2">pendiente 2</h2>
-          <p>parrafo pero pendiente de momento...</p>
+          <h2 className="text-lg font-semibold mb-2">Estado del Sistema</h2>
+          <p>Estado: {error ? 'Error' : 'Activo'}</p>
+          <p>Última actualización: {new Date().toLocaleString()}</p>
         </div>
         <div className="bg-white p-4 rounded-md shadow">
-          <h2 className="text-lg font-semibold mb-2">pendiente 3</h2>
-          <p>parrafo pero pendiente de momento...</p>
+          <h2 className="text-lg font-semibold mb-2">Acciones Rápidas</h2>
+          <p>Próximamente: Acciones personalizadas</p>
         </div>
       </div>
     </div>

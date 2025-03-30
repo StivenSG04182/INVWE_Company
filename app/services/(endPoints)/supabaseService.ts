@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 /**
  * Consulta en Supabase la asociación de un usuario y retorna la empresa predeterminada.
  */
-export async function getUserCompanyFromSupabase(userId: string): Promise<any> {
+export async function getUserCompanyFromSupabase(userId: string): Promise<unknown> {
   const { data: userData } = await supabase
     .from("users")
     .select("id")

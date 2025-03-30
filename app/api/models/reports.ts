@@ -1,9 +1,9 @@
-import type { IEntity } from "./base"
+/* import type { IEntity } from "./base"
 
 export interface IReport extends IEntity {
     type: ReportType
     dateRange: DateRange
-    data: any
+    data: Record<string, unknown>
     format: ReportFormat
     status: ReportStatus
     generatedBy: string
@@ -119,3 +119,4 @@ export enum AlertSeverity {
     CRITICAL = "CRITICAL",
 }
 
+ */

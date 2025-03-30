@@ -10,7 +10,7 @@ interface FAQItem {
 }
 
 // GET - Obtener todas las preguntas frecuentes
-export async function GET(req: Request) {
+export async function GET() {
   try {
     const { data, error } = await supabase
       .from('faq')

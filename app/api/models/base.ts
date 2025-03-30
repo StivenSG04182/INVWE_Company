@@ -1,4 +1,4 @@
-import { BaseService } from "../base/BaseService"
+/* import { BaseService } from "../base/BaseService"
 import type { IProduct } from "@/types/models/store"
 
 export class ProductService extends BaseService<IProduct> {
@@ -23,3 +23,4 @@ export class ProductService extends BaseService<IProduct> {
     }
 }
 
+ */

@@ -21,26 +21,10 @@ export const ImagesSlider = ({
     direction?: "up" | "down";
 }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [loading, setLoading] = useState(false);
+    const [, setLoading] = useState(false);
     const [loadedImages, setLoadedImages] = useState<string[]>([]);
 
-    const handleNext = () => {
-        setCurrentIndex((prevIndex) =>
-            prevIndex + 1 === images.length ? 0 : prevIndex + 1
-        );
-    };
-
-    const handlePrevious = () => {
-        setCurrentIndex((prevIndex) =>
-            prevIndex - 1 < 0 ? images.length - 1 : prevIndex - 1
-        );
-    };
-
-    useEffect(() => {
-        loadImages();
-    }, []);
-
-    const loadImages = () => {
+    const loadImages = React.useCallback(() => {
         setLoading(true);
         const loadPromises = images.map((image) => {
             return new Promise((resolve, reject) => {
@@ -57,7 +41,24 @@ export const ImagesSlider = ({
                 setLoading(false);
             })
             .catch((error) => console.error("Failed to load images", error));
-    };
+    }, [images]);
+
+    useEffect(() => {
+        loadImages();
+    }, [loadImages]);
+
+    const handleNext = React.useCallback(() => {
+        setCurrentIndex((prevIndex) =>
+            prevIndex + 1 === images.length ? 0 : prevIndex + 1
+        );
+    }, [images.length]);
+
+    const handlePrevious = React.useCallback(() => {
+        setCurrentIndex((prevIndex) =>
+            prevIndex - 1 < 0 ? images.length - 1 : prevIndex - 1
+        );
+    }, [images.length]);
+
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === "ArrowRight") {
@@ -70,7 +71,7 @@ export const ImagesSlider = ({
         window.addEventListener("keydown", handleKeyDown);
 
         // autoplay
-        let interval: any;
+        let interval: NodeJS.Timeout;
         if (autoplay) {
             interval = setInterval(() => {
                 handleNext();
@@ -81,7 +82,7 @@ export const ImagesSlider = ({
             window.removeEventListener("keydown", handleKeyDown);
             clearInterval(interval);
         };
-    }, []);
+    }, [autoplay, handleNext, handlePrevious]);
 
     const slideVariants = {
         initial: {

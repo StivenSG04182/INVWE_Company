@@ -4,8 +4,8 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import Image from 'next/image';
 
-// Note type definition
 interface Note {
   id: string;
   title: string;
@@ -19,7 +19,6 @@ export default function NotesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch notes from API
     const fetchNotes = async () => {
       try {
         const response = await fetch('/api/notes');
@@ -60,7 +59,7 @@ export default function NotesPage() {
               <Card className="h-full cursor-pointer hover:shadow-md transition-shadow">
                 {note.imageUrl && (
                   <div className="aspect-video w-full overflow-hidden">
-                    <img 
+                    <Image
                       src={note.imageUrl} 
                       alt={note.title} 
                       className="w-full h-full object-cover"

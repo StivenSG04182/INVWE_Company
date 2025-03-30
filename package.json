@@ -49,6 +49,7 @@
     "concat-stream": "2.0.0",
     "debug": "^4.4.0",
     "e-commerce-admin": "file:",
+    "embla-carousel-autoplay": "^8.5.2",
     "embla-carousel-react": "^8.5.2",
     "extend": "3.0.2",
     "firebase": "^11.5.0",

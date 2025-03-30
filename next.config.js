@@ -14,6 +14,9 @@ const nextConfig = {
             }
         }
     },
+    images: {
+        domains: ['startup-template-sage.vercel.app', 'avatar.vercel.sh']
+    },
     webpack: (config, { isServer }) => {
         if (!isServer) {
             config.resolve.fallback = {

@@ -104,7 +104,7 @@ export async function POST(req: Request) {
                 clerkUser.emailAddresses && clerkUser.emailAddresses[0]?.emailAddress
                     ? clerkUser.emailAddresses[0].emailAddress
                     : "sinemail@example.com",
-            phone: clerkUser.phoneNumber || "0000000000",
+            phone: clerkUser.phoneNumbers?.[0]?.phoneNumber || "0000000000",
         };
 
         // Verificar si existe una solicitud rechazada en las últimas 24 horas

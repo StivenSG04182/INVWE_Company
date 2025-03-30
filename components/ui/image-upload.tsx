@@ -20,7 +20,6 @@ export function ImageUpload({
 
     // For demo purposes, we'll use a random Unsplash image as a placeholder
     const handleUpload = () => {
-        const randomId = Math.floor(Math.random() * 1000)
         const imageUrl = `https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=800&h=600&fit=crop&q=80`
         onChange(imageUrl)
         setPreview(imageUrl)

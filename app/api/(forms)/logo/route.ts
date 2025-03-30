@@ -20,7 +20,8 @@ export const config = {
 export async function POST(request: Request) {
   try {
     // Verificar autenticación
-    const { userId } = getAuth(request);
+    const auth = getAuth();
+    const { userId } = auth;
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -84,12 +85,11 @@ export async function POST(request: Request) {
       { _id: new ObjectId(companyId) },
       { $set: { logoUrl: logoUrl } }
     );
-
     return NextResponse.json({ success: true, logoUrl });
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     console.error('Error uploading logo:', error);
     return NextResponse.json(
-      { error: error.message || 'Error uploading logo' },
+      { error: error instanceof Error ? error.message : 'Error uploading logo' },
       { status: 500 }
     );
   }

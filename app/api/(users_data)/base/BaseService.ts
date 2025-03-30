@@ -1,4 +1,4 @@
-export abstract class BaseService<T> {
+/* export abstract class BaseService<T> {
     protected abstract entityName: string
 
     async findAll(): Promise<T[]> {
@@ -52,3 +52,4 @@ export abstract class BaseService<T> {
     }
 }
 
+ */

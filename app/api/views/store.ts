@@ -1,4 +1,4 @@
-export interface ProductsView {
+/* export interface ProductsView {
     products: {
         id: string
         name: string
@@ -81,3 +81,4 @@ export interface LicensesView {
     }
 }
 
+ */

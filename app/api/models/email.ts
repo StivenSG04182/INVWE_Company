@@ -1,4 +1,4 @@
-import type { IEntity } from "./base"
+/* import type { IEntity } from "./base"
 
 export interface IEmailCampaign extends IEntity {
     name: string
@@ -75,3 +75,4 @@ export enum MessageStatus {
     FAILED = "FAILED",
 }
 
+ */

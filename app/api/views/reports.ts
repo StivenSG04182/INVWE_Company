@@ -1,4 +1,4 @@
-export interface SalesReportView {
+/* export interface SalesReportView {
     summary: {
         totalSales: number
         totalOrders: number
@@ -84,3 +84,4 @@ export interface PerformanceReportView {
     }[]
 }
 
+ */

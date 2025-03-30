@@ -44,9 +44,9 @@ interface InvoicePreviewProps {
   }
 }
 
-export default React.memo(function InvoicePreview({ loading = false, company = {}, params = {} }: Partial<InvoicePreviewProps> = {}) {
+export default React.memo(function InvoicePreview({ loading = false, company = {} }: Partial<InvoicePreviewProps> = {}) {
   const { control } = useFormContext();
-const formData = useWatch({ control });
+  const formData = useWatch({ control });
 
   const calculateSubtotal = (quantity: number, unitPrice: number | string) => {
     const price = typeof unitPrice === 'string' ? parseFloat(unitPrice) : unitPrice
@@ -58,7 +58,7 @@ const formData = useWatch({ control });
   }
 
   const calculateTotal = () => {
-    return formData.items.reduce((total, item) => {
+    return formData.items.reduce((total: number, item: { quantity: number, unitPrice: number | string, taxRate: number }) => {
       const subtotal = calculateSubtotal(item.quantity, item.unitPrice)
       const tax = calculateTax(subtotal, item.taxRate)
       return total + subtotal + tax
@@ -169,7 +169,16 @@ const formData = useWatch({ control });
               </TableRow>
             </TableHeader>
             <TableBody>
-              {formData.items.map((item, index) => {
+              {formData.items.map((item: { 
+                productId: string;
+                code: string;
+                unit: string;
+                description: string;
+                quantity: number;
+                unitPrice: number | string;
+                taxRate: number;
+                discount?: number;
+              }, index: number) => {
                 const subtotal = calculateSubtotal(item.quantity, item.unitPrice)
                 const tax = calculateTax(subtotal, item.taxRate)
                 const total = subtotal + tax
@@ -199,13 +208,13 @@ const formData = useWatch({ control });
                 <div className="flex justify-between text-sm">
                   <span className="font-medium text-gray-600">Subtotal:</span>
                   <span className="font-medium">
-                    ${formData.items.reduce((acc, item) => acc + calculateSubtotal(item.quantity, item.unitPrice), 0).toFixed(2)}
+                    ${formData.items.reduce((acc: number, item: { quantity: number, unitPrice: number | string }) => acc + calculateSubtotal(item.quantity, item.unitPrice), 0).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-medium text-gray-600">IVA Total:</span>
                   <span className="font-medium">
-                    ${formData.items.reduce((acc, item) => acc + calculateTax(calculateSubtotal(item.quantity, item.unitPrice), item.taxRate), 0).toFixed(2)}
+                    ${formData.items.reduce((acc: number, item: { quantity: number, unitPrice: number | string, taxRate: number }) => acc + calculateTax(calculateSubtotal(item.quantity, item.unitPrice), item.taxRate), 0).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-lg font-bold pt-2 border-t">
@@ -222,10 +231,10 @@ const formData = useWatch({ control });
             <div>
               <h4 className="font-semibold mb-2">Información de Pago</h4>
               <div className="space-y-1 text-sm">
-                <p><span className="font-medium">Método de Pago:</span> 
-                {loading ? "Loading..." : formData.customer?.paymentMethod || 'No especificado'}</p>
-                <p><span className="font-medium">Tipo de Pago:</span> 
-                {loading ? "Loading..." : formData.customer?.paymentType || 'No especificado'}</p>
+                <p><span className="font-medium">Método de Pago:</span>
+                  {loading ? "Loading..." : formData.customer?.paymentMethod || 'No especificado'}</p>
+                <p><span className="font-medium">Tipo de Pago:</span>
+                  {loading ? "Loading..." : formData.customer?.paymentType || 'No especificado'}</p>
                 <p><span className="font-medium">Vendedor:</span> {formData.seller || 'No especificado'}</p>
               </div>
             </div>

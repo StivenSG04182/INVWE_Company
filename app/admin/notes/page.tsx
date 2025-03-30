@@ -1,16 +1,8 @@
 "use client"
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pencil, Trash, Plus, Eye } from "lucide-react";
 import Link from "next/link";
 
@@ -23,7 +15,7 @@ interface Note {
 }
 
 export default function NotesManagementPage() {
-  const router = useRouter();
+
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
 

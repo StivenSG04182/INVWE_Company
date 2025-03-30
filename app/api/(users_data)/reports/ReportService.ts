@@ -1,4 +1,4 @@
-import { BaseService } from "../base/BaseService"
+/* import { BaseService } from "../base/BaseService"
 import type { IReport, ReportType, DateRange, ReportFormat } from "@/types/models/reports"
 
 export class ReportService extends BaseService<IReport> {
@@ -23,3 +23,4 @@ export class ReportService extends BaseService<IReport> {
     }
 }
 
+ */

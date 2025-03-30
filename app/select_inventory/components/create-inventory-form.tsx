@@ -118,10 +118,10 @@ export function CreateInventoryForm() {
             } else {
                 throw new Error("Formato de respuesta inválido");
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error("Error creando inventario:", error);
             toast.error(
-                error.response?.data?.errors?.[0]?.message ||
+                ((error as Error & { response?: { data?: { errors?: Array<{ message: string }> } } }).response?.data?.errors?.[0]?.message) ||
                 "Error al registrar la empresa"
             );
         } finally {
@@ -135,7 +135,7 @@ export function CreateInventoryForm() {
         const currentStepSchema = z.object(
             fields.reduce((acc, field) => ({
                 ...acc,
-                [field]: formSchema.shape[field]
+                [field]: formSchema.shape[field as keyof typeof formSchema.shape]
             }), {})
         );
 
@@ -164,7 +164,7 @@ export function CreateInventoryForm() {
             <FormField
                 key={fieldName}
                 control={form.control}
-                name={fieldName}
+                name={fieldName as keyof z.infer<typeof formSchema>}
                 render={({ field }) => (
                     <FormItem>
                         <FormLabel>

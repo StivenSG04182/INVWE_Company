@@ -1,4 +1,4 @@
-import { BaseService } from './base'
+/* import { BaseService } from './base'
 import { Report, ReportType } from '@/types/entities'
 
 export class ReportService extends BaseService {
@@ -81,4 +81,4 @@ export class ReportService extends BaseService {
     // Implementar generación de reporte de productos
     throw new Error('Método no implementado')
   }
-}
+} */

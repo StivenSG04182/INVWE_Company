@@ -9,6 +9,7 @@ const ThreeBackground: React.FC = () => {
 
     useEffect(() => {
         // 1. Crear la escena, cámara y renderer
+        const mountNode = mountRef.current;
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(
             75,
@@ -19,7 +20,7 @@ const ThreeBackground: React.FC = () => {
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
-        mountRef.current?.appendChild(renderer.domElement);
+        mountNode?.appendChild(renderer.domElement);
 
         // 2. Crear un cubo
         const geometry = new THREE.BoxGeometry();
@@ -78,9 +79,7 @@ const ThreeBackground: React.FC = () => {
             cancelAnimationFrame(reqId);
             window.removeEventListener("resize", handleResize);
             window.removeEventListener("featuresInView", handleFeaturesInView as EventListener);
-            if (mountRef.current && renderer.domElement) {
-                mountRef.current.removeChild(renderer.domElement);
-            }
+            mountNode?.removeChild(renderer.domElement);
             renderer.dispose();
         };
     }, []);
