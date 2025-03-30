@@ -1,4 +1,4 @@
-import type { ContentMap } from "@/app/api/types/content"
+import type { ContentMap } from "@/app/api/client/types/content"
 
 export const pageContent: ContentMap = {
     "/overview/dashboard": {

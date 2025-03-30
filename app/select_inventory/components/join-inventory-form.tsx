@@ -34,13 +34,23 @@ type ApiError = {
     message?: string;
 };
 
-export function JoinInventoryForm() {
+interface JoinInventoryFormProps {
+    companies: Company[];
+    isLoading: boolean;
+}
+
+interface Company {
+    id: string;
+    name: string;
+}
+
+export function JoinInventoryForm({companies: initialCompanies, isLoading: initialLoading }: JoinInventoryFormProps) {
     const router = useRouter();
+    const [companies, setCompanies] = useState<Company[]>(initialCompanies);
+    const [isLoading, setIsLoading] = useState(initialLoading);
     const [loading, setLoading] = useState(false);
     const [feedback, setFeedback] = useState<string | null>(null);
     const [feedbackType, setFeedbackType] = useState<"error" | "success" | null>(null);
-    const [companies, setCompanies] = useState<Array<{ _id: string; name: string }>>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
@@ -98,7 +108,7 @@ export function JoinInventoryForm() {
             console.error("Error joining inventory:", error);
             let errorMsg = "Error al enviar la solicitud";
             const apiError = error as ApiError;
-            
+
             if (apiError.response?.data) {
                 if (typeof apiError.response.data === "string") {
                     errorMsg = apiError.response.data;
@@ -112,7 +122,7 @@ export function JoinInventoryForm() {
             } else if (apiError.message) {
                 errorMsg = apiError.message;
             }
-            
+
             toast.error(errorMsg);
             setFeedback(errorMsg);
             setFeedbackType("error");
@@ -156,7 +166,7 @@ export function JoinInventoryForm() {
                                             <CommandGroup>
                                                 {filteredCompanies.map((company) => (
                                                     <CommandItem
-                                                        key={company._id}
+                                                        key={company.id}
                                                         value={company.name}
                                                         onSelect={(currentValue) =>
                                                             field.onChange(currentValue === field.value ? "" : currentValue)

@@ -19,7 +19,7 @@ export function NotificationBell({ hasNewNotification = false, hasNewMessage = f
     );
 }
 
-export function NotificationPanel() {
+export function NotificationPanelAdmin() {
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
 

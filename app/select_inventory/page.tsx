@@ -18,7 +18,7 @@ import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carouse
 export default function SelectInventoryPage() {
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
-  const [companies, setCompanies] = useState([]);
+  const [companies, setCompanies] = useState<[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
@@ -39,7 +39,7 @@ export default function SelectInventoryPage() {
         const data = await res.json();
         if (data.isValid) {
           if (data.data?.role === "admin") {
-            router.push('/admin');
+            router.push('/admin/dashboard_admin');
             return;
           }
           if (data.data?.role === "inventory" && data.data?.company?.name) {
@@ -101,8 +101,6 @@ export default function SelectInventoryPage() {
                   <CardItem translateZ="50" className="text-xl font-bold text-neutral-600 dark:text-white">
                     Crear Inventario
                   </CardItem>
-                  <CardItem as="p" translateZ="60" className="text-neutral-500 text-sm mt-2 dark:text-neutral-300">
-                  </CardItem>
                   <CardItem translateZ="100" className="w-full mt-4">
                     <Carousel className="w-full" opts={{ loop: true, align: "start", duration: 3000 }}>
                       <CarouselContent>
@@ -140,8 +138,6 @@ export default function SelectInventoryPage() {
                   <BorderBeam duration={4} size={50} className="z-10" />
                   <CardItem translateZ="50" className="text-xl font-bold dark:text-white">
                     Unirse a Inventario
-                  </CardItem>
-                  <CardItem as="p" translateZ="60" className="text-sm mt-2 dark:text-neutral-300">
                   </CardItem>
                   <CardItem translateZ="100" className="w-full mt-4">
                     <Carousel className="w-full" opts={{ loop: true, align: "start", duration: 3000 }}>

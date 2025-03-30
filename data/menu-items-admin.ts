@@ -22,7 +22,7 @@ export const menuSections: MenuSection[] = [
                 label: "Tienda & E-Commerce",
                 submenu: [
                     { icon: Store, label: "Tiendas Físicas", href: "/inventory/[companyName]/stores" },
-                    { icon: ShoppingCart, label: "E-Commerce", href: "/inventory/[companyName]/ecommerce" },
+                    { icon: ShoppingCart, label: "E-Commerce", href: "/admin/ecommerce" },
                     { icon: Tag, label: "Envíos", href: "/inventory/[companyName]/shipping" },
                 ],
             },

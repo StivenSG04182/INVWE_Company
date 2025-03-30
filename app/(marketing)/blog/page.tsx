@@ -35,7 +35,7 @@ export default function Page() {
                         <p className="text-gray-700 dark:text-gray-300 text-lg mb-6">
                             Te contamos cómo va el desarrollo de nuestro inventario interactivo.
                         </p>
-                        <Link href="/notes" className="inline-block w-full">
+                        <Link href="/nots" className="inline-block w-full">
                             <Button className="w-full bg-gradient-to-r from-[#5080ce] to-[#5080ce] dark:from-[#ce9e50] dark:to-[#ce9e50] text-white hover:from-[#4070be] hover:to-[#4070be] dark:hover:from-[#be8e40] dark:hover:to-[#be8e40] transition-all duration-300">
                                 Ver más
                             </Button>
