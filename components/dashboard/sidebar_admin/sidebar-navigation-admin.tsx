@@ -48,7 +48,7 @@ export default function SidebarNavigationAdminAdmin() {
     useEffect(() => {
         const fetchCompanies = async () => {
             try {
-                const response = await axios.get("/api/companies/list");
+                const response = await axios.get("/api/control_login/companies/list");
                 if (response.data && Array.isArray(response.data)) {
                     if (company && company._id) {
                         const matchedCompany = response.data.find(

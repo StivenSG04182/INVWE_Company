@@ -21,7 +21,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchCompanyData = async () => {
       try {
-        const response = await fetch('/api/companies');
+        const response = await fetch('/api/control_login/companies');
         const data = await response.json();
         
         if (data.isValid && data.data?.company) {
