@@ -54,7 +54,7 @@ export default function ProductPage(){
 
             <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
                 {products.map(Product => (
-                    <Card key={Product.id} className='flex justify-items-center flex-col grid grid-cols-1'>
+                    <Card key={Product.id} className='justify-items-center flex-col grid grid-cols-1'>
                         <CardHeader>
                             <CardTitle>{Product.name}</CardTitle>
                         </CardHeader>

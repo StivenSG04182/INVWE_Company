@@ -27,7 +27,7 @@ export default function SelectInventoryPage() {
     if (!isLoaded || !isSignedIn) return;
     (async () => {
       try {
-        const res = await fetch("/api/companies", {
+        const res = await fetch("/api/control_login/companies", {
           method: "GET",
           headers: { "Content-Type": "application/json" },
           cache: "no-store",
@@ -61,7 +61,7 @@ export default function SelectInventoryPage() {
     (async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get("/api/companies");
+        const response = await axios.get("/api/control_login/companies");
         setCompanies(response.data || []);
       } catch (error) {
         console.error("Error fetching companies:", error);

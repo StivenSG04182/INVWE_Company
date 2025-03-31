@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { Input } from '@/components/ui/input'
 import { useState } from 'react'
+import { CreateTemplateModal } from '@/components/ecommerce/create-template-modal'
 
 const templates = [
     { id: 1, name: 'Tienda Moderna', category: 'General' },
@@ -15,6 +16,7 @@ export default function EcommercePage() {
     const router = useRouter()
     const [searchQuery, setSearchQuery] = useState('')
     const [hoveredCard, setHoveredCard] = useState<number | null>(null)
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
     const filteredTemplates = templates.filter(template =>
         template.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -29,13 +31,26 @@ export default function EcommercePage() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <Button
-                    onClick={() => router.push('./ecommerce/ai-generator')}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                >
-                    AI Generator
-                </Button>
+                <div className="flex gap-2">
+                    <Button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                    >
+                        Crear Plantilla
+                    </Button>
+                    <Button
+                        onClick={() => router.push('./ecommerce/ai-generator')}
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    >
+                        AI Generator
+                    </Button>
+                </div>
             </div>
+            
+            <CreateTemplateModal 
+                isOpen={isCreateModalOpen} 
+                onClose={() => setIsCreateModalOpen(false)} 
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredTemplates.map((template) => (
@@ -56,13 +71,13 @@ export default function EcommercePage() {
                                     <div className="flex gap-4">
                                         <Button
                                             className="px-6 py-3 bg-blue-600 hover:bg-blue-700 transition-colors"
-                                            onClick={() => console.log('Preview', template.id)}
+                                            onClick={() => router.push(`./ecommerce/templates/${template.id}/preview`)}
                                         >
                                             Preview
                                         </Button>
                                         <Button
                                             className="px-6 py-3 bg-purple-600 hover:bg-purple-700 transition-colors"
-                                            onClick={() => console.log('Customize', template.id)}
+                                            onClick={() => router.push(`./ecommerce/templates/${template.id}`)}
                                         >
                                             Customize
                                         </Button>

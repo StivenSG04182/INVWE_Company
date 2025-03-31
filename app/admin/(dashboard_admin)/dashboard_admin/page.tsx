@@ -31,7 +31,7 @@ export default function DashboardAdminPage() {
   useEffect(() => {
     const fetchCompanyData = async () => {
       try {
-        const response = await fetch('/api/admin/companies');
+        const response = await fetch('/api/control_login/companies');
         const data = await response.json();
         
         if (data.isValid && data.data?.company) {
@@ -47,12 +47,13 @@ export default function DashboardAdminPage() {
       }
     };
 
-    if (companyName) {
-      fetchCompanyData();
-    } else {
-      console.error("No company name found in URL parameters");
+    if (!companyName) {
+      setError("Por favor seleccione una empresa para ver el panel administrativo");
       setLoading(false);
+      return;
     }
+
+    fetchCompanyData();
   }, [companyName]);
   
   if (loading) {

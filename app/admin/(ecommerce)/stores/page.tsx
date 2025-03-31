@@ -1,0 +1,1 @@
+//app/admin/(ecommerce)/stores/page.tsx

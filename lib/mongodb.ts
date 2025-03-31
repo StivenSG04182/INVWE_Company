@@ -18,4 +18,14 @@ if (process.env.NODE_ENV === 'development') {
   client = new MongoClient(uri!, options);
   clientPromise = client.connect();
 }
+
+/**
+ * Obtiene una conexión a la base de datos principal
+ * @returns Promesa que resuelve a una instancia de la base de datos
+ */
+export async function connectToDatabase() {
+  const client = await clientPromise;
+  return client.db(process.env.MONGODB_DB || 'main');
+}
+
 export default clientPromise;
