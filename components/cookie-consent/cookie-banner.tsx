@@ -24,20 +24,20 @@ export function CookieBanner() {
 
     const handleAccept = () => {
         setAnimationState('accept');
-
-        // Delay hiding the banner to allow animation to complete
         setTimeout(() => {
+            // Guardar en localStorage (si es necesario para el cliente)
             localStorage.setItem(COOKIE_CONSENT_KEY, 'accepted');
+            // Crear la cookie con duración, por ejemplo, 1 año
+            document.cookie = `${COOKIE_CONSENT_KEY}=accepted; path=/; max-age=${60 * 60 * 24 * 365}`;
             setShowBanner(false);
         }, 2000);
     };
 
     const handleReject = () => {
         setAnimationState('reject');
-
-        // Delay hiding the banner to allow animation to complete
         setTimeout(() => {
             localStorage.setItem(COOKIE_CONSENT_KEY, 'rejected');
+            document.cookie = `${COOKIE_CONSENT_KEY}=rejected; path=/; max-age=${60 * 60 * 24 * 365}`;
             setShowBanner(false);
         }, 2000);
     };
@@ -80,7 +80,7 @@ export function CookieBanner() {
                                 <div className="absolute top-2 left-1 right-1 h-0.5 bg-amber-700 opacity-30 rounded-full"></div>
                                 <div className="absolute top-5 left-1 right-1 h-0.5 bg-amber-700 opacity-30 rounded-full"></div>
                                 <div className="absolute top-8 left-1 right-1 h-0.5 bg-amber-700 opacity-30 rounded-full"></div>
-                                
+
                                 {/* Box lid */}
                                 <motion.div
                                     className="absolute -top-2 left-0 w-full h-2 rounded-t-md border-2 border-amber-600 dark:border-amber-500"
@@ -91,8 +91,8 @@ export function CookieBanner() {
                                         zIndex: 3,
                                     }}
                                     animate={{
-                                        rotateX: animationState === 'accept' ? [0, -110, -110] : 
-                                                animationState === 'reject' ? [0, -110, 0] : 0,
+                                        rotateX: animationState === 'accept' ? [0, -110, -110] :
+                                            animationState === 'reject' ? [0, -110, 0] : 0,
                                     }}
                                     transition={{ duration: 0.8 }}
                                 />

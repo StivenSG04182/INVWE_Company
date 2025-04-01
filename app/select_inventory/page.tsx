@@ -22,7 +22,6 @@ export default function SelectInventoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
-  // Verifica si el usuario ya tiene asociación o si debe redirigir a /admin
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
     (async () => {

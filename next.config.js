@@ -3,7 +3,6 @@ const nextConfig = {
     experimental: {
         turbo: {
             rules: {
-                // Configuración específica para Turbopack
                 options: {
                     resolve: {
                         fallback: {
