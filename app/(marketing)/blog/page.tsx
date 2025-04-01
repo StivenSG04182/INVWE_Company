@@ -21,6 +21,8 @@ export default function Page() {
                             src="/imagen_blog.jpg"
                             alt="Imagen del blog"
                             className="w-80 h-48 object-cover"
+                            width={80}
+                            height={48}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
                     </div>
