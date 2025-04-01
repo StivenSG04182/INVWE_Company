@@ -38,6 +38,7 @@
     "@radix-ui/react-tooltip": "^1.1.8",
     "@react-three/drei": "^10.0.5",
     "@react-three/fiber": "^9.1.0",
+    "@stackblitz/sdk": "^1.11.0",
     "@supabase/auth-helpers-shared": "^0.7.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.3",

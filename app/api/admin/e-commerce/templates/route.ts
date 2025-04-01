@@ -29,8 +29,8 @@ export async function GET(req: NextRequest) {
         }
 
         // Conectar a la base de datos
-        const db = await connectToDatabase();
-        const templatesCollection = db.collection('templates');
+        const db = await connectToDatabase('e_commerce_INVWE');
+        const templatesCollection = db.collection('ecommerce');
 
         // Construir la consulta
         const query: any = {};
@@ -41,7 +41,16 @@ export async function GET(req: NextRequest) {
         // Obtener las plantillas
         const templates = await templatesCollection.find(query).toArray();
 
-        return NextResponse.json(templates);
+        // Transformar datos para el frontend
+        const transformed = templates.map(t => ({
+            id: t._id.toString(),
+            name: t.name || 'Plantilla sin nombre',
+            description: t.description || '',
+            previewUrl: t.previewUrl || '/default-template-preview.jpg',
+            category: t.category || 'General'
+        }));
+
+        return NextResponse.json(transformed);
     } catch (error) {
         console.error('Error al obtener las plantillas:', error);
         return NextResponse.json({
@@ -90,8 +99,8 @@ export async function POST(req: NextRequest) {
         }
 
         // Conectar a la base de datos
-        const db = await connectToDatabase();
-        const templatesCollection = db.collection('templates');
+        const db = await connectToDatabase('e_commerce_INVWE');
+        const templatesCollection = db.collection('ecommerce');
 
         // Guardar la plantilla
         const result = await templatesCollection.insertOne({
