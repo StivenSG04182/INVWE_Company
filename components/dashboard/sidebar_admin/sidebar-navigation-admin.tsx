@@ -6,34 +6,27 @@ import { useState, useMemo, useEffect, useRef, useTransition } from "react";
 import { MenuIcon, Search, } from "lucide-react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { menuSections } from "@/data/menu-items-admin";
+import { menuSections } from "@/data/menu-items";
 import { UserButton } from "@clerk/nextjs";
-import { LogoUploadModal } from "../sidebar/logo-upload-modal";
 import { useCompany } from "@/hooks/use-company";
-import { SettingsPanelAdmin } from "../sidebar_admin/settings-modal-admin";
-import { NotificationPanelAdmin } from "../sidebar_admin/notification-modal-admin";
+import { SettingsPanelAdmin } from "./settings-modal-admin";
+import { NotificationPanelAdmin } from "./notification-modal-admin";
 import { useActiveMenu } from "@/hooks/use-active-menu";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue, } from "@/components/ui/select";
 
-interface Company {
-    _id?: string;
-    name?: string;
-    logo?: string;
-    stores?: Array<{ _id: string; name: string }>;
-}
 
-export default function SidebarNavigationAdminAdmin() {
+export default function SidebarNavigation() {
     // Estados para controlar la expansión y visibilidad del sidebar
-    const [isExpanded, setIsExpanded] = useState(true);
+    const [isExpanded, setIsExpanded] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeItem, setActiveItem] = useActiveMenu("Overview");
     // Estados para controlar la visibilidad de los modales
-    const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
+    const [, setIsLogoModalOpen] = useState(false);
 
     // Hooks para acceder a la información del usuario y la compañía
-    const { company, loading } = useCompany();
+    const { company, } = useCompany();
     const params = useParams();
     const companyName =
         typeof params.companyName === "string" ? params.companyName : "";
@@ -48,7 +41,20 @@ export default function SidebarNavigationAdminAdmin() {
     useEffect(() => {
         const fetchCompanies = async () => {
             try {
-                const response = await axios.get("/api/control_login/companies/list");
+                const response = await axios.get("/api/control_login/companies/list", {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                // Validar que la respuesta sea JSON válido
+                if (typeof response.data === 'string') {
+                    console.error('La respuesta no es JSON válido');
+                    setStores([]);
+                    return;
+                }
+
                 if (response.data && Array.isArray(response.data)) {
                     if (company && company._id) {
                         const matchedCompany = response.data.find(
@@ -168,24 +174,8 @@ export default function SidebarNavigationAdminAdmin() {
                                 className="flex items-center justify-center md:p-3 cursor-pointer hover:bg-gray-50"
                                 onClick={() => setIsLogoModalOpen(true)}>
                                 <Avatar className="h-8 w-8 md:h-10 md:w-10">
-                                    <AvatarImage
-                                        src={(company as Company)?.logo || "/placeholder.svg"}
-                                        alt="Company Logo"
-                                    />
-                                    <AvatarFallback>
-                                        {company?.name?.charAt(0).toUpperCase() || "CN"}
-                                    </AvatarFallback>
+                                    {/*  */}
                                 </Avatar>
-                            </div>
-                            <div className="flex items-center justify-center h-10">
-                                {!isExpanded && (
-                                    <button
-                                        onClick={() => setIsExpanded(true)}
-                                        className="rounded-lg p-2 text-gray-700 hover:bg-gray-100"
-                                    >
-                                        <Search className="h-5 w-5" />
-                                    </button>
-                                )}
                             </div>
                             {/* Sección de elementos principales del menú */}
                             <div className="flex flex-col items-center justify-center flex-grow ">
@@ -226,18 +216,6 @@ export default function SidebarNavigationAdminAdmin() {
                     )}>
                     <div className="flex h-full flex-col">
                         {/* Cabecera con búsqueda */}
-                        <div className="flex h-16 items-center justify-between px-4">
-                            <div className="flex items-center gap-3">
-                                <span className="font-semibold text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]" style={{ fontSize: '14px', transform: 'none', zoom: '1' }}>
-                                    {loading ? "Loading..." : company?.name || "Company Name"}
-                                </span>
-                            </div>
-                            <button
-                                onClick={toggleSidebar}
-                                className="rounded-lg p-2 text-gray-700 hover:bg-gray-100">
-                                <MenuIcon className="h-5 w-5" />
-                            </button>
-                        </div>
                         <div className="px-4 py-3">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
@@ -248,25 +226,6 @@ export default function SidebarNavigationAdminAdmin() {
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-500 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
                                 />
-                            </div>
-                        </div>
-                        <div className="px-4 py-4 border-t-2 border-b-2 border-solid border-gray-300">
-                            <div className="relative">
-                                <Select>
-                                    <SelectTrigger className="w-[220px] h-[40px] text-sm" data-exclude-close="true">
-                                        <SelectValue placeholder="Seleccionar Tienda" />
-                                    </SelectTrigger>
-                                    <SelectContent className="w-[220px] z-[9999]" side="bottom" align="start" position="popper" sideOffset={8} data-exclude-close="true">
-                                        <SelectGroup>
-                                            <SelectLabel>Tiendas</SelectLabel>
-                                            {stores.map((store) => (
-                                                <SelectItem key={store._id} value={store._id} data-exclude-close="true">
-                                                    {(store as { name?: string })?.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
                             </div>
                         </div>
                         {/* Navegación principal con resultados de búsqueda o submenú */}
@@ -314,13 +273,7 @@ export default function SidebarNavigationAdminAdmin() {
                         </nav>
                     </div>
                 </div>
-                {/* Área principal y modales */}
-                <div className="flex-1 overflow-y-auto p-3">
-                    {/* Modal para subir el logo de la empresa */}
-                    <LogoUploadModal
-                        isOpen={isLogoModalOpen}
-                        onClose={() => setIsLogoModalOpen(false)} />
-                </div>
+                {/* area principal de modal */}
             </div >
         </>
     );

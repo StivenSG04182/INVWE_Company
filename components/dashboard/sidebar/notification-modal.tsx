@@ -26,7 +26,7 @@ export function NotificationPanel() {
     useEffect(() => {
         async function fetchNotifications() {
             try {
-                const res = await fetch("/api/notifications?category=all");
+                const res = await fetch("/api/control_login/notifications?category=all");
                 const data = await res.json();
                 if (data.notifications) setNotifications(data.notifications);
             } catch (error) {
@@ -45,7 +45,7 @@ export function NotificationPanel() {
                     <NotificationBell hasNewNotification={notifications.length > 0} />
                 </button>
             </DialogTrigger>
-            <DialogContent className="w-full max-w-3xl p-4 h-auto min-h-[450px] overflow-y-auto" closeButton={false}>
+            <DialogContent className="w-full max-w-3xl p-4 h-auto min-h-[450px]" closeButton={false}>
                 <DialogTitle className="sr-only">Notifications</DialogTitle>
                 <Tabs defaultValue="all" className="w-full h-full flex flex-col">
                     <TabsList className="flex w-full items-center justify-between space-x-2 shrink-0">
@@ -56,7 +56,7 @@ export function NotificationPanel() {
                         <TabsTrigger value="invoices">Facturación</TabsTrigger>
                         <TabsTrigger value="email">Correo</TabsTrigger>
                     </TabsList>
-                    <div className="flex-grow overflow-y-auto border-t pb-6 pt-2 mt-4">
+                    <div className="flex-grow border-t pb-6 pt-2 mt-4">
                         <TabsContent value="all" className="space-y-4 h-full">
                             {loading ? (
                                 <div className="text-sm text-muted-foreground">Cargando notificaciones...</div>

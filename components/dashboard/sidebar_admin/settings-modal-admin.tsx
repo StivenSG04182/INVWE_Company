@@ -90,7 +90,7 @@ export function SettingsPanelAdmin() {
             }
 
             // For free plan, create subscription directly
-            const response = await axios.post("/api/subscription", {
+            const response = await axios.post("/api/client/sett_noti/subscription", {
                 companyId,
                 plan: plan.name,
                 limits: plan.limits
@@ -108,7 +108,7 @@ export function SettingsPanelAdmin() {
     useEffect(() => {
         async function fetchNotifications() {
             try {
-                const res = await fetch("/api/settings?category=all");
+                const res = await fetch("/api/client/sett_noti/settings?category=all");
                 const data = await res.json();
                 if (data.notifications) setNotifications(data.notifications);
             } catch (error) {

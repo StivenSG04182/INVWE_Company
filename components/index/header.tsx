@@ -45,25 +45,24 @@ export function Header() {
                     {/* Navigation Links - Center */}
                     <div className="hidden md:flex flex-1 justify-center">
                         <div className="flex items-center space-x-6 text-sm">
-                            {/* David */}
-                            <Link href="/about" className="text-muted-foreground hover:text-foreground transition-colors">
+                            {/* <Link href="/about" className="text-muted-foreground hover:text-foreground transition-colors">
                                 About
                             </Link>
-                            {/* Mateo */}
+                            
                             <Link href="/blog" className="text-muted-foreground hover:text-foreground transition-colors">
                                 Blog
                             </Link>
-                            {/* Mateo */}
+                            
                             <Link href="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
                                 Contact
                             </Link>
-                            {/* David */}
+                            
                             <Link href="/faq" className="text-muted-foreground hover:text-foreground transition-colors">
                                 Faq
                             </Link>
                             <Link href="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">
                                 Pricing
-                            </Link>
+                            </Link> */}
                         </div>
                     </div>
 
@@ -110,7 +109,7 @@ export function Header() {
                 {mobileMenuOpen && (
                     <div className="md:hidden pt-4 pb-3">
                         <div className="flex flex-col space-y-4 bg-background/95 backdrop-blur-sm p-4 rounded-lg shadow-lg border">
-                            <Link href="/about" className="text-muted-foreground hover:text-foreground transition-colors">
+                            {/* <Link href="/about" className="text-muted-foreground hover:text-foreground transition-colors">
                                 About
                             </Link>
                             <Link href="/blog" className="text-muted-foreground hover:text-foreground transition-colors">
@@ -133,7 +132,7 @@ export function Header() {
                             </Link>
                             <Button variant="ghost" className="justify-start">
                                 Sign In
-                            </Button>
+                            </Button> */}
                             <Link href="/Select_inventory">
                                 <Button className="w-full">Get Started</Button>
                             </Link>

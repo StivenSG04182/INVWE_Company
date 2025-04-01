@@ -53,7 +53,7 @@ export function LogoUploadModal({ isOpen, onClose }: LogoUploadModalProps) {
             }, 100)
 
             // Enviar la imagen al servidor
-            await axios.post('/api/(users_data)/companies/logo', formData, {
+            await axios.post('/api/control_login/(sidebar)/logo', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },

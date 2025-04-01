@@ -2,7 +2,6 @@
 
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Overview } from "@/components/dashboard/overview";
 import { BarChart, LineChart, PieChart } from "lucide-react";
 
 export default function AnalyticsPage() {
@@ -74,7 +73,6 @@ export default function AnalyticsPage() {
                     <Card className="p-6">
                         <h3 className="text-lg font-medium mb-4">Detailed Analytics</h3>
                         <div className="h-[400px]">
-                            <Overview />
                         </div>
                     </Card>
                 </TabsContent>

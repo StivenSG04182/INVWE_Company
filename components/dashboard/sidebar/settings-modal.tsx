@@ -108,7 +108,7 @@ export function SettingsPanel() {
     useEffect(() => {
         async function fetchNotifications() {
             try {
-                const res = await fetch("/api/settings?category=all");
+                const res = await fetch("/api/control_login/settings?category=all");
                 const data = await res.json();
                 if (data.notifications) setNotifications(data.notifications);
             } catch (error) {

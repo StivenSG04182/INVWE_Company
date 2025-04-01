@@ -3,22 +3,24 @@ import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsTrigger, TabsList } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { DataTable } from '@/components/ui/data-table';
 import { columns } from './components/columns';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
+import { Table, TableHeader, TableBody, TableRow, TableCell, Spinner, TableColumn, Pagination } from '@heroui/react';
+import useSWR from 'swr';
 
-interface Movement {
-  id: number;
-  name: string;
-  date: Date;
-  description: string;
-}
+
+const fetcher = (...args: [string, RequestInit?]) => fetch(...args).then((res) => res.json());
 
 export default function MovementsPage() {
+  const [page, setPage] = useState(1);
   const [dateRange, setDateRange] = useState({
     from: new Date(),
     to: new Date()
+  });
+
+  const {data, isLoading} = useSWR(`/api/movements?page=${page}`, fetcher, {
+    keepPreviousData: true
   });
 
   const [filters, setFilters] = useState<Record<string, string[]>>({
@@ -28,20 +30,10 @@ export default function MovementsPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('stock');
 
-  const movements: Movement[] = [
-    {
-      id: 1,
-      name: 'Ajuste de stock',
-      date: new Date(),
-      description: 'Ajuste inicial de inventario'
-    },
-    {
-      id: 2,
-      name: 'Traslado de productos',
-      date: new Date(),
-      description: 'Movimiento entre bodegas'
-    }
-  ];
+  const rowsPerPage = 10;
+
+  const pages = data?.count ? Math.ceil(data.count / rowsPerPage) : 0;
+  const loadingState = isLoading || !data?.results?.length ? "loading" : "idle";
 
   const filterOptions: Record<TabType, string[]> = {
     stock: ['Ajustes', 'Entrada', 'Salida'],
@@ -61,12 +53,14 @@ export default function MovementsPage() {
     });
   };
 
-  const filteredMovements = movements.filter(movement => {
-    const dateInRange = movement.date >= dateRange.from && movement.date <= dateRange.to;
+  const filteredMovements = data?.results?.filter((movement: { date: string; name: string }) => {
+    if (!movement) return false;
+    const moveDate = new Date(movement.date);
+    const dateInRange = moveDate >= dateRange.from && moveDate <= dateRange.to;
     const matchesFilter = filters[activeTab].length === 0 ||
       filters[activeTab].some(filter => movement.name.toLowerCase().includes(filter.toLowerCase()));
     return dateInRange && matchesFilter;
-  });
+  }) || [];
 
   return (
     <>
@@ -89,12 +83,42 @@ export default function MovementsPage() {
         </div>
         <TabsContent value="stock">
           <div className="flex items-center gap-4">
-            <DataTable
-              columns={columns}
-              data={filteredMovements.filter(m => m.name.includes('stock'))}
-              searchKey="name"
-              searchPlaceholder="Buscar movimientos..."
-            />
+            <Table
+              aria-label="Movimientos de stock"
+              className="dark"
+              bottomContent={
+                pages > 0 ? (
+                  <div className="flex w-full justify-center">
+                    <Pagination
+                      isCompact
+                      showControls
+                      showShadow
+                      color="primary"
+                      page={page}
+                      total={pages}
+                      onChange={(page) => setPage(page)}
+                    />
+                  </div>
+                ) : null
+              }
+            >
+              <TableHeader>
+                {columns.map(column => (
+                  <TableColumn key={column.accessorKey}>{column.header}</TableColumn>
+                ))}
+              </TableHeader>
+              <TableBody
+                items={data?.results ?? []}
+                loadingContent={<Spinner />}
+                loadingState={loadingState}
+              >
+                {(item) => (
+                  <TableRow key={(item as { id: string }).id}>
+                    {(columnKey) => <TableCell>{(item as Record<string, string | number | boolean>)[columnKey]}</TableCell>}
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
             <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">Filtro</Button>
@@ -121,12 +145,20 @@ export default function MovementsPage() {
         </TabsContent>
         <TabsContent value="productos">
           <div className="flex items-center gap-4">
-            <DataTable
-              columns={columns}
-              data={filteredMovements}
-              searchKey="name"
-              searchPlaceholder="Buscar productos..."
-            />
+            <Table aria-label="Movimientos de productos">
+              <TableHeader>
+                {columns.map(column => (
+                  <TableColumn key={column.accessorKey}>{column.header}</TableColumn>
+                ))}
+              </TableHeader>
+              <TableBody items={filteredMovements}>
+                {(item) => (
+                  <TableRow key={(item as { id: string }).id}>
+                    {(columnKey) => <TableCell>{(item as Record<string, string | number | boolean>)[columnKey]}</TableCell>}
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
             <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">Filtro</Button>

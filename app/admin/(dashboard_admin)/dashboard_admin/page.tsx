@@ -1,7 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface Company {
@@ -10,10 +9,9 @@ interface Company {
 }
 
 export default function DashboardAdminPage() {
-  const params = useParams();
-  const [loading, setLoading] = useState(true);
-  const [company, setCompany] = useState<Company | null>(null);
-  const [error, setError] = useState<string>("");
+  const [loading, ] = useState(true);
+  const [company, ] = useState<Company | null>(null);
+  const [error, ] = useState<string>("");
   const systemStats = [
     { name: 'Lun', usuarios: 45, transacciones: 240 },
     { name: 'Mar', usuarios: 52, transacciones: 310 },
@@ -23,38 +21,6 @@ export default function DashboardAdminPage() {
     { name: 'Sáb', usuarios: 65, transacciones: 410 },
     { name: 'Dom', usuarios: 48, transacciones: 290 },
   ];
-  
-  const companyName = typeof params.companyName === 'string' 
-    ? decodeURIComponent(params.companyName) 
-    : '';
-  
-  useEffect(() => {
-    const fetchCompanyData = async () => {
-      try {
-        const response = await fetch('/api/control_login/companies');
-        const data = await response.json();
-        
-        if (data.isValid && data.data?.company) {
-          setCompany(data.data.company);
-        } else {
-          setError(data.error || "No se pudo cargar la información de la empresa");
-        }
-      } catch (err) {
-        console.error("Error fetching company data:", err);
-        setError("Error al cargar los datos de la empresa");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (!companyName) {
-      setError("Por favor seleccione una empresa para ver el panel administrativo");
-      setLoading(false);
-      return;
-    }
-
-    fetchCompanyData();
-  }, [companyName]);
   
   if (loading) {
     return <div className="p-4">Loading dashboard...</div>;

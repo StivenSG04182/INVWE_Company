@@ -6,7 +6,7 @@ export const menuSections: MenuSection[] = [
         items: [
             {
                 icon: Home,
-                label: "Dashboard",  /* David */
+                label: "Dashboard",
                 submenu: [
                     { icon: BarChart, label: "Dashboard", href: "/inventory/[companyName]/dashboard" },
                     { icon: TrendingUp, label: "Análisis", href: "/inventory/[companyName]/analytics" },
@@ -32,7 +32,7 @@ export const menuSections: MenuSection[] = [
         items: [
             {
                 icon: ShoppingCart,
-                label: "Inventario",  /* Mateo */
+                label: "Inventario", 
                 submenu: [
                     { icon: ShoppingCart, label: "Productos", href: "/inventory/[companyName]/products" },
                     { icon: Archive, label: "Stock", href: "/inventory/[companyName]/stock" },
@@ -58,11 +58,11 @@ export const menuSections: MenuSection[] = [
             },
         ],
     },
-    {
+    /* {
         items: [
             {
                 icon: Users,
-                label: "Personal & RRHH",  /* David */
+                label: "Personal & RRHH", 
                 submenu: [
                     { icon: Users, label: "Empleados", href: "/inventory/[companyName]/employees" },
                     { icon: UserCog, label: "Horarios & Nómina", href: "/inventory/[companyName]/schedule" },
@@ -74,19 +74,19 @@ export const menuSections: MenuSection[] = [
         items: [
             {
                 icon: Users,
-                label: "Clientes & CRM", /* David */
+                label: "Clientes & CRM", 
                 submenu: [
                     { icon: Users, label: "Clientes", href: "/inventory/[companyName]/clients" },
                     { icon: Mail, label: "CRM", href: "/inventory/[companyName]/crm" },
                 ],
             },
         ],
-    },
+    }, */
     {
         items: [
             {
                 icon: FileText,
-                label: "Reportes & Analíticas",  /* David */
+                label: "Reportes & Analíticas",
                 submenu: [
                     { icon: BarChart, label: "Ventas", href: "/inventory/[companyName]/sales" },
                     { icon: PieChart, label: "Inventario", href: "/inventory/[companyName]/inventory" },
@@ -95,7 +95,7 @@ export const menuSections: MenuSection[] = [
             },
         ],
     },
-    {
+/*     {
         items: [
             {
                 icon: Mail,
@@ -107,19 +107,5 @@ export const menuSections: MenuSection[] = [
                 ],
             },
         ],
-    }, 
-    {
-        items: [
-            {
-                icon: Settings,
-                label: "Configuración & Administración", /* Mateo */
-                submenu: [
-                    { icon: Settings, label: "Empresa", href: "/inventory/[companyName]/company" },
-                    { icon: UserCog, label: "Usuarios y Roles", href: "/inventory/[companyName]/users" },
-                    { icon: KeyRound, label: "Subscripciones", href: "/inventory/[companyName]/subscriptions" },
-                    { icon: Layout, label: "Integraciones", href: "/inventory/[companyName]/integrations" },
-                ],
-            },
-        ],
-    }
+    },  */
 ]

@@ -56,7 +56,7 @@ export function JoinInventoryForm({companies: initialCompanies, isLoading: initi
     useEffect(() => {
         const fetchCompanies = async () => {
             try {
-                const response = await axios.get("/api/companies/list");
+                const response = await axios.get("/api/control_login/companies/list");
                 if (response.data && Array.isArray(response.data)) {
                     setCompanies(response.data);
                 }
@@ -204,7 +204,6 @@ export function JoinInventoryForm({companies: initialCompanies, isLoading: initi
                         </FormItem>
                     )}
                 />
-
                 <FormField
                     control={form.control}
                     name="codigoSeguridad"

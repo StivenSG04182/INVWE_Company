@@ -26,7 +26,7 @@ interface Company {
 
 export default function SidebarNavigation() {
     // Estados para controlar la expansión y visibilidad del sidebar
-    const [isExpanded, setIsExpanded] = useState(true);
+    const [isExpanded, setIsExpanded] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeItem, setActiveItem] = useActiveMenu("Overview");
     // Estados para controlar la visibilidad de los modales
@@ -48,7 +48,20 @@ export default function SidebarNavigation() {
     useEffect(() => {
         const fetchCompanies = async () => {
             try {
-                const response = await axios.get("/api/companies/list");
+                const response = await axios.get("/api/control_login/companies/list", {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                // Validar que la respuesta sea JSON válido
+                if (typeof response.data === 'string') {
+                    console.error('La respuesta no es JSON válido');
+                    setStores([]);
+                    return;
+                }
+
                 if (response.data && Array.isArray(response.data)) {
                     if (company && company._id) {
                         const matchedCompany = response.data.find(

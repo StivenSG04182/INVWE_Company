@@ -67,11 +67,11 @@ export default function ProvidersPage() {
                         <div className='max-w-relative h-32 bg-gray-200 rounded-md mb-4 p-4'>
                             *imagen del producto *
                         </div>
-                            <p className="text-sm text-gray-600">
-                                product: {provider.product}
-                                <p>phone: {provider.phone}</p>
-                                <p>email: {provider.email}</p>
-                            </p>
+                            <div className="text-sm text-gray-600">
+                                <div>product: {provider.product}</div>
+                                <div>phone: {provider.phone}</div>
+                                <div>email: {provider.email}</div>
+                            </div>
                             <div className="grid grid-cols-2 gap-2 mt-4">
                                 <Button variant="outline" size="sm">Edit</Button>
                                 <Button 
