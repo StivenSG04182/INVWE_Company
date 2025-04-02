@@ -6,11 +6,11 @@ export const menuSections: MenuSection[] = [
         items: [
             {
                 icon: Home,
-                label: "Dashboard",  /* David */
+                label: "Dashboard",
                 submenu: [
-                    { icon: BarChart, label: "Dashboard", href: "/inventory/[companyName]/dashboard" },
-                    { icon: TrendingUp, label: "Análisis", href: "/inventory/[companyName]/analytics" },
-                    { icon: Archive, label: "Actividad", href: "/inventory/[companyName]/activity" },  
+                    { icon: BarChart, label: "Dashboard", href: "/inventory/dashboard" },
+                    { icon: TrendingUp, label: "Análisis", href: "/inventory/analytics" },
+                    { icon: Archive, label: "Actividad", href: "/inventory/activity" },  
                 ],
             },
         ],
@@ -21,9 +21,9 @@ export const menuSections: MenuSection[] = [
                 icon: Store,
                 label: "Tienda & E-Commerce",
                 submenu: [
-                    { icon: Store, label: "Tiendas Físicas", href: "/inventory/[companyName]/stores" },
+                    { icon: Store, label: "Tiendas Físicas", href: "/inventory/stores" },
                     { icon: ShoppingCart, label: "E-Commerce", href: "/admin/ecommerce" },
-                    { icon: Tag, label: "Envíos", href: "/inventory/[companyName]/shipping" },
+                    { icon: Tag, label: "Envíos", href: "/inventory/shipping" },
                 ],
             },
         ],
@@ -32,12 +32,12 @@ export const menuSections: MenuSection[] = [
         items: [
             {
                 icon: ShoppingCart,
-                label: "Inventario",  /* Mateo */
+                label: "Inventario", 
                 submenu: [
-                    { icon: ShoppingCart, label: "Productos", href: "/inventory/[companyName]/products" },
-                    { icon: Archive, label: "Stock", href: "/inventory/[companyName]/stock" },
-                    { icon: FileText, label: "Movimientos", href: "/inventory/[companyName]/movements" },
-                    { icon: KeyRound, label: "Proveedores", href: "/inventory/[companyName]/providers" },
+                    { icon: ShoppingCart, label: "Productos", href: "/inventory/products" },
+                    { icon: Archive, label: "Stock", href: "/inventory/stock" },
+                    { icon: FileText, label: "Movimientos", href: "/inventory/movements" },
+                    { icon: KeyRound, label: "Proveedores", href: "/inventory/providers" },
                 ],
             },
         ],
@@ -48,12 +48,12 @@ export const menuSections: MenuSection[] = [
                 icon: BarChart,
                 label: "Ventas & Facturación", 
                 submenu: [
-                    { icon: BarChart, label: "Transacciones", href: "/inventory/[companyName]/sales" },
-                    { icon: FileText, label: "Facturas", href: "/inventory/[companyName]/facturas" },
-                    { icon: PieChart, label: "Notas Crédito/Débito", href: "/inventory/[companyName]/notes" },
-                    { icon: Settings, label: "DIAN Config", href: "/inventory/[companyName]/dian" },
-                    { icon: FileChartColumn, label: "Reportes", href: "/inventory/[companyName]/reportes"},
-                    { icon: CreditCard, label: "Pagos", href: "/inventory/[companyName]/pagos"},
+                    { icon: BarChart, label: "Transacciones", href: "/inventory/sales" },
+                    { icon: FileText, label: "Facturas", href: "/inventory/facturas" },
+                    { icon: PieChart, label: "Notas Crédito/Débito", href: "/inventory/notes" },
+                    { icon: Settings, label: "DIAN Config", href: "/inventory/dian" },
+                    { icon: FileChartColumn, label: "Reportes", href: "/inventory/reportes"},
+                    { icon: CreditCard, label: "Pagos", href: "/inventory/pagos"},
                 ],
             },
         ],
@@ -62,10 +62,10 @@ export const menuSections: MenuSection[] = [
         items: [
             {
                 icon: Users,
-                label: "Personal & RRHH",  /* David */
+                label: "Personal & RRHH", 
                 submenu: [
-                    { icon: Users, label: "Empleados", href: "/inventory/[companyName]/employees" },
-                    { icon: UserCog, label: "Horarios & Nómina", href: "/inventory/[companyName]/schedule" },
+                    { icon: Users, label: "Empleados", href: "/inventory/employees" },
+                    { icon: UserCog, label: "Horarios & Nómina", href: "/inventory/schedule" },
                 ],
             },
         ],
@@ -74,10 +74,10 @@ export const menuSections: MenuSection[] = [
         items: [
             {
                 icon: Users,
-                label: "Clientes & CRM", /* David */
+                label: "Clientes & CRM", 
                 submenu: [
-                    { icon: Users, label: "Clientes", href: "/inventory/[companyName]/clients" },
-                    { icon: Mail, label: "CRM", href: "/inventory/[companyName]/crm" },
+                    { icon: Users, label: "Clientes", href: "/inventory/clients" },
+                    { icon: Mail, label: "CRM", href: "/inventory/crm" },
                 ],
             },
         ],
@@ -86,11 +86,11 @@ export const menuSections: MenuSection[] = [
         items: [
             {
                 icon: FileText,
-                label: "Reportes & Analíticas",  /* David */
+                label: "Reportes & Analíticas", 
                 submenu: [
-                    { icon: BarChart, label: "Ventas", href: "/inventory/[companyName]/sales" },
-                    { icon: PieChart, label: "Inventario", href: "/inventory/[companyName]/inventory" },
-                    { icon: TrendingUp, label: "Desempeño", href: "/inventory/[companyName]/performance" },
+                    { icon: BarChart, label: "Ventas", href: "/inventory/sales" },
+                    { icon: PieChart, label: "Inventario", href: "/inventory/inventory" },
+                    { icon: TrendingUp, label: "Desempeño", href: "/inventory/performance" },
                 ],
             },
         ],
@@ -101,9 +101,9 @@ export const menuSections: MenuSection[] = [
                 icon: Mail,
                 label: "Emails",
                 submenu: [
-                    { icon: Send, label: "Campañas", href: "/inventory/[companyName]/campaigns" },
-                    { icon: Inbox, label: "Bandeja de entrada", href: "/inventory/[companyName]/inbox" },
-                    { icon: Archive, label: "Archivos", href: "/inventory/[companyName]/archives" },
+                    { icon: Send, label: "Campañas", href: "/inventory/campaigns" },
+                    { icon: Inbox, label: "Bandeja de entrada", href: "/inventory/inbox" },
+                    { icon: Archive, label: "Archivos", href: "/inventory/archives" },
                 ],
             },
         ],
@@ -112,12 +112,12 @@ export const menuSections: MenuSection[] = [
         items: [
             {
                 icon: Settings,
-                label: "Configuración & Administración", /* Mateo */
+                label: "Configuración & Administración", 
                 submenu: [
-                    { icon: Settings, label: "Empresa", href: "/inventory/[companyName]/company" },
-                    { icon: UserCog, label: "Usuarios y Roles", href: "/inventory/[companyName]/users" },
-                    { icon: KeyRound, label: "Subscripciones", href: "/inventory/[companyName]/subscriptions" },
-                    { icon: Layout, label: "Integraciones", href: "/inventory/[companyName]/integrations" },
+                    { icon: Settings, label: "Empresa", href: "/inventory/company" },
+                    { icon: UserCog, label: "Usuarios y Roles", href: "/inventory/users" },
+                    { icon: KeyRound, label: "Subscripciones", href: "/inventory/subscriptions" },
+                    { icon: Layout, label: "Integraciones", href: "/inventory/integrations" },
                 ],
             },
         ],

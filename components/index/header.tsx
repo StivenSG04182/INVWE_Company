@@ -78,17 +78,40 @@ export function Header() {
                                     } 
                                 }}
                             />
+                            <Button 
+                                onClick={async () => {
+                                    try {
+                                        const response = await fetch('/api/control_login/companies');
+                                        if (!response.ok) throw new Error('Error en la respuesta del servidor');
+                                        const data = await response.json();
+                                        
+                                        if (data.isValid) {
+                                            if (data.data?.role === 'admin') {
+                                                window.location.href = '/admin/dashboard_admin';
+                                            } else if (data.data?.role === 'inventory' && data.data?.company?.name) {
+                                                window.location.href = `/inventory/${encodeURIComponent(data.data.company.name)}/dashboard`;
+                                            } else {
+                                                window.location.href = '/';
+                                            }
+                                        } else {
+                                            window.location.href = '/Select_inventory';
+                                        }
+                                    } catch (error) {
+                                        console.error('Error al verificar compañías:', error);
+                                    }
+                                }}
+                            >
+                                Get Started
+                            </Button>
                         </SignedIn>
                         <SignedOut>
-                            <Link href="/sign-in">
-                                <Button variant="outline" size="sm">
-                                    Login
-                                </Button>
-                            </Link>
+                            <Button 
+                                onClick={() => (window.location.href = '/sign-in')}
+                                className="gap-2 bg-black hover:bg-gray-700"
+                            >
+                                Iniciar Sesión
+                            </Button>
                         </SignedOut>
-                        <Link href="/select_inventory">
-                            <Button>Get Started</Button>
-                        </Link>
                     </div>
 
                     {/* Mobile menu button */}

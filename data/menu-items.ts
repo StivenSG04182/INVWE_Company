@@ -1,4 +1,4 @@
-import { Home, Store, ShoppingCart, Users, Tag, KeyRound, Mail, Send, Inbox, Archive, CreditCard, FileText, BarChart, PieChart, TrendingUp, UserCog, Layout, Settings, FileChartColumn } from "lucide-react"
+import { Home, Store, ShoppingCart, Users, Tag, KeyRound, Mail, Send, Inbox, Archive, CreditCard, FileText, BarChart, PieChart, TrendingUp, UserCog, Settings, FileChartColumn } from "lucide-react"
 import type { MenuSection } from "@/app/api/client/types/sidebar"
 
 export const menuSections: MenuSection[] = [
@@ -58,7 +58,7 @@ export const menuSections: MenuSection[] = [
             },
         ],
     },
-    /* {
+    {
         items: [
             {
                 icon: Users,
@@ -81,7 +81,7 @@ export const menuSections: MenuSection[] = [
                 ],
             },
         ],
-    }, */
+    },
     {
         items: [
             {
@@ -95,7 +95,7 @@ export const menuSections: MenuSection[] = [
             },
         ],
     },
-/*     {
+    {
         items: [
             {
                 icon: Mail,
@@ -107,5 +107,5 @@ export const menuSections: MenuSection[] = [
                 ],
             },
         ],
-    },  */
+    }, 
 ]

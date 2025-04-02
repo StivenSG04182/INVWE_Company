@@ -27,7 +27,9 @@ export function NotificationPanelAdmin() {
         async function fetchNotifications() {
             try {
                 const res = await fetch("/api/notifications?category=all");
-                const data = await res.json();
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                const text = await res.text();
+                const data = text ? JSON.parse(text) : {};
                 if (data.notifications) setNotifications(data.notifications);
             } catch (error) {
                 console.error("Error fetching notifications:", error);

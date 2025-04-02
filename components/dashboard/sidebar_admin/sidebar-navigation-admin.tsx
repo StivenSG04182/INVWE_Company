@@ -1,20 +1,16 @@
 "use client";
 
 import * as React from "react";
-import axios from "axios";
 import { useState, useMemo, useEffect, useRef, useTransition } from "react";
-import { MenuIcon, Search, } from "lucide-react";
-import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Avatar } from "@/components/ui/avatar";
+import { Search, } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { menuSections } from "@/data/menu-items";
+import { menuSections } from "@/data/menu-items-admin";
 import { UserButton } from "@clerk/nextjs";
-import { useCompany } from "@/hooks/use-company";
 import { SettingsPanelAdmin } from "./settings-modal-admin";
 import { NotificationPanelAdmin } from "./notification-modal-admin";
-import { useActiveMenu } from "@/hooks/use-active-menu";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue, } from "@/components/ui/select";
+import { useActiveMenu } from "@/hooks/use-active-menu-admin";
+import { useSidebarColor } from "@/hooks/use-sidebar-color";
 
 
 export default function SidebarNavigation() {
@@ -23,57 +19,24 @@ export default function SidebarNavigation() {
     const [searchQuery, setSearchQuery] = useState("");
     const [activeItem, setActiveItem] = useActiveMenu("Overview");
     // Estados para controlar la visibilidad de los modales
-    const [, setIsLogoModalOpen] = useState(false);
+    const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
 
     // Hooks para acceder a la información del usuario y la compañía
-    const { company, } = useCompany();
+    const { company, loading } = useCompany();
     const params = useParams();
     const companyName =
         typeof params.companyName === "string" ? params.companyName : "";
+        
+    // Hook para acceder al color del sidebar
+    const { sidebarColor } = useSidebarColor();
 
     // Estado y refs para la gestión de la interfaz
     const [, startTransition] = useTransition();
-    const [stores, setStores] = useState<Array<{ _id: string, name: string }>>([]);
     const iconSidebarRef = useRef<HTMLDivElement>(null);
     const expandablePanelRef = useRef<HTMLDivElement>(null);
 
     // Efecto para cargar las tiendas y manejar clics fuera del sidebar
     useEffect(() => {
-        const fetchCompanies = async () => {
-            try {
-                const response = await axios.get("/api/control_login/companies/list", {
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                // Validar que la respuesta sea JSON válido
-                if (typeof response.data === 'string') {
-                    console.error('La respuesta no es JSON válido');
-                    setStores([]);
-                    return;
-                }
-
-                if (response.data && Array.isArray(response.data)) {
-                    if (company && company._id) {
-                        const matchedCompany = response.data.find(
-                            (comp) => comp._id === company._id
-                        );
-                        if (matchedCompany && matchedCompany.stores) {
-                            setStores(matchedCompany.stores);
-                        } else {
-                            setStores([]);
-                        }
-                    } else {
-                        setStores([]);
-                    }
-                }
-            } catch (error) {
-                console.error("Error fetching companies:", error);
-            }
-        };
-        fetchCompanies();
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as HTMLElement;
             const isSelectElement = target.closest('[data-exclude-close]');
@@ -94,13 +57,8 @@ export default function SidebarNavigation() {
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, [company]);
+    }, []);
 
-
-    // Función para alternar la expansión del sidebar
-    const toggleSidebar = () => {
-        setIsExpanded((prev) => !prev);
-    };
 
     // Manejador para cuando se selecciona un ítem del menú
     const handleItemClick = (label: string) => {
@@ -125,7 +83,7 @@ export default function SidebarNavigation() {
                     mainOption: menuItem.label,
                     icon: menuItem.icon,
                     label: menuItem.label,
-                    href: menuItem.href?.replace("[companyName]", companyName),
+                    href: menuItem.href
                 });
                 if (menuItem.submenu) {
                     menuItem.submenu.forEach((subItem) => {
@@ -133,15 +91,14 @@ export default function SidebarNavigation() {
                             mainOption: menuItem.label,
                             icon: subItem.icon,
                             label: subItem.label,
-                            href: subItem.href?.replace("[companyName]", companyName),
+                            href: subItem.href
                         });
                     });
                 }
             });
         });
         return items;
-    }, [companyName]);
-
+    }, []);
 
     // Memorización de los ítems filtrados según la búsqueda
     const filteredItems = useMemo(() => {
@@ -164,117 +121,126 @@ export default function SidebarNavigation() {
         <>
             {/* Contenedor principal que ocupa toda la altura de la pantalla */}
             <div className="flex h-screen">
-                {/* Barra lateral con iconos, siempre visible */}
-                <div
-                    ref={iconSidebarRef}
-                    className="flex h-full w-16 flex-col bg-white shadow-md">
-                    <div className="flex flex-col flex-1 justify-between min-h-screen">
-                        <div className="flex flex-col h-full">
-                            <div
-                                className="flex items-center justify-center md:p-3 cursor-pointer hover:bg-gray-50"
-                                onClick={() => setIsLogoModalOpen(true)}>
-                                <Avatar className="h-8 w-8 md:h-10 md:w-10">
-                                    {/*  */}
-                                </Avatar>
-                            </div>
-                            {/* Sección de elementos principales del menú */}
-                            <div className="flex flex-col items-center justify-center flex-grow ">
-                                {mainMenuItems.map((section) =>
-                                    section.items.map((item) => (
-                                        <button
-                                            key={item.label}
-                                            onClick={() => handleItemClick(item.label)}
-                                            className={cn(
-                                                "mb-2 flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100",
-                                                activeItem === item.label
-                                                    ? "bg-gray-100 font-semibold text-gray-900"
-                                                    : "text-gray-700"
-                                            )}>
-                                            <item.icon className="h-5 w-5" />
-                                        </button>
-                                    ))
-                                )}
-                            </div>
+                    {/* Barra lateral con iconos, siempre visible */}
+                    <div
+                        ref={iconSidebarRef}
+                        className="flex h-full w-16 flex-col shadow-md"
+                        style={{ backgroundColor: sidebarColor }}>
+                        <div className="flex flex-col flex-1 justify-between min-h-screen">
+                            <div className="flex flex-col h-full">
 
-                            {/* Sección inferior con notificaciones y configuraciones */}
-                            <div className="flex flex-col items-center justify-center pb-2 space-y-1">
-                                <NotificationPanelAdmin />
-                                <SettingsPanelAdmin />
-                                <div className="relative h-10 w-10 mx-auto flex justify-center">
-                                    <UserButton afterSignOutUrl="/" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {/* Panel expandible que muestra detalles del menú */}
-                <div
-                    ref={expandablePanelRef}
-                    className={cn(
-                        "w-64 bg-white shadow-lg transition-all duration-300",
-                        !isExpanded && "w-0 overflow-hidden"
-                    )}>
-                    <div className="flex h-full flex-col">
-                        {/* Cabecera con búsqueda */}
-                        <div className="px-4 py-3">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
-                                <input
-                                    type="text"
-                                    placeholder="Search..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-500 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
-                                />
-                            </div>
-                        </div>
-                        {/* Navegación principal con resultados de búsqueda o submenú */}
-                        <nav className="flex-1 space-y-1 px-3 overflow-y-auto">
-                            {searchQuery ? (
-                                <div className="space-y-1">
-                                    {filteredItems.map(({ mainOption, icon: Icon, label }, index) => (
-                                        <button
-                                            key={`${mainOption}-${label}-${index}`}
-                                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
-                                            <Icon className="h-5 w-5" />
-                                            <span>{label}</span>
-                                            <span className="ml-auto text-xs font-normal text-gray-500">
-                                                {mainOption}
-                                            </span>
-                                        </button>
-                                    ))}
-                                    {filteredItems.length === 0 && (
-                                        <div className="px-3 py-2 text-sm text-gray-500">
-                                            No options found
-                                        </div>
+                                {/* Sección de elementos principales del menú */}
+                                <div className="flex flex-col items-center justify-center flex-grow ">
+                                    {mainMenuItems.map((section) =>
+                                        section.items.map((item) => (
+                                            <button
+                                                key={item.label}
+                                                onClick={() => handleItemClick(item.label)}
+                                                className={cn(
+                                                    "mb-2 flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100",
+                                                    activeItem === item.label
+                                                        ? "bg-gray-100 font-semibold text-gray-900"
+                                                        : "text-gray-700"
+                                                )}>
+                                                <item.icon className="h-5 w-5" />
+                                            </button>
+                                        ))
                                     )}
                                 </div>
-                            ) : (
-                                activeMenuItem?.submenu && (
-                                    <div className="py-3">
-                                        <h2 className="mb-2 px-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                                            {activeItem}
-                                        </h2>
-                                        <div className="space-y-1">
-                                            {activeMenuItem.submenu.map((subItem) => (
-                                                <Link
-                                                    key={subItem.label}
-                                                    href={subItem.href?.replace("[companyName]", companyName) || "#"}
-                                                    onClick={() => setIsExpanded(true)}
-                                                    className="group flex items-center rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
-                                                    <subItem.icon className="mr-3 h-5 w-5" />
-                                                    {subItem.label}
-                                                </Link>
-                                            ))}
-                                        </div>
+
+                                {/* Sección inferior con notificaciones y configuraciones */}
+                                <div className="flex flex-col items-center justify-center pb-2 space-y-1">
+                                    <NotificationPanelAdmin />
+                                    <SettingsPanelAdmin />
+                                    <div className="relative h-10 w-10 mx-auto flex justify-center">
+                                        <UserButton afterSignOutUrl="/" />
                                     </div>
-                                )
-                            )}
-                        </nav>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                {/* area principal de modal */}
-            </div >
-        </>
-    );
+                    {/* Panel expandible que muestra detalles del menú */}
+                    <div
+                        ref={expandablePanelRef}
+                        className={cn(
+                            "w-64 shadow-lg transition-all duration-300",
+                            !isExpanded && "w-0 overflow-hidden"
+                        )}
+                        style={{ 
+                            backgroundColor: sidebarColor,
+                            filter: "brightness(1.1)" // Versión más clara del mismo color para el panel expandible
+                        }}>
+                        <div className="flex h-full flex-col">
+                            {/* Cabecera con búsqueda */}
+                            <div className="px-4 py-3">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-500 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
+                                    />
+                                </div>
+                            </div>
+                            {/* Navegación principal con resultados de búsqueda o submenú */}
+                            <nav className="flex-1 space-y-1 px-3 overflow-y-auto">
+                                {searchQuery ? (
+                                    <div className="space-y-1">
+                                        {filteredItems.map(({ mainOption, icon: Icon, label }, index) => (
+                                            <button
+                                                key={`${mainOption}-${label}-${index}`}
+                                                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                                                style={{
+                                                    backgroundColor: `${sidebarColor}`,
+                                                    filter: "brightness(1.25)", // Versión más clara para los resultados de búsqueda
+                                                    marginBottom: "4px"
+                                                }}>
+                                                <Icon className="h-5 w-5" />
+                                                <span>{label}</span>
+                                                <span className="ml-auto text-xs font-normal text-gray-500">
+                                                    {mainOption}
+                                                </span>
+                                            </button>
+                                        ))}
+                                        {filteredItems.length === 0 && (
+                                            <div className="px-3 py-2 text-sm text-gray-500">
+                                                No options found
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    activeMenuItem?.submenu && (
+                                        <div className="py-3">
+                                            <h2 className="mb-2 px-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                                                {activeItem}
+                                            </h2>
+                                            <div className="space-y-1">
+                                                {activeMenuItem.submenu.map((subItem) => (
+                                                    <Link
+                                                        key={subItem.label}
+                                                        href={subItem.href || "#"}
+                                                        className="group flex items-center rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                                                        style={{
+                                                            backgroundColor: `${sidebarColor}`,
+                                                            filter: "brightness(1.25)", // Versión más clara para las subopciones
+                                                            marginBottom: "4px"
+                                                        }}>
+                                                        <subItem.icon className="mr-3 h-5 w-5" />
+                                                        {subItem.label}
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )
+                                )}
+                            </nav>
+                        </div>
+                    </div>
+                    {/* area principal de modal */}
+                </div >
+            </>
+        );
 }
+

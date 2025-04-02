@@ -15,6 +15,7 @@ import { useCompany } from "@/hooks/use-company";
 import { SettingsPanel } from "./settings-modal";
 import { NotificationPanel } from "./notification-modal";
 import { useActiveMenu } from "@/hooks/use-active-menu";
+import { useSidebarColor } from "@/hooks/use-sidebar-color";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue, } from "@/components/ui/select";
 
 interface Company {
@@ -37,6 +38,9 @@ export default function SidebarNavigation() {
     const params = useParams();
     const companyName =
         typeof params.companyName === "string" ? params.companyName : "";
+    
+    // Hook para acceder al color del sidebar
+    const { sidebarColor } = useSidebarColor();
 
     // Estado y refs para la gestión de la interfaz
     const [, startTransition] = useTransition();
@@ -174,7 +178,8 @@ export default function SidebarNavigation() {
                 {/* Barra lateral con iconos, siempre visible */}
                 <div
                     ref={iconSidebarRef}
-                    className="flex h-full w-16 flex-col bg-white shadow-md">
+                    className="flex h-full w-16 flex-col shadow-md"
+                    style={{ backgroundColor: sidebarColor }}>
                     <div className="flex flex-col flex-1 justify-between min-h-screen">
                         <div className="flex flex-col h-full">
                             <div
@@ -208,9 +213,9 @@ export default function SidebarNavigation() {
                                             key={item.label}
                                             onClick={() => handleItemClick(item.label)}
                                             className={cn(
-                                                "mb-2 flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100",
+                                                "mb-2 flex h-10 w-10 items-center justify-center rounded-lg hover:bg-white/30",
                                                 activeItem === item.label
-                                                    ? "bg-gray-100 font-semibold text-gray-900"
+                                                    ? "bg-white/20 font-semibold text-gray-900"
                                                     : "text-gray-700"
                                             )}>
                                             <item.icon className="h-5 w-5" />
@@ -234,9 +239,13 @@ export default function SidebarNavigation() {
                 <div
                     ref={expandablePanelRef}
                     className={cn(
-                        "w-64 bg-white shadow-lg transition-all duration-300",
+                        "w-64 shadow-lg transition-all duration-300",
                         !isExpanded && "w-0 overflow-hidden"
-                    )}>
+                    )}
+                    style={{ 
+                        backgroundColor: sidebarColor,
+                        filter: "brightness(1.1)" // Versión más clara del mismo color para las subopciones
+                    }}>
                     <div className="flex h-full flex-col">
                         {/* Cabecera con búsqueda */}
                         <div className="flex h-16 items-center justify-between px-4">
@@ -289,7 +298,12 @@ export default function SidebarNavigation() {
                                     {filteredItems.map(({ mainOption, icon: Icon, label }, index) => (
                                         <button
                                             key={`${mainOption}-${label}-${index}`}
-                                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                                            style={{
+                                                backgroundColor: `${sidebarColor}`,
+                                                filter: "brightness(1.25)", // Versión más clara para los resultados de búsqueda
+                                                marginBottom: "4px"
+                                            }}>
                                             <Icon className="h-5 w-5" />
                                             <span>{label}</span>
                                             <span className="ml-auto text-xs font-normal text-gray-500">
@@ -315,7 +329,12 @@ export default function SidebarNavigation() {
                                                     key={subItem.label}
                                                     href={subItem.href?.replace("[companyName]", companyName) || "#"}
                                                     onClick={() => setIsExpanded(true)}
-                                                    className="group flex items-center rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                                                    className="group flex items-center rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                                                    style={{
+                                                        backgroundColor: `${sidebarColor}`,
+                                                        filter: "brightness(1.25)", // Versión más clara para las subopciones
+                                                        marginBottom: "4px"
+                                                    }}>
                                                     <subItem.icon className="mr-3 h-5 w-5" />
                                                     {subItem.label}
                                                 </Link>

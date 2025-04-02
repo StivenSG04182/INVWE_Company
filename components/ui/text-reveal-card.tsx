@@ -19,14 +19,14 @@ export const TextRevealCard = ({
     return (
         <div
             className={cn(
-                "relative w-full max-w-md overflow-hidden rounded-xl border border-neutral-200 bg-white p-8 shadow-lg",
+                "relative w-full max-w-md overflow-hidden rounded-xl border bg-white p-8 shadow-lg",
                 className,
             )}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
             <motion.div initial={{ opacity: 1 }} animate={{ opacity: isHovered ? 0 : 1 }} transition={{ duration: 0.5 }}>
-                <h2 className={`text-2xl font-bold text-neutral-800 text-${textAlign}`}>{text}</h2>
+                <h2 className={`text-2xl font-bold text-500 text-${textAlign}`}>{text}</h2>
             </motion.div>
             <motion.div
                 initial={{ opacity: 0 }}
@@ -34,7 +34,7 @@ export const TextRevealCard = ({
                 transition={{ duration: 0.2 }}
                 className="absolute inset-0 flex items-center justify-center bg-white"
             >
-                <h2 className={`text-2xl font-bold text-neutral-800 text-${textAlign}`}>{revealText}</h2>
+                <h2 className={`text-2xl font-bold text-500 text-${textAlign}`}>{revealText}</h2>
             </motion.div>
         </div>
     )

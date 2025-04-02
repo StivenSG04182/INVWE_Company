@@ -9,6 +9,8 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import axios from "axios"
 import { toast } from "sonner"
+import { ArcColorPicker } from "@/components/ui/arc-color-picker";
+import { useSidebarColor } from "@/hooks/use-sidebar-color";
 
 const subscriptionPlans = [
     {
@@ -73,6 +75,8 @@ export function SettingsPageAdmin({ hasNewNotification = false, hasNewMessage = 
 }
 
 export function SettingsPanelAdmin() {
+    const [selectedColor, setSelectedColor] = useState("#f6d365");
+    const [grainIntensity, setGrainIntensity] = useState(50);
     const [notifications, setNotifications] = useState([]);
     const [, setLoading] = useState(true);
     const router = useRouter();
@@ -180,6 +184,30 @@ export function SettingsPanelAdmin() {
                         </TabsContent>
                         <TabsContent value="templates" className="space-y-4 h-full">
 
+                        </TabsContent>
+                        <TabsContent value="themes" className="space-y-4 h-full">
+                            <div className="w-full max-w-md mx-auto">
+                                <h2 className="text-2xl font-bold mb-6 text-center">Color del Sidebar</h2>
+                                <p className="text-muted-foreground mb-8 text-center">Selecciona un color para personalizar la barra lateral</p>
+                                <ArcColorPicker
+                                    selectedColor={selectedColor}
+                                    setSelectedColor={setSelectedColor}
+                                    grainIntensity={grainIntensity}
+                                    setGrainIntensity={setGrainIntensity}
+                                />
+                                <div className="mt-8 flex justify-center">
+                                    <Button 
+                                        onClick={() => {
+                                            const sidebarColor = useSidebarColor.getState();
+                                            sidebarColor.setSidebarColor(selectedColor);
+                                            toast.success("Color del sidebar actualizado");
+                                        }}
+                                        className="bg-custom-blue hover:bg-custom-blue/90 dark:bg-custom-gold dark:hover:bg-custom-gold/90 dark:text-black"
+                                    >
+                                        Aplicar Color
+                                    </Button>
+                                </div>
+                            </div>
                         </TabsContent>
                     </div>
                 </Tabs>
