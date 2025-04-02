@@ -213,7 +213,7 @@ export default function SidebarNavigation() {
                                             key={item.label}
                                             onClick={() => handleItemClick(item.label)}
                                             className={cn(
-                                                "mb-2 flex h-10 w-10 items-center justify-center rounded-lg hover:bg-white/30",
+                                                "flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100",
                                                 activeItem === item.label
                                                     ? "bg-white/20 font-semibold text-gray-900"
                                                     : "text-gray-700"
@@ -244,7 +244,7 @@ export default function SidebarNavigation() {
                     )}
                     style={{ 
                         backgroundColor: sidebarColor,
-                        filter: "brightness(1.1)" // Versión más clara del mismo color para las subopciones
+                        filter: "brightness(0.72)" // Versión más clara del mismo color para las subopciones
                     }}>
                     <div className="flex h-full flex-col">
                         {/* Cabecera con búsqueda */}
@@ -275,7 +275,7 @@ export default function SidebarNavigation() {
                         <div className="px-4 py-4 border-t-2 border-b-2 border-solid border-gray-300">
                             <div className="relative">
                                 <Select>
-                                    <SelectTrigger className="w-[220px] h-[40px] text-sm" data-exclude-close="true">
+                                    <SelectTrigger className="w-[220px] h-[40px] text-sm bg-while" data-exclude-close="true">
                                         <SelectValue placeholder="Seleccionar Tienda" />
                                     </SelectTrigger>
                                     <SelectContent className="w-[220px] z-[9999]" side="bottom" align="start" position="popper" sideOffset={8} data-exclude-close="true">
@@ -301,7 +301,7 @@ export default function SidebarNavigation() {
                                             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
                                             style={{
                                                 backgroundColor: `${sidebarColor}`,
-                                                filter: "brightness(1.25)", // Versión más clara para los resultados de búsqueda
+                                                filter: "brightness(0.75)", // Versión más clara para los resultados de búsqueda
                                                 marginBottom: "4px"
                                             }}>
                                             <Icon className="h-5 w-5" />
@@ -332,7 +332,7 @@ export default function SidebarNavigation() {
                                                     className="group flex items-center rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
                                                     style={{
                                                         backgroundColor: `${sidebarColor}`,
-                                                        filter: "brightness(1.25)", // Versión más clara para las subopciones
+                                                        filter: "brightness(0.7)", // Versión más clara para las subopciones
                                                         marginBottom: "4px"
                                                     }}>
                                                     <subItem.icon className="mr-3 h-5 w-5" />
