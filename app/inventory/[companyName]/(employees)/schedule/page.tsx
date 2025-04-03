@@ -221,7 +221,7 @@ export default function SchedulePage() {
     }
 
     return (
-        <div className="p-6">
+        <div className="p-6 ">
             <h1 className="text-2xl font-bold mb-6">Horarios</h1>
 
             <div className="flex gap-6">
@@ -258,11 +258,11 @@ export default function SchedulePage() {
                     </CardContent>
                 </Card>
 
-                <Card className='flex-1'>
+                <Card className='flex-1 '>
                     <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle>Detalles del Horario</CardTitle>
                         {selectedEmployee && selectedEmployee !== 'all' && (
-                            <div className="flex space-x-2">
+                            <div className="flex space-x-2 ">
                                 {scheduleData ? (
                                     <>
                                         <Button variant="outline" size="sm" onClick={handleEdit}>

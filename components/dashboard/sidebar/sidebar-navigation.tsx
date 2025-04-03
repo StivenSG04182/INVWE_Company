@@ -3,7 +3,7 @@
 import * as React from "react";
 import axios from "axios";
 import { useState, useMemo, useEffect, useRef, useTransition } from "react";
-import { MenuIcon, Search, } from "lucide-react";
+import { MenuIcon, Search, ShoppingCart, } from "lucide-react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -26,17 +26,18 @@ interface Company {
 }
 
 export default function SidebarNavigation() {
+    const [ShoppingCartQuery, setShoppingCartQuery] = useState("");
     // Estados para controlar la expansión y visibilidad del sidebar
     const [isExpanded, setIsExpanded] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeItem, setActiveItem] = useActiveMenu("Overview");
-    
+
     // Estados para controlar la visibilidad de los modales
     const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    
-    
+
+
     // Estado y refs para la gestión de la interfaz
     const [isPending, startTransition] = useTransition();
     const [stores, setStores] = useState<Array<{ _id: string, name: string }>>([]);
@@ -81,10 +82,10 @@ export default function SidebarNavigation() {
         fetchCompanies();
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as HTMLElement;
-            
+
             // Verificar elementos que no deben cerrar el sidebar
             const isExcludedElement = target.closest('[data-exclude-close], [role="listbox"]');
-            
+
             // Determinar si el clic está dentro de las áreas del sidebar
             const isInSidebarArea = (
                 (iconSidebarRef.current?.contains(target)) ||
@@ -282,7 +283,12 @@ export default function SidebarNavigation() {
                             <div className="relative">
                                 <Select>
                                     <SelectTrigger className="w-[220px] h-[40px] text-sm bg-white text-gray-900" data-exclude-close="true">
-                                        <SelectValue placeholder="Seleccionar Tienda" />
+                                        <ShoppingCart />
+                                        <SelectValue
+                                            placeholder="Seleccionar Tienda"
+                                            value={ShoppingCartQuery}
+                                            onChange={(e) => setShoppingCartQuery(e.target.value)}
+                                            className="w-full" />
                                     </SelectTrigger>
                                     <SelectContent className="w-[220px] z-[9999] bg-white text-gray-900" side="bottom" align="start" position="popper" sideOffset={8} data-exclude-close="true">
                                         <SelectGroup>
