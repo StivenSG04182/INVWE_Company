@@ -17,6 +17,13 @@ export async function POST(req: NextRequest) {
         }
 
         // Obtener los datos de la solicitud
+        const contentType = req.headers.get('content-type');
+        if (!contentType?.includes('application/json')) {
+            return NextResponse.json(
+                { error: 'Formato no soportado' },
+                { status: 415 }
+            );
+        }
         const data = await req.json();
 
         // Validar los datos de entrada
@@ -80,8 +87,12 @@ export async function POST(req: NextRequest) {
         console.error('Error al generar la plantilla:', error);
         return NextResponse.json({
             error: 'Error al procesar la solicitud',
-            details: error instanceof Error ? error.message : 'Error desconocido'
-        }, { status: 500 });
+            details: error instanceof Error ? error.message : 'Error desconocido',
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        }, { 
+            status: 500, 
+            headers: { 'content-type': 'application/json' } 
+        });
     }
 }
 
@@ -147,7 +158,11 @@ export async function GET(req: NextRequest) {
         console.error('Error al obtener opciones de generación:', error);
         return NextResponse.json({
             error: 'Error al procesar la solicitud',
-            details: error instanceof Error ? error.message : 'Error desconocido'
-        }, { status: 500 });
+            details: error instanceof Error ? error.message : 'Error desconocido',
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        }, { 
+            status: 500, 
+            headers: { 'content-type': 'application/json' } 
+        });
     }
 }

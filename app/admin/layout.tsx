@@ -44,7 +44,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             }}
         >
             <SidebarNavigation />
-            <main className="flex-1 overflow-auto">
+            <main className="flex-1 overflow-auto w-full">
                 {children}
             </main>
         </div>

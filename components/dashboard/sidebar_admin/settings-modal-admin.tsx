@@ -77,6 +77,7 @@ export function SettingsPageAdmin({ hasNewNotification = false, hasNewMessage = 
 export function SettingsPanelAdmin() {
     const [selectedColor, setSelectedColor] = useState("#f6d365");
     const [grainIntensity, setGrainIntensity] = useState(50);
+    const [selectedPosition, setSelectedPosition] = useState('left');
     const [notifications, setNotifications] = useState([]);
     const [, setLoading] = useState(true);
     const router = useRouter();
@@ -186,26 +187,177 @@ export function SettingsPanelAdmin() {
 
                         </TabsContent>
                         <TabsContent value="themes" className="space-y-4 h-full">
-                            <div className="w-full max-w-md mx-auto">
-                                <h2 className="text-2xl font-bold mb-6 text-center">Color del Sidebar</h2>
-                                <p className="text-muted-foreground mb-8 text-center">Selecciona un color para personalizar la barra lateral</p>
-                                <ArcColorPicker
-                                    selectedColor={selectedColor}
-                                    setSelectedColor={setSelectedColor}
-                                    grainIntensity={grainIntensity}
-                                    setGrainIntensity={setGrainIntensity}
-                                />
-                                <div className="mt-8 flex justify-center">
-                                    <Button 
-                                        onClick={() => {
-                                            const sidebarColor = useSidebarColor.getState();
-                                            sidebarColor.setSidebarColor(selectedColor);
-                                            toast.success("Color del sidebar actualizado");
-                                        }}
-                                        className="bg-custom-blue hover:bg-custom-blue/90 dark:bg-custom-gold dark:hover:bg-custom-gold/90 dark:text-black"
-                                    >
-                                        Aplicar Color
-                                    </Button>
+                            <h2 className="text-2xl font-bold mb-6 text-center">Color del Sidebar</h2>
+                            <p className="text-muted-foreground mb-4 text-center">Selecciona un color para personalizar la barra lateral</p>
+                            
+                            {/* Contenedor principal con dos columnas */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                {/* Columna izquierda: Selector de color */}
+                                <div className="bg-white p-6 rounded-lg shadow-md">
+                                    <h3 className="text-lg font-semibold mb-4">Selector de Color</h3>
+                                    <ArcColorPicker
+                                        selectedColor={selectedColor}
+                                        setSelectedColor={setSelectedColor}
+                                        grainIntensity={grainIntensity}
+                                        setGrainIntensity={setGrainIntensity}
+                                    />
+                                </div>
+                                
+                                {/* Columna derecha: Vista previa */}
+                                <div className="bg-white p-6 rounded-lg shadow-md">
+                                    <h3 className="text-lg font-semibold mb-4">Vista Previa</h3>
+                                    <div className="border rounded-lg overflow-hidden h-[300px] relative">
+                                        {/* Simulación de la estructura de la página */}
+                                        {selectedPosition === 'top' ? (
+                                            <div className="flex flex-col h-full">
+                                                {/* Sidebar arriba simulado */}
+                                                <div 
+                                                    className="h-16 w-full flex flex-row items-center justify-center px-4 shadow-md" 
+                                                    style={{ backgroundColor: selectedColor || '#f6d365' }}
+                                                >
+                                                    {/* Iconos simulados en horizontal */}
+                                                    <div className="flex space-x-4">
+                                                        {[1, 2, 3, 4, 5].map((item) => (
+                                                            <div key={item} className="w-8 h-8 rounded-full bg-white/20"></div>
+                                                        ))}
+                                                        <div className="ml-auto flex space-x-4">
+                                                            <div className="w-8 h-8 rounded-full bg-white/20"></div>
+                                                            <div className="w-8 h-8 rounded-full bg-white/20"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {/* Contenido simulado */}
+                                                <div className="flex-1 bg-gray-100 p-4">
+                                                    <div className="h-8 bg-white rounded-md mb-4"></div>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div className="h-24 bg-white rounded-md"></div>
+                                                        <div className="h-24 bg-white rounded-md"></div>
+                                                        <div className="h-24 bg-white rounded-md"></div>
+                                                        <div className="h-24 bg-white rounded-md"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : selectedPosition === 'right' ? (
+                                            <div className="flex h-full">
+                                                {/* Contenido simulado */}
+                                                <div className="flex-1 bg-gray-100 p-4">
+                                                    <div className="h-8 bg-white rounded-md mb-4"></div>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div className="h-24 bg-white rounded-md"></div>
+                                                        <div className="h-24 bg-white rounded-md"></div>
+                                                        <div className="h-24 bg-white rounded-md"></div>
+                                                        <div className="h-24 bg-white rounded-md"></div>
+                                                    </div>
+                                                </div>
+                                                {/* Sidebar derecho simulado */}
+                                                <div 
+                                                    className="w-16 h-full flex flex-col items-center py-4 shadow-md" 
+                                                    style={{ backgroundColor: selectedColor || '#f6d365' }}
+                                                >
+                                                    {/* Iconos simulados */}
+                                                    {[1, 2, 3, 4, 5].map((item) => (
+                                                        <div key={item} className="w-8 h-8 rounded-full bg-white/20 mb-4"></div>
+                                                    ))}
+                                                    <div className="mt-auto">
+                                                        <div className="w-8 h-8 rounded-full bg-white/20 mb-4"></div>
+                                                        <div className="w-8 h-8 rounded-full bg-white/20"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex h-full">
+                                                {/* Sidebar izquierdo simulado (por defecto) */}
+                                                <div 
+                                                    className="w-16 h-full flex flex-col items-center py-4 shadow-md" 
+                                                    style={{ backgroundColor: selectedColor || '#f6d365' }}
+                                                >
+                                                    {/* Iconos simulados */}
+                                                    {[1, 2, 3, 4, 5].map((item) => (
+                                                        <div key={item} className="w-8 h-8 rounded-full bg-white/20 mb-4"></div>
+                                                    ))}
+                                                    <div className="mt-auto">
+                                                        <div className="w-8 h-8 rounded-full bg-white/20 mb-4"></div>
+                                                        <div className="w-8 h-8 rounded-full bg-white/20"></div>
+                                                    </div>
+                                                </div>
+                                                {/* Contenido simulado */}
+                                                <div className="flex-1 bg-gray-100 p-4">
+                                                    <div className="h-8 bg-white rounded-md mb-4"></div>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div className="h-24 bg-white rounded-md"></div>
+                                                        <div className="h-24 bg-white rounded-md"></div>
+                                                        <div className="h-24 bg-white rounded-md"></div>
+                                                        <div className="h-24 bg-white rounded-md"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Contenedor para opciones de posición del sidebar */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                <div className="bg-white p-6 rounded-lg shadow-md">
+                                    <h3 className="text-lg font-semibold mb-4">Posición del Sidebar</h3>
+                                    <div className="flex justify-center space-x-4 flex-wrap">
+                                        <button 
+                                            className={`p-4 border rounded-lg hover:bg-gray-100 transition-colors ${selectedPosition === 'left' ? 'ring-2 ring-blue-500' : ''}`}
+                                            onClick={() => {
+                                                setSelectedPosition('left');
+                                                toast.info("Sidebar a la izquierda seleccionado");
+                                            }}
+                                        >
+                                            <div className="flex h-20 w-32 border rounded overflow-hidden">
+                                                <div className="w-1/4 bg-gray-300"></div>
+                                                <div className="w-3/4 bg-white"></div>
+                                            </div>
+                                            <p className="mt-2 text-sm font-medium">Izquierda</p>
+                                        </button>
+                                        <button 
+                                            className={`p-4 border rounded-lg hover:bg-gray-100 transition-colors ${selectedPosition === 'right' ? 'ring-2 ring-blue-500' : ''}`}
+                                            onClick={() => {
+                                                setSelectedPosition('right');
+                                                toast.info("Sidebar a la derecha seleccionado");
+                                            }}
+                                        >
+                                            <div className="flex h-20 w-32 border rounded overflow-hidden">
+                                                <div className="w-3/4 bg-white"></div>
+                                                <div className="w-1/4 bg-gray-300"></div>
+                                            </div>
+                                            <p className="mt-2 text-sm font-medium">Derecha</p>
+                                        </button>
+                                        <button 
+                                            className={`p-4 border rounded-lg hover:bg-gray-100 transition-colors mt-4 ${selectedPosition === 'top' ? 'ring-2 ring-blue-500' : ''}`}
+                                            onClick={() => {
+                                                setSelectedPosition('top');
+                                                toast.info("Sidebar arriba seleccionado");
+                                            }}
+                                        >
+                                            <div className="flex flex-col h-20 w-32 border rounded overflow-hidden">
+                                                <div className="h-1/4 w-full bg-gray-300"></div>
+                                                <div className="h-3/4 w-full bg-white"></div>
+                                            </div>
+                                            <p className="mt-2 text-sm font-medium">Arriba</p>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="bg-white p-6 rounded-lg shadow-md">
+                                    <h3 className="text-lg font-semibold mb-4">Aplicar Cambios</h3>
+                                    <p className="text-sm text-gray-500 mb-4">Aplica los cambios de color y posición al sidebar de tu aplicación.</p>
+                                    <div className="flex justify-center">
+                                        <Button
+                                            onClick={() => {
+                                                const sidebarColor = useSidebarColor.getState();
+                                                sidebarColor.setSidebarColor(selectedColor);
+                                                sidebarColor.setSidebarPosition(selectedPosition);
+                                                toast.success("Configuración del sidebar actualizada");
+                                            }}
+                                            className="bg-custom-blue hover:bg-custom-blue/90 dark:bg-custom-gold dark:hover:bg-custom-gold/90 dark:text-black"
+                                        >
+                                            Aplicar Cambios
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                         </TabsContent>

@@ -30,42 +30,36 @@ export default function SidebarNavigation() {
     const [isExpanded, setIsExpanded] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeItem, setActiveItem] = useActiveMenu("Overview");
+    
     // Estados para controlar la visibilidad de los modales
     const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
+    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    
+    
+    // Estado y refs para la gestión de la interfaz
+    const [isPending, startTransition] = useTransition();
+    const [stores, setStores] = useState<Array<{ _id: string, name: string }>>([]);
+    const iconSidebarRef = useRef<HTMLDivElement>(null);
+    const expandablePanelRef = useRef<HTMLDivElement>(null);
 
     // Hooks para acceder a la información del usuario y la compañía
     const { company, loading } = useCompany();
     const params = useParams();
     const companyName =
         typeof params.companyName === "string" ? params.companyName : "";
-    
-    // Hook para acceder al color del sidebar
-    const { sidebarColor } = useSidebarColor();
+
+    // Hook para acceder al color y posición del sidebar
+    const { sidebarColor, sidebarPosition } = useSidebarColor();
 
     // Estado y refs para la gestión de la interfaz
-    const [, startTransition] = useTransition();
-    const [stores, setStores] = useState<Array<{ _id: string, name: string }>>([]);
-    const iconSidebarRef = useRef<HTMLDivElement>(null);
-    const expandablePanelRef = useRef<HTMLDivElement>(null);
+
 
     // Efecto para cargar las tiendas y manejar clics fuera del sidebar
     useEffect(() => {
         const fetchCompanies = async () => {
             try {
-                const response = await axios.get("/api/control_login/companies/list", {
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                // Validar que la respuesta sea JSON válido
-                if (typeof response.data === 'string') {
-                    console.error('La respuesta no es JSON válido');
-                    setStores([]);
-                    return;
-                }
-
+                const response = await axios.get("/api/control_login/companies/list");
                 if (response.data && Array.isArray(response.data)) {
                     if (company && company._id) {
                         const matchedCompany = response.data.find(
@@ -87,16 +81,18 @@ export default function SidebarNavigation() {
         fetchCompanies();
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as HTMLElement;
-            const isSelectElement = target.closest('[data-exclude-close]');
-            const isSelectContent = target.closest('[role="listbox"]');
-            if (
-                iconSidebarRef.current &&
-                !iconSidebarRef.current.contains(event.target as Node) &&
-                expandablePanelRef.current &&
-                !expandablePanelRef.current.contains(event.target as Node) &&
-                !isSelectElement &&
-                !isSelectContent
-            ) {
+            
+            // Verificar elementos que no deben cerrar el sidebar
+            const isExcludedElement = target.closest('[data-exclude-close], [role="listbox"]');
+            
+            // Determinar si el clic está dentro de las áreas del sidebar
+            const isInSidebarArea = (
+                (iconSidebarRef.current?.contains(target)) ||
+                (expandablePanelRef.current?.contains(target))
+            );
+
+            // Cerrar solo si el clic está fuera de ambas áreas y no es un elemento excluido
+            if (!isInSidebarArea && !isExcludedElement) {
                 setIsExpanded(false);
             }
         };
@@ -153,7 +149,6 @@ export default function SidebarNavigation() {
         return items;
     }, [companyName]);
 
-
     // Memorización de los ítems filtrados según la búsqueda
     const filteredItems = useMemo(() => {
         if (!searchQuery) return [];
@@ -174,14 +169,14 @@ export default function SidebarNavigation() {
     return (
         <>
             {/* Contenedor principal que ocupa toda la altura de la pantalla */}
-            <div className="flex h-screen">
+            <div className={`${sidebarPosition === 'top' ? 'flex flex-col' : 'flex'} h-screen`}>
                 {/* Barra lateral con iconos, siempre visible */}
                 <div
                     ref={iconSidebarRef}
-                    className="flex h-full w-16 flex-col shadow-md"
+                    className={`${sidebarPosition === 'top' ? 'flex w-full h-16 flex-row shadow-md' : sidebarPosition === 'right' ? 'flex h-full w-16 flex-col shadow-md ml-auto' : 'flex h-full w-16 flex-col shadow-md'}`}
                     style={{ backgroundColor: sidebarColor }}>
-                    <div className="flex flex-col flex-1 justify-between min-h-screen">
-                        <div className="flex flex-col h-full">
+                    <div className={`${sidebarPosition === 'top' ? 'flex flex-row w-full justify-between items-center px-4' : 'flex flex-col flex-1 justify-between min-h-screen'}`}>
+                        <div className={`${sidebarPosition === 'top' ? 'flex flex-row items-center' : 'flex flex-col h-full'}`}>
                             <div
                                 className="flex items-center justify-center md:p-3 cursor-pointer hover:bg-gray-50"
                                 onClick={() => setIsLogoModalOpen(true)}>
@@ -195,27 +190,27 @@ export default function SidebarNavigation() {
                                     </AvatarFallback>
                                 </Avatar>
                             </div>
-                            <div className="flex items-center justify-center h-10">
+                            <div className={`${sidebarPosition === 'top' ? 'flex items-center justify-center h-10 ml-4' : 'flex items-center justify-center h-10'}`}>
                                 {!isExpanded && (
                                     <button
-                                        onClick={() => setIsExpanded(true)}
-                                        className="rounded-lg p-2 text-gray-700 hover:bg-gray-100"
+                                        onClick={toggleSidebar}
+                                        className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100"
                                     >
-                                        <Search className="h-5 w-5" />
+                                        <MenuIcon className="h-5 w-5" />
                                     </button>
                                 )}
                             </div>
                             {/* Sección de elementos principales del menú */}
-                            <div className="flex flex-col items-center justify-center flex-grow ">
+                            <div className={`${sidebarPosition === 'top' ? 'flex flex-row items-center justify-center ml-4 space-x-2' : 'flex flex-col items-center justify-center flex-grow'}`}>
                                 {mainMenuItems.map((section) =>
                                     section.items.map((item) => (
                                         <button
                                             key={item.label}
                                             onClick={() => handleItemClick(item.label)}
                                             className={cn(
-                                                "flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100",
+                                                sidebarPosition === 'top' ? "mx-1 flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100" : "mb-2 flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100",
                                                 activeItem === item.label
-                                                    ? "bg-white/20 font-semibold text-gray-900"
+                                                    ? "bg-gray-100 font-semibold text-gray-900"
                                                     : "text-gray-700"
                                             )}>
                                             <item.icon className="h-5 w-5" />
@@ -225,7 +220,7 @@ export default function SidebarNavigation() {
                             </div>
 
                             {/* Sección inferior con notificaciones y configuraciones */}
-                            <div className="flex flex-col items-center justify-center pb-2 space-y-1">
+                            <div className={`${sidebarPosition === 'top' ? 'flex flex-row items-center justify-center space-x-2' : 'flex flex-col items-center justify-center pb-2 space-y-1'}`}>
                                 <NotificationPanel />
                                 <SettingsPanel />
                                 <div className="relative h-10 w-10 mx-auto flex justify-center">
@@ -239,16 +234,27 @@ export default function SidebarNavigation() {
                 <div
                     ref={expandablePanelRef}
                     className={cn(
-                        "w-64 shadow-lg transition-all duration-300",
-                        !isExpanded && "w-0 overflow-hidden"
+                        sidebarPosition === 'top'
+                            ? `h-64 w-full shadow-lg transition-all duration-300 ${!isExpanded && "h-0 overflow-hidden"}`
+                            : sidebarPosition === 'right'
+                                ? `w-64 shadow-lg transition-all duration-300 ${!isExpanded && "w-0 overflow-hidden"}`
+                                : `w-64 shadow-lg transition-all duration-300 ${!isExpanded && "w-0 overflow-hidden"}`
                     )}
-                    style={{ 
+                    style={{
                         backgroundColor: sidebarColor,
-                        filter: "brightness(0.72)" // Versión más clara del mismo color para las subopciones
+                        filter: "brightness(1.05)", // Versión ligeramente más clara para el panel expandible
+                        position: sidebarPosition === 'top' ? 'absolute' : 'relative',
+                        top: sidebarPosition === 'top' ? '3rem' : 'auto',
+                        left: sidebarPosition === 'top' ? '0' : 'auto',
+                        right: sidebarPosition === 'right' ? '0' : 'auto',
+                        width: sidebarPosition === 'top' ? '100%' : '16rem',
+                        zIndex: 50,
+                        order: sidebarPosition === 'right' ? -1 : 'initial',
+                        marginLeft: sidebarPosition === 'right' ? '0' : 'auto'
                     }}>
-                    <div className="flex h-full flex-col">
+                    <div className={`flex ${sidebarPosition === 'top' ? 'flex-row' : 'flex-col'} h-full bg-white/90`}>
                         {/* Cabecera con búsqueda */}
-                        <div className="flex h-16 items-center justify-between px-4">
+                        <div className="flex h-16 items-center justify-between px-4 bg-white">
                             <div className="flex items-center gap-3">
                                 <span className="font-semibold text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]" style={{ fontSize: '14px', transform: 'none', zoom: '1' }}>
                                     {loading ? "Loading..." : company?.name || "Company Name"}
@@ -262,23 +268,23 @@ export default function SidebarNavigation() {
                         </div>
                         <div className="px-4 py-3">
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
+                                <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 " />
                                 <input
                                     type="text"
                                     placeholder="Search..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-500 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
+                                    className="w-full rounded-lg border border-black py-2 pl-10 pr-4 text-sm text-black focus:outline-none focus:ring-1 bg-white"
                                 />
                             </div>
                         </div>
                         <div className="px-4 py-4 border-t-2 border-b-2 border-solid border-gray-300">
                             <div className="relative">
                                 <Select>
-                                    <SelectTrigger className="w-[220px] h-[40px] text-sm bg-while" data-exclude-close="true">
+                                    <SelectTrigger className="w-[220px] h-[40px] text-sm bg-white text-gray-900" data-exclude-close="true">
                                         <SelectValue placeholder="Seleccionar Tienda" />
                                     </SelectTrigger>
-                                    <SelectContent className="w-[220px] z-[9999]" side="bottom" align="start" position="popper" sideOffset={8} data-exclude-close="true">
+                                    <SelectContent className="w-[220px] z-[9999] bg-white text-gray-900" side="bottom" align="start" position="popper" sideOffset={8} data-exclude-close="true">
                                         <SelectGroup>
                                             <SelectLabel>Tiendas</SelectLabel>
                                             {stores.map((store) => (
@@ -298,15 +304,14 @@ export default function SidebarNavigation() {
                                     {filteredItems.map(({ mainOption, icon: Icon, label }, index) => (
                                         <button
                                             key={`${mainOption}-${label}-${index}`}
-                                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100"
                                             style={{
-                                                backgroundColor: `${sidebarColor}`,
-                                                filter: "brightness(0.75)", // Versión más clara para los resultados de búsqueda
+                                                backgroundColor: "white",
                                                 marginBottom: "4px"
                                             }}>
                                             <Icon className="h-5 w-5" />
                                             <span>{label}</span>
-                                            <span className="ml-auto text-xs font-normal text-gray-500">
+                                            <span className="ml-auto text-xs font-normal">
                                                 {mainOption}
                                             </span>
                                         </button>
@@ -329,10 +334,9 @@ export default function SidebarNavigation() {
                                                     key={subItem.label}
                                                     href={subItem.href?.replace("[companyName]", companyName) || "#"}
                                                     onClick={() => setIsExpanded(true)}
-                                                    className="group flex items-center rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                                                    className="group flex items-center rounded-lg px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100"
                                                     style={{
-                                                        backgroundColor: `${sidebarColor}`,
-                                                        filter: "brightness(0.7)", // Versión más clara para las subopciones
+                                                        backgroundColor: "white",
                                                         marginBottom: "4px"
                                                     }}>
                                                     <subItem.icon className="mr-3 h-5 w-5" />
@@ -347,7 +351,7 @@ export default function SidebarNavigation() {
                     </div>
                 </div>
                 {/* Área principal y modales */}
-                <div className="flex-1 overflow-y-auto p-3">
+                <div className={`flex-1 overflow-y-auto p-3 ${sidebarPosition === 'top' ? 'mt-4' : ''}`}>
                     {/* Modal para subir el logo de la empresa */}
                     <LogoUploadModal
                         isOpen={isLogoModalOpen}

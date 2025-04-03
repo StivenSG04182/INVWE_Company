@@ -55,8 +55,12 @@ export async function GET(req: NextRequest) {
         console.error('Error al obtener las plantillas:', error);
         return NextResponse.json({
             error: 'Error al procesar la solicitud',
-            details: error instanceof Error ? error.message : 'Error desconocido'
-        }, { status: 500 });
+            details: error instanceof Error ? error.message : 'Error desconocido',
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        }, { 
+            status: 500,
+            headers: { 'content-type': 'application/json' }
+        });
     }
 }
 
@@ -73,7 +77,14 @@ export async function POST(req: NextRequest) {
         }
 
         // Obtener los datos de la solicitud
-        const data = await req.json();
+        const contentType = req.headers.get('content-type');
+if (!contentType?.includes('application/json')) {
+  return NextResponse.json(
+    { error: 'Formato no soportado' },
+    { status: 415, headers: { 'content-type': 'application/json' } }
+  );
+}
+const data = await req.json();
 
         let template: Template;
 
@@ -118,7 +129,11 @@ export async function POST(req: NextRequest) {
         console.error('Error al crear la plantilla:', error);
         return NextResponse.json({
             error: 'Error al procesar la solicitud',
-            details: error instanceof Error ? error.message : 'Error desconocido'
-        }, { status: 500 });
+            details: error instanceof Error ? error.message : 'Error desconocido',
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        }, { 
+            status: 500,
+            headers: { 'content-type': 'application/json' }
+        });
     }
 }

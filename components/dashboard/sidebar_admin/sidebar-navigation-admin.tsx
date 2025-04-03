@@ -27,8 +27,8 @@ export default function SidebarNavigation() {
     const companyName =
         typeof params.companyName === "string" ? params.companyName : "";
         
-    // Hook para acceder al color del sidebar
-    const { sidebarColor } = useSidebarColor();
+    // Hook para acceder al color y posición del sidebar
+    const { sidebarColor, sidebarPosition } = useSidebarColor();
 
     // Estado y refs para la gestión de la interfaz
     const [, startTransition] = useTransition();
@@ -120,24 +120,24 @@ export default function SidebarNavigation() {
     return (
         <>
             {/* Contenedor principal que ocupa toda la altura de la pantalla */}
-            <div className="flex h-screen">
+            <div className={`${sidebarPosition === 'top' ? 'flex flex-col' : 'flex'} h-screen`}>
                     {/* Barra lateral con iconos, siempre visible */}
                     <div
                         ref={iconSidebarRef}
-                        className="flex h-full w-16 flex-col shadow-md"
+                        className={`${sidebarPosition === 'top' ? 'flex w-full h-16 flex-row shadow-md' : sidebarPosition === 'right' ? 'flex h-full w-16 flex-col shadow-md ml-auto' : 'flex h-full w-16 flex-col shadow-md'}`}
                         style={{ backgroundColor: sidebarColor }}>
-                        <div className="flex flex-col flex-1 justify-between min-h-screen">
-                            <div className="flex flex-col h-full">
+                        <div className={`${sidebarPosition === 'top' ? 'flex flex-row w-full justify-between items-center px-4' : 'flex flex-col flex-1 justify-between min-h-screen'}`}>
+                            <div className={`${sidebarPosition === 'top' ? 'flex flex-row items-center' : 'flex flex-col h-full'}`}>
 
                                 {/* Sección de elementos principales del menú */}
-                                <div className="flex flex-col items-center justify-center flex-grow ">
+                                <div className={`${sidebarPosition === 'top' ? 'flex flex-row items-center justify-center ml-4 space-x-2' : 'flex flex-col items-center justify-center flex-grow'}`}>
                                     {mainMenuItems.map((section) =>
                                         section.items.map((item) => (
                                             <button
                                                 key={item.label}
                                                 onClick={() => handleItemClick(item.label)}
                                                 className={cn(
-                                                    "mb-2 flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100",
+                                                    sidebarPosition === 'top' ? "mx-1 flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100" : "mb-2 flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100",
                                                     activeItem === item.label
                                                         ? "bg-gray-100 font-semibold text-gray-900"
                                                         : "text-gray-700"
@@ -149,7 +149,7 @@ export default function SidebarNavigation() {
                                 </div>
 
                                 {/* Sección inferior con notificaciones y configuraciones */}
-                                <div className="flex flex-col items-center justify-center pb-2 space-y-1">
+                                <div className={`${sidebarPosition === 'top' ? 'flex flex-row items-center justify-center space-x-2' : 'flex flex-col items-center justify-center pb-2 space-y-1'}`}>
                                     <NotificationPanelAdmin />
                                     <SettingsPanelAdmin />
                                     <div className="relative h-10 w-10 mx-auto flex justify-center">
@@ -163,8 +163,11 @@ export default function SidebarNavigation() {
                     <div
                         ref={expandablePanelRef}
                         className={cn(
-                            "w-64 shadow-lg transition-all duration-300",
-                            !isExpanded && "w-0 overflow-hidden"
+                            sidebarPosition === 'top' 
+                                ? `h-64 w-full shadow-lg transition-all duration-300 ${!isExpanded && "h-0 overflow-hidden"}` 
+                                : sidebarPosition === 'right'
+                                    ? `w-64 shadow-lg transition-all duration-300 ${!isExpanded && "w-0 overflow-hidden"}`
+                                    : `w-64 shadow-lg transition-all duration-300 ${!isExpanded && "w-0 overflow-hidden"}`
                         )}
                         style={{ 
                             backgroundColor: sidebarColor,
@@ -180,21 +183,20 @@ export default function SidebarNavigation() {
                                         placeholder="Search..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-500 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
+                                        className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-500 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
                                     />
                                 </div>
                             </div>
                             {/* Navegación principal con resultados de búsqueda o submenú */}
-                            <nav className="flex-1 space-y-1 px-3 overflow-y-auto">
+                            <nav className="flex-1 space-y-1 px-3 overflow-y-auto bg-white dark:bg-gray-800">
                                 {searchQuery ? (
                                     <div className="space-y-1">
                                         {filteredItems.map(({ mainOption, icon: Icon, label }, index) => (
                                             <button
                                                 key={`${mainOption}-${label}-${index}`}
-                                                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                                                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
                                                 style={{
-                                                    backgroundColor: `${sidebarColor}`,
-                                                    filter: "brightness(1.25)", // Versión más clara para los resultados de búsqueda
+                                                    backgroundColor: 'transparent',
                                                     marginBottom: "4px"
                                                 }}>
                                                 <Icon className="h-5 w-5" />
