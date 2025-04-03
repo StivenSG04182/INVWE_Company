@@ -46,6 +46,7 @@ export default function SchedulePage() {
     const [date, setDate] = useState<Date>(new Date())
     const [selectedEmployee, setSelectedEmployee] = useState<string>('')
     const [scheduleData, setScheduleData] = useState<ScheduleData | null>(null)
+    const [employeesWithSchedule, setEmployeesWithSchedule] = useState<Array<{id: string, name: string, schedule: ScheduleData}>>([])
     const [isEditing, setIsEditing] = useState(false)
     const [editData, setEditData] = useState<ScheduleData>({
         entrada: "",
@@ -56,6 +57,7 @@ export default function SchedulePage() {
     const [allSchedules, setAllSchedules] = useState<Record<string, Record<string, ScheduleData>>>(initialSchedules)
     const [isAddingSchedule, setIsAddingSchedule] = useState(false)
     const [daysWithSchedules, setDaysWithSchedules] = useState<Record<string, boolean>>({})
+    const [activeTab, setActiveTab] = useState<string>('details')
 
     // Formatear fecha como YYYY-MM-DD para buscar en los datos
     function formatDate(date: Date): string {
@@ -67,11 +69,30 @@ export default function SchedulePage() {
 
     // Cargar datos de horario según empleado y fecha seleccionados
     useEffect(() => {
-        if (selectedEmployee && date) {
-            const dateStr = formatDate(date)
+        const dateStr = formatDate(date)
+        
+        // Buscar todos los empleados que tienen horario para la fecha seleccionada
+        const employeesScheduled = []
+        for (const empId in allSchedules) {
+            if (allSchedules[empId][dateStr]) {
+                const employee = employeesData.find(emp => emp.id === empId)
+                if (employee) {
+                    employeesScheduled.push({
+                        id: empId,
+                        name: employee.name,
+                        schedule: allSchedules[empId][dateStr]
+                    })
+                }
+            }
+        }
+        setEmployeesWithSchedule(employeesScheduled)
+        
+        // Si hay un empleado específico seleccionado, mostramos su horario
+        if (selectedEmployee && selectedEmployee !== 'all') {
             const employeeSchedules = allSchedules[selectedEmployee] || {}
             setScheduleData(employeeSchedules[dateStr] || null)
         } else {
+            // Si no hay empleado seleccionado o se seleccionó "Todos", no mostrar un horario específico
             setScheduleData(null)
         }
     }, [selectedEmployee, date, allSchedules])
@@ -80,14 +101,14 @@ export default function SchedulePage() {
     useEffect(() => {
         const scheduledDays: Record<string, boolean> = {}
         
-        // Si hay un empleado seleccionado, solo mostramos sus días con horario
-        if (selectedEmployee) {
+        // Si hay un empleado seleccionado y no es "todos", solo mostramos sus días con horario
+        if (selectedEmployee && selectedEmployee !== 'all') {
             const employeeSchedules = allSchedules[selectedEmployee] || {}
             Object.keys(employeeSchedules).forEach(dateStr => {
                 scheduledDays[dateStr] = true
             })
         } else {
-            // Si no hay empleado seleccionado, mostramos todos los días que tienen algún horario
+            // Si no hay empleado seleccionado o es "todos", mostramos todos los días que tienen algún horario
             Object.values(allSchedules).forEach(employeeSchedules => {
                 Object.keys(employeeSchedules).forEach(dateStr => {
                     scheduledDays[dateStr] = true
@@ -120,7 +141,7 @@ export default function SchedulePage() {
 
     // Guardar cambios de horario
     const handleSaveChanges = () => {
-        if (!selectedEmployee || !date) return
+        if (!selectedEmployee || !date || selectedEmployee === 'all') return
         
         const dateStr = formatDate(date)
         const newSchedules = { ...allSchedules }
@@ -153,7 +174,7 @@ export default function SchedulePage() {
 
     // Guardar nuevo horario
     const handleSaveNewSchedule = () => {
-        if (!selectedEmployee || !date) return
+        if (!selectedEmployee || !date || selectedEmployee === 'all') return
         
         const dateStr = formatDate(date)
         const newSchedules = { ...allSchedules }
@@ -175,7 +196,7 @@ export default function SchedulePage() {
 
     // Eliminar horario
     const handleDeleteSchedule = () => {
-        if (!selectedEmployee || !date) return
+        if (!selectedEmployee || !date || selectedEmployee === 'all') return
         
         const dateStr = formatDate(date)
         const newSchedules = { ...allSchedules }
@@ -194,6 +215,7 @@ export default function SchedulePage() {
 
     // Obtener nombre de empleado por ID
     const getEmployeeName = (id: string) => {
+        if (id === 'all') return "Todos los empleados"
         const employee = employeesData.find(emp => emp.id === id)
         return employee ? employee.name : "Desconocido"
     }
@@ -202,30 +224,16 @@ export default function SchedulePage() {
         <div className="p-6">
             <h1 className="text-2xl font-bold mb-6">Horarios</h1>
 
-            <div className="grid gap-6 md:grid-cols-2">
-                <Card>
+            <div className="flex gap-6">
+                <Card className='flex-none'>
                     <CardHeader>
                         <CardTitle>Calendario</CardTitle>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="text-sm font-medium">Empleado</label>
-                                <Select onValueChange={setSelectedEmployee} value={selectedEmployee}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Seleccionar empleado" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {employeesData.map(emp => (
-                                            <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
+                        
                         <p className="text-sm text-gray-500 ">
                             Los días en <span className="text-blue-600 font-bold">azul</span> tienen horarios asignados
                         </p>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className='flex justify-center grid cols-1'>
                     <Calendar
                         mode="single"
                         selected={date}
@@ -250,10 +258,10 @@ export default function SchedulePage() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className='flex-1'>
                     <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle>Detalles del Horario</CardTitle>
-                        {selectedEmployee && (
+                        {selectedEmployee && selectedEmployee !== 'all' && (
                             <div className="flex space-x-2">
                                 {scheduleData ? (
                                     <>
@@ -274,7 +282,23 @@ export default function SchedulePage() {
                     </CardHeader>
                     <CardContent>
                         <div>
-                            {selectedEmployee ? (
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-sm font-medium">Empleado</label>
+                                <Select onValueChange={setSelectedEmployee} value={selectedEmployee}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccionar empleado" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Todos los empleados</SelectItem>
+                                        {employeesData.map(emp => (
+                                            <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                            {selectedEmployee && selectedEmployee !== 'all' ? (
                                 scheduleData ? (
                                     <div>
                                         <h3 className="text-sm font-medium mb-2">Horario del día</h3>
@@ -308,9 +332,43 @@ export default function SchedulePage() {
                                     </div>
                                 )
                             ) : (
-                                <div className="py-8 text-center">
-                                    <p className="text-gray-500">Selecciona un empleado para ver su horario.</p>
-                                </div>
+                                employeesWithSchedule.length > 0 ? (
+                                    <div>
+                                        <h3 className="text-sm font-medium mb-4">Horarios para el {date.toLocaleDateString()}</h3>
+                                        <div className="space-y-6">
+                                            {employeesWithSchedule.map((employeeWithSchedule) => (
+                                                <div key={employeeWithSchedule.id} className="border rounded-lg p-4">
+                                                    <h4 className="font-medium text-lg mb-3">{employeeWithSchedule.name}</h4>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <span className="text-sm text-gray-500">Entrada:</span>
+                                                            <p className="font-medium">{employeeWithSchedule.schedule.entrada}</p>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-sm text-gray-500">Salida:</span>
+                                                            <p className="font-medium">{employeeWithSchedule.schedule.salida}</p>
+                                                        </div>
+                                                        <div className="col-span-2">
+                                                            <span className="text-sm text-gray-500">Descanso:</span>
+                                                            <p className="font-medium">{employeeWithSchedule.schedule.descanso || "No especificado"}</p>
+                                                        </div>
+                                                        {employeeWithSchedule.schedule.notas && (
+                                                            <div className="col-span-2">
+                                                                <span className="text-sm text-gray-500">Notas:</span>
+                                                                <p className="font-medium">{employeeWithSchedule.schedule.notas}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="py-8 text-center">
+                                        <p className="text-gray-500">No hay horarios asignados para esta fecha.</p>
+                                        <p className="text-sm text-gray-400 mt-2">Selecciona un empleado específico para asignar un horario.</p>
+                                    </div>
+                                )
                             )}
                         </div>
                     </CardContent>
