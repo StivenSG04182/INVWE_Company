@@ -4,6 +4,11 @@ export interface Functionality {
     id: string;
     nombre: string;
     descripcion: string;
+    categoria: string;
+    creadorId: string;
+    votos: number;
+    progreso: number;
+    tareas?: { id: string; descripcion: string; completada: boolean }[];
 }
 
 export const functionalities: Functionality[] = [

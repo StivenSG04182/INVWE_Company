@@ -1,29 +1,55 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Settings, FolderCode, ThumbsUp, XCircle, Plus, Pencil } from "lucide-react";
+import { Settings, FolderCode, ThumbsUp, XCircle, Plus, Pencil, CheckCircle2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner"
 import { useSidebarColor } from "@/hooks/use-sidebar-color";
 import PricingTables from "@/components/ui/pricing-tables";
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { Functionality, functionalities } from "@/data/functionalities";
+import { FunctionalityModal } from "./functionality-modal";
+import { useAuth } from "@clerk/nextjs";
 
 export function SettingsPanel() {
     const [selectedPosition, setSelectedPosition] = useState('left');
     const [, setNotifications] = useState([]);
-    const [, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
 
-    const [, setIsModalOpen] = useState(false);
-    const [, setCurrentFunctionality] = useState<Functionality | null>(null);
-    const [, setModalMode] = useState<'add' | 'edit'>('add');
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [currentFunctionality, setCurrentFunctionality] = useState<Functionality | null>(null);
+    const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
     const [FolderCodeTerm, setFolderCodeTerm] = useState("");
-    const [functionality,] = useState<Functionality[]>(functionalities);
+    const [functionality, setFunctionality] = useState<Functionality[]>([]);
+    const [currentUserId, setCurrentUserId] = useState("user-1"); // Simulamos un ID de usuario
 
     const filteredFunctionality = functionality.filter(functionality =>
         functionality.nombre.toLowerCase().includes(FolderCodeTerm.toLowerCase()) ||
-        functionality.descripcion.toLowerCase().includes(FolderCodeTerm.toLowerCase())
+        functionality.descripcion.toLowerCase().includes(FolderCodeTerm.toLowerCase()) ||
+        functionality.categoria?.toLowerCase().includes(FolderCodeTerm.toLowerCase())
     );
+
+    // Función para cargar las funcionalidades desde la API
+    const fetchFunctionalities = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch('/api/client/control_dash/(settings)/functionality/read');
+            if (!response.ok) {
+                // Si la API aún no está implementada, usamos los datos locales
+                setFunctionality(functionalities);
+                return;
+            }
+            const data = await response.json();
+            setFunctionality(data.functionalities);
+        } catch (error) {
+            console.error('Error fetching functionalities:', error);
+            // Fallback a datos locales si hay un error
+            setFunctionality(functionalities);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Función para abrir el modal en modo añadir
     const handleAddFunctionality = () => {
@@ -39,10 +65,63 @@ export function SettingsPanel() {
         setIsModalOpen(true);
     };
 
+    // Función para guardar una funcionalidad (nueva o editada)
+    const handleSaveFunctionality = (savedFunctionality: Functionality) => {
+        if (modalMode === 'add') {
+            setFunctionality(prev => [...prev, savedFunctionality]);
+        } else {
+            setFunctionality(prev => 
+                prev.map(item => item.id === savedFunctionality.id ? savedFunctionality : item)
+            );
+        }
+    };
+
+    // Función para votar por una funcionalidad
+    const handleVote = async (functionality: Functionality) => {
+        try {
+            const updatedFunctionality = {
+                ...functionality,
+                votos: functionality.votos + 1
+            };
+            
+            const response = await fetch('/api/client/control_dash/(settings)/functionality/write', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    functionality: updatedFunctionality,
+                    mode: 'edit'
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al votar por la funcionalidad');
+            }
+
+            const data = await response.json();
+            
+            // Actualizar el estado local
+            setFunctionality(prev => 
+                prev.map(item => item.id === updatedFunctionality.id ? updatedFunctionality : item)
+            );
+            
+            toast.success("Voto registrado correctamente");
+        } catch (error) {
+            console.error('Error:', error);
+            toast.error("Ocurrió un error al registrar tu voto");
+        }
+    };
+
     // Función para limpiar el término de búsqueda
     const clearFolderCode = () => {
         setFolderCodeTerm("");
     };
+
+    // Cargar funcionalidades al montar el componente
+    useEffect(() => {
+        fetchFunctionalities();
+    }, []);
 
 
     // Obtener todas las propiedades y métodos del hook useSidebarColor
@@ -484,7 +563,11 @@ export function SettingsPanel() {
                                     </button>
                                 </div>
                                 <div className="h-full rounded-lg border border-gray-400 flex-grow pb-10 pt-10 mt-4 overflow-y-auto">
-                                    {filteredFunctionality.length === 0 ? (
+                                    {loading ? (
+                                        <div className="flex items-center justify-center h-40">
+                                            <p className="text-gray-500">Cargando funcionalidades...</p>
+                                        </div>
+                                    ) : filteredFunctionality.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center h-full p-8">
                                             <p className="text-gray-500 mb-4">No se encontraron funcionalidades</p>
                                             <Button onClick={handleAddFunctionality} variant="outline">
@@ -498,17 +581,71 @@ export function SettingsPanel() {
                                                 <div
                                                     key={item.id}
                                                     className="bg-white border rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow"
-                                                    onClick={() => handleEditFunctionality(item)}
                                                 >
-                                                    <div className="flex justify-between items-start mb-4">
+                                                    <div className="flex justify-between items-start mb-2">
                                                         <h3 className="text-lg font-semibold">{item.nombre}</h3>
-                                                        <Button variant="ghost" size="sm">
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
+                                                        {item.creadorId === currentUserId && (
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="sm"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleEditFunctionality(item);
+                                                                }}
+                                                            >
+                                                                <Pencil className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                                                            {item.categoria || 'Sin categoría'}
+                                                        </span>
+                                                        <span className="text-xs text-gray-500">
+                                                            {item.votos} {item.votos === 1 ? 'voto' : 'votos'}
+                                                        </span>
                                                     </div>
                                                     <p className="text-gray-600 mb-4">{item.descripcion}</p>
+                                                    
+                                                    <div className="mb-4">
+                                                        <div className="flex justify-between items-center mb-1">
+                                                            <span className="text-sm font-medium">Progreso</span>
+                                                            <span className="text-sm font-medium">{item.progreso}%</span>
+                                                        </div>
+                                                        <Progress value={item.progreso} className="h-2" />
+                                                    </div>
+                                                    
+                                                    {item.tareas && item.tareas.length > 0 && (
+                                                        <div className="mb-4">
+                                                            <h4 className="text-sm font-semibold mb-2">Tareas</h4>
+                                                            <ul className="space-y-1">
+                                                                {item.tareas.map(tarea => (
+                                                                    <li key={tarea.id} className="flex items-start gap-2">
+                                                                        <div className="mt-0.5">
+                                                                            {tarea.completada ? (
+                                                                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                                                            ) : (
+                                                                                <div className="h-4 w-4 rounded-full border border-gray-300" />
+                                                                            )}
+                                                                        </div>
+                                                                        <span className={`text-sm ${tarea.completada ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                                                                            {tarea.descripcion}
+                                                                        </span>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    )}
+                                                    
                                                     <div className="flex justify-end">
-                                                        <Button variant="outline" size="sm">
+                                                        <Button 
+                                                            variant="outline" 
+                                                            size="sm"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleVote(item);
+                                                            }}
+                                                        >
                                                             <ThumbsUp className="h-4 w-4 mr-2" />
                                                             Votar
                                                         </Button>
@@ -519,6 +656,16 @@ export function SettingsPanel() {
                                     )}
                                 </div>
                             </div>
+                            
+                            {/* Modal para añadir/editar funcionalidades */}
+                            <FunctionalityModal 
+                                isOpen={isModalOpen}
+                                onClose={() => setIsModalOpen(false)}
+                                functionality={currentFunctionality}
+                                mode={modalMode}
+                                onSave={handleSaveFunctionality}
+                                currentUserId={currentUserId}
+                            />
                         </TabsContent>
                     </div>
                 </Tabs>
