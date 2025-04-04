@@ -5,6 +5,7 @@ import './globals.css'
 import type React from 'react'
 import { ThemeProvider } from "@/components/index/theme-provider"
 import { CookieConsentProvider } from "@/components/cookie-consent/cookie-provider"
+import { NotificationProvider } from "@/providers/notification-provider"
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -31,8 +32,10 @@ export default function RootLayout({
             enableSystem={false}
             disableTransitionOnChange
             storageKey="invwe-theme">
-            <div className="flex-grow">{children}</div>
-            <CookieConsentProvider />
+            <NotificationProvider>
+              <div className="flex-grow">{children}</div>
+              <CookieConsentProvider />
+            </NotificationProvider>
           </ThemeProvider>
         </body>
       </html>
