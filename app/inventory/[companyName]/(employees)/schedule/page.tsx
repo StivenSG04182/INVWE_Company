@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog'
 import { toast } from '@/components/ui/use-toast'
+import { Edit, EditIcon, Icon } from 'lucide-react'
 
 // Datos de ejemplo - En una aplicación real, esto vendría de una API o base de datos
 const employeesData = [
@@ -224,8 +225,8 @@ export default function SchedulePage() {
         <div className="p-6 ">
             <h1 className="text-2xl font-bold mb-6">Horarios</h1>
 
-            <div className="flex gap-6">
-                <Card className='flex-none'>
+            <div className="flex gap-6 overflow-y-auto">
+                <Card className='flex-none h-full'>
                     <CardHeader>
                         <CardTitle>Calendario</CardTitle>
                         
@@ -233,7 +234,7 @@ export default function SchedulePage() {
                             Los días en <span className="text-blue-600 font-bold">azul</span> tienen horarios asignados
                         </p>
                     </CardHeader>
-                    <CardContent className='flex justify-center grid cols-1'>
+                    <CardContent className=''>
                     <Calendar
                         mode="single"
                         selected={date}
@@ -258,7 +259,7 @@ export default function SchedulePage() {
                     </CardContent>
                 </Card>
 
-                <Card className='flex-1 '>
+                <Card className='flex-1 overflow-auto'>
                     <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle>Detalles del Horario</CardTitle>
                         {selectedEmployee && selectedEmployee !== 'all' && (
@@ -335,31 +336,35 @@ export default function SchedulePage() {
                                 employeesWithSchedule.length > 0 ? (
                                     <div>
                                         <h3 className="text-sm font-medium mb-4">Horarios para el {date.toLocaleDateString()}</h3>
-                                        <div className="space-y-6">
+                                        <div className="space-y-6 grid grid-cols-1">
                                             {employeesWithSchedule.map((employeeWithSchedule) => (
-                                                <div key={employeeWithSchedule.id} className="border rounded-lg p-4">
-                                                    <h4 className="font-medium text-lg mb-3">{employeeWithSchedule.name}</h4>
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div>
-                                                            <span className="text-sm text-gray-500">Entrada:</span>
-                                                            <p className="font-medium">{employeeWithSchedule.schedule.entrada}</p>
-                                                        </div>
-                                                        <div>
-                                                            <span className="text-sm text-gray-500">Salida:</span>
-                                                            <p className="font-medium">{employeeWithSchedule.schedule.salida}</p>
-                                                        </div>
-                                                        <div className="col-span-2">
-                                                            <span className="text-sm text-gray-500">Descanso:</span>
-                                                            <p className="font-medium">{employeeWithSchedule.schedule.descanso || "No especificado"}</p>
-                                                        </div>
-                                                        {employeeWithSchedule.schedule.notas && (
-                                                            <div className="col-span-2">
-                                                                <span className="text-sm text-gray-500">Notas:</span>
-                                                                <p className="font-medium">{employeeWithSchedule.schedule.notas}</p>
+                                                <Button variant='outline' 
+                                                className='w-full h-full flex flex-items'
+                                                endIcon={Edit}>
+                                                    <div key={employeeWithSchedule.id} className="border border-rose-600 rounded-lg p-4 w-full">
+                                                        <h4 className="font-medium text-lg mb-3 underline">{employeeWithSchedule.name}</h4>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div>
+                                                                <span className="text-sm text-gray-500">Entrada:</span>
+                                                                <p className="font-medium">{employeeWithSchedule.schedule.entrada}</p>
                                                             </div>
-                                                        )}
+                                                            <div>
+                                                                <span className="text-sm text-gray-500">Salida:</span>
+                                                                <p className="font-medium">{employeeWithSchedule.schedule.salida}</p>
+                                                            </div>
+                                                            <div className="col-span-2">
+                                                                <span className="text-sm text-gray-500">Descanso:</span>
+                                                                <p className="font-medium">{employeeWithSchedule.schedule.descanso || "No especificado"}</p>
+                                                            </div>
+                                                            {employeeWithSchedule.schedule.notas && (
+                                                                <div className="col-span-2">
+                                                                    <span className="text-sm text-gray-500">Notas:</span>
+                                                                    <p className="font-medium">{employeeWithSchedule.schedule.notas}</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                </Button>
                                             ))}
                                         </div>
                                     </div>
