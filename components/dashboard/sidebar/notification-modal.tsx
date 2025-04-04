@@ -4,6 +4,7 @@ import { Bell } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { useSidebarColor } from "@/hooks/use-sidebar-color";
 
 export function NotificationBell({ hasNewNotification = false, hasNewMessage = false }) {
     return (
@@ -22,6 +23,7 @@ export function NotificationBell({ hasNewNotification = false, hasNewMessage = f
 export function NotificationPanel() {
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
+    const { sidebarColor } = useSidebarColor();
 
     useEffect(() => {
         async function fetchNotifications() {
@@ -41,8 +43,13 @@ export function NotificationPanel() {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <button className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100">
-                    <NotificationBell hasNewNotification={notifications.length > 0} />
+                <button className={`flex h-10 w-10 items-center justify-center rounded-lg ${sidebarColor.toLowerCase() === '#1f2937' ? 'text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}>
+                    <div className="relative">
+                        <Bell className={`h-4 w-4 ${sidebarColor.toLowerCase() === '#ffffff' ? 'text-gray-900' : sidebarColor.toLowerCase() === '#1f2937' ? 'group-hover:text-gray-900 hover:text-gray-900 text-white active:text-gray-900' : 'text-white'}`} />
+                        {notifications.length > 0 && (
+                            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+                        )}
+                    </div>
                 </button>
             </DialogTrigger>
             <DialogContent className="w-full max-w-3xl p-4 h-auto min-h-[450px]" closeButton={false}>
