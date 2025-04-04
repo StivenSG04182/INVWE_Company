@@ -69,7 +69,7 @@ export default function MovementsPage() {
         setActiveTab(tab);
         setFilters(prev => ({ ...prev, [tab]: [] }));
       }}>
-        <div className="flex gap-4 mb-4">
+        <div className="flex w-screen">
           <TabsList className="grid grid-cols-2">
             <TabsTrigger value="stock">Movimientos de Stock</TabsTrigger>
             <TabsTrigger value="productos">Movimientos de Productos</TabsTrigger>
@@ -81,6 +81,7 @@ export default function MovementsPage() {
             setDate={(date) => date && setDateRange({ from: date.from || new Date(), to: date.to || new Date() })}
           />
         </div>
+        <div className="border-b border-black my-4" />
         <TabsContent value="stock">
           <div className="flex items-center gap-4">
             <Table

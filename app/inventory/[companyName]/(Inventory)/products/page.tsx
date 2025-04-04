@@ -28,7 +28,7 @@ export default function ProductPage(){
     ])
 
     return(
-        <div className='p-6 max-w-4xl'>
+        <div className='p-6 w-screen'>
             <h1 className="text-2xl font-bold mb-4">Inventory</h1>
             <div className="flex gap-4 mb-6">
                 <Input
@@ -37,7 +37,7 @@ export default function ProductPage(){
                 />
                 <Button>Add Product</Button>
             </div>
-
+            <div className="border-b border-black my-4 w-auto"/>
             <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
                 {products.map(Product => (
                     <Card key={Product.id} className='justify-items-center flex-col grid grid-cols-1'>
