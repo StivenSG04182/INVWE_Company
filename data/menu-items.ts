@@ -1,4 +1,4 @@
-import { Home, Store, ShoppingCart, Users, Tag, KeyRound, Mail, Send, Inbox, Archive, CreditCard, FileText, BarChart, PieChart, TrendingUp, UserCog, Settings, FileChartColumn } from "lucide-react"
+import { Home, Store, ShoppingCart, Users, Tag, KeyRound, Mail, Send, Inbox, MessageSquareText, Archive, CreditCard, FileText, BarChart, PieChart, TrendingUp, UserCog, Settings, FileChartColumn, SquarePen } from "lucide-react"
 import type { MenuSection } from "@/app/api/client/types/sidebar"
 
 export const menuSections: MenuSection[] = [
@@ -38,6 +38,7 @@ export const menuSections: MenuSection[] = [
                     { icon: Archive, label: "Stock", href: "/inventory/[companyName]/stock" },
                     { icon: FileText, label: "Movimientos", href: "/inventory/[companyName]/movements" },
                     { icon: KeyRound, label: "Proveedores", href: "/inventory/[companyName]/providers" },
+                    { icon: SquarePen, label: "Area de Inventario", href: "/inventory/[companyName]/area" }
                 ],
             },
         ],
@@ -85,6 +86,20 @@ export const menuSections: MenuSection[] = [
     {
         items: [
             {
+                icon: Mail,
+                label: "Emails",
+                submenu: [
+                    { icon: Send, label: "Campañas", href: "/inventory/[companyName]/campaigns" },
+                    { icon: Inbox, label: "Bandeja de entrada", href: "/inventory/[companyName]/inbox" },
+                    { icon: Archive, label: "Archivos", href: "/inventory/[companyName]/archives" },
+                    { icon: MessageSquareText, label: "Chat", href: "/inventory/[companyName]/chat"},
+                ],
+            },
+        ],
+    }, 
+    {
+        items: [
+            {
                 icon: FileText,
                 label: "Reportes & Analíticas",
                 submenu: [
@@ -95,17 +110,4 @@ export const menuSections: MenuSection[] = [
             },
         ],
     },
-    {
-        items: [
-            {
-                icon: Mail,
-                label: "Emails",
-                submenu: [
-                    { icon: Send, label: "Campañas", href: "/inventory/[companyName]/campaigns" },
-                    { icon: Inbox, label: "Bandeja de entrada", href: "/inventory/[companyName]/inbox" },
-                    { icon: Archive, label: "Archivos", href: "/inventory/[companyName]/archives" },
-                ],
-            },
-        ],
-    }, 
 ]

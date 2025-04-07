@@ -28,7 +28,7 @@ export async function GET(req: Request, res: any) {
     });
 
     // Configurar escucha de cambios en Supabase para notificaciones
-    const channel = supabase
+    const notifications = supabase
       .channel('notifications-changes')
       .on(
         'postgres_changes',
@@ -43,6 +43,21 @@ export async function GET(req: Request, res: any) {
         }
       )
       .subscribe();
+
+    // Configurar escucha de cambios en Supabase para functionalities
+    const functionalities = supabase
+    .channel('functionalities-changes')
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'functionalities',
+      },
+      () => {
+      }
+    )
+    .subscribe();
   }
 
   return NextResponse.json({ success: true }, { status: 200 });

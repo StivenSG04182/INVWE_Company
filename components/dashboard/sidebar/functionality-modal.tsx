@@ -100,7 +100,7 @@ export function FunctionalityModal({
             };
 
             // Llamar a la API para guardar la funcionalidad
-            const response = await fetch('/api/client/control_dash/(settings)/functionality/write', {
+            const response = await fetch('/api/client/control_dash/functionality/write', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

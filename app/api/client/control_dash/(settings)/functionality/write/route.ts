@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 
 export async function POST(req: Request) {
     try {
-        const { userId } = auth();
+        const { userId } = await auth();
 
         if (!userId) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -33,21 +33,20 @@ export async function POST(req: Request) {
         if (mode === 'add') {
             // Insertar nueva funcionalidad
             const { data, error } = await supabase
-                .from('functionalities')
-                .insert([
-                    {
-                        id: functionality.id,
-                        nombre: functionality.nombre,
-                        descripcion: functionality.descripcion,
-                        categoria: functionality.categoria,
-                        creadorId: userId,
-                        votos: 0,
-                        progreso: 0,
-                        tareas: functionality.tareas || []
-                    }
-                ])
-                .select()
-                .single();
+            .from('functionalities')
+            .insert([
+              {
+                nombre: functionality.nombre,
+                descripcion: functionality.descripcion,
+                categoria: functionality.categoria,
+                creadorid: userId,         
+                votos: 0,
+                progreso: 0,
+                tareas: functionality.tareas || []
+              }
+            ])
+            .select()
+            .single();          
 
             if (error) {
                 console.error("[FUNCTIONALITY_CREATE]", error);
@@ -56,7 +55,6 @@ export async function POST(req: Request) {
 
             result = data;
         } else if (mode === 'edit') {
-            // Verificar si el usuario es el creador (excepto para votos)
             if (functionality.creadorId !== userId && !('votos' in body)) {
                 return NextResponse.json(
                     { error: "No autorizado para editar esta funcionalidad" },

@@ -34,7 +34,7 @@ export function SettingsPanel() {
     const fetchFunctionalities = async () => {
         setLoading(true);
         try {
-            const response = await fetch('/api/client/control_dash/(settings)/functionality/read');
+            const response = await fetch('/api/client/control_dash/functionality/read');
             if (!response.ok) {
                 // Si la API aún no está implementada, usamos los datos locales
                 setFunctionality(functionalities);
@@ -84,7 +84,7 @@ export function SettingsPanel() {
                 votos: functionality.votos + 1
             };
             
-            const response = await fetch('/api/client/control_dash/(settings)/functionality/write', {
+            const response = await fetch('/api/client/control_dash/functionality/write', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

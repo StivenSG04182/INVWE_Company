@@ -45,7 +45,7 @@ export async function GET(req: Request, res: NextApiResponseWithSocket) {
         });
 
         // Configurar escucha de cambios en Supabase para notificaciones
-        const channel = supabase
+        const notificaions = supabase
             .channel('notifications-changes')
             .on(
                 'postgres_changes',
@@ -55,11 +55,25 @@ export async function GET(req: Request, res: NextApiResponseWithSocket) {
                     table: 'notifications',
                 },
                 (payload) => {
-                    // Emitir evento de nueva notificación a todos los clientes conectados
                     io.emit('new-notification', payload.new);
                 }
             )
             .subscribe();
+
+        // Configurar escucha de cambios en Supabase para functionalities
+        const functionalities = supabase
+            .channel('functionalities-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'functionalities',
+                },
+                () => {
+                }
+            )
+            .subscribe(); 
     }
 
     return NextResponse.json({ success: true }, { status: 200 });
