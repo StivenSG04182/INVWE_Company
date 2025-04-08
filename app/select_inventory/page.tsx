@@ -14,7 +14,7 @@ import Image from "next/image";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 
 export default function SelectInventoryPage() {
-  const [companies, setCompanies] = useState<[]>([]);
+  const [companies, setCompanies] = useState<Array<{id: string, name: string}>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
@@ -23,8 +23,17 @@ export default function SelectInventoryPage() {
     (async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get("/api/control_login/companies");
-        setCompanies(response.data || []);
+        const response = await axios.get("/api/control_login/companies/list");
+        if (response.data && response.data.companies && Array.isArray(response.data.companies)) {
+          // Mapear los datos para asegurar que tengan el formato correcto (id y name)
+          const formattedCompanies = response.data.companies.map((company: any) => ({
+            id: company._id,
+            name: company.name
+          }));
+          setCompanies(formattedCompanies);
+        } else {
+          setCompanies([]);
+        }
       } catch (error) {
         console.error("Error fetching companies:", error);
         setCompanies([]);

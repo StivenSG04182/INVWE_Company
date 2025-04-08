@@ -57,8 +57,13 @@ export function JoinInventoryForm({companies: initialCompanies, isLoading: initi
         const fetchCompanies = async () => {
             try {
                 const response = await axios.get("/api/control_login/companies/list");
-                if (response.data && Array.isArray(response.data)) {
-                    setCompanies(response.data);
+                if (response.data && response.data.companies && Array.isArray(response.data.companies)) {
+                    // Mapear los datos para asegurar que tengan el formato correcto (id y name)
+                    const formattedCompanies = response.data.companies.map((company: any) => ({
+                        id: company._id,
+                        name: company.name
+                    }));
+                    setCompanies(formattedCompanies);
                 }
             } catch (error) {
                 console.error("Error fetching companies:", error);
@@ -90,7 +95,7 @@ export function JoinInventoryForm({companies: initialCompanies, isLoading: initi
 
             console.log("Submitting values:", values);
 
-            const response = await axios.post("/api/inventory/join", {
+            const response = await axios.post("/api/control_login/join", {
                 nombreEmpresa: values.nombreEmpresa.trim(),
                 nit: values.nit.trim(),
                 codigoSeguridad: values.codigoSeguridad.trim(),
@@ -100,7 +105,7 @@ export function JoinInventoryForm({companies: initialCompanies, isLoading: initi
                 toast.success("Tu solicitud está pendiente de aprobación por un administrador.");
                 setFeedback("Tu solicitud está pendiente de aprobación por un administrador.");
                 setFeedbackType("success");
-                router.push("/pending-approval");
+                router.push("../pending-approval");
             } else {
                 throw new Error("Respuesta inválida del servidor");
             }

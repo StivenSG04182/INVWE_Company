@@ -1,7 +1,7 @@
 'use client';
 
 import { Toaster } from 'react-hot-toast';
-import { NotificationProvider as PersistentNotificationProvider } from '@/contexts/notification-context';
+import { NotificationProvider as PersistentNotificationProvider } from '@/components/dashboard/contexts/notification-context';
 import { ToastNotifications } from '@/components/ui/toast-notification';
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {

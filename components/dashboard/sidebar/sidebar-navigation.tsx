@@ -167,8 +167,8 @@ export default function SidebarNavigation() {
         .flatMap((section) => section.items)
         .find((item) => item.label === activeItem);
 
-    // Obtener todas las secciones del menú principal (mostrando todas las opciones definidas en menuOrder)
-    const mainMenuItems = menuSections.slice(0, 7);
+    // Obtener todas las secciones del menú principal (mostrando todas las opciones disponibles)
+    const mainMenuItems = menuSections;
 
     mainMenuItems.sort((a, b) => {
         const aIndex = a.items[0] && menuOrder.indexOf(a.items[0].label);

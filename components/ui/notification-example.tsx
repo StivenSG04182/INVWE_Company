@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNotificationToast } from '@/hooks/use-notification-toast';
-import { useNotifications } from '@/contexts/notification-context';
+import { useNotifications } from '@/components/dashboard/contexts/notification-context';
 import { NotificationBell } from '@/components/ui/notification-bell';
 
 export function NotificationExample() {

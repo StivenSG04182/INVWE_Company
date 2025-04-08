@@ -178,24 +178,47 @@ export async function POST(req: Request) {
             }
         }
 
-        // Insertar notificación para que el administrador revise la solicitud
-        const adminUserId = process.env.ADMIN_USER_ID; // Debe definirse en tus variables de entorno
-        if (adminUserId) {
-            const notifMessage = `El usuario ${userData.name} ${userData.last_name} (${userData.email}) ha solicitado unirse a la empresa ${nombreEmpresa}. Revisa y decide aprobar o rechazar la solicitud.`;
-            const { error: notifError } = await supabase
-                .from("notifications")
-                .insert({
-                    type: "alert",
-                    title: "Nueva solicitud de unión",
-                    message: notifMessage,
-                    users_companies_id: supabaseCompany.id,  
-                    created_by: clerkUserId,           
+        // Insertar notificación para que los administradores de la empresa revisen la solicitud
+        try {
+            // Buscar todos los usuarios con rol ADMINISTRATOR para esta empresa
+            const { data: adminUsers, error: adminUsersError } = await supabase
+                .from("users_companies")
+                .select("id, user_id")
+                .eq("company_id", supabaseCompany.id)
+                .eq("role", "ADMINISTRATOR");
+
+            if (adminUsersError) {
+                console.error("Error obteniendo administradores de la empresa:", adminUsersError);
+            } else if (adminUsers && adminUsers.length > 0) {
+                // Crear notificaciones para cada administrador
+                const notifMessage = `El usuario ${userData.name} ${userData.last_name} (${userData.email}) ha solicitado unirse a la empresa ${nombreEmpresa}. Revisa y decide aprobar o rechazar la solicitud.`;
+                
+                const notificationPromises = adminUsers.map(admin => {
+                    return supabase
+                        .from("notifications")
+                        .insert({
+                            type: "alert",
+                            title: "Nueva solicitud de unión",
+                            message: notifMessage,
+                            users_companies_id: admin.id,  // Usar el ID de la relación users_companies
+                            created_by: clerkUserId,
+                            category: "store",  // Agregar categoría para filtrado
+                        });
                 });
-            if (notifError) {
-                console.error("Error inserting notification:", notifError);
+                
+                const results = await Promise.allSettled(notificationPromises);
+                const failedNotifications = results.filter(result => result.status === 'rejected');
+                
+                if (failedNotifications.length > 0) {
+                    console.error(`${failedNotifications.length} notificaciones fallaron al insertarse`);
+                } else {
+                    console.log(`${results.length} notificaciones de solicitud de unión creadas exitosamente`);
+                }
+            } else {
+                console.warn("No se encontraron administradores para esta empresa. No se insertaron notificaciones.");
             }
-        } else {
-            console.warn("ADMIN_USER_ID no está definido. No se insertó notificación.");
+        } catch (notifError) {
+            console.error("Error al crear notificaciones para administradores:", notifError);
         }
 
 

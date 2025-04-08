@@ -97,21 +97,40 @@ export async function POST(req: Request) {
                 .single();
 
             if (!existingMapping) {
-                const { error: insertMappingError } = await supabase
+                const { data: newMapping, error: insertMappingError } = await supabase
                     .from("users_companies")
                     .insert({
                         user_id: joinRequest.user_id,
                         company_id: joinRequest.company_id,
-                        role: "EMPLOYEE", // Asumimos el rol de empleado para la asociación
-                        is_default_inventory: false, // Modificar según la lógica de negocio
+                        role: "EMPLOYEE",
+                        is_default_inventory: false,
                         created_at: new Date().toISOString(),
                         updated_at: new Date().toISOString(),
-                    });
+                    })
+                    .select()
+                    .single();
                 if (insertMappingError) {
                     return NextResponse.json(
                         { error: "Association failed", message: "No se pudo asociar el usuario con el inventario" },
                         { status: 500 }
                     );
+                }
+
+                // Crear notificación para el administrador
+                const { error: notificationError } = await supabase
+                    .from('notifications')
+                    .insert({
+                        type: 'alert',
+                        title: 'Nueva solicitud aprobada',
+                        message: `Has aprobado la solicitud de ${clerkUser.firstName} ${clerkUser.lastName}`,
+                        users_companies_id: mapping.id,
+                        created_by: clerkUserId,
+                        recipient_user_id: joinRequest.user_id,
+                        read: false
+                    });
+
+                if (notificationError) {
+                    console.error('Error creating notification:', notificationError);
                 }
             }
         }

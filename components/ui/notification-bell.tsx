@@ -5,7 +5,7 @@ import { Bell } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { useNotifications, type Notification } from '@/contexts/notification-context';
+import { useNotifications, type Notification } from '@/components/dashboard/contexts/notification-context';
 import { cn } from '@/lib/utils';
 
 export function NotificationBell() {

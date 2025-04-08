@@ -1,8 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import toast from 'react-hot-toast';
+import { useCompany } from '@/hooks/use-company';
 
 // Definir el tipo para las notificaciones
 export interface Notification {
@@ -31,19 +32,26 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 // Proveedor del contexto
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
+    const { currentInventoryId } = useCompany();
     const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [unreadCount, setUnreadCount] = useState<number>(
+    notifications.filter((n) => !n.read).length
+  );
     const [socket, setSocket] = useState<Socket | null>(null);
-    const [unreadCount, setUnreadCount] = useState(0);
+    const socketRef = useRef<Socket | null>(null);
 
-    // Función para obtener notificaciones
     const fetchNotifications = async () => {
         try {
-            const response = await fetch('/api/client/control_dash/(notifications)?read=false');
-            const data = await response.json();
+            const { data: notifications, error } = await supabase
+                .from('notifications')
+                .select('*, users_companies(*)')
+                .eq('inventory_id', currentInventoryId)
+                .eq('users_companies.role', 'ADMINISTRADOR')
+                .order('created_at', { ascending: false });
 
-            if (data.notifications) {
-                setNotifications(data.notifications);
-                setUnreadCount(data.notifications.filter((n: Notification) => !n.read).length);
+            if (data) {
+                setNotifications(data);
+                setUnreadCount(data.filter((n: Notification) => !n.read).length);
             }
         } catch (error) {
             console.error('Error fetching notifications:', error);
@@ -99,24 +107,25 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     // Inicializar Socket.IO para notificaciones en tiempo real
     useEffect(() => {
-        // Inicializar socket solo en el cliente
-        if (typeof window !== 'undefined') {
-            const newSocket = io();
-            setSocket(newSocket);
+        if (typeof window === 'undefined') return;
 
-            // Limpiar al desmontar
-            return () => {
-                newSocket.disconnect();
-            };
-        }
+        const newSocket = io();
+        socketRef.current = newSocket;
+        setSocket(newSocket);
+
+        return () => {
+            newSocket.off('new-notification');
+            newSocket.disconnect();
+            socketRef.current = null;
+        };
     }, []);
 
     // Escuchar eventos de notificaciones en tiempo real
     useEffect(() => {
-        if (!socket) return;
+        if (!socketRef.current) return;
 
         // Escuchar nuevas notificaciones
-        socket.on('new-notification', (notification: Notification) => {
+        socketRef.current.on('new-notification', (notification: Notification) => {
             // Actualizar el estado
             setNotifications(prev => [notification, ...prev]);
             setUnreadCount(prev => prev + 1);
@@ -130,14 +139,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
         // Limpiar listeners al desmontar
         return () => {
-            socket.off('new-notification');
+            socketRef.current?.off('new-notification');
         };
     }, [socket]);
 
     // Cargar notificaciones iniciales
     useEffect(() => {
         fetchNotifications();
-    }, []);
+    }, [currentInventoryId]);
 
     // Valor del contexto
     const value = {

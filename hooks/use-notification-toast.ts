@@ -1,7 +1,7 @@
 'use client';
 
 import toast from 'react-hot-toast';
-import { useNotifications } from '@/contexts/notification-context';
+import { useNotifications } from '@/components/dashboard/contexts/notification-context';
 
 // Tipos de notificaciones toast
 export type ToastType = 'success' | 'error' | 'loading' | 'custom';
