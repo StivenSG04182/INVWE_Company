@@ -97,7 +97,7 @@ export async function POST(req: Request) {
                 .single();
 
             if (!existingMapping) {
-                const { data: newMapping, error: insertMappingError } = await supabase
+                const { error: insertMappingError } = await supabase
                     .from("users_companies")
                     .insert({
                         user_id: joinRequest.user_id,

@@ -1,530 +1,387 @@
-"use client";
+"use client"
 
-import React, { useState, useRef, useEffect } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Text, Html } from "@react-three/drei";
-import * as THREE from "three";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Expand, Move, MousePointer, Edit, Type, CuboidIcon as Cube, Square, Link as LinkIcon } from "lucide-react";
+import {
+    Expand,
+    Navigation,
+    SquareDashedMousePointer,
+    ArrowDownZA,
+    Boxes,
+    Clock,
+    Search,
+/*     BarChart2,
+    Folder,
+    Zap,
+    Settings,
+    Eye, */
+} from "lucide-react"
+import Image from "next/image"
+import { ProductProvider, useProducts } from "@/contexts/product-context"
 
-// Definición de tipos
-interface Product {
-    id: string;
-    name: string;
-    image?: string;
-    price: number;
-    stock: number;
-    sku: string;
-    category?: string;
-    sold?: number;
+export default function ProductManagement() {
+    return (
+        <ProductProvider>
+            <AreaContent />
+        </ProductProvider>
+    )
 }
 
-interface Container {
-    id: string;
-    position: { x: number, y: number };
-    size: { width: number, height: number };
-    product: Product | null;
-    capacity: number;
-    occupied: number;
-    isDragging?: boolean;
-    isSelected?: boolean;
-    isRectangular?: boolean;
-}
+function AreaContent() {
+    const { products, } = useProducts()
+    /* const [showDetail, setShowDetail] = useState(false) */
+    // Contador de productos por nivel de stock
+    const stockCounts = {
+        red: 0, // Crítico (<10%)
+        yellow: 0, // Bajo (<50%)
+        gray: 0, // Medio (=50%)
+        green: 0, // Alto (>50%)
+    }
 
-// Función para determinar el color según el nivel de stock
-const getStockColor = (container: Container): number => {
-    if (!container.product) return 0xcccccc; // Gris para contenedores vacíos
-    
-    const stockPercentage = (container.occupied / container.capacity) * 100;
-    
-    if (stockPercentage >= 90) return 0x22c55e; // Verde para lleno
-    if (stockPercentage > 50) return 0x94a3b8; // Gris para por encima de la mitad
-    if (stockPercentage >= 20) return 0xfacc15; // Amarillo para menos de la mitad
-    return 0xef4444; // Rojo para por acabarse o acabado
-};
+    // Función para calcular el nivel de stock y actualizar contadores
+    const calculateStockLevel = (stock: string, total: string) => {
+        const stockPercent = (Number.parseInt(stock) / Number.parseInt(total)) * 100
 
-// Componente para mostrar información al pasar el mouse sobre un contenedor
-const ContainerTooltip = ({ product, containerId, capacity, occupied }: { 
-    product: Product | null, 
-    containerId: string,
-    capacity: number,
-    occupied: number
-}) => {
-    if (!product) return null;
+        if (stockPercent < 10) {
+            stockCounts.red++
+            return "red"
+        } else if (stockPercent < 50) {
+            stockCounts.yellow++
+            return "yellow"
+        } else if (stockPercent === 50) {
+            stockCounts.gray++
+            return "gray"
+        } else {
+            stockCounts.green++
+            return "green"
+        }
+    }
+
+    // Convertir los productos del contexto al formato necesario para la visualización
+    const productData = products.map(product => ({
+        code: product.code || '',
+        name: product.name,
+        subtext: product.subtext,
+        subtextColor: product.subtextColor,
+        stock: String(product.stock),
+        total: product.total || String(product.stock + 100),
+        price: `$${product.price}`,
+        image: product.imagen || "/placeholder.svg?height=40&width=40",
+        color: product.color || "green",
+    }));
+
+    // Calcular niveles de stock para cada producto
+    productData.forEach((product) => {
+        calculateStockLevel(product.stock, product.total)
+    })
+    
+    // Calcular el total de productos y artículos
+    const totalProducts = products.length
+    const totalItems = products.reduce((sum, product) => sum + product.stock, 0)
 
     return (
-        <div className="bg-white p-3 rounded-md shadow-lg border z-50 max-w-xs">
-            <div className="font-bold text-lg">{product.name}</div>
-            <p className="text-sm text-gray-500">Ubicación: {containerId}</p>
-            <div className="mt-2 space-y-1 text-sm">
-                <div className="flex justify-between">
-                    <span>Valor:</span>
-                    <span className="font-medium">${product.price.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                    <span>Stock:</span>
-                    <span className="font-medium">{product.stock} unidades</span>
-                </div>
-                <div className="flex justify-between">
-                    <span>Ocupación:</span>
-                    <span className="font-medium">{occupied}/{capacity}</span>
+        <div className="flex h-screen bg-gray-50">
+
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col h-screen overflow-hidden">
+                {/* Header */}
+                <header className="bg-white p-4 border-b flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+
+                        <div>
+                            <h1 className="text-xl font-semibold text-gray-900">Gestión de Productos</h1>
+                            <p className="text-sm text-gray-500">{totalProducts} Productos - {totalItems} Artículos</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <button className="p-4 rounded-lg hover:bg-gray-500">
+                                <Expand className="w-6 h-6 text-gray-900" />
+                            </button>
+                            <button className="p-4 rounded-lg hover:bg-gray-500">
+                                <Navigation className="w-6 h-6 text-gray-900" />
+                            </button>
+                            <button className="p-4 rounded-lg hover:bg-gray-500">
+                                <SquareDashedMousePointer className="w-6 h-6 text-gray-00" />
+                            </button>
+                            <button className="p-4 rounded-lg hover:bg-gray-500">
+                                <ArrowDownZA className="w-6 h-6 text-gray-00" />
+                            </button>
+                            <button className="p-4 rounded-lg hover:bg-gray-500">
+                                <Boxes className="w-6 h-6 text-gray-00" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center space-x-3">
+                        <button className="px-4 py-2 bg-gray-100 rounded-full text-gray-700 text-sm font-medium">Ver la lista</button>
+                        <button className="p-2 rounded-lg hover:bg-gray-100">
+                            <Clock className="w-5 h-5 text-gray-700" />
+                        </button>
+                        <button className="p-2 rounded-lg hover:bg-gray-100">
+                            <Search className="w-5 h-5 text-gray-700" />
+                        </button>
+                        <button 
+                            className="px-5 py-2 bg-blue-600 text-white rounded-full text-sm font-medium"
+                        >
+                            Crear
+                        </button>
+                    </div>
+                </header>
+
+                {/* Content - No Scroll */}
+                <div className="flex-1 p-6 flex">
+                    {/* Grid Layout - Static */}
+                    <div className="w-2/3 pr-6">
+                        {/* Espacio para el área de trabajo interactiva con Three.js */}
+                        <div className="bg-white rounded-lg shadow-sm p-4 h-full relative border border-gray-950">
+                            <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                                <p className="text-center">
+                                    Área de trabajo interactiva para Three.js
+                                    <br />
+                                    <span className="text-sm">
+                                        Aquí se implementará el editor visual para dibujar zonas y colocar contenedores
+                                    </span>
+                                </p>
+                            </div>
+
+                            {/* Posicionamiento del detalle del producto */}
+{/*                             <div className="absolute top-4 left-4 z-10">
+                                {showDetail && <ProductDetailCard onClose={() => setShowDetail(false)} />}
+                            </div> */}
+                        </div>
+                    </div>
+
+                    {/* Product List - Scrollable */}
+                    <div className="w-1/3 flex">
+                        {/* Indicador de colores */}
+                        <div className="mr-2 bg-white rounded-lg shadow-sm py-4 flex flex-col items-center justify-start">
+                            <div className="flex flex-col space-y-6 px-2">
+                                <div className="flex flex-col items-center">
+                                    <div className="w-3 h-3 rounded-full bg-red-500 mb-1"></div>
+                                    <span className="text-xs font-medium">{stockCounts.red}</span>
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <div className="w-3 h-3 rounded-full bg-yellow-500 mb-1"></div>
+                                    <span className="text-xs font-medium">{stockCounts.yellow}</span>
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <div className="w-3 h-3 rounded-full bg-gray-500 mb-1"></div>
+                                    <span className="text-xs font-medium">{stockCounts.gray}</span>
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <div className="w-3 h-3 rounded-full bg-green-500 mb-1"></div>
+                                    <span className="text-xs font-medium">{stockCounts.green}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 bg-white rounded-lg shadow-sm h-full flex flex-col">
+                            <div className="p-4 border-b">
+                                <div className="flex justify-between text-sm text-gray-500">
+                                    <span>Nombre del producto</span>
+                                    <div className="flex space-x-12">
+                                        <span>En stock</span>
+                                        <span>Precio</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Lista con scroll */}
+                            <div className="divide-y overflow-y-auto flex-1">
+                                {productData.map((product, index) => (
+                                    <ProductItem
+                                        key={index}
+                                        code={product.code}
+                                        name={product.name}
+                                        subtext={product.subtext}
+                                        subtextColor={product.subtextColor}
+                                        stock={product.stock}
+                                        total={product.total}
+                                        price={product.price}
+                                        image={product.image}
+                                        color={product.color}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <Button variant="link" size="sm" className="mt-2 p-0 h-auto">Vista detallada</Button>
-        </div>
-    );
-};
-
-// Componente para representar un estante/contenedor en 3D
-const Shelf = ({ container, onClick, isSelected, onHover, onLeaveHover }: { 
-    container: Container, 
-    onClick: () => void, 
-    isSelected: boolean,
-    onHover: () => void,
-    onLeaveHover: () => void
-}) => {
-    // Referencia al mesh para animaciones
-    const meshRef = useRef<THREE.Mesh>(null);
-
-    // Color base según nivel de stock y color cuando está seleccionado
-    const baseColor = getStockColor(container);
-    const selectedColor = 0x48bb78;
-
-    // Animación suave al seleccionar
-    useFrame(() => {
-        if (!meshRef.current) return;
-
-        // Animación de elevación cuando está seleccionado
-        const targetY = isSelected ? 0.1 : 0;
-        meshRef.current.position.y = THREE.MathUtils.lerp(
-            meshRef.current.position.y,
-            targetY,
-            0.1
-        );
-
-        // Cambio de color cuando está seleccionado
-        const material = meshRef.current.material as THREE.MeshStandardMaterial;
-        const targetColor = isSelected ? selectedColor : baseColor;
-        material.color.lerp(new THREE.Color(targetColor), 0.1);
-    });
-
-    return (
-        <mesh
-            ref={meshRef}
-            position={[container.position.x, 0, container.position.y]}
-            onClick={onClick}
-            onPointerOver={onHover}
-            onPointerOut={onLeaveHover}
-            receiveShadow
-            castShadow
-        >
-            <boxGeometry args={[container.size.width, 0.5, container.size.height]} />
-            <meshStandardMaterial color={baseColor} />
-
-            {/* Etiqueta con ID del contenedor */}
-            <Text
-                position={[0, 0.3, 0]}
-                rotation={[-Math.PI / 2, 0, 0]}
-                fontSize={0.3}
-                color="#000000"
-                anchorX="center"
-                anchorY="middle"
-            >
-                {container.id}
-            </Text>
             
-            {/* Información del producto al pasar el mouse */}
-            {container.product && container.isSelected && (
-                <Html
-                    position={[0, 1, 0]}
-                    className="pointer-events-none"
-                    transform
-                    occlude
-                    distanceFactor={10}
-                >
-                    <div className="bg-white p-2 rounded shadow-lg text-xs w-40">
-                        <div className="font-bold">{container.product.name}</div>
-                        <div>Stock: {container.product.stock}</div>
-                    </div>
-                </Html>
-            )}
-        </mesh>
-    );
-};
 
-// Componente para mostrar información del producto seleccionado
-const ProductInfo = ({ product, containerId, capacity, occupied }: { 
-    product: Product | null, 
-    containerId: string,
-    capacity: number,
-    occupied: number
-}) => {
-    if (!product) return null;
-
-    return (
-        <div className="fixed top-4 right-4 w-72 z-10">
-            <Card>
-                <CardHeader>
-                    <CardTitle>{product.name}</CardTitle>
-                    <CardDescription>Ubicación: {containerId} | SKU: {product.sku}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-2">
-                        <div className="flex justify-between">
-                            <span>Valor unitario:</span>
-                            <span className="font-medium">${product.price.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>Capacidad:</span>
-                            <span className="font-medium">{capacity} unidades</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>Items guardados:</span>
-                            <span className="font-medium">{occupied} unidades</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>Total inventario:</span>
-                            <span className="font-medium">{product.stock} unidades</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>Cantidad vendida:</span>
-                            <span className="font-medium">{product.sold || 0} unidades</span>
-                        </div>
-                        {product.category && (
-                            <div className="flex justify-between">
-                                <span>Categoría:</span>
-                                <span className="font-medium">{product.category}</span>
-                            </div>
-                        )}
-                    </div>
-                </CardContent>
-                <CardFooter>
-                    <Button variant="outline" size="sm" className="w-full">Vista detallada</Button>
-                </CardFooter>
-            </Card>
         </div>
-    );
-};
+    )
+}
 
-// Componente principal para la escena 3D
-const InventoryScene = ({ viewMode, isEditMode }: { viewMode: '2d' | '3d', isEditMode: boolean }) => {
-    // Estado para el contenedor seleccionado y el que tiene hover
-    const [selectedContainer, setSelectedContainer] = useState<Container | null>(null);
-    const [hoveredContainer, setHoveredContainer] = useState<Container | null>(null);
-    
-    // Datos de ejemplo para los contenedores (estanterías)
-    const [containers, setContainers] = useState<Container[]>([
-        // Sección A
-        { id: "A1", position: { x: -5, y: -5 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-        { id: "A2", position: { x: -5, y: -3 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-        { id: "A3", position: { x: -5, y: -1 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-        { id: "A4", position: { x: -5, y: 1 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-        { id: "A5", position: { x: -5, y: 3 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-        { id: "A6", position: { x: -5, y: 5 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-
-        // Sección B
-        { id: "B1", position: { x: -2, y: -5 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-        { id: "B2", position: { x: -2, y: -3 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-        { id: "B3", position: { x: -2, y: -1 }, size: { width: 2.5, height: 2.5 }, product: { id: "p1", name: "Pennywort", price: 12.23, stock: 192, sku: "B3-1234", sold: 45 }, capacity: 200, occupied: 192, isRectangular: true },
-        { id: "B4", position: { x: -2, y: 1 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-        { id: "B5", position: { x: -2, y: 3 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-        { id: "B6", position: { x: -2, y: 5 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-
-        // Sección C
-        { id: "C1", position: { x: 1, y: -5 }, size: { width: 1.5, height: 1.5 }, product: { id: "p2", name: "Apple", price: 14.81, stock: 72, sku: "C1-5678", category: "Fruits", sold: 28 }, capacity: 100, occupied: 72, isRectangular: true },
-        { id: "C2", position: { x: 1, y: -3 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-        { id: "C3", position: { x: 1, y: -1 }, size: { width: 2.5, height: 1.5 }, product: { id: "p3", name: "Bell Pepper", price: 8.50, stock: 22, sku: "C3-9012", category: "Vegetables", sold: 15 }, capacity: 100, occupied: 22, isRectangular: true },
-        { id: "C4", position: { x: 1, y: 1 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-        { id: "C5", position: { x: 1, y: 3 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-        { id: "C6", position: { x: 1, y: 5 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-
-        // Sección D
-        { id: "D1", position: { x: 4, y: -5 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-        { id: "D2", position: { x: 4, y: -3 }, size: { width: 1.5, height: 1.5 }, product: { id: "p4", name: "Cucumber", price: 5.25, stock: 5, sku: "D2-3456", category: "Vegetables", sold: 95 }, capacity: 100, occupied: 5, isRectangular: true },
-        { id: "D3", position: { x: 4, y: -1 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-        { id: "D4", position: { x: 4, y: 1 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-        { id: "D5", position: { x: 4, y: 3 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-        { id: "D6", position: { x: 4, y: 5 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-
-        // Sección E (abajo)
-        { id: "E1", position: { x: -3.5, y: 8 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-        { id: "E2", position: { x: -1, y: 8 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-        { id: "E3", position: { x: 1.5, y: 8 }, size: { width: 1.5, height: 1.5 }, product: { id: "p5", name: "Avocado", price: 18.99, stock: 78, sku: "E3-7890", category: "Fruits", sold: 32 }, capacity: 100, occupied: 78, isRectangular: true },
-        { id: "E4", position: { x: 4, y: 8 }, size: { width: 1.5, height: 1.5 }, product: null, capacity: 100, occupied: 0, isRectangular: true },
-    ]);
-
-    // Manejar clic en un contenedor
-    const handleContainerClick = (container: Container) => {
-        setSelectedContainer(container.id === selectedContainer?.id ? null : container);
-    };
-
-    // Manejar hover en un contenedor
-    const handleContainerHover = (container: Container) => {
-        setHoveredContainer(container);
-    };
-
-    // Manejar cuando se deja de hacer hover en un contenedor
-    const handleContainerLeaveHover = () => {
-        setHoveredContainer(null);
-    };
-
-    // Añadir un nuevo contenedor en modo edición
-    const addContainer = () => {
-        if (!isEditMode) return;
-        
-        const newId = `X${containers.length + 1}`;
-        const newContainer: Container = {
-            id: newId,
-            position: { x: 0, y: 0 },
-            size: { width: 2, height: 2 },
-            product: null,
-            capacity: 100,
-            occupied: 0,
-            isRectangular: true,
-        };
-        
-        setContainers([...containers, newContainer]);
-    };
-
+/* function ProductDetailCard({ onClose }: { onClose: () => void }) {
     return (
-        <>
-            {/* Información del producto seleccionado */}
-            {selectedContainer?.product && (
-                <ProductInfo 
-                    product={selectedContainer.product} 
-                    containerId={selectedContainer.id} 
-                    capacity={selectedContainer.capacity} 
-                    occupied={selectedContainer.occupied} 
-                />
-            )}
-
-            {/* Información del producto al hacer hover - Ahora fuera del contexto 3D */}
-            {hoveredContainer?.product && hoveredContainer.id !== selectedContainer?.id && (
-                <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-10 pointer-events-none">
-                    <ContainerTooltip 
-                        product={hoveredContainer.product} 
-                        containerId={hoveredContainer.id} 
-                        capacity={hoveredContainer.capacity} 
-                        occupied={hoveredContainer.occupied} 
-                    />
+        <div className="bg-white rounded-lg shadow-lg w-72">
+            <div className="p-4 flex justify-between items-center">
+                <div>
+                    <h3 className="font-medium">Pennywort</h3>
+                    <p className="text-xs text-gray-500">B3 ID: B214</p>
                 </div>
-            )}
+                <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path
+                            fillRule="evenodd"
+                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                            clipRule="evenodd"
+                        />
+                    </svg>
+                </button>
+            </div>
 
-            {/* Escena 3D */}
-            <ambientLight intensity={0.5} />
-            <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
+            <div className="px-4 pb-2">
+                <div className="text-lg font-semibold">$12.23</div>
+            </div>
 
-            {/* Suelo */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.25, 0]} receiveShadow>
-                <planeGeometry args={[30, 30]} />
-                <meshStandardMaterial color="#f0f0f0" />
-            </mesh>
-
-            {/* Contenedores/Estanterías */}
-            {containers.map((container) => (
-                <Shelf
-                    key={container.id}
-                    container={container}
-                    onClick={() => handleContainerClick(container)}
-                    isSelected={selectedContainer?.id === container.id}
-                    onHover={() => handleContainerHover(container)}
-                    onLeaveHover={handleContainerLeaveHover}
+            <div className="p-4 flex justify-center">
+                <Image
+                    src="/placeholder.svg?height=80&width=120"
+                    alt="Pennywort"
+                    width={120}
+                    height={80}
+                    className="object-cover rounded"
                 />
-            ))}
+            </div>
 
-            {/* Controles de cámara */}
-            <OrbitControls
-                enableDamping
-                dampingFactor={0.05}
-                minDistance={5}
-                maxDistance={20}
-                maxPolarAngle={Math.PI / 2}
-            />
-
-            {/* Botón para añadir contenedor en modo edición */}
-            {isEditMode && (
-                <Html 
-                    position={[8, 0, 8]}
-                    transform
-                    occlude
-                    distanceFactor={10}
-                >
-                    <div className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded cursor-pointer" onClick={addContainer}>
-                        Añadir Contenedor
-                    </div>
-                </Html>
-            )}
-        </>
-    );
-};
-
-// Página principal
-export default function AreaPage() {
-    // Estado para el modo de visualización y edición
-    const [viewMode, setViewMode] = useState<'2d' | '3d'>('3d');
-    const [isEditMode, setIsEditMode] = useState(false);
-
-    return (
-        <div className="h-screen w-full">
-            <div className="p-4 h-16 border-b flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <h1 className="text-2xl font-bold">Gestión de Área de Inventario</h1>
-                    
-                    {/* Barra de herramientas */}
-                    <TooltipProvider>
-                        <ToggleGroup type="single" className="ml-4">
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <ToggleGroupItem value="expand" aria-label="Expandir">
-                                        <Expand className="h-4 w-4" />
-                                    </ToggleGroupItem>
-                                </TooltipTrigger>
-                                <TooltipContent>Expandir</TooltipContent>
-                            </Tooltip>
-                            
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <ToggleGroupItem value="move" aria-label="Mover">
-                                        <Move className="h-4 w-4" />
-                                    </ToggleGroupItem>
-                                </TooltipTrigger>
-                                <TooltipContent>Mover</TooltipContent>
-                            </Tooltip>
-                            
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <ToggleGroupItem value="select" aria-label="Seleccionar">
-                                        <MousePointer className="h-4 w-4" />
-                                    </ToggleGroupItem>
-                                </TooltipTrigger>
-                                <TooltipContent>Seleccionar</TooltipContent>
-                            </Tooltip>
-                            
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <ToggleGroupItem 
-                                        value="edit" 
-                                        aria-label="Editar"
-                                        pressed={isEditMode}
-                                        onClick={() => setIsEditMode(!isEditMode)}
-                                    >
-                                        <Edit className="h-4 w-4" />
-                                    </ToggleGroupItem>
-                                </TooltipTrigger>
-                                <TooltipContent>Editar</TooltipContent>
-                            </Tooltip>
-                            
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <ToggleGroupItem value="rename" aria-label="Renombrar">
-                                        <Type className="h-4 w-4" />
-                                    </ToggleGroupItem>
-                                </TooltipTrigger>
-                                <TooltipContent>Renombrar</TooltipContent>
-                            </Tooltip>
-                        </ToggleGroup>
-                        
-                        <ToggleGroup type="single" value={viewMode} className="ml-4">
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <ToggleGroupItem 
-                                        value="3d" 
-                                        aria-label="Vista 3D"
-                                        onClick={() => setViewMode('3d')}
-                                    >
-                                        <Cube className="h-4 w-4" />
-                                    </ToggleGroupItem>
-                                </TooltipTrigger>
-                                <TooltipContent>Vista 3D</TooltipContent>
-                            </Tooltip>
-                            
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <ToggleGroupItem 
-                                        value="2d" 
-                                        aria-label="Vista 2D"
-                                        onClick={() => setViewMode('2d')}
-                                    >
-                                        <Square className="h-4 w-4" />
-                                    </ToggleGroupItem>
-                                </TooltipTrigger>
-                                <TooltipContent>Vista 2D</TooltipContent>
-                            </Tooltip>
-                        </ToggleGroup>
-                    </TooltipProvider>
-                </div>
-                
-                <div className="flex gap-2">
-                    <Button variant="outline">Exportar</Button>
-                    <Button>Añadir Producto</Button>
+            <div className="px-4 py-2 flex items-center justify-between">
+                <div className="flex items-center">
+                    <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
+                    <span className="text-sm">192</span>
                 </div>
             </div>
 
-            <div className="flex h-[calc(100vh-4rem)]">
-                {/* Visualización 3D/2D (central) */}
-                <div className="flex-1">
-                    <Canvas shadows camera={{ position: [0, 10, 10], fov: 50 }}>
-                        <InventoryScene viewMode={viewMode} isEditMode={isEditMode} />
-                    </Canvas>
+            <div className="px-4 py-2 grid grid-cols-2 gap-4">
+                <div>
+                    <p className="text-sm text-gray-500">On shelf:</p>
+                    <p className="text-sm font-medium">22/35 items</p>
                 </div>
-                
-                {/* Panel lateral derecho (Productos) */}
-                <div className="w-64 border-l p-4">
-                    <h2 className="font-semibold mb-4">Productos</h2>
-                    <ScrollArea className="h-[calc(100vh-20rem)]">
-                        <div className="space-y-2">
-                            <div className="p-2 border rounded-md hover:bg-accent cursor-pointer">
-                                <div className="font-medium">Pennywort</div>
-                                <div className="text-sm text-muted-foreground">Stock: 192</div>
-                            </div>
-                            <div className="p-2 border rounded-md hover:bg-accent cursor-pointer">
-                                <div className="font-medium">Apple</div>
-                                <div className="text-sm text-muted-foreground">Stock: 72</div>
-                            </div>
-                            <div className="p-2 border rounded-md hover:bg-accent cursor-pointer">
-                                <div className="font-medium">Bell Pepper</div>
-                                <div className="text-sm text-muted-foreground">Stock: 22</div>
-                            </div>
-                            <div className="p-2 border rounded-md hover:bg-accent cursor-pointer">
-                                <div className="font-medium">Cucumber</div>
-                                <div className="text-sm text-muted-foreground">Stock: 5</div>
-                            </div>
-                            <div className="p-2 border rounded-md hover:bg-accent cursor-pointer">
-                                <div className="font-medium">Avocado</div>
-                                <div className="text-sm text-muted-foreground">Stock: 78</div>
-                            </div>
-                        </div>
-                    </ScrollArea>
-                    
-                    <h2 className="font-semibold mt-6 mb-4">Filtros</h2>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="text-sm font-medium">Sección</label>
-                            <select className="w-full mt-1 rounded-md border border-input bg-background px-3 py-1">
-                                <option value="">Todas</option>
-                                <option value="A">Sección A</option>
-                                <option value="B">Sección B</option>
-                                <option value="C">Sección C</option>
-                                <option value="D">Sección D</option>
-                                <option value="E">Sección E</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="text-sm font-medium">Estado</label>
-                            <select className="w-full mt-1 rounded-md border border-input bg-background px-3 py-1">
-                                <option value="">Todos</option>
-                                <option value="occupied">Ocupados</option>
-                                <option value="available">Disponibles</option>
-                            </select>
-                        </div>
+                <div>
+                    <p className="text-sm text-gray-500">Inventory:</p>
+                    <p className="text-sm font-medium">196 items</p>
+                </div>
+            </div>
+
+            <div className="w-full bg-gray-200 h-1 mt-2">
+                <div className="bg-green-500 h-1 w-1/2"></div>
+            </div>
+
+            <div className="px-4 py-3 flex items-center justify-between">
+                <div>
+                    <p className="text-sm text-gray-500">Sales:</p>
+                    <p className="text-sm font-medium">3213</p>
+                </div>
+                <div className="flex items-center text-green-500">
+                    <span className="text-sm font-medium">9%</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path
+                            fillRule="evenodd"
+                            d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z"
+                            clipRule="evenodd"
+                        />
+                    </svg>
+                </div>
+            </div>
+
+            <div className="p-4 border-t">
+                <button className="w-full py-2 flex items-center justify-center text-gray-600 hover:text-gray-800">
+                    <Eye className="w-4 h-4 mr-2" />
+                    <span className="text-sm font-medium">View detail</span>
+                </button>
+            </div>
+        </div>
+    )
+} */
+
+interface ProductItemProps {
+    code: string
+    name: string
+    subtext?: string
+    subtextColor?: string
+    stock: string
+    total: string
+    price: string
+    image: string
+    color: string
+}
+
+function ProductItem({
+    code,
+    name,
+    subtext,
+    subtextColor = "gray",
+    stock,
+    total,
+    price,
+    image,
+    color,
+}: ProductItemProps) {
+    const dotColors: Record<string, string> = {
+        red: "bg-red-500",
+        orange: "bg-orange-500",
+        yellow: "bg-yellow-500",
+        green: "bg-green-500",
+        blue: "bg-blue-500",
+    }
+
+    const textColors: Record<string, string> = {
+        gray: "text-gray-500",
+        blue: "text-blue-500",
+        green: "text-green-500",
+        red: "text-red-500",
+    }
+
+    // Calcular el porcentaje de stock
+    const stockNum = Number.parseInt(stock)
+    const totalNum = Number.parseInt(total)
+    const stockPercent = (stockNum / totalNum) * 100
+
+    // Determinar el color del indicador de stock
+    let stockIndicatorColor = ""
+    if (stockPercent > 50) {
+        stockIndicatorColor = "bg-green-500"
+    } else if (stockPercent === 50) {
+        stockIndicatorColor = "bg-gray-500" 
+    } else if (stockPercent >= 10) {
+        stockIndicatorColor = "bg-yellow-500"
+    } else {
+        stockIndicatorColor = "bg-red-500"
+    }
+
+    return (
+        <div className="p-4 flex items-center">
+            <div className="w-2 h-2 rounded-full mr-3 mt-1 self-start" style={{ backgroundColor: dotColors[color] }}></div>
+
+            <div className="flex-1 flex items-center">
+                {/* Indicador de nivel de stock */}
+                <div className={`w-3 h-3 rounded-full mr-2 ${stockIndicatorColor}`}></div>
+
+                <div className="w-10 h-10 rounded overflow-hidden mr-3">
+                    <Image src={image || "/placeholder.svg"} alt={name} width={40} height={40} className="object-cover" />
+                </div>
+
+                <div>
+                    <div className="flex items-center">
+                        <span className="text-gray-500 text-sm mr-2">{code}</span>
+                        <span className="font-medium">{name}</span>
                     </div>
+                    {subtext && <p className={`text-sm ${textColors[subtextColor]}`}>{subtext}</p>}
+                </div>
+            </div>
+
+            <div className="flex items-center space-x-12">
+                <div className="text-right">
+                    <div className="text-sm font-medium">
+                        {stock} <span className="text-gray-400">/ {total}</span>
+                    </div>
+                    <div className="w-16 bg-gray-200 h-1 mt-1">
+                        <div className="bg-blue-500 h-1" style={{ width: `${stockPercent}%` }}></div>
+                    </div>
+                </div>
+
+                <div className="w-16 text-right">
+                    <span className="font-medium">{price}</span>
                 </div>
             </div>
         </div>
-    );
+    )
 }

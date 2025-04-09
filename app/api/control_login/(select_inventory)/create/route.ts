@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { generateSecurityCode } from "@/lib/utils";
+import { ObjectId } from "mongodb";
 import { supabase } from "@/lib/supabase";
 import { v4 as uuidv4 } from "uuid";
 
@@ -62,10 +63,8 @@ export async function POST(req: Request) {
     }
 
     let mongoCompany: MongoCompanyResult | null = null;
-    let mongoStore: { insertedId: string } | null = null;
-    // Eliminamos las declaraciones innecesarias de 'db' y 'session'
-    // const db: { insertedId: string | number } | null = null;
-    // const session: { insertedId: string | number } | null = null;
+    let mongoStore: { insertedId: ObjectId } | null = null;
+
 
     try {
         // Obtenemos el id del usuario desde Clerk
@@ -204,7 +203,7 @@ export async function POST(req: Request) {
                     createdAt: new Date(),
                     updatedAt: new Date()
                 }, { session }).then(result => ({
-                    insertedId: result.insertedId.toString()
+                    insertedId: result.insertedId
                 }));
 
                 if (!mongoStore?.insertedId) {
@@ -237,15 +236,17 @@ export async function POST(req: Request) {
             phone: values.company_phone,
             email: values.company_email,
             dian_registered: false,
-            mongo_id: mongoCompany.insertedId,
+            mongo_id: mongoCompany,
             security_code: securityCode,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         });
 
         if (createCompanyError) {
-            await db.collection("companies").deleteOne({ _id: mongoCompany.insertedId });
-            await db.collection("stores").deleteOne({ _id: mongoStore.insertedId });
+            await db.collection("companies").deleteOne({ _id: mongoCompany });
+            if (mongoStore && mongoStore ){
+                await db.collection("stores").deleteOne({ _id: mongoStore });
+            }
             throw createCompanyError;
         }
 
@@ -259,11 +260,14 @@ export async function POST(req: Request) {
         });
 
         if (relationsError) {
-            await db.collection("companies").deleteOne({ _id: mongoCompany.insertedId });
-            await db.collection("stores").deleteOne({ _id: mongoStore.insertedId });
+            await db.collection("companies").deleteOne({ _id: mongoCompany });
+            if (mongoStore && mongoStore) {
+                await db.collection("stores").deleteOne({ _id: mongoStore });
+            }
             await supabase.from("companies").delete().eq("id", companyId);
             throw relationsError;
         }
+        
 
         await supabase
             .from("users_companies")
@@ -289,15 +293,17 @@ export async function POST(req: Request) {
                 address: values.store_address || values.company_address,
                 phone: values.store_phone || values.company_phone,
                 created_by: internalUserId,
-                mongodb_store_id: mongoStore.insertedId.toString(),
+                mongodb_store_id: mongoStore,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             })
         ]);
 
         if (subscriptionResult.error || storeResult.error) {
-            await db.collection("companies").deleteOne({ _id: mongoCompany.insertedId });
-            await db.collection("stores").deleteOne({ _id: mongoStore.insertedId });
+            await db.collection("companies").deleteOne({ _id: mongoCompany });
+            if (mongoStore  && mongoStore) {
+                await db.collection("stores").deleteOne({ _id: mongoStore });
+            }
             await supabase.from("companies").delete().eq("id", companyId);
             await supabase.from("users_companies").delete().eq("company_id", companyId);
             throw subscriptionResult.error || storeResult.error;
@@ -305,12 +311,11 @@ export async function POST(req: Request) {
 
         return NextResponse.json({
             companyName: values.company_name,
-            storeId: mongoStore.insertedId.toString(),
+            storeId: mongoStore && mongoStore,
             redirectUrl: `/inventory/${encodeURIComponent(values.company_name)}/dashboard`
         });
 
     } catch (error: unknown) {
-        // Definimos una interfaz para extender el error si tiene propiedades adicionales
         interface ExtendedError extends Error {
             code?: string;
             details?: string;

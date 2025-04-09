@@ -1,9 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
 import { getMongoDB, validateCompany, normalizeCompanyId } from '@/app/services/(endPoints)/companiesService';
+import { supabase } from '@/lib/supabase';
+
 export const runtime = 'nodejs';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
     const startTime = performance.now();
     console.time("[API/Companies] Tiempo de ejecución");
     try {
@@ -33,7 +35,7 @@ export async function GET(request: Request) {
         if (ownedCompany) {
             const companyData = ownedCompany.name
                 ? { name: ownedCompany.name, _id: ownedCompany._id }
-                : await validateCompany(ownedCompany, undefined);
+                : await validateCompany({ name: ownedCompany.name, metadata: ownedCompany.metadata }, supabase);
             if (!companyData) {
                 return NextResponse.json({ isValid: false, error: "Company name not found" });
             }
@@ -69,7 +71,10 @@ export async function GET(request: Request) {
         if (!associatedCompany) {
             return NextResponse.json({ isValid: false, error: "Associated company not found" });
         }
-        const companyData = await validateCompany(associatedCompany, undefined);
+        const companyData = await validateCompany({ 
+            name: associatedCompany.name, 
+            metadata: associatedCompany.metadata 
+        }, supabase);
         if (!companyData) {
             return NextResponse.json({ isValid: false, error: "Company name not found" });
         }

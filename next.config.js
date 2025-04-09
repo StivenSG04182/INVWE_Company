@@ -14,7 +14,7 @@ const nextConfig = {
         }
     },
     images: {
-        domains: ['startup-template-sage.vercel.app', 'avatar.vercel.sh']
+        domains: ['startup-template-sage.vercel.app', 'avatar.vercel.sh', 'via.placeholder.com']
     },
     webpack: (config, { isServer }) => {
         if (!isServer) {
