@@ -1,4 +1,4 @@
-import HeroVideoDialog from "@/components/magicui/hero-video-dialog";
+import HeroVideoDialog from "@/components/ui/magicui/hero-video-dialog";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay  from 'embla-carousel-autoplay';
 

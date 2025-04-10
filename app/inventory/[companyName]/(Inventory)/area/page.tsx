@@ -76,10 +76,10 @@ function AreaContent() {
                     <div className="flex items-center space-x-4">
 
                         <div>
-                            <h1 className="text-xl font-semibold text-gray-900">Gestión de Productos</h1>
+                            <h1 className="text-xl font-semibold text-gray-950">Gestión de Productos</h1>
                             <p className="text-sm text-gray-500">{totalProducts} Productos - {totalItems} Artículos</p>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        {/* <div className="flex items-center space-x-2">
                             <button className="p-4 rounded-lg hover:bg-gray-500">
                                 <Expand className="w-6 h-6 text-gray-900" />
                             </button>
@@ -95,7 +95,7 @@ function AreaContent() {
                             <button className="p-4 rounded-lg hover:bg-gray-500">
                                 <Boxes className="w-6 h-6 text-gray-00" />
                             </button>
-                        </div>
+                        </div> */}
                     </div>
 
                     <div className="flex items-center space-x-3">

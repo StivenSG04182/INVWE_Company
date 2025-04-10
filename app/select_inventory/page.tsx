@@ -8,7 +8,7 @@ import { JoinInventoryForm } from "./components/join-inventory-form";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Boxes } from "@/components/ui/background-boxes";
-import { BorderBeam } from "@/components/magicui/border-beam";
+import { BorderBeam } from "@/components/ui/magicui/border-beam";
 import { CardContainer, CardBody, CardItem } from "@/components/ui/3d-card";
 import Image from "next/image";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";

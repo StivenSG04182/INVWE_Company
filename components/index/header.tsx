@@ -94,7 +94,7 @@ export function Header() {
                                                 window.location.href = '/';
                                             }
                                         } else {
-                                            window.location.href = '/Select_inventory';
+                                            window.location.href = '/select_inventory';
                                         }
                                     } catch (error) {
                                         console.error('Error al verificar compañías:', error);

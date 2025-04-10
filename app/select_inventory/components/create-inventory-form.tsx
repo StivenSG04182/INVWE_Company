@@ -13,25 +13,25 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
 const formSchema = z.object({
-    // User Information
-    name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
-    last_name: z.string().min(3, "El apellido debe tener al menos 3 caracteres"),
-    email: z.string().email("Debe ser un email válido"),
-    phone: z.string().min(7, "El teléfono debe tener al menos 7 caracteres"),
-    date_of_birth: z.string().min(1, "La fecha de nacimiento es requerida"),
+    // Información del Usuario
+    name: z.string().min(3, "El nombre debe tener al menos 3 caracteres.").trim(),
+    last_name: z.string().min(3, "El apellido debe tener al menos 3 caracteres.").trim(),
+    email: z.string().email("Debe ser un email válido.").trim(),
+    phone: z.string().min(7, "El teléfono debe tener al menos 7 caracteres.").trim(),
+    date_of_birth: z.string().min(1, "La fecha de nacimiento es requerida.").trim(),
 
-    // Company Information
-    nit: z.string().min(9, "El NIT debe tener al menos 9 caracteres").regex(/^\d{9}-\d$/, "El NIT debe tener el formato: 900123456-7"),
-    company_name: z.string().min(3, "El nombre de la empresa debe tener al menos 3 caracteres"),
-    company_address: z.string().min(5, "La dirección debe tener al menos 5 caracteres"),
-    company_phone: z.string()
-        .min(7, "El teléfono debe tener al menos 7 caracteres")
-        .regex(/^[0-9+]+$/, "El teléfono solo debe contener números"),
-    company_email: z.string().email("Debe ser un email válido"),
+    // Información de la Empresa
+    nit: z.string()
+    .regex(/^\d{9}-\d$/, "El NIT debe tener el formato: *********-*").optional(),
+    company_name: z.string().min(3, "El nombre de la empresa debe tener al menos 3 caracteres.").trim(),
+    company_address: z.string().min(5, "La dirección debe tener al menos 5 caracteres.").trim(),
+    company_phone: z.string().min(7, "El teléfono debe tener al menos 7 caracteres.").trim()
+    .regex(/^[0-9+]+$/, "El teléfono solo debe contener números."),
+    company_email: z.string().email("Debe ser un email válido.").trim(),
 
-    // Store Information
-    store_name: z.string().min(3, "El nombre de la tienda debe tener al menos 3 caracteres"),
-    store_address: z.string().min(5, "La dirección de la tienda debe tener al menos 5 caracteres"),
+    // Información de la Tienda
+    store_name: z.string().min(3, "El nombre de la tienda debe tener al menos 3 caracteres.").trim(),
+    store_address: z.string().min(5, "La dirección de la tienda debe tener al menos 5 caracteres.").trim(),
     store_phone: z.string()
         .min(7, "El teléfono de la tienda debe tener al menos 7 caracteres")
         .regex(/^[0-9+]+$/, "El teléfono solo debe contener números"),
@@ -39,16 +39,15 @@ const formSchema = z.object({
 
 const formSteps = [
     {
-        title: "Información del Usuario",
+        title: "Información del Usuario", 
         fields: ["name", "last_name", "email", "phone", "date_of_birth"]
     },
     {
-        title: "Información de la Empresa",
-        // Se agrega el campo "nit" junto a los demás datos de la empresa
+        title: "Información de la Empresa", 
         fields: ["nit", "company_name", "company_address", "company_phone", "company_email"]
     },
     {
-        title: "Configuración de la Tienda",
+        title: "Configuración de la Tienda", 
         fields: ["store_name", "store_address", "store_phone"]
     }
 ];
@@ -82,7 +81,7 @@ export function CreateInventoryForm() {
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             setIsLoading(true);
-            // Construir el objeto para el API sin duplicar claves
+           
             const apiValues = {
                 // Datos del usuario
                 name: values.name.trim(),
@@ -92,12 +91,12 @@ export function CreateInventoryForm() {
                 date_of_birth: values.date_of_birth,
 
                 // Datos de la empresa
-                nombreEmpresa: values.company_name.trim(),
-                nit: values.nit.trim(),
-                address: values.company_address.trim(),
-                phone_company: values.company_phone.trim(),
-                email_company: values.company_email.trim(),
-
+                nombreEmpresa: values.company_name.trim(), 
+                nit: values.nit?.trim(), 
+                address: values.company_address.trim(), 
+                phone_company: values.company_phone.trim(), 
+                email_company: values.company_email.trim(), 
+               
                 // Datos para la relación usuario-empresa
                 nombres_apellidos: `${values.name} ${values.last_name}`.trim(),
                 correo_electronico: values.email.trim(),
@@ -110,16 +109,15 @@ export function CreateInventoryForm() {
                 store_phone: values.store_phone.trim()
             };
 
-            const response = await axios.post("/api/inventory/create", apiValues);
-
+            const response = await axios.post("/api/control_login/(select_inventory)/create", apiValues);
+           
             if (response.data.companyName && response.data.storeId) {
                 router.push(`/inventory/${encodeURIComponent(response.data.companyName)}/dashboard`);
                 toast.success("Empresa registrada exitosamente");
             } else {
                 throw new Error("Formato de respuesta inválido");
             }
-        } catch (error) {
-            console.error("Error creando inventario:", error);
+        } catch (error) {          
             toast.error(
                 ((error as Error & { response?: { data?: { errors?: Array<{ message: string }> } } }).response?.data?.errors?.[0]?.message) ||
                 "Error al registrar la empresa"
@@ -136,8 +134,16 @@ export function CreateInventoryForm() {
             fields.reduce((acc, field) => ({
                 ...acc,
                 [field]: formSchema.shape[field as keyof typeof formSchema.shape]
-            }), {})
+            }), {})            
         );
+        
+        if (currentStep === 1 && form.getValues("nit") === "") {
+            const { nit, ...rest } = currentStepSchema.shape;
+            currentStepSchema.shape = rest;
+          }
+        
+        
+
 
         try {
             currentStepSchema.parse(currentValues);
@@ -148,7 +154,7 @@ export function CreateInventoryForm() {
                     toast.error(`${err.path.join('.')}: ${err.message}`);
                 });
             } else {
-                toast.error("Por favor complete todos los campos requeridos correctamente");
+                toast.error("Por favor, complete todos los campos requeridos correctamente.");
             }
         }
     };
@@ -167,11 +173,10 @@ export function CreateInventoryForm() {
                 name={fieldName as keyof z.infer<typeof formSchema>}
                 render={({ field }) => (
                     <FormItem>
-                        <FormLabel>
-                            {fieldName.replace(/_/g, " ").charAt(0).toUpperCase() +
-                                fieldName.slice(1).replace(/_/g, " ")}
+                        <FormLabel className="capitalize">
+                            {fieldName.replace(/_/g, " ")}
                         </FormLabel>
-                        <FormControl>
+                        <FormControl>                            
                             <Input
                                 type={
                                     fieldName === "date_of_birth" || fieldName.includes("fecha")
@@ -197,7 +202,7 @@ export function CreateInventoryForm() {
                 <div className="space-y-2">
                     <h2 className="text-2xl font-bold">{formSteps[currentStep].title}</h2>
                     <Progress value={progress} className="w-full" />
-                </div>
+                </div> 
 
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     {renderFormFields()}
@@ -215,7 +220,7 @@ export function CreateInventoryForm() {
                             </Button>
                         ) : (
                             <Button type="submit" disabled={isLoading} className="w-full">
-                                {isLoading ? "Creando..." : "Crear Inventario"}
+                                {isLoading ? "Creando..." : "Crear Inventario"} 
                             </Button>
                         )}
                     </div>

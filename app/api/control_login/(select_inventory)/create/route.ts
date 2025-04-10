@@ -22,10 +22,6 @@ async function validateCompanyData(values: {
 }): Promise<ValidationResponse> {
     const errors: ValidationError[] = [];
     const nit = values?.nit ? values.nit.trim() : '';
-    if (!nit.match(/^\d{9}-\d$/)) {
-        errors.push({ field: "nit", message: "El NIT debe tener el formato: 900123456-7" });
-        return { isValid: false, errors };
-    }
     const companyName = values?.company_name ? values.company_name.trim() : '';
 
     if (!nit || !companyName) {

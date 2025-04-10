@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Marquee } from "@/components/magicui/marquee";
+import { Marquee } from "@/components/ui/magicui/marquee";
 import Image from "next/image";
 
 const reviews = [
