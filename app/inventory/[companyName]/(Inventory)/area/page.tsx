@@ -1,21 +1,10 @@
 "use client"
 
-import {
-    Expand,
-    Navigation,
-    SquareDashedMousePointer,
-    ArrowDownZA,
-    Boxes,
-    Clock,
-    Search,
-/*     BarChart2,
-    Folder,
-    Zap,
-    Settings,
-    Eye, */
-} from "lucide-react"
+import { Expand, Navigation, SquareDashedMousePointer, ArrowDownZA, Boxes, Clock, Search, /*BarChart2, Folder, Zap, Settings, Eye, */} from "lucide-react"
 import Image from "next/image"
 import { ProductProvider, useProducts } from "@/contexts/product-context"
+import { ThreeWorkspace } from "@/components/area/ThreeWorkspace"
+
 
 export default function ProductManagement() {
     return (
@@ -132,13 +121,7 @@ function AreaContent() {
                         {/* Espacio para el área de trabajo interactiva con Three.js */}
                         <div className="bg-white rounded-lg shadow-sm p-4 h-full relative border border-gray-950">
                             <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                                <p className="text-center">
-                                    Área de trabajo interactiva para Three.js
-                                    <br />
-                                    <span className="text-sm">
-                                        Aquí se implementará el editor visual para dibujar zonas y colocar contenedores
-                                    </span>
-                                </p>
+                                <ThreeWorkspace />
                             </div>
 
                             {/* Posicionamiento del detalle del producto */}
