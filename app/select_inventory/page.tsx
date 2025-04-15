@@ -25,7 +25,6 @@ export default function SelectInventoryPage() {
         setIsLoading(true);
         const response = await axios.get("/api/control_login/companies/list");
         if (response.data && response.data.companies && Array.isArray(response.data.companies)) {
-          // Mapear los datos para asegurar que tengan el formato correcto (id y name)
           const formattedCompanies = response.data.companies.map((company: any) => ({
             id: company._id,
             name: company.name
@@ -35,7 +34,7 @@ export default function SelectInventoryPage() {
           setCompanies([]);
         }
       } catch (error) {
-        console.error("Error fetching companies:", error);
+        console.error("Error al buscar empresas:", error);
         setCompanies([]);
       } finally {
         setIsLoading(false);
