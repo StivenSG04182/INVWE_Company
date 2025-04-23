@@ -121,7 +121,10 @@ function AreaContent() {
                         {/* Espacio para el área de trabajo interactiva con Three.js */}
                         <div className="bg-white rounded-lg shadow-sm p-4 h-full relative border border-gray-950">
                             <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                                <ThreeWorkspace />
+                                <p className="text-center">
+                                    Área de trabajo Three.js
+                                    
+                                </p>
                             </div>
 
                             {/* Posicionamiento del detalle del producto */}

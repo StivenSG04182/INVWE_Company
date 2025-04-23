@@ -2,12 +2,58 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import Head from 'next/head';
+import { Card } from "@/components/ui/card";
+import Image from "next/image";
+import { ChartContainer, ChartLegendContent, ChartTooltipContent } from "@/components/ui/chart";
+import { LineChart, CartesianGrid, XAxis, YAxis, Line } from "recharts";
 
 interface Company {
   name: string;
   _id?: string;
 }
+
+interface Product {
+  name: string;
+  quantity: number;
+  type: string;
+  image: string;
+}
+
+const createProduct = (
+  name: string, 
+  type: string, 
+  quantity: number,
+  image: string
+): Product => ({
+  name,
+  type,
+  quantity,
+  image
+});
+
+const productList = [
+  createProduct("manzana", "fruit", 25, "/images/apple.png"),
+  createProduct("apio", "vegetable", 10, "/images/celery.png"),
+  createProduct("almendras", "grain", 30, "/images/almonds.png"),
+  createProduct("esparragos", "vegetable", 30, "/images/almonds.png")
+];
+
+const salesData = [
+  { date: "2025-04-14", value: 120 },
+  { date: "2025-04-15", value: 98 },
+  { date: "2025-04-16", value: 134 },
+  { date: "2025-04-17", value: 112 },
+  { date: "2025-04-18", value: 145 },
+  { date: "2025-04-19", value: 130 },
+  { date: "2025-04-20", value: 150 },
+];
+
+const chartConfig = {
+  ventas: {
+    label: "Ventas diarias",
+    color: "#4f46e5",
+  },
+};
 
 export default function DashboardPage() {
   const params = useParams();
@@ -56,44 +102,61 @@ export default function DashboardPage() {
   
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-    <Head>
-      <title>Mi Sitio Minimalista</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-    </Head>
-
-    {/* Encabezado */}
-    <header className="py-4 px-6 border-b border-gray-200 dark:border-gray-700">
-      <div className="container mx-auto flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Mi Sitio Minimalista</h1>
-        <nav>
-          <ul className="flex space-x-4">
-            <li><a href="#" className="hover:underline">Inicio</a></li>
-            <li><a href="#" className="hover:underline">Acerca</a></li>
-            <li><a href="#" className="hover:underline">Contacto</a></li>
-          </ul>
-        </nav>
-      </div>
-    </header>
-
-    {/* Contenido Principal */}
-    <main className="container mx-auto p-6">
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Bienvenido</h2>
-        <p>
-          Este es un ejemplo de un diseño minimalista utilizando Next.js y Tailwind CSS 3,
-          inspirado en el estilo limpio y moderno de cuicui.day. El fondo es sencillo y se adapta
-          al modo claro y oscuro para mejorar la experiencia de usuario.
-        </p>
-      </section>
-      {/* Agrega más secciones o componentes según necesites */}
-    </main>
-
-    {/* Pie de Página */}
-    <footer className="py-4 px-6 border-t border-gray-200 dark:border-gray-700">
-      <div className="container mx-auto text-center">
-        <p>&copy; 2025 Mi Sitio Minimalista. Todos los derechos reservados.</p>
-      </div>
-    </footer>
-  </div>
+      <main className="container mx-auto p-6">
+        <h1 className="text-3xl font-bold pb-10">Dashboard de {companyName}</h1>
+        <section className="mb-4 pl-7 p-2 border border-gray-300 rounded-md flex gap-x-8 gap-y-4 grid grid-flow-row">
+          <div className="bg-gray-200 rounded-md w-[15.5rem] px-1">
+            <h2 className="text-lg text-center font-semibold">Productos bajos de stock</h2>
+          </div>
+          <div className="flex gap-8 overflow-x-auto">
+          {productList.sort((a, b) => a.quantity - b.quantity).map((product, index) => (
+            <Card key={index} className="flex flex-col items-center border-none shadow-none">
+              <div className="relative w-16 h-16 rounded-full overflow-hidden mb-2 border-2 border-gray-200">
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                />
+              </div>
+              <div className="text-center">
+                <p className="text-sm capitalize">{product.name}</p>
+                <p className="text-gray-500 text-xs">Cantidad: {product.quantity}</p>
+              </div>
+            </Card>
+          ))}
+          </div>
+        </section>
+        <section className="mb-4 grid grid-cols-5 gap-2">
+          <div className="border border-color-gray-300 rounded-md p-4 pt-2 col-span-3">
+            <h2 className="mb-4 text-lg font-semibold">Ventas</h2>
+            <ChartContainer config={chartConfig} className="w-full h-64 transform -translate-x-4">
+              <LineChart data={salesData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date"
+                       interval={0}
+                       angle={-45}
+                       textAnchor="end"
+                       height={60}
+                       tick={{ fontSize: 10 }} />
+                <YAxis />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="var(--color-ventas)"
+                  dot={{ fill: "var(--color-ventas)" }}
+                />
+                <ChartTooltipContent />
+                <ChartLegendContent />
+              </LineChart>
+            </ChartContainer>
+          </div>
+          <div className="border border-color-gray-300 rounded-md p-2 col-span-2">
+          
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }
