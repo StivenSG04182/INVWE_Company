@@ -1,1 +1,0 @@
-//app/admin/(ecommerce)/ecommerce/ai-generator/page.tsx
