@@ -14,6 +14,13 @@ const font = DM_Sans({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "INVWE",
   description: "Solución de gestión de inventario para tu negocio",
+  manifest: "/manifest.json",
+  themeColor: "#000000",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "INVWE"
+  }
 };
 
 export default function RootLayout({
@@ -24,6 +31,9 @@ export default function RootLayout({
   return (
     
       <html lang="en" suppressHydrationWarning>
+        <head>
+          <script src="/register-sw.js" defer></script>
+        </head>
         <body className={twMerge(font.className, "bg-black text-white antialiased")}>
           <ClerkProvider>
             <PayPalProvider>

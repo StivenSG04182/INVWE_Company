@@ -20,10 +20,10 @@ export default function SEODocs() {
               <span className="text-white">Optimización SEO</span>
             </div>
             
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight mb-6">Optimización SEO</h1>
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight mb-6">Gestión de Inventario</h1>
             
             <p className="text-lg text-white/80 mb-8">
-              Nuestra plataforma de IA SEO proporciona herramientas avanzadas para optimizar el posicionamiento de tu sitio web en los motores de búsqueda de manera eficiente y efectiva.
+              INVWE ofrece herramientas avanzadas para la gestión de inventarios multi-tienda, control de stock y sincronización con plataformas de ecommerce.
             </p>
 
             <div className="border border-white/15 rounded-lg overflow-hidden mb-10">

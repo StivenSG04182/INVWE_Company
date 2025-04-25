@@ -12,7 +12,7 @@ export default function Pricing() {
           
           <div className="max-w-3xl mx-auto text-center mt-6 mb-12">
             <p className="text-lg text-[#d9dee4]">
-              Elige el plan que mejor se adapte a tus necesidades y comienza a gestionar tu inventario y facturación electrónica hoy mismo.
+              Soluciones completas para gestión de inventarios, control de múltiples tiendas, ecommerce y administración de personal
             </p>
           </div>
           
@@ -20,7 +20,7 @@ export default function Pricing() {
             {/* Plan Básico */}
             <div className="border border-[#c0f2d0]/30 rounded-xl p-6 backdrop-blur bg-black/40">
               <div className="mb-4">
-                <h3 className="text-xl font-medium text-[#c0f2d0]">Plan Básico</h3>
+                <h3 className="text-xl font-medium text-[#c0f2d0]">Emprendedor</h3>
                 <div className="mt-2">
                   <span className="text-3xl font-bold text-white">$0</span>
                   <span className="text-[#d9dee4] ml-1">/ por mes</span>
@@ -31,7 +31,7 @@ export default function Pricing() {
                 <h4 className="text-sm font-medium mb-3 text-[#a4c5ec]">Qué está incluido</h4>
                 <ul className="space-y-2">
                   <li className="flex items-center gap-2 text-sm text-[#d9dee4]">
-                    <span className="text-[#c0f2d0]">✓</span> 1 tienda única
+                    <span className="text-[#c0f2d0]">✓</span> Hasta 3 tiendas
                   </li>
                   <li className="flex items-center gap-2 text-sm text-[#d9dee4]">
                     <span className="text-[#c0f2d0]">✓</span> Hasta 100 productos

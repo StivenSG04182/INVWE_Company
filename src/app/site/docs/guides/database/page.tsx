@@ -20,10 +20,10 @@ export default function DatabaseDocs() {
               <span className="text-white">Base de datos</span>
             </div>
             
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight mb-6">Base de datos</h1>
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight mb-6">Inventario Centralizado</h1>
             
             <p className="text-lg text-white/80 mb-8">
-              Cada proyecto de IA SEO viene con una base de datos completa, una herramienta gratuita y de código abierto que es considerada una de las bases de datos más estables y avanzadas del mundo.
+              INVWE proporciona un sistema centralizado para gestionar inventarios en múltiples tiendas con sincronización en tiempo real y control de stock.
             </p>
 
             <div className="border border-white/15 rounded-lg overflow-hidden mb-10">

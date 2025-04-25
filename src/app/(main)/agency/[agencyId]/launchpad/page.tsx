@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { db } from '@/lib/db'
 import { paypal } from '@/lib/paypal'
-import { CheckCircleIcon, XCircleIcon, CreditCard } from 'lucide-react'
+import { CheckCircleIcon, XCircleIcon, CreditCard, SmartphoneIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
@@ -24,8 +24,74 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [gatewayStatus, setGatewayStatus] = useState<Record<string, PaymentGatewayValidationResponse>>({})
     const [isLoading, setIsLoading] = useState(true)
+    const [agencyDetails, setAgencyDetails] = useState<any>(null)
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
     const { toast } = useToast()
 
+    // Efecto para cargar los detalles de la agencia
+    useEffect(() => {
+        const getAgencyDetails = async () => {
+            try {
+                const response = await fetch(`/api/agency/${params.agencyId}`)
+                const data = await response.json()
+                if (data) {
+                    setAgencyDetails(data)
+                }
+            } catch (error) {
+                console.error('Error loading agency details:', error)
+            }
+        }
+        
+        getAgencyDetails()
+    }, [params.agencyId])
+    
+    // Efecto para detectar si el sitio puede instalarse como PWA
+    useEffect(() => {
+        // Guardar el evento beforeinstallprompt para usarlo después
+        const handleBeforeInstallPrompt = (e: any) => {
+            // Prevenir que Chrome muestre el diálogo automáticamente
+            e.preventDefault()
+            // Guardar el evento para usarlo después
+            setDeferredPrompt(e)
+        }
+        
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+        
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+        }
+    }, [])
+    
+    // Función para instalar la PWA
+    const installPWA = async () => {
+        if (!deferredPrompt) {
+            // Si no hay un evento guardado, mostrar instrucciones manuales
+            toast({
+                title: 'Instalación manual',
+                description: 'Para instalar la aplicación, usa la opción "Añadir a pantalla de inicio" en el menú de tu navegador.',
+                variant: 'default'
+            })
+            return
+        }
+        
+        // Mostrar el diálogo de instalación
+        deferredPrompt.prompt()
+        
+        // Esperar a que el usuario responda al diálogo
+        const choiceResult = await deferredPrompt.userChoice
+        
+        if (choiceResult.outcome === 'accepted') {
+            toast({
+                title: 'Instalación exitosa',
+                description: 'La aplicación se ha instalado correctamente en tu dispositivo.',
+                variant: 'default'
+            })
+        }
+        
+        // Limpiar el evento guardado
+        setDeferredPrompt(null)
+    }
+    
     // Efecto para validar las pasarelas de pago
     useEffect(() => {
         const validateGateways = async () => {
@@ -36,7 +102,7 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
                 if (!searchParams.code) {
                     setIsLoading(true)
                 }
-                
+
                 const validations = await Promise.all(
                     paymentGateways.map(async (gateway) => {
                         const response = await fetch(`/api/payment-gateways/${gateway.id}/validate?agencyId=${params.agencyId}`)
@@ -68,7 +134,7 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
     useEffect(() => {
         // Recuperar el ID de la pasarela guardado antes de la redirección
         const lastGatewayId = typeof window !== 'undefined' ? localStorage.getItem('lastGatewayId') : null
-        
+
         // Procesar el código de autenticación si existe en la URL
         if (searchParams.code) {
             // Intentar determinar qué pasarela se está autenticando
@@ -76,10 +142,10 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
             // Si no está disponible, intentamos determinarlo por la URL de referencia
             // Si todo falla, usamos PayPal como valor predeterminado
             const referrer = document.referrer
-            const gatewayId = lastGatewayId || 
-                              paymentGateways.find(g => referrer.includes(g.id))?.id || 
-                              'paypal'
-            
+            const gatewayId = lastGatewayId ||
+                paymentGateways.find(g => referrer.includes(g.id))?.id ||
+                'paypal'
+
             // Mostrar un indicador de carga mientras procesamos la autenticación
             setIsLoading(true)
             handleGatewaySelect(gatewayId)
@@ -91,12 +157,12 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
                 description: `No se pudo completar la autenticación con la pasarela ${paymentGateways.find(g => g.id === lastGatewayId)?.name || lastGatewayId}`,
                 variant: 'destructive'
             })
-            
+
             // Limpiar el ID guardado
             if (typeof window !== 'undefined') {
                 localStorage.removeItem('lastGatewayId')
             }
-            
+
             // Actualizar el estado de la pasarela a error
             setGatewayStatus(prev => ({
                 ...prev,
@@ -106,10 +172,10 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
                     error: 'Error de autenticación'
                 }
             }))
-            
+
             setIsLoading(false)
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams.code]) // Este efecto solo se ejecuta cuando cambia el código
 
     const handleGatewaySelect = async (gatewayId: string) => {
@@ -137,7 +203,7 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
                             status: 'connected'
                         }
                     }))
-                    
+
                     // Mostrar un mensaje de éxito con toast
                     toast({
                         title: 'Pasarela conectada',
@@ -154,19 +220,19 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
                             error: data.error || 'Error desconocido'
                         }
                     }))
-                    
+
                     // Mostrar mensaje de error con toast
                     toast({
                         title: 'Error de conexión',
                         description: `No se pudo conectar la pasarela ${paymentGateways.find(g => g.id === gatewayId)?.name || gatewayId}: ${data.error || 'Error desconocido'}`,
                         variant: 'destructive'
                     })
-                    
+
                     console.error(`Error al conectar pasarela ${gatewayId}:`, data.error)
                 }
             } catch (error) {
                 console.error('Error connecting gateway:', error)
-                
+
                 // Actualizar el estado de la pasarela a error
                 setGatewayStatus(prev => ({
                     ...prev,
@@ -176,7 +242,7 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
                         error: 'Error de conexión'
                     }
                 }))
-                
+
                 // Mostrar mensaje de error con toast
                 toast({
                     title: 'Error de conexión',
@@ -193,7 +259,7 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
             if (gateway) {
                 // Guardar el ID de la pasarela en localStorage para recuperarlo después de la redirección
                 localStorage.setItem('lastGatewayId', gatewayId)
-                
+
                 // Redirigir a la URL de autenticación
                 window.location.href = gateway.authUrl(params.agencyId)
             }
@@ -219,16 +285,33 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
                     <CardContent className="flex flex-col gap-4">
                         <div className="flex justify-between items-center w-full border p-4 rounded-lg gap-2">
                             <div className="flex md:items-center gap-4 flex-col md:!flex-row">
-                                <Image src="/appstore.png" alt="app logo" height={80} width={80} className="rounded-md object-contain" />
+                                <div className="relative w-20 h-20 flex items-center justify-center">
+                                    <SmartphoneIcon className="w-12 h-12 text-primary" />
+                                </div>
                                 <p>Guarda el sitio web como acceso directo en tu dispositivo móvil</p>
                             </div>
-                            <Button>Iniciar</Button>
+                            <Button onClick={installPWA}>Instalar</Button>
                         </div>
-                        
+
                         <div className="flex justify-between items-center w-full border p-4 rounded-lg gap-2">
                             <div className="flex md:items-center gap-4 flex-col md:!flex-row">
                                 <div className="relative w-20 h-20 flex items-center justify-center">
-                                    <CreditCard className="w-12 h-12 text-primary" />
+                                    <div className="flex flex-wrap gap-1 justify-center items-center">
+                                        {paymentGateways.map((gateway) => (
+                                            <div key={gateway.id} className="relative">
+                                                <Image 
+                                                    src={gateway.logo} 
+                                                    alt={`${gateway.name} logo`} 
+                                                    height={30} 
+                                                    width={30} 
+                                                    className="rounded-md object-contain border p-1" 
+                                                />
+                                                {gatewayStatus[gateway.id]?.isValid && gatewayStatus[gateway.id]?.status === 'connected' && (
+                                                    <CheckCircleIcon className="absolute -top-1 -right-1 text-primary bg-background rounded-full" size={12} />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     <p>Configura tus pasarelas de pago</p>
@@ -249,7 +332,13 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
 
                         <div className="flex justify-between items-center w-full border p-4 rounded-lg gap-2">
                             <div className="flex md:items-center gap-4 flex-col md:!flex-row">
-                                <Image src="/agency-logo.png" alt="agency logo" height={80} width={80} className="rounded-md object-contain" />
+                                <Image 
+                                    src={agencyDetails?.agencyLogo || "/agency-logo.png"} 
+                                    alt="Logo de la agencia" 
+                                    height={80} 
+                                    width={80} 
+                                    className="rounded-md object-contain" 
+                                />
                                 <p>Completa los detalles de tu negocio</p>
                             </div>
                             <Link

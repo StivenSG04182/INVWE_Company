@@ -37,6 +37,18 @@ export const getAuthUserDetails = async () => {
   return userData;
 };
 
+export const getAgencyDetails = async (agencyId: string): Promise<Agency | null> => {
+  return await db.agency.findUnique({
+    where: {
+      id: agencyId
+    },
+    include: {
+      SubAccount: true,
+      Subscription: true
+    }
+  })
+}
+
 export const saveActivityLogsNotification = async ({
   agencyId,
   description,

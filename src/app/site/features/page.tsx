@@ -8,22 +8,22 @@ export default function Features() {
       <Header />
       <main className="py-20 md:py-24">
         <div className="container">
-          <h1 className="text-4xl md:text-6xl font-semibold tracking-tighter text-center mb-10">Características</h1>
+          <h1 className="text-4xl md:text-6xl font-semibold tracking-tighter text-center mb-10 text-[#c0f2d0]">Funcionalidades de INVWE</h1>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
             <div className="border border-white/15 rounded-xl p-6 backdrop-blur">
-              <h3 className="text-xl font-medium mb-3">Análisis Inteligente</h3>
-              <p className="text-white/70">Nuestro sistema de IA analiza tu sitio web y proporciona recomendaciones personalizadas para mejorar tu SEO.</p>
+              <h3 className="text-xl font-medium mb-3">Gestión Multi-Tienda</h3>
+              <p className="text-white/70">Control centralizado de inventarios para múltiples tiendas con sincronización en tiempo real.</p>
             </div>
             
             <div className="border border-white/15 rounded-xl p-6 backdrop-blur">
-              <h3 className="text-xl font-medium mb-3">Generador de Palabras Clave</h3>
-              <p className="text-white/70">Encuentra las mejores palabras clave para tu nicho con nuestro generador impulsado por IA.</p>
+              <h3 className="text-xl font-medium mb-3">Integración Ecommerce</h3>
+              <p className="text-white/70">Conexión con plataformas de comercio electrónico para sincronización automática de inventario.</p>
             </div>
             
             <div className="border border-white/15 rounded-xl p-6 backdrop-blur">
-              <h3 className="text-xl font-medium mb-3">Optimización de Contenido</h3>
-              <p className="text-white/70">Mejora tu contenido existente con sugerencias inteligentes basadas en los últimos algoritmos de búsqueda.</p>
+              <h3 className="text-xl font-medium mb-3">Control de Personal</h3>
+              <p className="text-white/70">Gestión de usuarios con roles y permisos configurables para cada tienda.</p>
             </div>
             
             <div className="border border-white/15 rounded-xl p-6 backdrop-blur">

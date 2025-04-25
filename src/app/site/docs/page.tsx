@@ -20,36 +20,36 @@ export default function Docs() {
               <span className="text-white">Base de datos</span>
             </div>
             
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight mb-6">Base de datos</h1>
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight mb-6">Documentación de INVWE</h1>
             
             <p className="text-lg text-white/80 mb-8">
-              Cada proyecto de IA SEO viene con una base de datos completa, una herramienta gratuita y de código abierto que es considerada una de las bases de datos más estables y avanzadas del mundo.
+              Aprende a utilizar todas las funcionalidades de nuestro sistema de gestión de inventarios multi-tienda, control de stock y sincronización con ecommerce.
             </p>
 
             <div className="grid md:grid-cols-2 gap-6 mb-12">
               <div className="border border-white/15 rounded-lg p-5 bg-[#1F1F1F]/50 hover:border-[#8c44ff]/50 transition-colors">
-                <h3 className="text-xl font-medium mb-2">Vista de tabla</h3>
+                <h3 className="text-xl font-medium mb-2">Vista de Inventario</h3>
                 <p className="text-white/70">
-                  No necesitas ser un experto en bases de datos para comenzar a usar IA SEO. Nuestra vista de tabla hace que el manejo de datos sea tan fácil como usar una hoja de cálculo.
+                  Interfaz intuitiva para gestionar productos, categorías y stock en múltiples tiendas.
                 </p>
               </div>
               
               <div className="border border-white/15 rounded-lg p-5 bg-[#1F1F1F]/50 hover:border-[#8c44ff]/50 transition-colors">
-                <h3 className="text-xl font-medium mb-2">Relaciones</h3>
+                <h3 className="text-xl font-medium mb-2">Sincronización Multi-Tienda</h3>
                 <p className="text-white/70">
-                  Profundiza en las relaciones dentro de tus datos de SEO y descubre conexiones valiosas entre palabras clave, contenido y posicionamiento.
+                  Configura y gestiona la sincronización de inventario entre múltiples ubicaciones en tiempo real.
                 </p>
               </div>
               
               <div className="border border-white/15 rounded-lg p-5 bg-[#1F1F1F]/50 hover:border-[#8c44ff]/50 transition-colors">
-                <h3 className="text-xl font-medium mb-2">Duplicar tablas</h3>
+                <h3 className="text-xl font-medium mb-2">Reportes de Stock</h3>
                 <p className="text-white/70">
-                  Puedes duplicar tus tablas de análisis, exactamente como lo harías dentro de una hoja de cálculo, facilitando la comparación de diferentes estrategias.
+                  Genera reportes personalizados de inventario, movimientos y niveles de stock.
                 </p>
               </div>
               
               <div className="border border-white/15 rounded-lg p-5 bg-[#1F1F1F]/50 hover:border-[#8c44ff]/50 transition-colors">
-                <h3 className="text-xl font-medium mb-2">Editor SQL</h3>
+                <h3 className="text-xl font-medium mb-2">Integración Ecommerce</h3>
                 <p className="text-white/70">
                   IA SEO viene con un Editor SQL. ¡También puedes guardar tus consultas favoritas para ejecutarlas más tarde!
                 </p>

@@ -8,58 +8,58 @@ export default function Developers() {
       <Header />
       <main className="py-20 md:py-24">
         <div className="container">
-          <h1 className="text-4xl md:text-6xl font-semibold tracking-tighter text-center mb-10">Desarrolladores</h1>
+          <h1 className="text-4xl md:text-6xl font-semibold tracking-tighter text-center mb-10 text-[#c0f2d0]">API de Gestión de Inventario</h1>
           
           <div className="max-w-3xl mx-auto text-center mb-12">
             <p className="text-lg text-white/70 mb-6">
-              Nuestra API y herramientas para desarrolladores te permiten integrar nuestras potentes funciones de SEO con IA en tus propias aplicaciones.
+              Conecta tus sistemas con nuestra API RESTful para controlar inventarios, stock, proveedores y sincronización multi-tienda en tiempo real.
             </p>
           </div>
           
           <div className="grid md:grid-cols-2 gap-8 mt-12">
             <div className="border border-white/15 rounded-xl p-6 backdrop-blur">
-              <h3 className="text-xl font-medium mb-3">API Completa</h3>
-              <p className="text-white/70 mb-4">Accede a todas nuestras funciones a través de una API RESTful bien documentada.</p>
+              <h3 className="text-xl font-medium mb-3">API de Inventario</h3>
+              <p className="text-white/70 mb-4">Consulta y actualiza inventarios, productos y stock a través de endpoints RESTful.</p>
               <pre className="bg-black/30 p-3 rounded-lg overflow-x-auto text-sm">
                 <code>{
-`// Ejemplo de solicitud de API
-fetch('https://api.iaseo.com/v1/analyze', {
-  method: 'POST',
+`// Consultar stock de producto
+fetch('https://api.invwe.com/v1/inventory', {
+  method: 'GET',
   headers: {
     'Content-Type': 'application/json',
     'Authorization': 'Bearer TU_API_KEY'
   },
-  body: JSON.stringify({
-    url: 'https://tudominio.com'
-  })
+  params: {
+    product_id: 'PROD-123'
+  }
 })`
                 }</code>
               </pre>
             </div>
             
             <div className="border border-white/15 rounded-xl p-6 backdrop-blur">
-              <h3 className="text-xl font-medium mb-3">SDK para Múltiples Plataformas</h3>
-              <p className="text-white/70 mb-4">Integraciones nativas para JavaScript, Python, PHP, Ruby y más.</p>
+              <h3 className="text-xl font-medium mb-3">SDK de Inventario</h3>
+              <p className="text-white/70 mb-4">Bibliotecas para JavaScript, Python y otros lenguajes para integrar fácilmente la gestión de inventario.</p>
               <pre className="bg-black/30 p-3 rounded-lg overflow-x-auto text-sm">
                 <code>{
-`// Ejemplo con nuestro SDK de JavaScript
-import { IASEO } from 'iaseo-sdk';
+`// Actualizar stock con SDK
+import { INVWE } from 'invwe-sdk';
 
-const seo = new IASEO('TU_API_KEY');
-const results = await seo.analyzeKeywords({
-  keywords: ['marketing digital', 'seo']
-});
-
-console.log(results.suggestions);`
+const invwe = new INVWE('TU_API_KEY');
+await invwe.updateStock({
+  product_id: 'PROD-123',
+  quantity: 50,
+  store_id: 'STORE-456'
+});`
                 }</code>
               </pre>
             </div>
           </div>
           
           <div className="mt-16 border border-white/15 rounded-xl p-8 backdrop-blur">
-            <h3 className="text-2xl font-medium mb-6 text-center">Documentación Completa</h3>
+            <h3 className="text-2xl font-medium mb-6 text-center">Documentación para Gestión de Inventarios</h3>
             <p className="text-white/70 text-center mb-8">
-              Explora nuestra documentación detallada con ejemplos, guías y referencias de API.
+              Explora nuestra documentación detallada para gestión de inventarios con ejemplos prácticos y referencias de API.
             </p>
             <div className="flex justify-center">
               <Button>Acceder a la Documentación</Button>

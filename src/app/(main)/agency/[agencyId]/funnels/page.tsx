@@ -6,8 +6,22 @@ import FunnelForm from '@/components/forms/funnel-form'
 import BlurPage from '@/components/global/blur-page'
 import FunnelsDataTable from './data-table'
 import { db } from '@/lib/db'
+import { getAgencyDetails } from '@/lib/queries'
+import { redirect } from 'next/navigation'
 
 const Funnels = async ({ params }: { params: { agencyId: string } }) => {
+  // Verificar configuraciones requeridas
+  const agencyDetails = await getAgencyDetails(params.agencyId)
+  const requiredSettings = [
+    agencyDetails?.paymentGatewayConfigured,
+    agencyDetails?.address,
+    agencyDetails?.phone
+  ]
+
+  if (requiredSettings.some(setting => !setting)) {
+    redirect(`/agency/${params.agencyId}/launchpad`)
+  }
+
   // Obtener todas las subcuentas de la agencia
   const subAccounts = await db.subAccount.findMany({
     where: {
