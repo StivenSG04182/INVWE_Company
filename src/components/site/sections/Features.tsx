@@ -1,27 +1,11 @@
 "use client";
-import {
-  DotLottieCommonPlayer,
-  DotLottiePlayer,
-} from "@dotlottie/react-player";
-import {
-  Component,
-  ComponentPropsWithoutRef,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import Image from "next/image";
+import { DotLottieCommonPlayer, DotLottiePlayer, } from "@dotlottie/react-player";
+import { ComponentPropsWithoutRef, useEffect, useRef, useState, } from "react";
 import productImage from "../assets/product-image.png";
-import {
-  animate,
-  motion,
-  useMotionTemplate,
-  useMotionValue,
-  ValueAnimationTransition,
-} from "framer-motion";
+import { animate, motion, useMotionTemplate, useMotionValue, ValueAnimationTransition, } from "framer-motion";
 const tabs = [
   {
-    icon: "/assets/lottie/vroom.lottie",
+    icon: "/public/assets/lottie/vroom.lottie",
     title: "Panel de control intuitivo",
     isNew: false,
     backgroundPositionX: 0,
@@ -29,7 +13,7 @@ const tabs = [
     backgroundSizeX: 150,
   },
   {
-    icon: "/assets/lottie/click.lottie",
+    icon: "/public/assets/lottie/click.lottie",
     title: "Optimización con un clic",
     isNew: false,
     backgroundPositionX: 98,
@@ -37,7 +21,7 @@ const tabs = [
     backgroundSizeX: 135,
   },
   {
-    icon: "/assets/lottie/stars.lottie",
+    icon: "/public/assets/lottie/stars.lottie",
     title: "Generador inteligente de palabras clave",
     isNew: true,
     backgroundPositionX: 100,
@@ -101,7 +85,7 @@ const FeatureTab = (
           style={{
             maskImage,
           }}
-          className="absolute inset-0 -m-px border border-[#A369FF] rounded-xl"
+          className="absolute inset-0 -m-px border border-[#a4c5ec] rounded-xl"
         ></motion.div>
       )}
 
@@ -114,7 +98,7 @@ const FeatureTab = (
       </div>
       <div className="font-medium">{props.title}</div>
       {props.isNew && (
-        <div className="text-xs rounded-full px-2 py-0.5 bg-[#8c44ff] text-black font-semibold">
+        <div className="text-xs rounded-full px-2 py-0.5 bg-[#a4c5ec] text-black font-semibold">
           Nuevo
         </div>
       )}

@@ -1,6 +1,7 @@
 'use client'
 import React from 'react'
 import { z } from 'zod'
+import { Role } from '@prisma/client'
 import {
   Card,
   CardContent,
@@ -53,22 +54,23 @@ const SendInvitation: React.FC<SendInvitationProps> = ({ agencyId }) => {
 
   const onSubmit = async (values: z.infer<typeof userDataSchema>) => {
     try {
-      const res = await sendInvitation(values.role, values.email, agencyId)
+      console.log('Enviando invitación con rol:', values.role);
+      const res = await sendInvitation(values.role as Role, values.email, agencyId)
       await saveActivityLogsNotification({
         agencyId: agencyId,
         description: `Invited ${res.email}`,
         subaccountId: undefined,
       })
       toast({
-        title: 'Success',
-        description: 'Created and sent invitation',
+        title: 'Éxito',
+        description: 'Creación y envío de la invitación',
       })
     } catch (error) {
       console.log(error)
       toast({
-        variant: 'destructive',
+        variant: 'destructivo',
         title: 'Oppse!',
-        description: 'Could not send invitation',
+        description: 'No se ha podido enviar la invitación',
       })
     }
   }
@@ -76,11 +78,10 @@ const SendInvitation: React.FC<SendInvitationProps> = ({ agencyId }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Invitation</CardTitle>
+        <CardTitle>Invitación</CardTitle>
         <CardDescription>
-          An invitation will be sent to the user. Users who already have an
-          invitation sent out to their email, will not receive another
-          invitation.
+          Se enviará una invitación al usuario. Los usuarios que ya tengan una invitación de
+          enviada a su correo electrónico, no recibirán otra invitación.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -112,7 +113,7 @@ const SendInvitation: React.FC<SendInvitationProps> = ({ agencyId }) => {
               name="role"
               render={({ field }) => (
                 <FormItem className="flex-1">
-                  <FormLabel>User role</FormLabel>
+                  <FormLabel>Función del usuario</FormLabel>
                   <Select
                     onValueChange={(value) => field.onChange(value)}
                     defaultValue={field.value}
@@ -123,12 +124,12 @@ const SendInvitation: React.FC<SendInvitationProps> = ({ agencyId }) => {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="AGENCY_ADMIN">Agency Admin</SelectItem>
+                      <SelectItem value="AGENCY_ADMIN">Administración de la Agencia</SelectItem>
                       <SelectItem value="SUBACCOUNT_USER">
-                        Sub Account User
+                      Usuario de la subcuenta
                       </SelectItem>
                       <SelectItem value="SUBACCOUNT_GUEST">
-                        Sub Account Guest
+                      Subcuenta Invitado
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -140,7 +141,7 @@ const SendInvitation: React.FC<SendInvitationProps> = ({ agencyId }) => {
               disabled={form.formState.isSubmitting}
               type="submit"
             >
-              {form.formState.isSubmitting ? <Loading /> : 'Send Invitation'}
+              {form.formState.isSubmitting ? <Loading /> : 'Enviar invitaciónInvitation'}
             </Button>
           </form>
         </Form>

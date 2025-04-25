@@ -262,9 +262,12 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
         SidebarOption: {
           create: [
             // 1. Dashboard & Visión general
-            { name: "Dashboard", icon: "chart", link: `/agency/${agency.id}/dashboard` },
+            { name: "Dashboard & Visión general", icon: "chart", link: "#" },
+            { name: "Dashboard", icon: "category", link: `/agency/${agency.id}` },
             { name: "Análisis", icon: "chart", link: `/agency/${agency.id}/analytics` },
             { name: "Actividad", icon: "calendar", link: `/agency/${agency.id}/activity` },
+            { name: "Visión general", icon: "chart", link: `/agency/${agency.id}/overview` },
+            { name: "Integraciones", icon: "link", link: `/agency/${agency.id}/integrations` },
 
             // 2. Gestión de Inventario
             { name: "Gestión de Inventario", icon: "database", link: "#" },
@@ -277,7 +280,7 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             // 3. Tienda & E-Commerce
             { name: "Tienda & E-Commerce", icon: "category", link: "#" },
             { name: "Tiendas Físicas", icon: "home", link: `/agency/${agency.id}/physical-stores` },
-            { name: "E-Commerce", icon: "category", link: `/agency/${agency.id}/ecommerce` },
+            { name: "E-Commerce", icon: "pipelines", link: `/agency/${agency.id}/funnels` },
             { name: "Envíos", icon: "send", link: `/agency/${agency.id}/shipping` },
 
             // 4. Ventas & Facturación
@@ -288,22 +291,25 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "Configuración DIAN", icon: "settings", link: `/agency/${agency.id}/dian-config` },
             { name: "Reportes", icon: "chart", link: `/agency/${agency.id}/reports` },
             { name: "Pagos", icon: "payment", link: `/agency/${agency.id}/payments` },
+            { name: "Billing", icon: "payment", link: `/agency/${agency.id}/billing` },
 
             // 5. Clientes & CRM
             { name: "Clientes & CRM", icon: "person", link: "#" },
             { name: "Clientes", icon: "person", link: `/agency/${agency.id}/clients` },
             { name: "CRM", icon: "contact", link: `/agency/${agency.id}/crm` },
+            { name: "All Sub-Accounts", icon: "person", link: `/agency/${agency.id}/all-subaccounts` },
 
             // 6. Personal & RRHH
             { name: "Personal & RRHH", icon: "person", link: "#" },
-            { name: "Empleados", icon: "person", link: `/agency/${agency.id}/employees` },
+            { name: "Empleados", icon: "person", link: `/agency/${agency.id}/team` },
             { name: "Horarios & Nómina", icon: "calendar", link: `/agency/${agency.id}/schedule` },
+            { name: "Contactos", icon: "contact", link: `/agency/${agency.id}/contacts` },
 
             // 7. Comunicaciones
             { name: "Comunicaciones", icon: "messages", link: "#" },
             { name: "Campañas", icon: "send", link: `/agency/${agency.id}/campaigns` },
             { name: "Bandeja de entrada", icon: "messages", link: `/agency/${agency.id}/inbox` },
-            { name: "Archivos", icon: "database", link: `/agency/${agency.id}/files` },
+            { name: "Medios", icon: "database", link: `/agency/${agency.id}/media` },
             { name: "Chat", icon: "messages", link: `/agency/${agency.id}/chat` },
 
             // 8. Reportes & Analíticas
@@ -317,23 +323,10 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "Ajustes de Empresa", icon: "settings", link: `/agency/${agency.id}/company-settings` },
             { name: "Usuarios & Permisos", icon: "settings", link: `/agency/${agency.id}/users` },
             { name: "Facturación", icon: "payment", link: `/agency/${agency.id}/billing` },
-            { name: "Integraciones", icon: "link", link: `/agency/${agency.id}/integrations` },
-
-            // 10. Launchpad
-            { name: "Launchpad", icon: "power", link: "#" },
             { name: "Configuración Inicial", icon: "settings", link: `/agency/${agency.id}/launchpad` },
-
-            // 11. Billing (Suscripción)
-            { name: "Billing", icon: "payment", link: `/agency/${agency.id}/billing` },
-
-            // 12. Settings (General)
-            { name: "Settings", icon: "settings", link: "#" },
             { name: "General Settings", icon: "tune", link: `/agency/${agency.id}/settings` },
-
-            // 13. Gestión de Cuentas
-            { name: "Gestión de Cuentas", icon: "person", link: "#" },
-            { name: "All Sub-Accounts", icon: "person", link: `/agency/${agency.id}/all-subaccounts` },
-            { name: "Team", icon: "shield", link: `/agency/${agency.id}/team` },
+            { name: "Automatización", icon: "chip", link: `/agency/${agency.id}/automations` },
+            { name: "Pipelines", icon: "flag", link: `/agency/${agency.id}/pipelines` },
           ],
         },
       },
@@ -519,8 +512,13 @@ export const sendInvitation = async (
   email: string,
   agencyId: string
 ) => {
+  console.log('Sending invitation with role:', role);
   const resposne = await db.invitation.create({
-    data: { email, agencyId, role },
+    data: { 
+      email: email, 
+      agencyId: agencyId, 
+      role: role 
+    },
   })
 
   try {

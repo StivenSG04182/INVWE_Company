@@ -42,13 +42,13 @@ const TeamPage = async ({ params }: Props) => {
       actionButtonText={
         <>
           <Plus size={15} />
-          Add
+          Añadir
         </>
       }
       modalChildren={
       <SendInvitation agencyId={agencyDetails.id} />
     }
-      filterValue="name"
+      filterValue="nombre"
       columns={columns}
       data={teamMembers}
     ></DataTable>

@@ -7,6 +7,7 @@ import { Toaster } from '@/components/ui/toaster'
 import { Toaster as SonnarToaster} from '@/components/ui/sonner'
 import { PayPalProvider } from '@/components/providers/paypal-provider'
 import { ClerkProvider } from '@clerk/nextjs'
+import { twMerge } from "tailwind-merge";
 
 const font = DM_Sans({ subsets: ["latin"] });
 
@@ -23,7 +24,7 @@ export default function RootLayout({
   return (
     
       <html lang="en" suppressHydrationWarning>
-        <body className={font.className}>
+        <body className={twMerge(font.className, "bg-black text-white antialiased")}>
           <ClerkProvider>
             <PayPalProvider>
               <ThemeProvider

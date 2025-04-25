@@ -1,11 +1,7 @@
 "use client";
-import { Button } from "@/components/Button";
-import starsBg from "@/assets/stars.png";
-import {
-  motion,
-  useScroll,
-  useTransform,
-} from "framer-motion";
+import { Button } from "@/components/site/ui/Button";
+import starsBg from "@/components/site/assets/stars.png";
+import { motion, useScroll, useTransform, } from "framer-motion";
 import { useRef } from "react";
 export const Hero = () => {
   const sectionRef = useRef(null);

@@ -144,17 +144,17 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
             variant="ghost"
             className="h-8 w-8 p-0"
           >
-            <span className="sr-only">Open menu</span>
+            <span className="sr-only">Abrir menú</span>
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuLabel>Acciones</DropdownMenuLabel>
           <DropdownMenuItem
             className="flex gap-2"
             onClick={() => navigator.clipboard.writeText(rowData?.email)}
           >
-            <Copy size={15} /> Copy Email
+            <Copy size={15} /> Copiar correo electrónico
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -162,8 +162,8 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
             onClick={() => {
               setOpen(
                 <CustomModal
-                  subheading="You can change permissions only when the user has an owned subaccount"
-                  title="Edit User Details"
+                  subheading="Sólo puede cambiar los permisos si el usuario tiene una subcuenta propia."
+                  title="Editar datos de usuario"
                 >
                   <UserDetails
                     type="agency"
@@ -187,7 +187,7 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
                 // WIP : complete this function to remove the user
                 onClick={() => {}}
               >
-                <Trash size={15} /> Remove User
+                <Trash size={15} /> Eliminar usuario
               </DropdownMenuItem>
             </AlertDialogTrigger>
           )}
@@ -196,15 +196,15 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className="text-left">
-            Are you absolutely sure?
+          ¿Está completamente seguro?
           </AlertDialogTitle>
           <AlertDialogDescription className="text-left">
-            This action cannot be undone. This will permanently delete the user
-            and related data.
+          Esta acción no se puede deshacer. Esto eliminará permanentemente el usuario
+          y los datos relacionados.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex items-center">
-          <AlertDialogCancel className="mb-2">Cancel</AlertDialogCancel>
+          <AlertDialogCancel className="mb-2">Cancelar</AlertDialogCancel>
           <AlertDialogAction
             disabled={loading}
             className="bg-destructive hover:bg-destructive"
@@ -212,15 +212,15 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
               setLoading(true)
               await deleteUser(rowData.id)
               toast({
-                title: 'Deleted User',
+                title: 'Usuario eliminado',
                 description:
-                  'The user has been deleted from this agency they no longer have access to the agency',
+                  'El usuario ha sido eliminado de esta agencia ya no tiene acceso a la agencia',
               })
               setLoading(false)
               router.refresh()
             }}
           >
-            Delete
+            Eliminar
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -1,15 +1,8 @@
 "use client";
-import { Button } from "@/components/Button";
-import starsBg from "@/assets/stars.png";
-import gridLines from "@/assets/grid-lines.png";
-import {
-  animate,
-  motion,
-  useMotionTemplate,
-  useMotionValue,
-  useScroll,
-  useTransform,
-} from "framer-motion";
+import { Button } from "@/components/site/ui/Button";
+import starsBg from "@/components/site/assets/stars.png";
+import gridLines from "@/components/site/assets/grid-lines.png";
+import { animate, motion, useMotionTemplate, useMotionValue, useScroll,useTransform, } from "framer-motion";
 import { RefObject, useEffect, useRef } from "react";
 
 const useRelativeMousePosition = (to: RefObject<HTMLElement>) => {
@@ -74,13 +67,13 @@ export const CallToAction = () => {
           }}
         >
           <div
-            className="absolute inset-0 bg-[rgb(74,32,138)] bg-blend-overlay [mask-image:radial-gradient(50%_50%_at_50%_35%,black,transparent)] group-hover:opacity-0 transition duration-700"
+            className="absolute inset-0 bg-[rgb(192, 242, 208)] bg-blend-overlay [mask-image:radial-gradient(50%_50%_at_50%_35%,black,transparent)] group-hover:opacity-0 transition duration-700"
             style={{
               backgroundImage: `url(${gridLines.src})`,
             }}
           ></div>
           <motion.div
-            className="absolute inset-0 bg-[rgb(74,32,138)] bg-blend-overlay opacity-0 group-hover:opacity-100"
+            className="absolute inset-0 bg-[rgb(192, 242, 208)] bg-blend-overlay opacity-0 group-hover:opacity-100"
             style={{
               maskImage,
               backgroundImage: `url(${gridLines.src})`,
