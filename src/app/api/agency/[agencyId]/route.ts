@@ -20,6 +20,13 @@ export async function GET(
       select: {
         name: true,
         agencyLogo: true,
+        address: true,
+        city: true,
+        companyEmail: true,
+        companyPhone: true,
+        country: true,
+        state: true,
+        zipCode: true
       },
     })
 
@@ -41,4 +48,4 @@ export async function GET(
       { status: 500 }
     )
   }
-} 
+}

@@ -48,7 +48,9 @@ Prisma.PromiseReturnType<
 
 export type GetMediaFiles = Prisma.PromiseReturnType<typeof getMedia>
 
-export type createMediaType = Prisma.MediaCreateWithoutSubaccountInput
+export type createMediaType = Prisma.MediaCreateWithoutSubaccountInput & {
+  agencyId?: string
+}
 
 export type TicketAndTags = Ticket & {
   Tags: Tag[];

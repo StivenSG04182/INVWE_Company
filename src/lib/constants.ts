@@ -16,7 +16,7 @@ import Notification from "@/components/icons/notification";
 import Payment from "@/components/icons/payment";
 import Person from "@/components/icons/person";
 import Pipelines from "@/components/icons/pipelines";
-import PluraCategory from "@/components/icons/plura-category";
+import InvweCategory from "@/components/icons/invwe-category";
 import Power from "@/components/icons/power";
 import Receipt from "@/components/icons/receipt";
 import Send from "@/components/icons/send";
@@ -211,7 +211,7 @@ export const icons = [
   {
     value: "category",
     label: "Categoría",
-    path: PluraCategory,
+    path: InvweCategory,
   },
   {
     value: "clipboardIcon",

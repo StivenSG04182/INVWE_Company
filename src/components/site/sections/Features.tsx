@@ -143,11 +143,11 @@ export const Features = () => {
     <section className="py-24">
       <div className="container">
         <h2 className="text-5xl md:text-6xl font-medium text-center tracking-tighter">
-          Eleva tus esfuerzos SEO
+          Eleva tus esfuerzos con INVWE
         </h2>
         <p className="text-white/70 text-lg md:text-xl max-w-2xl mx-auto tracking-tightert text-center mt-5">
-          Desde pequeñas startups hasta grandes empresas, nuestra herramienta impulsada por IA ha
-          revolucionado la forma en que los negocios abordan el SEO
+          Desde pequeñas empresas o emprendimientos hasta grandes empresas, nuestra herramienta de gestión de inventario a 
+          impulsado a las mejoras constantes de su establecimiento.
         </p>
         <div className="mt-10 flex flex-col lg:flex-row gap-3">
           {tabs.map((tab, tabIndex) => (

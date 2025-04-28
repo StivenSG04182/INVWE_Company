@@ -6,7 +6,7 @@ export const Footer = () => {
             <div className="container">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                     <div>
-                        <h3 className="text-lg font-medium mb-4 text-[#c0f2d0]">InventarioSaaS</h3>
+                        <h3 className="text-lg font-medium mb-4 text-[#c0f2d0]">INVWE</h3>
                         <p className="text-sm text-white/60 mb-4">
                             Solución integral para gestión de inventario y facturación electrónica.
                         </p>
@@ -78,7 +78,7 @@ export const Footer = () => {
 
                 <div className="border-t border-white/10 mt-12 pt-6 flex flex-col md:flex-row justify-between items-center">
                     <p className="text-sm text-white/40 mb-4 md:mb-0">
-                        © 2023 InventarioSaaS. Todos los derechos reservados.
+                        © 2025 INVWE. Todos los derechos reservados.
                     </p>
 
                     <div className="flex items-center gap-4">

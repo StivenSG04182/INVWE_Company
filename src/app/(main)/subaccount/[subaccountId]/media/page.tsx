@@ -8,7 +8,14 @@ type Props = {
 }
 
 const MediaPage = async ({ params }: Props) => {
-  const data = await getMedia(params.subaccountId)
+  // Intentar obtener los datos de media, pero no fallar si no hay datos
+  let data = null
+  try {
+    data = await getMedia(params.subaccountId, false)
+  } catch (error) {
+    console.error('Error al cargar medios:', error)
+    // Continuamos con data = null
+  }
 
   return (
     <BlurPage>

@@ -81,7 +81,7 @@ export const CallToAction = () => {
           ></motion.div>
           <div className="relative">
             <h2 className="text-5xl md:text-6xl max-w-sm mx-auto tracking-tighter text-center font-medium">
-              SEO impulsado por IA para todos
+              INVWE, gestión de inventarrio.
             </h2>
             <p className="text-center text-lg md:text-xl max-w-xs mx-auto text-white/70 px-4 mt-5 tracking-tight">
               Logra resultados claros e impactantes sin la complejidad

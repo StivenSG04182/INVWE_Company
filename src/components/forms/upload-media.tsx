@@ -13,15 +13,16 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 
 type Props = {
-    subaccountId:string
+    subaccountId: string
+    agencyId?: string
 }
 
 const formSchema = z.object({
-    link: z.string().min(1, { message: 'Media File is required' }),
-    name: z.string().min(1, { message: 'Name is required' }),
+    link: z.string().min(1, { message: 'Se requiere archivo multimedia' }),
+    name: z.string().min(1, { message: 'Nombre obligatorio' }),
 })
 
-const UploadMediaForm = ({ subaccountId }: Props) => {
+const UploadMediaForm = ({ subaccountId, agencyId }: Props) => {
     const { toast } = useToast()
     const router = useRouter()
     const form = useForm<z.infer<typeof formSchema>>({
@@ -35,20 +36,28 @@ const UploadMediaForm = ({ subaccountId }: Props) => {
 
     async function onSubmit(values:z.infer<typeof formSchema>){
         try{
-            const response = await createMedia(subaccountId, values)
+            console.log('UploadMediaForm - onSubmit con valores:', values);
+            console.log('UploadMediaForm - Parámetros:', { subaccountId, agencyId });
+            
+            // Aseguramos que el agencyId se pase correctamente
+            const response = await createMedia(subaccountId, {...values, agencyId})
+            console.log('UploadMediaForm - Respuesta de createMedia:', response);
+            
+            // Guardamos la notificación con el agencyId correcto
             await saveActivityLogsNotification({
-                agencyId:undefined,
-                description:`Uploaded a media file | ${response.name}`,
-                subaccountId
+                description:`Cargado un archivo multimedia | ${response.name}`,
+                subaccountId: subaccountId || '', // Aseguramos que siempre haya un valor, incluso si es vacío
+                agencyId: agencyId || response.agencyId // Usamos el agencyId del formulario o de la respuesta
             })
-            toast({title:"success", description:"Uploaded media"})
+            
+            toast({title:"Éxito", description:"Archivo multimedia cargado correctamente"})
             router.refresh()
         } catch(error){
-            console.log(error)
+            console.error('Error al cargar archivo multimedia:', error)
             toast({
                 variant:"destructive",
-                title:"Failed",
-                description:"Could not uploaded media"
+                title:"Error",
+                description:"No se han podido cargar los archivos"
             }) 
         }
 
@@ -56,8 +65,8 @@ const UploadMediaForm = ({ subaccountId }: Props) => {
 
     return <Card className='w-full'>
         <CardHeader>
-            <CardTitle>Media Information</CardTitle>
-                <CardDescription>Please enter the details for your file</CardDescription>
+            <CardTitle>Información para los medios</CardTitle>
+                <CardDescription>Introduzca los datos de su expediente</CardDescription>
         </CardHeader>
         <CardContent>
             <Form {...form}>
@@ -67,10 +76,10 @@ const UploadMediaForm = ({ subaccountId }: Props) => {
               name="name"
               render={({ field }) => (
                 <FormItem className="flex-1">
-                  <FormLabel>File Name</FormLabel>
+                  <FormLabel>Nombre del archivo</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Your agency name"
+                      placeholder="Nombre de su agencia"
                       {...field}
                     />
                   </FormControl>
@@ -84,7 +93,7 @@ const UploadMediaForm = ({ subaccountId }: Props) => {
               name="link"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Media File</FormLabel>
+                  <FormLabel>Archivo multimedia</FormLabel>
                   <FormControl>
                     <FileUpload
                       apiEndpoint="subaccountLogo"
@@ -100,21 +109,12 @@ const UploadMediaForm = ({ subaccountId }: Props) => {
               type="submit"
               className="mt-4"
             >
-              Upload Media
+              Cargar medios
             </Button>
                 </form>
             </Form>
         </CardContent>
     </Card>
-
-
-
-
-
-
-
 }
 
 export default UploadMediaForm
-
-

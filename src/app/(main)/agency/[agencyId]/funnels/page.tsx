@@ -32,13 +32,31 @@ const Funnels = async ({ params }: { params: { agencyId: string } }) => {
     }
   })
   
-  // Si no hay subcuentas, no hay embudos
-  if (subAccounts.length === 0) return null
+  // Si no hay subcuentas, mostrar mensaje informativo
+  if (subAccounts.length === 0) {
+    return (
+      <BlurPage>
+        <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+          <h2 className="text-2xl font-bold mb-2">No hay subcuentas disponibles</h2>
+          <p>Necesita crear al menos una subcuenta para poder gestionar embudos.</p>
+        </div>
+      </BlurPage>
+    )
+  }
   
   // Usar la primera subcuenta para mostrar sus embudos
   const firstSubAccountId = subAccounts[0].id
   const funnels = await getFunnels(firstSubAccountId)
-  if (!funnels) return null
+  if (!funnels) {
+    return (
+      <BlurPage>
+        <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+          <h2 className="text-2xl font-bold mb-2">No hay embudos disponibles</h2>
+          <p>No se encontraron embudos para esta subcuenta.</p>
+        </div>
+      </BlurPage>
+    )
+  }
 
   return (
     <BlurPage>

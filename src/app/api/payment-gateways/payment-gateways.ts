@@ -40,7 +40,7 @@ export const paymentGateways: PaymentGateway[] = [
             currency: 'USD'
         },
         authUrl: (agencyId: string) => {
-            const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+            const clientId = 'AfcdnxX0JkXCQKlXfRqFLe_7C4skdzXbk1PgnMSNEoLLLuSYM1t5c5Je-zjxZ8wuhQk0KQZ8Ce5FSgEL';
             const redirectUri = encodeURIComponent(`${process.env.NEXT_PUBLIC_URL}/agency/${agencyId}/launchpad`);
             return `https://www.sandbox.paypal.com/connect?flowEntry=static&client_id=${clientId}&scope=openid email&redirect_uri=${redirectUri}&response_type=code`;
         }

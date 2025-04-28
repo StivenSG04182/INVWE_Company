@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { PaymentGatewayValidationResponse } from '@/lib/payment-gateway-types'
+import { PaymentGatewayValidationResponse } from '@/app/api/payment-gateways/payment-gateway-types'
 
 export async function GET(req: Request) {
     try {

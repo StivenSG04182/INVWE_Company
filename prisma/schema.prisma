@@ -102,6 +102,7 @@ model Agency {
   Notification     Notification[]
   Subscription     Subscription?
   AddOns           AddOns[]
+  Media            Media[]
   paymentGateways  PaymentGatewayConnection[]
   settings         AgencySettings[]
 }
@@ -282,11 +283,14 @@ model Media {
   name         String
   link         String     @unique
   subAccountId String
+  agencyId     String
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   Subaccount   SubAccount @relation(fields: [subAccountId], references: [id], onDelete: Cascade)
+  Agency       Agency     @relation(fields: [agencyId], references: [id], onDelete: Cascade)
 
   @@index([subAccountId])
+  @@index([agencyId])
 }
 
 model Funnel {

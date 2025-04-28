@@ -7,12 +7,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils'
 import { useModal } from '@/providers/modal-provider'
 import { Pipeline } from '@prisma/client'
-import { Check, ChevronsUpDown, Plus } from 'lucide-react'
+import { Check, ChevronsUpDown, Plus}ide-react'
 import Link from 'next/link'
-import React from 'react'
-
-type Props = {
-    pipelineId:string,
+import Rering,
     subAccountId:string,
     pipelines:Pipeline[]
 }
@@ -23,11 +20,7 @@ const PipelineInfoBar = ({pipelineId, subAccountId, pipelines}: Props) => {
     const [value, setValue] = React.useState(pipelineId)
 
     const handleClickCreatePipeline = () => {
-        setOpenModal(
-            <CustomModal
-            title='Create A Pipeline'
-            subheading='Pipelines allows you to group tickets into lanes and track your business processes all in one place.'
-            >
+       istoc       >
             <CreatePipelineForm subAccountId={subAccountId} />
 
             </CustomModal>
@@ -45,14 +38,7 @@ const PipelineInfoBar = ({pipelineId, subAccountId, pipelines}: Props) => {
                     <Button
                     variant='outline'
                     role='combobox'
-                    aria-expanded={open}
-                    className='w-[200px] justify-between'
-                    >
-                        {value
-                ? pipelines.find((pipeline) => pipeline.id === value)?.name
-                : 'Select a pipeline...'}
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
+                    aria-lt    </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[200px] p-0">
             <Command>

@@ -6,21 +6,22 @@ import CustomModal from '../global/custom-modal'
 import UploadMediaForm from '../forms/upload-media'
 
 type Props = {
-    subaccountId: string 
+    subaccountId: string,
+    agencyId?: string
 }
 
-const MediaUploadButton = ({subaccountId}: Props) => {
+const MediaUploadButton = ({subaccountId, agencyId}: Props) => {
     const {isOpen, setOpen, setClose} = useModal()
 
   return <Button onClick={() => {
     setOpen(
         <CustomModal
-        title='Upload Media'
-        subheading='Upload a file to your bucket'>
-            <UploadMediaForm subaccountId={subaccountId}></UploadMediaForm>
+        title='Cargar medios'
+        subheading='Sube un archivo a tu cubo'>
+            <UploadMediaForm subaccountId={subaccountId} agencyId={agencyId}></UploadMediaForm>
         </CustomModal>
     )
-  }}>Upload
+  }}>Cargar
   </Button>
 }
 

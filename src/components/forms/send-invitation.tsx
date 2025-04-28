@@ -35,23 +35,75 @@ const SendInvitation: React.FC<SendInvitationProps> = ({ agencyId }) => {
 
   const onSubmit = async (values: z.infer<typeof userDataSchema>) => {
     try {
-      console.log('Enviando invitación con rol:', values.role);
-      const res = await sendInvitation(values.role as Role, values.email, agencyId)
+      console.warn('🚀 === INICIO DEL PROCESO DE INVITACIÓN ===');
+      console.warn('📝 Valores del formulario:', JSON.stringify(values, null, 2));
+      console.warn('🏢 Agency ID recibido:', agencyId);
+      console.warn('ℹ️ Tipo de Agency ID:', typeof agencyId);
+      
+      if (!values.role) {
+        console.warn('⛔ ERROR CRÍTICO: El rol es undefined o null');
+        throw new Error('El rol es obligatorio');
+      }
+      
+      if (!values.email) {
+        console.warn('⛔ ERROR CRÍTICO: El email es undefined o null');
+        throw new Error('El email es obligatorio');
+      }
+      
+      if (!agencyId) {
+        console.warn('⛔ ERROR CRÍTICO: El agencyId es undefined o null');
+        throw new Error('El agencyId es obligatorio');
+      }
+      
+      console.warn('📨 Enviando invitación con parámetros:');
+      console.warn('👤 - Rol:', values.role, '(tipo:', typeof values.role, ')');
+      console.warn('📧 - Email:', values.email, '(tipo:', typeof values.email, ')');
+      console.warn('🏢 - Agency ID:', agencyId, '(tipo:', typeof agencyId, ')');
+      
+      // Convertir explícitamente el rol a tipo Role
+      const roleValue = values.role as Role;
+      console.warn('🔄 Rol convertido:', roleValue);
+      
+      const res = await sendInvitation(roleValue, values.email, agencyId)
+      console.warn('✅ Respuesta de sendInvitation:', JSON.stringify(res, null, 2));
+      
+      console.warn('📝 Guardando notificación de actividad...');
       await saveActivityLogsNotification({
         agencyId: agencyId,
         description: `Invited ${res.email}`,
         subaccountId: undefined,
       })
+      console.warn('✅ Notificación guardada correctamente');
+      
+      console.warn('🎉 === PROCESO DE INVITACIÓN COMPLETADO CON ÉXITO ===');
       toast({
         title: 'Éxito',
         description: 'Creación y envío de la invitación',
       })
     } catch (error) {
-      console.log(error)
+      console.warn('❌ === ERROR EN EL PROCESO DE INVITACIÓN ===');
+      console.warn('⚠️ Detalles del error:', error);
+      console.warn('📄 Mensaje:', error instanceof Error ? error.message : 'Error desconocido');
+      console.warn('🔍 Stack:', error instanceof Error ? error.stack : 'No disponible');
+      
+      // Mensaje de error personalizado basado en el tipo de error
+      let errorMessage = 'No se ha podido enviar la invitación';
+      
+      if (error instanceof Error) {
+        // Personalizar mensaje según el error específico
+        if (error.message.includes('Ya existe una invitación')) {
+          errorMessage = 'Ya existe una invitación para este email';
+        } else if (error.message.includes('URL de redirección')) {
+          errorMessage = 'Error de configuración: URL de redirección no configurada';
+        } else if (error.message.includes('Error al enviar la invitación')) {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
-        variant: 'destructivo',
-        title: 'Oppse!',
-        description: 'No se ha podido enviar la invitación',
+        variant: 'destructive',
+        title: 'Error',
+        description: errorMessage,
       })
     }
   }
@@ -122,7 +174,7 @@ const SendInvitation: React.FC<SendInvitationProps> = ({ agencyId }) => {
               disabled={form.formState.isSubmitting}
               type="submit"
             >
-              {form.formState.isSubmitting ? <Loading /> : 'Enviar invitaciónInvitation'}
+              {form.formState.isSubmitting ? <Loading /> : 'Enviar invitación'}
             </Button>
           </form>
         </Form>

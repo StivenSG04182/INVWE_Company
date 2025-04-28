@@ -13,14 +13,14 @@ const MediaBucketTab = (props: Props) => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await getMedia(props.subaccountId)
+      const response = await getMedia(props.subaccountId, false)
       setdata(response)
     }
     fetchData()
   }, [props.subaccountId])
 
   return (
-    <div className="h-[900px] overflow-scroll p-4">
+    <div className="h-[900px] p-4">
       <MediaComponent
         data={data}
         subaccountId={props.subaccountId}

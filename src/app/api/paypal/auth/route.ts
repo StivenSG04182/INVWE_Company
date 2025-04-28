@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { PaymentGatewayAuthResponse } from '@/lib/payment-gateway-types'
+import { PaymentGatewayAuthResponse } from '@/app/api/payment-gateways/payment-gateway-types'
 
 export async function POST(req: Request) {
     try {

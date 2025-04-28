@@ -48,7 +48,7 @@ const TeamPage = async ({ params }: Props) => {
       modalChildren={
       <SendInvitation agencyId={agencyDetails.id} />
     }
-      filterValue="nombre"
+      filterValue="name"
       columns={columns}
       data={teamMembers}
     ></DataTable>

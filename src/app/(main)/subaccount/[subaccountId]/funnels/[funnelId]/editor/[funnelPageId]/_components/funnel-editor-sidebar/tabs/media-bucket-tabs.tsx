@@ -13,7 +13,7 @@ const MediaBucketTab = (props: Props) => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await getMedia(props.subaccountId)
+      const response = await getMedia(props.subaccountId, false)
       setdata(response)
     }
     fetchData()

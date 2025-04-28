@@ -98,11 +98,11 @@ export const Hero = () => {
       {/*end ring 3 */}
       <div className="container relative mt-16">
         <h1 className="text-8xl md:text-[168px] md:leading-none font-semibold tracking-tighter bg-white bg-[radial-gradient(100%_100%_at_top_left,white,white,rgb(74,32,138,.5))] text-transparent bg-clip-text text-center">
-          IA SEO
+          INVWE
         </h1>
         <p className="text-lg md:text-xl text-white/70 mt-5 text-center max-w-xl mx-auto">
-          Eleva la visibilidad de tu sitio sin esfuerzo con IA, donde la tecnología
-          inteligente se une a herramientas SEO fáciles de usar.
+        Eleva la visibilidad de tu sitio sin esfuerzo con INVWE, donde la tecnología
+        Se une para favorecer el crecimiento fácil de lograr.
         </p>
         <div className="flex justify-center mt-5">
           <Button>Unirse a la Lista</Button>

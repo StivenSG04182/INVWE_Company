@@ -61,13 +61,43 @@ export const saveActivityLogsNotification = async ({
   const authUser = await currentUser();
   let userData;
   if (!authUser) {
+    // Si no hay usuario autenticado, buscar un usuario con acceso a la subcuenta o agencia
     const response = await db.user.findFirst({
       where: {
-        Agency: {
-          SubAccount: {
-            some: { id: subaccountId },
+        OR: [
+          // Buscar usuarios con rol SUBACCOUNT_USER
+          {
+            role: 'SUBACCOUNT_USER',
+            Agency: {
+              SubAccount: {
+                some: { id: subaccountId },
+              },
+            },
           },
-        },
+          // Buscar usuarios con rol SUBACCOUNT_GUEST
+          {
+            role: 'SUBACCOUNT_GUEST',
+            Agency: {
+              SubAccount: {
+                some: { id: subaccountId },
+              },
+            },
+          },
+          // Buscar usuarios con rol AGENCY_OWNER
+          {
+            role: 'AGENCY_OWNER',
+            Agency: {
+              id: agencyId,
+            },
+          },
+          // Buscar usuarios con rol AGENCY_ADMIN
+          {
+            role: 'AGENCY_ADMIN',
+            Agency: {
+              id: agencyId,
+            },
+          },
+        ],
       },
     });
     if (response) {
@@ -86,9 +116,9 @@ export const saveActivityLogsNotification = async ({
   let foundAgencyId = agencyId;
   if (!foundAgencyId) {
     if (!subaccountId) {
-      throw new Error(
-        "You need to provide atleast an agency Id or subaccount Id"
-      );
+      // Si no hay ID de agencia ni de subcuenta, simplemente registramos y retornamos
+      console.log("No agency ID or subaccount ID provided for activity log");
+      return;
     }
     const response = await db.subAccount.findUnique({
       where: { id: subaccountId },
@@ -524,63 +554,369 @@ export const sendInvitation = async (
   email: string,
   agencyId: string
 ) => {
-  console.log('Sending invitation with role:', role);
-  const resposne = await db.invitation.create({
-    data: { 
-      email: email, 
-      agencyId: agencyId, 
-      role: role 
-    },
-  })
-
-  try {
-    const invitation = await clerkClient.invitations.createInvitation({
-      emailAddress: email,
-      redirectUrl: process.env.NEXT_PUBLIC_URL,
-      publicMetadata: {
-        throughInvitation: true,
-        role,
-      },
-    })
-  } catch (error) {
-    console.log(error)
-    throw error
+  // Usar console.warn para asegurar que los mensajes sean más visibles en la terminal
+  console.warn('🚀 === INICIO DE FUNCIÓN sendInvitation ===');
+  console.warn('Parámetros recibidos:');
+  console.warn('- Role:', role, '(tipo:', typeof role, ')');
+  console.warn('- Email:', email, '(tipo:', typeof email, ')');
+  console.warn('- Agency ID:', agencyId, '(tipo:', typeof agencyId, ')');
+  
+  // Validación de parámetros
+  if (!role) {
+    console.warn('⛔ ERROR: Role es undefined o null');
+    throw new Error('Role es obligatorio para crear una invitación');
   }
+  
+  if (!email) {
+    console.warn('⛔ ERROR: Email es undefined o null');
+    throw new Error('Email es obligatorio para crear una invitación');
+  }
+  
+  if (!agencyId) {
+    console.warn('⛔ ERROR: AgencyId es undefined o null');
+    throw new Error('AgencyId es obligatorio para crear una invitación');
+  }
+  
+  try {
+    // Verificar si ya existe una invitación para este email en esta agencia
+    const existingInvitation = await db.invitation.findFirst({
+      where: {
+        email: email,
+        agencyId: agencyId,
+      },
+    });
+    
+    if (existingInvitation) {
+      console.warn('⚠️ Ya existe una invitación para este email en esta agencia');
+      console.warn('Detalles:', JSON.stringify(existingInvitation, null, 2));
+      throw new Error('Ya existe una invitación para este email');
+    }
+    
+    console.warn('📝 Creando registro en la base de datos con los siguientes datos:');
+    console.warn(JSON.stringify({ email, agencyId, role }, null, 2));
+    
+    let response;
+    try {
+      response = await db.invitation.create({
+        data: { 
+          email: email, 
+          agencyId: agencyId, 
+          role: role,
+          status: 'PENDING' // Asegurando que el estado sea PENDING
+        },
+      });
+      
+      console.warn('✅ Registro creado exitosamente en la base de datos:');
+      console.warn(JSON.stringify(response, null, 2));
+    } catch (dbError) {
+      console.warn('⛔ ERROR al crear registro en la base de datos:');
+      console.warn('Mensaje:', dbError instanceof Error ? dbError.message : 'Error desconocido');
+      console.warn('Stack:', dbError instanceof Error ? dbError.stack : 'No disponible');
+      
+      // Verificar si es un error de clave única (email duplicado)
+      if (dbError instanceof Error && dbError.message.includes('Unique constraint')) {
+        throw new Error('Ya existe una invitación para este email');
+      }
+      
+      throw dbError;
+    }
 
-  return resposne
+    try {
+      console.warn('📨 Intentando crear invitación en Clerk...');
+      console.warn('NEXT_PUBLIC_URL:', process.env.NEXT_PUBLIC_URL);
+      
+      if (!process.env.NEXT_PUBLIC_URL) {
+        console.warn('⛔ ERROR: NEXT_PUBLIC_URL no está definido');
+        throw new Error('La URL de redirección no está configurada');
+      }
+      
+      const redirectUrl = process.env.NEXT_PUBLIC_URL.endsWith('/') 
+        ? process.env.NEXT_PUBLIC_URL 
+        : `${process.env.NEXT_PUBLIC_URL}/`;
+      
+      console.warn('🔗 URL de redirección:', redirectUrl);
+      
+      const invitation = await clerkClient.invitations.createInvitation({
+        emailAddress: email,
+        redirectUrl: redirectUrl,
+        publicMetadata: {
+          throughInvitation: true,
+          role,
+          agencyId,
+        },
+      });
+      
+      console.warn('✅ Invitación creada exitosamente en Clerk:');
+      console.warn(JSON.stringify(invitation, null, 2));
+    } catch (clerkError) {
+      console.warn('⛔ ERROR al crear invitación en Clerk:');
+      console.warn('Mensaje:', clerkError instanceof Error ? clerkError.message : 'Error desconocido');
+      console.warn('Stack:', clerkError instanceof Error ? clerkError.stack : 'No disponible');
+      
+      // Intentar eliminar la invitación de la base de datos si falló en Clerk
+      try {
+        if (response?.id) {
+          await db.invitation.delete({
+            where: { id: response.id },
+          });
+          console.warn('🗑️ Invitación eliminada de la base de datos debido al error en Clerk');
+        }
+      } catch (cleanupError) {
+        console.warn('⚠️ Error al limpiar la invitación de la base de datos:', cleanupError);
+      }
+      
+      throw new Error('Error al enviar la invitación: ' + (clerkError instanceof Error ? clerkError.message : 'Error desconocido'));
+    }
+
+    console.warn('🎉 === FUNCIÓN sendInvitation COMPLETADA CON ÉXITO ===');
+    return response;
+  } catch (error) {
+    console.warn('❌ === ERROR GENERAL EN sendInvitation ===');
+    console.warn('Mensaje:', error instanceof Error ? error.message : 'Error desconocido');
+    console.warn('Stack:', error instanceof Error ? error.stack : 'No disponible');
+    throw error;
+  }
 }
-export const getMedia = async (subaccountId: string) => {
-  const mediafiles = await db.subAccount.findUnique({
+export const getMedia = async (subaccountIdOrAgencyId: string, isAgencyId: boolean = false) => {
+  console.log('getMedia llamado con:', { subaccountIdOrAgencyId, isAgencyId });
+  
+  if (!subaccountIdOrAgencyId) {
+    console.log('No se proporcionó ID, devolviendo array vacío');
+    // Si no hay ID, devolver un objeto con array Media vacío
+    return { Media: [] }
+  }
+  
+  let agencyId: string | null = null;
+  
+  if (isAgencyId) {
+    // Si se proporciona directamente el agencyId
+    console.log('Usando directamente el agencyId:', subaccountIdOrAgencyId);
+    agencyId = subaccountIdOrAgencyId;
+  } else {
+    // Si se proporciona un subaccountId, obtenemos su agencyId
+    console.log('Buscando agencyId para subaccountId:', subaccountIdOrAgencyId);
+    const subaccount = await db.subAccount.findUnique({
+      where: {
+        id: subaccountIdOrAgencyId,
+      },
+      select: {
+        agencyId: true
+      }
+    })
+    
+    if (!subaccount) {
+      console.log('No se encontró la subcuenta, devolviendo array vacío');
+      return { Media: [] }
+    }
+    
+    agencyId = subaccount.agencyId;
+    console.log('AgencyId encontrado:', agencyId);
+  }
+  
+  // Obtenemos todas las subcuentas asociadas a la agencia
+  console.log('Buscando subcuentas para agencyId:', agencyId);
+  const agencySubaccounts = await db.subAccount.findMany({
     where: {
-      id: subaccountId,
+      agencyId: agencyId
     },
-    include: { Media: true },
+    select: {
+      id: true
+    }
   })
-  return mediafiles
+  
+  const subaccountIds = agencySubaccounts.map(sub => sub.id)
+  console.log('IDs de subcuentas encontrados:', subaccountIds);
+  
+  // Verificamos si hay subcuentas
+  if (subaccountIds.length === 0) {
+    console.log('No se encontraron subcuentas para la agencia, buscando solo por agencyId');
+  }
+  
+  // Construimos la consulta para buscar medios
+  let whereClause: any = {};
+  
+  if (subaccountIds.length > 0) {
+    // Si hay subcuentas, buscamos por subcuentas y agencyId
+    whereClause = {
+      OR: [
+        {
+          subAccountId: {
+            in: subaccountIds
+          }
+        },
+        {
+          agencyId: agencyId
+        }
+      ]
+    };
+  } else {
+    // Si no hay subcuentas, buscamos solo por agencyId
+    whereClause = {
+      agencyId: agencyId
+    };
+  }
+  
+  console.log('Buscando medios con condición:', JSON.stringify(whereClause, null, 2));
+  
+  // Ejecutamos la consulta
+  const mediaFiles = await db.media.findMany({
+    where: whereClause,
+    include: {
+      Subaccount: {
+        select: {
+          name: true,
+          agencyId: true
+        }
+      }
+    }
+  }).catch(async (error) => {
+    console.log('Error en la consulta principal, intentando consulta alternativa:', error.message);
+    
+    // Si falla la consulta con include, intentamos sin incluir la relación Subaccount
+    return await db.media.findMany({
+      where: whereClause
+    });
+  });
+  
+  // Verificamos si realmente se encontraron archivos
+  if (mediaFiles.length === 0) {
+    console.log('ADVERTENCIA: No se encontraron archivos multimedia para la agencia:', agencyId);
+    
+    // Intentamos una búsqueda directa solo por agencyId para verificar
+    const directMediaFiles = await db.media.findMany({
+      where: {
+        agencyId: agencyId
+      }
+    }).catch(async (error) => {
+      console.log('Error en la búsqueda directa, devolviendo array vacío:', error.message);
+      return [];
+    });
+    
+    console.log(`Búsqueda directa por agencyId: ${directMediaFiles.length} archivos encontrados`);
+    
+    // Si encontramos archivos en la búsqueda directa pero no en la original, usamos estos
+    if (directMediaFiles.length > 0) {
+      console.log('Usando resultados de búsqueda directa por agencyId');
+      return { 
+        Media: directMediaFiles,
+        id: isAgencyId ? null : subaccountIdOrAgencyId
+      }
+    }
+  }
+  
+  console.log(`Se encontraron ${mediaFiles.length} archivos multimedia`);
+  if (mediaFiles.length > 0) {
+    console.log('Primer archivo encontrado:', {
+      id: mediaFiles[0].id,
+      name: mediaFiles[0].name,
+      subAccountId: mediaFiles[0].subAccountId,
+      agencyId: mediaFiles[0].agencyId
+    });
+  }
+  
+  // Devolvemos los medios en el formato esperado por los componentes
+  return { 
+    Media: mediaFiles,
+    id: isAgencyId ? null : subaccountIdOrAgencyId
+  }
 }
 
 export const createMedia = async (
   subaccountId: string,
   mediaFile: createMediaType
 ) => {
-  const response = await db.media.create({
-    data: {
-      link: mediaFile.link,
-      name: mediaFile.name,
-      subAccountId: subaccountId,
+  try {
+    console.log('createMedia llamado con:', { subaccountId, mediaFile });
+    
+    // Verificamos si se proporcionó un agencyId directamente
+    if (mediaFile.agencyId) {
+      console.log('Usando agencyId proporcionado directamente:', mediaFile.agencyId);
+      
+      const response = await db.media.create({
+        data: {
+          link: mediaFile.link,
+          name: mediaFile.name,
+          subAccountId: subaccountId,
+          agencyId: mediaFile.agencyId,
+        }
+      })
+      
+      console.log('Media creado exitosamente con agencyId proporcionado:', response);
+      return response
     }
-  })
-  return response
+    
+    // Si no se proporcionó agencyId, intentamos obtenerlo de la subcuenta
+    console.log('Buscando agencyId para subaccountId:', subaccountId);
+    const subaccount = await db.subAccount.findUnique({
+      where: {
+        id: subaccountId,
+      },
+      select: {
+        agencyId: true
+      }
+    })
+    
+    console.log('Resultado de búsqueda de subcuenta:', subaccount);
+    
+    if (!subaccount) {
+      console.error('Subcuenta no encontrada y no se proporcionó agencyId');
+      throw new Error('Subcuenta no encontrada y no se proporcionó agencyId')
+    }
+    
+    // Si encontramos la subcuenta, procedemos normalmente
+    console.log('Usando agencyId de la subcuenta:', subaccount.agencyId);
+    
+    const response = await db.media.create({
+      data: {
+        link: mediaFile.link,
+        name: mediaFile.name,
+        subAccountId: subaccountId,
+        agencyId: subaccount.agencyId, // Agregamos el agencyId obtenido de la subcuenta
+      }
+    })
+    
+    console.log('Media creado exitosamente:', response);
+    return response
+  } catch (error) {
+    console.error('Error al crear media:', error)
+    throw error
+  }
 }
 
 
 export const deleteMedia = async (mediaId: string) => {
-  const response = await db.media.delete({
-    where: {
-      id: mediaId
+  try {
+    // Primero obtenemos el media para verificar si existe
+    const mediaToDelete = await db.media.findUnique({
+      where: {
+        id: mediaId
+      }
+    })
+    
+    if (!mediaToDelete) {
+      throw new Error('Media no encontrado')
     }
-  })
-  return response
+    
+    // Eliminamos el media
+    const response = await db.media.delete({
+      where: {
+        id: mediaId
+      }
+    })
+    
+    // Registramos la actividad
+    await saveActivityLogsNotification({
+      agencyId: mediaToDelete.agencyId || undefined,
+      description: `Eliminó un archivo multimedia: ${mediaToDelete.name}`,
+      subaccountId: mediaToDelete.subAccountId || undefined
+    })
+    
+    // Devolvemos la respuesta sin depender de la relación Subaccount
+    return response
+  } catch (error) {
+    console.error('Error al eliminar media:', error)
+    throw error
+  }
 }
 
 export const getPipelineDetails = async (pipelineId: string) => {

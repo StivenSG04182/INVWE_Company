@@ -4,8 +4,8 @@ import React, { useState } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
-import { paymentGateways } from '@/lib/payment-gateways'
-import { PaymentGatewayValidationResponse } from '@/lib/payment-gateway-types'
+import { paymentGateways } from '@/app/api/payment-gateways/payment-gateways'
+import { PaymentGatewayValidationResponse } from '@/app/api/payment-gateways/payment-gateway-types'
 import { CheckCircleIcon, XCircleIcon, CreditCard, Loader2Icon } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 
@@ -47,17 +47,34 @@ const PaymentGatewayModal = ({
         // Si no está conectada, iniciamos el proceso de autenticación
         toast({
           title: 'Iniciando conexión',
-          description: `Serás redirigido a la página de autenticación de ${paymentGateways.find(g => g.id === gatewayId)?.name || gatewayId}`,
+          description: `Se abrirá una nueva pestaña para autenticación con ${paymentGateways.find(g => g.id === gatewayId)?.name || gatewayId}`,
         })
         
-        // Cerramos el modal antes de redirigir
-        onClose()
+        // Guardar el ID de la pasarela en localStorage antes de abrir la nueva ventana
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('lastGatewayId', gatewayId)
+        }
         
-        // Pequeña pausa para que el toast sea visible
-        setTimeout(() => {
-          // Redirigimos al usuario a la pasarela para autenticación
-          onSelectGateway(gatewayId)
-        }, 1500)
+        // Obtener la URL de autenticación de la pasarela
+        const gateway = paymentGateways.find(g => g.id === gatewayId)
+        if (gateway) {
+          // Abrir la URL de autenticación en una nueva pestaña
+          const authWindow = window.open(gateway.authUrl(agencyId), '_blank')
+          
+          // Cerramos el modal después de abrir la nueva pestaña
+          onClose()
+          
+          // Configurar un intervalo para verificar si la ventana se ha cerrado
+          if (authWindow) {
+            const checkWindowClosed = setInterval(() => {
+              if (authWindow.closed) {
+                clearInterval(checkWindowClosed)
+                // Notificar al componente padre que se seleccionó esta pasarela
+                onSelectGateway(gatewayId)
+              }
+            }, 1000)
+          }
+        }
       }
     } catch (error) {
       console.error('Error validating gateway:', error)
@@ -141,7 +158,17 @@ const PaymentGatewayModal = ({
               {paymentGateways.map((gateway) => (
                 <div key={gateway.id} className="flex justify-between items-center w-full border p-4 rounded-lg gap-2">
                   <div className="flex md:items-center gap-4 flex-col md:!flex-row">
-                    <Image src={gateway.logo} alt={`${gateway.name} logo`} height={80} width={80} className="rounded-md object-contain" />
+                    <Image 
+                      src={gateway.logo} 
+                      alt={`${gateway.name} logo`} 
+                      height={80} 
+                      width={80} 
+                      className="rounded-md object-contain" 
+                      onError={(e) => {
+                        // Fallback para logos que no existan
+                        e.currentTarget.src = '/placeholder-logo.png'
+                      }}
+                    />
                     <div>
                       <h3 className="font-medium">{gateway.name}</h3>
                       <p className="text-sm text-muted-foreground">{gateway.description}</p>

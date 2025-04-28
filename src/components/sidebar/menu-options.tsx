@@ -64,7 +64,7 @@ const organizeSidebarOptions = (options: AgencySidebarOption[] | SubAccountSideb
       // Asignamos el orden según nuestra configuración o un valor alto por defecto
       order: categoryOrder[option.name] || 999
     };
-    
+
     // Identificamos si es una categoría principal (tiene # en el link) o una subopción
     if (option.link === '#') {
       mainCategories.push(optionsMap[option.id]);
@@ -92,7 +92,7 @@ const organizeSidebarOptions = (options: AgencySidebarOption[] | SubAccountSideb
   subOptions.forEach(subOption => {
     // Buscamos la categoría principal a la que pertenece esta subopción
     const categoryName = getCategoryForOption(subOption.name);
-    
+
     if (categoryName && !excludedCategories.includes(categoryName)) {
       // Buscamos la categoría principal por nombre
       const mainCategory = mainCategories.find(cat => cat.name === categoryName);
@@ -121,10 +121,10 @@ const organizeSidebarOptions = (options: AgencySidebarOption[] | SubAccountSideb
   // Separamos las opciones de configuración que deben ir al final
   const regularOptions: any[] = [];
   const configOptions: any[] = [];
-  
+
   mainCategories.forEach(option => {
     // Verificamos si es una opción de configuración
-    if (  
+    if (
       option.name === 'Configuración & Administración'
     ) {
       configOptions.push(option);
@@ -146,19 +146,19 @@ const getCategoryForOption = (optionName: string): string | null => {
     'Actividad': 'Dashboard & Visión general',
     'Visión general': 'Dashboard & Visión general',
     'Integraciones': 'Dashboard & Visión general',
-    
+
     // Gestión de Inventario
     'Productos': 'Gestión de Inventario',
     'Stock': 'Gestión de Inventario',
     'Movimientos': 'Gestión de Inventario',
     'Proveedores': 'Gestión de Inventario',
     'Áreas de Inventario': 'Gestión de Inventario',
-    
+
     // Tienda & E-Commerce
     'Tiendas Físicas': 'Tienda & E-Commerce',
     'E-Commerce': 'Tienda & E-Commerce',
     'Envíos': 'Tienda & E-Commerce',
-    
+
     // Ventas & Facturación
     'Transacciones': 'Ventas & Facturación',
     'Facturas': 'Ventas & Facturación',
@@ -167,23 +167,23 @@ const getCategoryForOption = (optionName: string): string | null => {
     'Reportes': 'Ventas & Facturación',
     'Pagos': 'Ventas & Facturación',
     'Billing': 'Ventas & Facturación',
-    
+
     // Clientes & CRM
     'Clientes': 'Clientes & CRM',
     'CRM': 'Clientes & CRM',
     'All Sub-Accounts': 'Clientes & CRM',
-    
+
     // Personal & RRHH
     'Empleados': 'Personal & RRHH',
     'Horarios & Nómina': 'Personal & RRHH',
     'Contactos': 'Personal & RRHH',
-    
+
     // Comunicaciones
     'Campañas': 'Comunicaciones',
     'Bandeja de entrada': 'Comunicaciones',
     'Medios': 'Comunicaciones',
     'Chat': 'Comunicaciones',
-    
+
     // Reportes & Analíticas
     'Ventas': 'Reportes & Analíticas',
     'Inventario': 'Reportes & Analíticas',
@@ -202,14 +202,14 @@ const getCategoryForOption = (optionName: string): string | null => {
 };
 
 // Componente para renderizar una opción del sidebar y sus subopciones
-const SidebarOptionItem = ({ 
-  option, 
-  defaultOpen, 
+const SidebarOptionItem = ({
+  option,
+  defaultOpen,
   level = 0,
   expandedOptionId,
   setExpandedOptionId
-}: { 
-  option: any, 
+}: {
+  option: any,
   defaultOpen: boolean,
   level?: number,
   expandedOptionId: string | null,
@@ -276,15 +276,15 @@ const SidebarOptionItem = ({
           )}
         </Link>
       </CommandItem>
-      
+
       {hasChildren && isExpanded && (
         <div className="transition-all duration-200 ease-in-out pl-3 border-l border-primary/10 ml-3 mt-0.5 mb-1"> {/* Reducido espaciado y grosor del borde */}
           {option.children.map((child: any) => (
-            <SidebarOptionItem 
-              key={child.id} 
-              option={child} 
-              defaultOpen={defaultOpen} 
-              level={level + 1} 
+            <SidebarOptionItem
+              key={child.id}
+              option={child}
+              defaultOpen={defaultOpen}
+              level={level + 1}
               expandedOptionId={expandedOptionId}
               setExpandedOptionId={setExpandedOptionId}
             />
@@ -355,7 +355,7 @@ const MenuOptions = ({
         )}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-center mb-8">
+          <div className="flex items-center justify-center mb-8 ">
             <AspectRatio ratio={16 / 5} className="w-full max-w-[200px]">
               <Image
                 src={sidebarLogo}
@@ -369,24 +369,18 @@ const MenuOptions = ({
           <Popover>
             <PopoverTrigger asChild>
               <Button
-                className="w-full mb-6 flex items-center justify-between py-6 hover:bg-accent/50"
-                variant="ghost"
-              >
+                className="w-full mb-6 flex items-center justify-between py-6 hover:bg-accent/40 overflow-hidden"
+                variant="ghost">
                 <div className="flex items-center text-left gap-3">
                   <div className="flex items-center justify-center w-10 h-10 rounded-md bg-primary/10">
                     <Compass className="text-primary" />
                   </div>
-                  <div className="flex flex-col">
-                    <span className="font-semibold">{details.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {details.address}
-                    </span>
+                  <div className="flex flex-col flex-1 ">
+                    <span className="font-semibold truncate">{details.name}</span>
+                    <span className="text-xs text-muted-foreground truncate min-w-2">{details.address}</span>
                   </div>
                 </div>
-                <ChevronsUpDown
-                  size={16}
-                  className="text-muted-foreground"
-                />
+                <ChevronsUpDown size={16} className="text-muted-foreground" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 h-80 mt-4 z-[200]">
@@ -448,8 +442,29 @@ const MenuOptions = ({
                   <CommandGroup heading="Cuentas">
                     {!!subAccounts
                       ? subAccounts.map((subaccount) => (
-                          <CommandItem key={subaccount.id}>
-                            {defaultOpen ? (
+                        <CommandItem key={subaccount.id}>
+                          {defaultOpen ? (
+                            <Link
+                              href={`/subaccount/${subaccount.id}`}
+                              className="flex gap-4 w-full h-full"
+                            >
+                              <div className="relative w-16">
+                                <Image
+                                  src={subaccount.subAccountLogo}
+                                  alt="subaccount Logo"
+                                  fill
+                                  className="rounded-md object-contain"
+                                />
+                              </div>
+                              <div className="flex flex-col flex-1">
+                                <span className="font-semibold">{subaccount.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {subaccount.address}
+                                </span>
+                              </div>
+                            </Link>
+                          ) : (
+                            <SheetClose asChild>
                               <Link
                                 href={`/subaccount/${subaccount.id}`}
                                 className="flex gap-4 w-full h-full"
@@ -469,59 +484,38 @@ const MenuOptions = ({
                                   </span>
                                 </div>
                               </Link>
-                            ) : (
-                              <SheetClose asChild>
-                                <Link
-                                  href={`/subaccount/${subaccount.id}`}
-                                  className="flex gap-4 w-full h-full"
-                                >
-                                  <div className="relative w-16">
-                                    <Image
-                                      src={subaccount.subAccountLogo}
-                                      alt="subaccount Logo"
-                                      fill
-                                      className="rounded-md object-contain"
-                                    />
-                                  </div>
-                                  <div className="flex flex-col flex-1">
-                                    <span className="font-semibold">{subaccount.name}</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      {subaccount.address}
-                                    </span>
-                                  </div>
-                                </Link>
-                              </SheetClose>
-                            )}
-                          </CommandItem>
-                        ))
+                            </SheetClose>
+                          )}
+                        </CommandItem>
+                      ))
                       : 'No hay cuentas'}
                   </CommandGroup>
                 </CommandList>
                 {(user?.role === 'AGENCY_OWNER' ||
                   user?.role === 'AGENCY_ADMIN') && (
-                  <SheetClose>
-                    <Button
-                      className="w-full flex gap-2"
-                      onClick={() => {
-                        setOpen(
-                          <CustomModal
-                            title="Crear Subcuenta"
-                            subheading="Puedes cambiar entre tu cuenta de agencia y la subcuenta desde el sidebar"
-                          >
-                            <SubAccountDetails
-                              agencyDetails={user?.Agency as Agency}
-                              userId={user?.id as string}
-                              userName={user?.name}
-                            />
-                          </CustomModal>
-                        )
-                      }}
-                    >
-                      <PlusCircleIcon size={15} />
-                      Crear Subcuenta
-                    </Button>
-                  </SheetClose>
-                )}
+                    <SheetClose>
+                      <Button
+                        className="w-full flex gap-2"
+                        onClick={() => {
+                          setOpen(
+                            <CustomModal
+                              title="Crear Subcuenta"
+                              subheading="Puedes cambiar entre tu cuenta de agencia y la subcuenta desde el sidebar"
+                            >
+                              <SubAccountDetails
+                                agencyDetails={user?.Agency as Agency}
+                                userId={user?.id as string}
+                                userName={user?.name}
+                              />
+                            </CustomModal>
+                          )
+                        }}
+                      >
+                        <PlusCircleIcon size={15} />
+                        Crear Subcuenta
+                      </Button>
+                    </SheetClose>
+                  )}
               </Command>
             </PopoverContent>
           </Popover>
@@ -537,9 +531,9 @@ const MenuOptions = ({
                     <CommandEmpty>No se encontraron resultados</CommandEmpty>
                     <CommandGroup className="overflow-visible">
                       {organizedOptions.map((option) => (
-                        <SidebarOptionItem 
-                          key={option.id} 
-                          option={option} 
+                        <SidebarOptionItem
+                          key={option.id}
+                          option={option}
                           defaultOpen={defaultOpen}
                           expandedOptionId={expandedOptionId}
                           setExpandedOptionId={setExpandedOptionId}
@@ -550,7 +544,7 @@ const MenuOptions = ({
                 </Command>
               </nav>
             </div>
-            
+
             {configOptions.length > 0 && (
               <div className="mt-auto pt-4">
                 <Separator className="my-4" />
@@ -560,9 +554,9 @@ const MenuOptions = ({
                     <CommandList className="py-4 overflow-visible">
                       <CommandGroup className="overflow-visible">
                         {configOptions.map((option) => (
-                          <SidebarOptionItem 
-                            key={option.id} 
-                            option={option} 
+                          <SidebarOptionItem
+                            key={option.id}
+                            option={option}
                             defaultOpen={defaultOpen}
                             expandedOptionId={expandedOptionId}
                             setExpandedOptionId={setExpandedOptionId}

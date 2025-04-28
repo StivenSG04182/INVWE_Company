@@ -15,12 +15,15 @@ export const metadata: Metadata = {
   title: "INVWE",
   description: "Solución de gestión de inventario para tu negocio",
   manifest: "/manifest.json",
-  themeColor: "#000000",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "INVWE"
   }
+};
+
+export const viewport = {
+  themeColor: "#000000"
 };
 
 export default function RootLayout({
