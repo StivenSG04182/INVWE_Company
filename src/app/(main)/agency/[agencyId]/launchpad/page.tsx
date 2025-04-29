@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CheckCircleIcon, CreditCard, SmartphoneIcon } from 'lucide-react'
+import { CheckCircleIcon, CreditCard } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
@@ -23,7 +23,7 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
     const [gatewayStatus, setGatewayStatus] = useState<Record<string, PaymentGatewayValidationResponse>>({})
     const [isLoading, setIsLoading] = useState(true)
     const [agencyDetails, setAgencyDetails] = useState<any>(null)
-    // Estado eliminado: ya no se requiere la funcionalidad PWA
+    const [hasConnectedGateway, setHasConnectedGateway] = useState(false)
     const { toast } = useToast()
     const allDetailsExist = agencyDetails ? (
         agencyDetails.address &&
@@ -59,21 +59,52 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
     // Efecto para PWA eliminado: ya no se requiere esta funcionalidad
 
     
-    // Función para validar las pasarelas de pago (extraída del useEffect para poder usarla en todo el componente)
+    // Función para validar las pasarelas de pago consultando directamente en la base de datos
     const validateGateways = async () => {
         try {
             // Mostrar indicador de carga al iniciar la validación
             setIsLoading(true)
 
-            const validations = await Promise.all(
-                paymentGateways.map(async (gateway) => {
-                    const response = await fetch(`/api/payment-gateways/${gateway.id}/validate?agencyId=${params.agencyId}`)
-                    const data = await response.json()
-                    return [gateway.id, data]
+            // Consultar directamente si existe alguna pasarela conectada para esta agencia
+            const response = await fetch(`/api/agency/${params.agencyId}/payment-gateways`)
+            const data = await response.json()
+            
+            if (data.success) {
+                // Verificar si hay alguna pasarela con status 'connected'
+                const connectedGateways = data.connections.filter(
+                    (connection: any) => connection.status === 'connected'
+                )
+                
+                // Actualizar el estado de conexión de pasarelas
+                setHasConnectedGateway(connectedGateways.length > 0)
+                
+                // Actualizar el estado detallado de cada pasarela
+                const gatewayStatusMap: Record<string, PaymentGatewayValidationResponse> = {}
+                
+                // Inicializar todas las pasarelas como no conectadas
+                paymentGateways.forEach(gateway => {
+                    gatewayStatusMap[gateway.id] = {
+                        success: true,
+                        isValid: false,
+                        isConnected: false,
+                        status: 'not_connected'
+                    }
                 })
-            )
-
-            setGatewayStatus(Object.fromEntries(validations))
+                
+                // Actualizar el estado de las pasarelas conectadas
+                connectedGateways.forEach((connection: any) => {
+                    gatewayStatusMap[connection.gatewayId] = {
+                        success: true,
+                        isValid: true,
+                        isConnected: true,
+                        status: 'connected'
+                    }
+                })
+                
+                setGatewayStatus(gatewayStatusMap)
+            } else {
+                throw new Error(data.error || 'Error al consultar pasarelas de pago')
+            }
         } catch (error) {
             console.error('Error validating gateways:', error)
             toast({
@@ -110,17 +141,26 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
 
             // Mostrar un indicador de carga mientras procesamos la autenticación
             setIsLoading(true)
+            
+            // Limpiar el código de la URL para evitar procesamiento repetido
+            if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+            }
+            
+            // Procesar la autenticación
             handleGatewaySelect(gatewayId)
             
+            // Limpiar datos de localStorage para evitar procesamiento repetido
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('lastGatewayId')
+                localStorage.removeItem('authStartTime')
+            }
+            
             // Cerrar esta ventana si fue abierta como una nueva pestaña
-            // Esto ocurre cuando la pasarela redirige de vuelta a nuestra aplicación
-            // después de completar la autenticación
             if (window.opener) {
-                // Si tenemos una ventana padre, significa que fuimos abiertos como una nueva pestaña
-                // Enviamos un mensaje a la ventana padre para que actualice su estado
                 try {
                     window.opener.postMessage({ type: 'GATEWAY_AUTH_COMPLETE', gatewayId }, window.location.origin)
-                    // Cerramos esta ventana después de un breve retraso para permitir que se procese la autenticación
                     setTimeout(() => window.close(), 2000)
                 } catch (error) {
                     console.error('Error al comunicarse con la ventana principal:', error)
@@ -135,20 +175,11 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
                 variant: 'destructive'
             })
 
-            // Limpiar el ID guardado
+            // Limpiar todos los datos guardados
             if (typeof window !== 'undefined') {
                 localStorage.removeItem('lastGatewayId')
+                localStorage.removeItem('authStartTime')
             }
-
-            // Actualizar el estado de la pasarela a error
-            setGatewayStatus(prev => ({
-                ...prev,
-                [lastGatewayId]: {
-                    isValid: false,
-                    status: 'error',
-                    error: 'Error de autenticación'
-                }
-            }))
 
             setIsLoading(false)
             
@@ -161,6 +192,9 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
                     console.error('Error al comunicarse con la ventana principal:', error)
                 }
             }
+            
+            // Actualizar el estado de las pasarelas consultando la base de datos
+            validateGateways()
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams.code]) // Evitamos dependencia circular con handleGatewaySelect
@@ -173,7 +207,7 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
             
             // Procesar mensajes de la ventana de autenticación
             if (event.data.type === 'GATEWAY_AUTH_COMPLETE' || event.data.type === 'GATEWAY_AUTH_ERROR') {
-                // Actualizar el estado de las pasarelas
+                // Actualizar el estado de las pasarelas consultando la base de datos
                 validateGateways()
             }
         }
@@ -185,7 +219,7 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
         return () => {
             window.removeEventListener('message', handleMessage)
         }
-    }, [validateGateways]) // Incluir validateGateways en las dependencias
+    }, []) // No incluimos validateGateways en las dependencias para evitar bucles infinitos
 
     const handleGatewaySelect = async (gatewayId: string) => {
         if (searchParams.code) {
@@ -204,32 +238,16 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
                 const data = await response.json()
 
                 if (data.success) {
-                    // Actualizar el estado de la pasarela a conectada
-                    setGatewayStatus(prev => ({
-                        ...prev,
-                        [gatewayId]: {
-                            isValid: true,
-                            status: 'connected'
-                        }
-                    }))
-
                     // Mostrar un mensaje de éxito con toast
                     toast({
                         title: 'Pasarela conectada',
                         description: `La pasarela ${paymentGateways.find(g => g.id === gatewayId)?.name || gatewayId} ha sido conectada correctamente`,
                         variant: 'default'
                     })
+                    
+                    // Actualizar el estado de las pasarelas consultando la base de datos
+                    validateGateways()
                 } else {
-                    // Actualizar el estado de la pasarela a error
-                    setGatewayStatus(prev => ({
-                        ...prev,
-                        [gatewayId]: {
-                            isValid: false,
-                            status: 'error',
-                            error: data.error || 'Error desconocido'
-                        }
-                    }))
-
                     // Mostrar mensaje de error con toast
                     toast({
                         title: 'Error de conexión',
@@ -238,19 +256,12 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
                     })
 
                     console.error(`Error al conectar pasarela ${gatewayId}:`, data.error)
+                    
+                    // Actualizar el estado de las pasarelas consultando la base de datos
+                    validateGateways()
                 }
             } catch (error) {
                 console.error('Error connecting gateway:', error)
-
-                // Actualizar el estado de la pasarela a error
-                setGatewayStatus(prev => ({
-                    ...prev,
-                    [gatewayId]: {
-                        isValid: false,
-                        status: 'error',
-                        error: 'Error de conexión'
-                    }
-                }))
 
                 // Mostrar mensaje de error con toast
                 toast({
@@ -258,6 +269,9 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
                     description: `Ocurrió un error al conectar con la pasarela ${paymentGateways.find(g => g.id === gatewayId)?.name || gatewayId}`,
                     variant: 'destructive'
                 })
+                
+                // Actualizar el estado de las pasarelas consultando la base de datos
+                validateGateways()
             } finally {
                 // Finalizar el indicador de carga
                 setIsLoading(false)
@@ -283,13 +297,11 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
                             clearInterval(checkWindowClosed)
                             
                             // Verificar si ha pasado un tiempo razonable desde que se inició la autenticación
-                            // Si el tiempo es muy corto, probablemente el usuario cerró la ventana sin completar el proceso
                             const currentTime = new Date().getTime()
                             const authStartTime = parseInt(localStorage.getItem('authStartTime') || '0')
                             const timeElapsed = currentTime - authStartTime
                             
                             // Si han pasado menos de 10 segundos, consideramos que el usuario cerró la ventana sin completar
-                            // Este tiempo puede ajustarse según la experiencia de usuario deseada
                             if (timeElapsed < 10000 && localStorage.getItem('lastGatewayId')) {
                                 const canceledGatewayId = localStorage.getItem('lastGatewayId') || gatewayId
                                 
@@ -299,16 +311,6 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
                                     description: `No se completó el proceso de configuración con la pasarela ${paymentGateways.find(g => g.id === canceledGatewayId)?.name || canceledGatewayId}`,
                                     variant: 'destructive'
                                 })
-                                
-                                // Actualizar el estado de la pasarela a error
-                                setGatewayStatus(prev => ({
-                                    ...prev,
-                                    [canceledGatewayId]: {
-                                        isValid: false,
-                                        status: 'error',
-                                        error: 'Proceso cancelado por el usuario'
-                                    }
-                                }))
                             }
                             
                             // Limpiar datos de autenticación
@@ -321,12 +323,6 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
                 }
             }
         }
-    }
-
-    const getConnectedGatewaysCount = () => {
-        return Object.values(gatewayStatus).filter(
-            status => status?.isValid && status?.status === 'connected'
-        ).length
     }
 
     return (
@@ -348,19 +344,29 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-1">
-                                    <p>Configura tus pasarelas de pago</p>
+                                    <p>Configura tu pasarela de pago</p>
                                     <p className="text-sm text-muted-foreground">
-                                        {getConnectedGatewaysCount()} pasarelas conectadas
+                                        {hasConnectedGateway ? 'Pasarela conectada' : 'Sin pasarela conectada'}
                                     </p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                {getConnectedGatewaysCount() > 0 && (
-                                    <CheckCircleIcon size={20} className="text-primary" />
+                                {hasConnectedGateway && (
+                                    <CheckCircleIcon size={50} className="text-primary p-2 flex-shrink-0" />
                                 )}
-                                <Button onClick={() => setIsModalOpen(true)}>
-                                    {getConnectedGatewaysCount() > 0 ? 'Gestionar' : 'Conectar'}
-                                </Button>
+                                {!hasConnectedGateway && (
+                                    <Button onClick={() => setIsModalOpen(true)}>
+                                        Conectar
+                                    </Button>
+                                )}
+                                {hasConnectedGateway && (
+                                    <Button 
+                                        onClick={() => setIsModalOpen(true)}
+                                        variant="outline"
+                                    >
+                                        Gestionar
+                                    </Button>
+                                )}
                             </div>
                         </div>
 
@@ -391,7 +397,7 @@ const LaunchPadPage = ({ params, searchParams }: Props) => {
                             ) : (
                                 <Link 
                                 className='bg-primary p-2 px-4 rounded-md text-white'
-                                href={`/agency/${params.agencyId}/settings`}>Inicio</Link>
+                                href={`/agency/${params.agencyId}/settings`}>Configurar</Link>
                             )}
                         </div>
                     </CardContent>

@@ -105,6 +105,7 @@ model Agency {
   Media            Media[]
   paymentGateways  PaymentGatewayConnection[]
   settings         AgencySettings[]
+  webhookEvents    PaymentGatewayWebhookEvent[]
 }
 
 model SubAccount {
@@ -470,4 +471,18 @@ model AgencySettings {
   updatedAt              DateTime @updatedAt
 
   @@index([agencyId])
+}
+
+model PaymentGatewayWebhookEvent {
+  id         String   @id @default(cuid())
+  gatewayId  String
+  agencyId   String
+  eventType  String
+  eventData  Json
+  createdAt  DateTime @default(now())
+  
+  agency Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  
+  @@index([agencyId])
+  @@index([gatewayId])
 }

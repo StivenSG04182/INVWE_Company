@@ -1,141 +1,161 @@
 /**
- * Configuración de las pasarelas de pago disponibles para los usuarios
- * Este archivo contiene la configuración de las diferentes pasarelas de pago
- * que los usuarios pueden conectar a sus agencias.
+ * Implementación de pasarelas de pago para el sistema multi-merchant
+ * Este archivo define las configuraciones y funciones para integrar con:
+ * - PayPal
+ * - MercadoPago
  */
 
-import { PaymentGatewayError } from './payment-gateway-types'
+import { PaymentGatewayValidationResponse } from './payment-gateway-types';
 
+// Interfaz para definir una pasarela de pago
 export interface PaymentGateway {
-    id: string
-    name: string
-    logo: string
-    description: string
+    id: string;
+    name: string;
+    logo: string;
+    description: string;
     fees: {
-        percentage: number
-        fixed: number
-        currency: string
-    }
-    /**
-     * Genera la URL de autenticación para la pasarela de pago
-     * @param agencyId ID de la agencia que está conectando la pasarela
-     * @returns URL de autenticación para redirigir al usuario
-     */
-    authUrl(agencyId: string): string
+        percentage: number;
+        fixed: number;
+        currency: string;
+    };
+    authUrl: (agencyId: string) => string;
+    validateConnection: (agencyId: string) => Promise<PaymentGatewayValidationResponse>;
 }
 
-/**
- * Lista de pasarelas de pago disponibles para los usuarios
- * Cada pasarela debe implementar la interfaz PaymentGateway
- */
-export const paymentGateways: PaymentGateway[] = [
-    {
-        id: 'paypal',
-        name: 'PayPal',
-        logo: '/images/payment-gateways/paypal-logo.png',
-        description: 'Conecta tu cuenta de PayPal para aceptar pagos internacionales',
-        fees: {
-            percentage: 3.4,
-            fixed: 0.30,
-            currency: 'USD'
-        },
-        authUrl: (agencyId: string) => {
-            const clientId = 'AfcdnxX0JkXCQKlXfRqFLe_7C4skdzXbk1PgnMSNEoLLLuSYM1t5c5Je-zjxZ8wuhQk0KQZ8Ce5FSgEL';
-            const redirectUri = encodeURIComponent(`${process.env.NEXT_PUBLIC_URL}/agency/${agencyId}/launchpad`);
-            return `https://www.sandbox.paypal.com/connect?flowEntry=static&client_id=${clientId}&scope=openid email&redirect_uri=${redirectUri}&response_type=code`;
-        }
-    },
-    {
-        id: 'payu',
-        name: 'PayU Colombia',
-        logo: '/images/payment-gateways/payu-logo.png',
-        description: 'Acepta pagos con tarjetas de crédito y débito en Colombia',
-        fees: {
-            percentage: 2.5,
-            fixed: 0.50,
-            currency: 'COP'
-        },
-        authUrl: (agencyId: string) => {
-            const clientId = process.env.NEXT_PUBLIC_PAYU_CLIENT_ID;
-            const redirectUri = encodeURIComponent(`${process.env.NEXT_PUBLIC_URL}/agency/${agencyId}/launchpad`);
-            return `https://secure.payulatam.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}`;
-        }
-    },
-    {
-        id: 'mercadopago',
-        name: 'Mercado Pago',
-        logo: '/images/payment-gateways/mercadopago-logo.png',
-        description: 'Solución de pagos líder en Latinoamérica',
-        fees: {
-            percentage: 2.9,
-            fixed: 0.40,
-            currency: 'COP'
-        },
-        authUrl: (agencyId: string) => {
-            const clientId = process.env.NEXT_PUBLIC_MERCADOPAGO_CLIENT_ID;
-            const redirectUri = encodeURIComponent(`${process.env.NEXT_PUBLIC_URL}/agency/${agencyId}/launchpad`);
-            return `https://auth.mercadopago.com.co/authorization?client_id=${clientId}&response_type=code&platform_id=mp&redirect_uri=${redirectUri}`;
-        }
-    },
-    {
-        id: 'epayco',
-        name: 'ePayco',
-        logo: '/images/payment-gateways/epayco-logo.png',
-        description: 'Plataforma de pagos en línea para Colombia',
-        fees: {
-            percentage: 2.2,
-            fixed: 0.35,
-            currency: 'COP'
-        },
-        authUrl: (agencyId: string) => {
-            const clientId = process.env.NEXT_PUBLIC_EPAYCO_CLIENT_ID;
-            const redirectUri = encodeURIComponent(`${process.env.NEXT_PUBLIC_URL}/agency/${agencyId}/launchpad`);
-            return `https://secure.epayco.co/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}`;
-        }
-    },
-    {
-        id: 'wompi',
-        name: 'Wompi',
-        logo: '/images/payment-gateways/wompi-logo.png',
-        description: 'Procesamiento de pagos con tarjetas y PSE',
-        fees: {
-            percentage: 2.8,
-            fixed: 0.45,
-            currency: 'COP'
-        },
-        authUrl: (agencyId: string) => {
-            const clientId = process.env.NEXT_PUBLIC_WOMPI_CLIENT_ID;
-            const redirectUri = encodeURIComponent(`${process.env.NEXT_PUBLIC_URL}/agency/${agencyId}/launchpad`);
-            return `https://id.wompi.co/connect/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}`;
-        }
-    }
-]
+// Configuración de PayPal
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || '';
+const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || '';
+const PAYPAL_OAUTH_URL = 'https://www.paypal.com/signin/authorize';
+const PAYPAL_API_URL = 'https://api-m.paypal.com';
 
-/**
- * Obtiene una pasarela de pago por su ID
- */
-export function getPaymentGateway(gatewayId: string): PaymentGateway {
-    const gateway = paymentGateways.find(g => g.id === gatewayId)
-    if (!gateway) {
-        throw new PaymentGatewayError({
-            code: 'GATEWAY_NOT_FOUND',
-            message: `Payment gateway ${gatewayId} not found`
-        })
-    }
-    return gateway
-}
+// Configuración de MercadoPago
+const MERCADOPAGO_CLIENT_ID = process.env.MERCADOPAGO_CLIENT_ID || '';
+const MERCADOPAGO_CLIENT_SECRET = process.env.MERCADOPAGO_CLIENT_SECRET || '';
+const MERCADOPAGO_OAUTH_URL = 'https://auth.mercadopago.com/authorization';
+const MERCADOPAGO_API_URL = 'https://api.mercadopago.com';
 
-/**
- * Valida que todas las pasarelas de pago estén correctamente configuradas
- */
-export function validatePaymentGatewaysConfig() {
-    for (const gateway of paymentGateways) {
+
+// URL de redirección después de la autenticación
+const getRedirectUrl = (agencyId: string) => {
+    const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
+    return `${baseUrl}/agency/${agencyId}/launchpad`;
+};
+
+// Implementación de PayPal
+const paypalGateway: PaymentGateway = {
+    id: 'paypal',
+    name: 'PayPal',
+    logo: '/payment-gateways/paypal-logo.png',
+    description: 'Conecta tu cuenta de PayPal para recibir pagos de tus clientes',
+    fees: {
+        percentage: 3.5,
+        fixed: 0.30,
+        currency: 'USD'
+    },
+    authUrl: (agencyId: string) => {
+        // Usar nuestra página de simulación en lugar de la URL real de PayPal
+        const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
+        const redirectUri = encodeURIComponent(getRedirectUrl(agencyId));
+        
+        // Redirigir a nuestra página de simulación con los parámetros necesarios
+        return `${baseUrl}/paypal-auth-mock?redirect_uri=${redirectUri}&state=${agencyId}`;
+    },
+    validateConnection: async (agencyId: string) => {
         try {
-            // Verificar que la URL de autenticación se puede generar
-            gateway.authUrl('test')
+            // Esta función será implementada en la ruta de validación
+            // Aquí solo definimos la interfaz
+            return {
+                success: true,
+                isConnected: false,
+                merchantStatus: 'pending'
+            };
         } catch (error) {
-            console.error(`Configuration error for ${gateway.name}:`, error)
-            throw error
+            console.error('Error validating PayPal connection:', error);
+            return {
+                success: false,
+                error: 'Error validating PayPal connection',
+                isConnected: false
+            };
         }
+    }
+};
+
+// Implementación de MercadoPago
+const mercadoPagoGateway: PaymentGateway = {
+    id: 'mercadopago',
+    name: 'MercadoPago',
+    logo: '/payment-gateways/mercadopago-logo.png',
+    description: 'Conecta tu cuenta de MercadoPago para recibir pagos de tus clientes',
+    fees: {
+        percentage: 3.99,
+        fixed: 0.40,
+        currency: 'USD'
+    },
+    authUrl: (agencyId: string) => {
+        const redirectUri = encodeURIComponent(getRedirectUrl(agencyId));
+        const scope = encodeURIComponent('read write payments');
+
+        return `${MERCADOPAGO_OAUTH_URL}?client_id=${MERCADOPAGO_CLIENT_ID}&response_type=code&scope=${scope}&redirect_uri=${redirectUri}&state=${agencyId}`;
+    },
+    validateConnection: async (agencyId: string) => {
+        try {
+            return {
+                success: true,
+                isConnected: false,
+                merchantStatus: 'pending'
+            };
+        } catch (error) {
+            console.error('Error validating MercadoPago connection:', error);
+            return {
+                success: false,
+                error: 'Error validating MercadoPago connection',
+                isConnected: false
+            };
+        }
+    }
+};
+
+// Lista de todas las pasarelas disponibles
+export const paymentGateways: PaymentGateway[] = [
+    paypalGateway,
+    mercadoPagoGateway,
+];
+
+// Función para obtener una pasarela por su ID
+export const getGatewayById = (gatewayId: string): PaymentGateway | undefined => {
+    return paymentGateways.find(gateway => gateway.id === gatewayId);
+};
+
+// Importar las funciones de autenticación desde utils
+import {
+    getPayPalAccessToken,
+    getMercadoPagoAccessToken,
+    refreshGatewayToken
+} from './utils/auth-utils';
+
+// Función para obtener el token de acceso de una pasarela
+export const getGatewayAccessToken = async (code: string, gatewayId: string, agencyId: string): Promise<any> => {
+    try {
+        switch (gatewayId) {
+            case 'paypal':
+                return await getPayPalAccessToken(code, agencyId);
+            case 'mercadopago':
+                return await getMercadoPagoAccessToken(code, agencyId);
+            default:
+                throw new Error(`Pasarela de pago no soportada: ${gatewayId}`);
+        }
+    } catch (error) {
+        console.error(`Error obteniendo token para ${gatewayId}:`, error);
+        throw error;
+    }
+};
+
+// Función para actualizar un token expirado
+export const refreshAccessToken = async (gatewayId: string, refreshToken: string, agencyId: string): Promise<any> => {
+    try {
+        return await refreshGatewayToken(gatewayId, refreshToken, agencyId);
+    } catch (error) {
+        console.error(`Error actualizando token para ${gatewayId}:`, error);
+        throw error;
     }
 }

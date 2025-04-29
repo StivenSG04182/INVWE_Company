@@ -12,13 +12,23 @@ import { redirect } from 'next/navigation'
 const Funnels = async ({ params }: { params: { agencyId: string } }) => {
   // Verificar configuraciones requeridas
   const agencyDetails = await getAgencyDetails(params.agencyId)
-  const requiredSettings = [
-    agencyDetails?.paymentGatewayConfigured,
-    agencyDetails?.address,
+  
+  // Verificar si existe una pasarela de pago conectada para esta agencia
+  const paymentGatewayConnected = await db.paymentGatewayConnection.findFirst({
+    where: {
+      agencyId: params.agencyId,
+      status: 'connected'
+    }
+  })
+  
+  // Verificar si los datos de la agencia están completos
+  const agencyDataComplete = !!(
+    agencyDetails?.address &&
     agencyDetails?.phone
-  ]
-
-  if (requiredSettings.some(setting => !setting)) {
+  )
+  
+  // Redirigir al launchpad si falta alguna configuración requerida
+  if (!paymentGatewayConnected || !agencyDataComplete) {
     redirect(`/agency/${params.agencyId}/launchpad`)
   }
 

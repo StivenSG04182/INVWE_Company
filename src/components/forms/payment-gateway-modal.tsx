@@ -53,6 +53,10 @@ const PaymentGatewayModal = ({
         // Guardar el ID de la pasarela en localStorage antes de abrir la nueva ventana
         if (typeof window !== 'undefined') {
           localStorage.setItem('lastGatewayId', gatewayId)
+          
+          // Guardar el timestamp de inicio del proceso de autenticación
+          const authStartTime = new Date().getTime()
+          localStorage.setItem('authStartTime', authStartTime.toString())
         }
         
         // Obtener la URL de autenticación de la pasarela
@@ -64,16 +68,8 @@ const PaymentGatewayModal = ({
           // Cerramos el modal después de abrir la nueva pestaña
           onClose()
           
-          // Configurar un intervalo para verificar si la ventana se ha cerrado
-          if (authWindow) {
-            const checkWindowClosed = setInterval(() => {
-              if (authWindow.closed) {
-                clearInterval(checkWindowClosed)
-                // Notificar al componente padre que se seleccionó esta pasarela
-                onSelectGateway(gatewayId)
-              }
-            }, 1000)
-          }
+          // No configuramos un intervalo aquí para evitar múltiples llamadas
+          // La actualización se manejará a través del sistema de mensajes en el componente principal
         }
       }
     } catch (error) {
