@@ -39,8 +39,9 @@ const UploadMediaForm = ({ subaccountId, agencyId }: Props) => {
             console.log('UploadMediaForm - onSubmit con valores:', values);
             console.log('UploadMediaForm - Parámetros:', { subaccountId, agencyId });
             
-            // Aseguramos que el agencyId se pase correctamente
-            const response = await createMedia(subaccountId, {...values, agencyId})
+            // Pasamos el agencyId solo si está definido
+            const mediaData = agencyId ? {...values, agencyId} : values;
+            const response = await createMedia(subaccountId, mediaData)
             console.log('UploadMediaForm - Respuesta de createMedia:', response);
             
             // Guardamos la notificación con el agencyId correcto
@@ -96,7 +97,7 @@ const UploadMediaForm = ({ subaccountId, agencyId }: Props) => {
                   <FormLabel>Archivo multimedia</FormLabel>
                   <FormControl>
                     <FileUpload
-                      apiEndpoint="subaccountLogo"
+                      apiEndpoint="media"
                       value={field.value}
                       onChange={field.onChange}
                     />

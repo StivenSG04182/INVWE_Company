@@ -125,6 +125,11 @@ export const saveActivityLogsNotification = async ({
     });
     if (response) foundAgencyId = response.agencyId;
   }
+  if (!foundAgencyId) {
+    console.log("No agency ID found for activity log after processing");
+    return;
+  }
+
   if (subaccountId) {
     await db.notification.create({
       data: {
@@ -295,6 +300,16 @@ export const initUser = async (newUser: Partial<User>) => {
 export const upsertAgency = async (agency: Agency, price?: Plan) => {
   if (!agency.companyEmail) return null;
   try {
+    // Verificar si el usuario existe antes de intentar conectarlo
+    const userExists = await db.user.findUnique({
+      where: { email: agency.companyEmail }
+    });
+    
+    if (!userExists) {
+      console.error('Error: No se puede crear la agencia porque el usuario con email', agency.companyEmail, 'no existe');
+      return null;
+    }
+    
     const agencyDetails = await db.agency.upsert({
       where: { id: agency.id },
       update: agency,
@@ -306,76 +321,84 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             // 1. Dashboard & Visión general
             { name: "Dashboard & Visión general", icon: "chart", link: "#" },
             { name: "Dashboard", icon: "category", link: `/agency/${agency.id}` },
-            { name: "Análisis", icon: "chart", link: `/agency/${agency.id}/analytics` },
-            { name: "Actividad", icon: "calendar", link: `/agency/${agency.id}/activity` },
-            { name: "Visión general", icon: "chart", link: `/agency/${agency.id}/overview` },
-            { name: "Integraciones", icon: "link", link: `/agency/${agency.id}/integrations` },
+            { name: "Análisis", icon: "chart", link: `/agency/${agency.id}/(Dashboard)/analytics` },
+            { name: "Actividad", icon: "calendar", link: `/agency/${agency.id}/(Dashboard)/activity` },
+            { name: "Visión general", icon: "chart", link: `/agency/${agency.id}/(Dashboard)/overview` },
+            { name: "Integraciones", icon: "link", link: `/agency/${agency.id}/(Dashboard)/integrations` },
 
             // 2. Gestión de Inventario
             { name: "Gestión de Inventario", icon: "database", link: "#" },
-            { name: "Productos", icon: "category", link: `/agency/${agency.id}/products` },
-            { name: "Stock", icon: "database", link: `/agency/${agency.id}/stock` },
-            { name: "Movimientos", icon: "compass", link: `/agency/${agency.id}/movements` },
-            { name: "Proveedores", icon: "person", link: `/agency/${agency.id}/providers` },
-            { name: "Áreas de Inventario", icon: "home", link: `/agency/${agency.id}/areas` },
+            { name: "Productos", icon: "category", link: `/agency/${agency.id}/(Inventory)/products` },
+            { name: "Stock", icon: "database", link: `/agency/${agency.id}/(Inventory)/stock` },
+            { name: "Movimientos", icon: "compass", link: `/agency/${agency.id}/(Inventory)/movements` },
+            { name: "Proveedores", icon: "person", link: `/agency/${agency.id}/(Inventory)/providers` },
+            { name: "Áreas de Inventario", icon: "home", link: `/agency/${agency.id}/(Inventory)/areas` },
 
             // 3. Tienda & E-Commerce
             { name: "Tienda & E-Commerce", icon: "category", link: "#" },
-            { name: "Tiendas Físicas", icon: "home", link: `/agency/${agency.id}/physical-stores` },
-            { name: "E-Commerce", icon: "pipelines", link: `/agency/${agency.id}/funnels` },
-            { name: "Envíos", icon: "send", link: `/agency/${agency.id}/shipping` },
+            { name: "Tiendas", icon: "category", link: `/agency/${agency.id}/(Ecommerce)/stores` },
+            { name: "E-Commerce", icon: "pipelines", link: `/agency/${agency.id}/(Ecommerce)/funnels` },
+            { name: "Envíos", icon: "send", link: `/agency/${agency.id}/(Ecommerce)/shipping` },
 
             // 4. Ventas & Facturación
             { name: "Ventas & Facturación", icon: "payment", link: "#" },
-            { name: "Transacciones", icon: "receipt", link: `/agency/${agency.id}/transactions` },
-            { name: "Facturas", icon: "receipt", link: `/agency/${agency.id}/invoices` },
-            { name: "Notas Crédito/Débito", icon: "receipt", link: `/agency/${agency.id}/notes` },
-            { name: "Configuración DIAN", icon: "settings", link: `/agency/${agency.id}/dian-config` },
-            { name: "Reportes", icon: "chart", link: `/agency/${agency.id}/reports` },
-            { name: "Pagos", icon: "payment", link: `/agency/${agency.id}/payments` },
-            { name: "Billing", icon: "payment", link: `/agency/${agency.id}/billing` },
+            { name: "Transacciones", icon: "receipt", link: `/agency/${agency.id}/(Billing)/transactions` },
+            { name: "Facturas", icon: "receipt", link: `/agency/${agency.id}/(Billing)/invoices` },
+            { name: "Notas Crédito/Débito", icon: "receipt", link: `/agency/${agency.id}/(Billing)/notes` },
+            { name: "Configuración DIAN", icon: "settings", link: `/agency/${agency.id}/(Billing)/dian-config` },
+            { name: "Reportes", icon: "chart", link: `/agency/${agency.id}/(Billing)/reports` },
+            { name: "Pagos", icon: "payment", link: `/agency/${agency.id}/(Billing)/payments` },
+            { name: "Billing", icon: "payment", link: `/agency/${agency.id}/(Billing)/billing-store` },
 
             // 5. Clientes & CRM
             { name: "Clientes & CRM", icon: "person", link: "#" },
-            { name: "Clientes", icon: "person", link: `/agency/${agency.id}/clients` },
-            { name: "CRM", icon: "contact", link: `/agency/${agency.id}/crm` },
-            { name: "All Sub-Accounts", icon: "person", link: `/agency/${agency.id}/all-subaccounts` },
+            { name: "Clientes", icon: "person", link: `/agency/${agency.id}/(Customers)/clients` },
+            { name: "CRM", icon: "contact", link: `/agency/${agency.id}/(Customers)/crm` },
 
             // 6. Personal & RRHH
             { name: "Personal & RRHH", icon: "person", link: "#" },
-            { name: "Empleados", icon: "person", link: `/agency/${agency.id}/team` },
-            { name: "Horarios & Nómina", icon: "calendar", link: `/agency/${agency.id}/schedule` },
-            { name: "Contactos", icon: "contact", link: `/agency/${agency.id}/contacts` },
+            { name: "Empleados", icon: "person", link: `/agency/${agency.id}/(Staff)/team` },
+            { name: "Horarios & Nómina", icon: "calendar", link: `/agency/${agency.id}/(Staff)/schedule` },
+            { name: "Contactos", icon: "contact", link: `/agency/${agency.id}/(Staff)/contacts` },
+            { name: "Pipelines", icon: "flag", link: `/agency/${agency.id}/(Staff)/pipelines` },
 
             // 7. Comunicaciones
             { name: "Comunicaciones", icon: "messages", link: "#" },
-            { name: "Campañas", icon: "send", link: `/agency/${agency.id}/campaigns` },
-            { name: "Bandeja de entrada", icon: "messages", link: `/agency/${agency.id}/inbox` },
-            { name: "Medios", icon: "database", link: `/agency/${agency.id}/media` },
-            { name: "Chat", icon: "messages", link: `/agency/${agency.id}/chat` },
+            { name: "Campañas", icon: "send", link: `/agency/${agency.id}/(Communications)/campaigns` },
+            { name: "Bandeja de entrada", icon: "messages", link: `/agency/${agency.id}/(Communications)/inbox` },
+            { name: "Medios", icon: "database", link: `/agency/${agency.id}/(Communications)/media` },
+            { name: "Chat", icon: "messages", link: `/agency/${agency.id}/(Communications)/chat` },
 
             // 8. Reportes & Analíticas
             { name: "Reportes & Analíticas", icon: "chart", link: "#" },
-            { name: "Ventas", icon: "chart", link: `/agency/${agency.id}/sales-reports` },
-            { name: "Inventario", icon: "database", link: `/agency/${agency.id}/inventory-reports` },
-            { name: "Desempeño", icon: "chart", link: `/agency/${agency.id}/performance` },
+            { name: "Ventas", icon: "chart", link: `/agency/${agency.id}/(Reports)/sales-reports` },
+            { name: "Inventario", icon: "database", link: `/agency/${agency.id}/(Reports)/inventory-reports` },
+            { name: "Desempeño", icon: "chart", link: `/agency/${agency.id}/(Reports)/performance` },
+            { name: "Finanzas", icon: "chart", link: `/agency/${agency.id}/(Reports)/financial-reports` },
+            { name: "Reportes Productos", icon: "chart", link: `/agency/${agency.id}/(Reports)/product-reports` },
 
             // 9. Configuración & Administración
             { name: "Configuración & Administración", icon: "settings", link: "#" },
-            { name: "Ajustes de Empresa", icon: "settings", link: `/agency/${agency.id}/company-settings` },
-            { name: "Usuarios & Permisos", icon: "settings", link: `/agency/${agency.id}/users` },
-            { name: "Facturación", icon: "payment", link: `/agency/${agency.id}/billing` },
-            { name: "Configuración Inicial", icon: "settings", link: `/agency/${agency.id}/launchpad` },
-            { name: "General Settings", icon: "tune", link: `/agency/${agency.id}/settings` },
-            { name: "Automatización", icon: "chip", link: `/agency/${agency.id}/automations` },
-            { name: "Pipelines", icon: "flag", link: `/agency/${agency.id}/pipelines` },
+            { name: "Ajustes de Empresa", icon: "settings", link: `/agency/${agency.id}/(Settings)/company-settings` },
+            { name: "Usuarios & Permisos", icon: "settings", link: `/agency/${agency.id}/(Settings)/users` },
+            { name: "Facturación", icon: "payment", link: `/agency/${agency.id}/(Settings)/billing` },
+            { name: "Configuración Inicial", icon: "settings", link: `/agency/${agency.id}/(Settings)/launchpad` },
+            { name: "General Settings", icon: "tune", link: `/agency/${agency.id}/(Settings)/settings` },
+            { name: "Soporte", icon: "settings", link: `/agency/${agency.id}/(Settings)/contact` },
           ],
         },
       },
     });
     return agencyDetails;
   } catch (error) {
-    console.log(error);
+    console.error('Error al crear/actualizar la agencia:', error);
+    // Proporcionar información más detallada sobre el error
+    if (error instanceof Prisma.PrismaClientValidationError) {
+      console.error('Error de validación de Prisma. Verifique que todos los campos requeridos estén presentes y con el formato correcto.');
+    } else if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.error(`Error conocido de Prisma: ${error.message}. Código: ${error.code}`);
+    }
+    return null;
   }
 };
 
@@ -430,33 +453,67 @@ export const upsertSubAccount = async (subAccount: SubAccount) => {
         create: { name: 'Lead Cycle' },
       },
       SidebarOption: {
-        create: [
-          {
-            name: 'Settings',
-            icon: 'settings',
-            link: `/subaccount/${subAccount.id}/settings`,
-          },
-          {
-            name: 'Media',
-            icon: 'database',
-            link: `/subaccount/${subAccount.id}/media`,
-          },
-          {
-            name: 'Automations',
-            icon: 'chip',
-            link: `/subaccount/${subAccount.id}/automations`,
-          },
-          {
-            name: 'Pipelines',
-            icon: 'flag',
-            link: `/subaccount/${subAccount.id}/pipelines`,
-          },
-          {
-            name: 'Dashboard',
-            icon: 'category',
-            link: `/subaccount/${subAccount.id}`,
-          },
-        ],
+          create: [
+            // 1. Dashboard & Visión general
+            { name: "Dashboard & Visión general", icon: "chart", link: "#" },
+            { name: "Dashboard", icon: "category", link: `/subaccount/${subAccount.id}` },
+            { name: "Análisis", icon: "chart", link: `/subaccount/${subAccount.id}/(Dashboard)/analytics` },
+            { name: "Actividad", icon: "calendar", link: `/subaccount/${subAccount.id}/(Dashboard)/activity` },
+
+            // 2. Gestión de Inventario
+            { name: "Gestión de Inventario", icon: "database", link: "#" },
+            { name: "Productos", icon: "category", link: `/subaccount/${subAccount.id}/(Inventory)/products` },
+            { name: "Stock", icon: "database", link: `/subaccount/${subAccount.id}/(Inventory)/stock` },
+            { name: "Movimientos", icon: "compass", link: `/subaccount/${subAccount.id}/(Inventory)/movements` },
+            { name: "Proveedores", icon: "person", link: `/subaccount/${subAccount.id}/(Inventory)/providers` },
+            { name: "Áreas de Inventario", icon: "home", link: `/subaccount/${subAccount.id}/(Inventory)/areas` },
+
+            // 3. Tienda & E-Commerce
+            { name: "Tienda & E-Commerce", icon: "category", link: "#" },
+            { name: "Tiendas", icon: "store", link: `/subaccount/${subAccount.id}/(Ecommerce)/stores` },
+            { name: "Envíos", icon: "send", link: `/subaccount/${subAccount.id}/(Ecommerce)/shipping` },
+
+            // 4. Ventas & Facturación
+            { name: "Ventas & Facturación", icon: "payment", link: "#" },
+            { name: "Transacciones", icon: "receipt", link: `/subaccount/${subAccount.id}/(Billing)/transactions` },
+            { name: "Facturas", icon: "receipt", link: `/subaccount/${subAccount.id}/(Billing)/invoices` },
+            { name: "Notas Crédito/Débito", icon: "receipt", link: `/subaccount/${subAccount.id}/(Billing)/notes` },
+            { name: "Configuración DIAN", icon: "settings", link: `/(Billing)/dian-config` },
+            { name: "Reportes", icon: "chart", link: `/subaccount/${subAccount.id}/(Billing)/reports` },
+            { name: "Pagos", icon: "payment", link: `/subaccount/${subAccount.id}/(Billing)/payments` },
+            { name: "Billing", icon: "payment", link: `/subaccount/${subAccount.id}/(Billing)/billing-store` },
+
+            // 5. Clientes & CRM
+            { name: "Clientes & CRM", icon: "person", link: "#" },
+            { name: "Clientes", icon: "person", link: `/subaccount/${subAccount.id}/(Customers)/clients` },
+            { name: "CRM", icon: "contact", link: `/subaccount/${subAccount.id}/(Customers)/crm` },
+
+            // 6. Personal & RRHH
+            { name: "Personal & RRHH", icon: "person", link: "#" },
+            { name: "Empleados", icon: "person", link: `/subaccount/${subAccount.id}/(Staff)/team` },
+            { name: "Horarios & Nómina", icon: "calendar", link: `/subaccount/${subAccount.id}/(Staff)/schedule` },
+            { name: "Contactos", icon: "contact", link: `/subaccount/${subAccount.id}/(Staff)/contacts` },
+            { name: "Pipelines", icon: "flag", link: `/subaccount/${subAccount.id}/(Staff)/pipelines` },
+
+            // 7. Comunicaciones
+            { name: "Comunicaciones", icon: "messages", link: "#" },
+            { name: "Campañas", icon: "send", link: `/subaccount/${subAccount.id}/(Communications)/campaigns` },
+            { name: "Bandeja de entrada", icon: "messages", link: `/subaccount/${subAccount.id}/(Communications)/inbox` },
+            { name: "Medios", icon: "database", link: `/subaccount/${subAccount.id}/(Communications)/media` },
+            { name: "Chat", icon: "messages", link: `/subaccount/${subAccount.id}/(Communications)/chat` },
+
+            // 8. Reportes & Analíticas
+            { name: "Reportes & Analíticas", icon: "chart", link: "#" },
+            { name: "Ventas", icon: "chart", link: `/subaccount/${subAccount.id}/(Reports)/sales-reports` },
+            { name: "Inventario", icon: "database", link: `/subaccount/${subAccount.id}/(Reports)/inventory-reports` },
+            { name: "Desempeño", icon: "chart", link: `/subaccount/${subAccount.id}/(Reports)/performance` },
+
+            // 9. Configuración & Administración
+            { name: "Configuración & Administración", icon: "settings", link: "#" },
+            { name: "Ajustes de Empresa", icon: "settings", link: `/subaccount/${subAccount.id}/(Settings)/company-settings` },
+            { name: "Usuarios & Permisos", icon: "settings", link: `/subaccount/${subAccount.id}/(Settings)/users` },
+            { name: "General Settings", icon: "tune", link: `/subaccount/${subAccount.id}/(Settings)/settings` },
+          ],
       },
     }
   })
@@ -549,134 +606,42 @@ export const getUser = async (id: string) => {
   return user
 }
 
+
 export const sendInvitation = async (
   role: Role,
   email: string,
   agencyId: string
 ) => {
-  // Usar console.warn para asegurar que los mensajes sean más visibles en la terminal
-  console.warn('🚀 === INICIO DE FUNCIÓN sendInvitation ===');
-  console.warn('Parámetros recibidos:');
-  console.warn('- Role:', role, '(tipo:', typeof role, ')');
-  console.warn('- Email:', email, '(tipo:', typeof email, ')');
-  console.warn('- Agency ID:', agencyId, '(tipo:', typeof agencyId, ')');
-  
-  // Validación de parámetros
-  if (!role) {
-    console.warn('⛔ ERROR: Role es undefined o null');
-    throw new Error('Role es obligatorio para crear una invitación');
-  }
-  
-  if (!email) {
-    console.warn('⛔ ERROR: Email es undefined o null');
-    throw new Error('Email es obligatorio para crear una invitación');
-  }
-  
-  if (!agencyId) {
-    console.warn('⛔ ERROR: AgencyId es undefined o null');
-    throw new Error('AgencyId es obligatorio para crear una invitación');
-  }
-  
+  // 1. Crear registro local en la DB
+  const invitationRecord = await db.invitation.create({
+    data: { email, agencyId, role },
+  })
+
   try {
-    // Verificar si ya existe una invitación para este email en esta agencia
-    const existingInvitation = await db.invitation.findFirst({
-      where: {
-        email: email,
-        agencyId: agencyId,
+    // 2. Crear invitación en Clerk
+    const clerkInvitation = await clerkClient.invitations.createInvitation({
+      emailAddress: email,
+      // Redirect dinámico incluyendo el id de la invitación
+      redirectUrl: `${process.env.NEXT_PUBLIC_URL}/invitation/${invitationRecord.id}/accept`,
+      publicMetadata: {
+        throughInvitation: true,
+        role,
       },
-    });
-    
-    if (existingInvitation) {
-      console.warn('⚠️ Ya existe una invitación para este email en esta agencia');
-      console.warn('Detalles:', JSON.stringify(existingInvitation, null, 2));
-      throw new Error('Ya existe una invitación para este email');
-    }
-    
-    console.warn('📝 Creando registro en la base de datos con los siguientes datos:');
-    console.warn(JSON.stringify({ email, agencyId, role }, null, 2));
-    
-    let response;
-    try {
-      response = await db.invitation.create({
-        data: { 
-          email: email, 
-          agencyId: agencyId, 
-          role: role,
-          status: 'PENDING' // Asegurando que el estado sea PENDING
-        },
-      });
-      
-      console.warn('✅ Registro creado exitosamente en la base de datos:');
-      console.warn(JSON.stringify(response, null, 2));
-    } catch (dbError) {
-      console.warn('⛔ ERROR al crear registro en la base de datos:');
-      console.warn('Mensaje:', dbError instanceof Error ? dbError.message : 'Error desconocido');
-      console.warn('Stack:', dbError instanceof Error ? dbError.stack : 'No disponible');
-      
-      // Verificar si es un error de clave única (email duplicado)
-      if (dbError instanceof Error && dbError.message.includes('Unique constraint')) {
-        throw new Error('Ya existe una invitación para este email');
-      }
-      
-      throw dbError;
-    }
+    })
 
-    try {
-      console.warn('📨 Intentando crear invitación en Clerk...');
-      console.warn('NEXT_PUBLIC_URL:', process.env.NEXT_PUBLIC_URL);
-      
-      if (!process.env.NEXT_PUBLIC_URL) {
-        console.warn('⛔ ERROR: NEXT_PUBLIC_URL no está definido');
-        throw new Error('La URL de redirección no está configurada');
-      }
-      
-      const redirectUrl = process.env.NEXT_PUBLIC_URL.endsWith('/') 
-        ? process.env.NEXT_PUBLIC_URL 
-        : `${process.env.NEXT_PUBLIC_URL}/`;
-      
-      console.warn('🔗 URL de redirección:', redirectUrl);
-      
-      const invitation = await clerkClient.invitations.createInvitation({
-        emailAddress: email,
-        redirectUrl: redirectUrl,
-        publicMetadata: {
-          throughInvitation: true,
-          role,
-          agencyId,
-        },
-      });
-      
-      console.warn('✅ Invitación creada exitosamente en Clerk:');
-      console.warn(JSON.stringify(invitation, null, 2));
-    } catch (clerkError) {
-      console.warn('⛔ ERROR al crear invitación en Clerk:');
-      console.warn('Mensaje:', clerkError instanceof Error ? clerkError.message : 'Error desconocido');
-      console.warn('Stack:', clerkError instanceof Error ? clerkError.stack : 'No disponible');
-      
-      // Intentar eliminar la invitación de la base de datos si falló en Clerk
-      try {
-        if (response?.id) {
-          await db.invitation.delete({
-            where: { id: response.id },
-          });
-          console.warn('🗑️ Invitación eliminada de la base de datos debido al error en Clerk');
-        }
-      } catch (cleanupError) {
-        console.warn('⚠️ Error al limpiar la invitación de la base de datos:', cleanupError);
-      }
-      
-      throw new Error('Error al enviar la invitación: ' + (clerkError instanceof Error ? clerkError.message : 'Error desconocido'));
-    }
-
-    console.warn('🎉 === FUNCIÓN sendInvitation COMPLETADA CON ÉXITO ===');
-    return response;
+    // 3. Retornar ambos registros para mayor flexibilidad
+    return { invitationRecord, clerkInvitation }
   } catch (error) {
-    console.warn('❌ === ERROR GENERAL EN sendInvitation ===');
-    console.warn('Mensaje:', error instanceof Error ? error.message : 'Error desconocido');
-    console.warn('Stack:', error instanceof Error ? error.stack : 'No disponible');
-    throw error;
+    console.error('Error creando invitación en Clerk:', error)
+    // Si falla Clerk, revertimos la DB local para evitar registros huérfanos
+    await db.invitation.delete({
+      where: { id: invitationRecord.id },
+    })
+    throw error
   }
 }
+
+
 export const getMedia = async (subaccountIdOrAgencyId: string, isAgencyId: boolean = false) => {
   console.log('getMedia llamado con:', { subaccountIdOrAgencyId, isAgencyId });
   
@@ -860,7 +825,18 @@ export const createMedia = async (
     
     if (!subaccount) {
       console.error('Subcuenta no encontrada y no se proporcionó agencyId');
-      throw new Error('Subcuenta no encontrada y no se proporcionó agencyId')
+      // En lugar de lanzar un error, creamos el media sin agencyId
+      const response = await db.media.create({
+        data: {
+          link: mediaFile.link,
+          name: mediaFile.name,
+          subAccountId: subaccountId,
+          // No incluimos agencyId ya que no está disponible
+        }
+      })
+      
+      console.log('Media creado sin agencyId:', response);
+      return response
     }
     
     // Si encontramos la subcuenta, procedemos normalmente
@@ -953,7 +929,7 @@ export const getLanesWithTicketAndTags = async (pipelineId: string) => {
 }
 
 export const upsertFunnel = async (
-  subaccountId: string,
+  agencyId: string,
   funnel: z.infer<typeof CreateFunnelFormSchema> & { liveProducts: string },
   funnelId: string
 ) => {
@@ -963,7 +939,7 @@ export const upsertFunnel = async (
     create: {
       ...funnel,
       id: funnelId || v4(),
-      subAccountId: subaccountId,
+      agencyId: agencyId,
     },
   })
 
@@ -1190,9 +1166,9 @@ export const upsertContact = async (
   })
   return response
 }
-export const getFunnels = async (subacountId: string) => {
+export const getFunnels = async (agencyId: string) => {
   const funnels = await db.funnel.findMany({
-    where: { subAccountId: subacountId },
+    where: { agencyId: agencyId },
     include: { FunnelPages: true },
   })
 
@@ -1237,14 +1213,14 @@ export const upsertFunnelPage = async (
       content: funnelPage.content
         ? funnelPage.content
         : JSON.stringify([
-          {
-            content: [],
-            id: '__body',
-            name: 'Body',
-            styles: { backgroundColor: 'white' },
-            type: '__body',
-          },
-        ]),
+            {
+              content: [],
+              id: '__body',
+              name: 'Body',
+              styles: { backgroundColor: 'white' },
+              type: '__body',
+            },
+          ]),
       funnelId,
     },
   })
@@ -1252,7 +1228,6 @@ export const upsertFunnelPage = async (
   revalidatePath(`/subaccount/${subaccountId}/funnels/${funnelId}`, 'page')
   return response
 }
-
 
 export const deleteFunnelePage = async (funnelPageId: string) => {
   const response = await db.funnelPage.delete({ where: { id: funnelPageId } })

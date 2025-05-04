@@ -20,73 +20,74 @@ B (255 */
 
 @layer base {
   :root {
-    --background: 216 100% 98.04%;
-    --foreground: 213.6 100% 4.9%;
+    /* Modo claro (tema por defecto) */
+    --background: 30 20% 98%;
 
-    --primary: 214.12 100% 50%;
-    --primary-foreground: 0 0% 100%;
+    /* Texto siempre negro */
+    --foreground: 0 0% 0%;
 
-    --card: 216 100% 98.04%;
-    --card-foreground: 213.6 100% 4.9%;
+    --primary: 170 40% 45%;
+    --primary-foreground: 0 0% 100%; /* mantiene blanco sobre primary */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 213.6 100% 4.9%;
+    --secondary: 270 20% 55%;
+    --secondary-foreground: 0 0% 0%; /* negro sobre secondary */
 
-    --secondary: 214.74 100% 92.55%;
-    --secondary-foreground: 216 100% 0.98%;
+    --card: 30 20% 95%;
+    --card-foreground: 0 0% 0%; /* negro en tarjetas */
 
-    --muted: 213.6 100% 95.1%;
-    --muted-foreground: 0 0% 40%;
+    --popover: 30 20% 97%;
+    --popover-foreground: 0 0% 0%; /* negro en popovers */
 
-    --accent: 213.6 100% 95.1%;
-    --accent-foreground: 214.12 100% 50%;
+    --border: 30 20% 80%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --input: 30 20% 100%;
+    --input-foreground: 0 0% 0%; /* negro en inputs */
 
-    --border: 0 0% 90.2%;
-    --input: 0 0% 90.2%;
-    --ring: 214.12 100% 50%;
+    --accent: 30 70% 50%;
+    --accent-foreground: 0 0% 0%; /* negro en acentos si se usa */
 
-    --radius: 0.5rem;
+    --destructive: 354 65% 55%;
+    --destructive-foreground: 0 0% 0%; /* negro en mensajes de error */
+
+    --ring: 170 40% 55%;
+    --ring-foreground: 0 0% 0%; /* negro en focus ring si aplica */
+
+    --selector-bg: 30 70% 50%;
+    --selector-fg: 0 0% 0%; /* negro en selectores */
   }
 
   .dark {
-    /* Name: custom color palette
-       Author: Ilias Ism
-       URL: https://gradient.page */
+    /* Modo oscuro */
+    --background: 30 20% 12%; /* gris cálido muy oscuro */
+    --foreground: 30 10% 92%; /* texto claro suave */
 
-    /* CSS: .bg-gradient { background: var(--gradient) } */
-    --gradient: linear-gradient(to top left, #007adf, #00ecbc);
+    --primary: 170 40% 60%; /* verde azulado más vibrante */
+    --primary-foreground: 0 0% 0%;
 
-    --background: 220 65% 3.52%;
-    --foreground: 220 10% 97.2%;
+    --secondary: 270 20% 70%; /* púrpura grisáceo más luminoso */
+    --secondary-foreground: 0 0% 0%;
 
-    --muted: 220 50% 13.2%;
-    --muted-foreground: 220 10% 54.4%;
+    --card: 30 20% 20%; /* fondo de tarjeta oscuro */
+    --card-foreground: 30 10% 92%;
 
-    --popover: 220 45% 5.72%;
-    --popover-foreground: 220 10% 97.2%;
+    --popover: 30 20% 25%; /* ligeramente más claro que card */
+    --popover-foreground: 30 10% 92%;
 
-    --card: 220 45% 5.72%;
-    --card-foreground: 220 10% 97.2%;
+    --border: 30 20% 30%; /* líneas suaves sobre fondo oscuro */
+    --input: 30 20% 20%;
+    --input-foreground: 30 10% 92%;
 
-    --border: 220 50% 13.2%;
-    --input: 220 50% 13.2%;
+    --accent: 30 70% 60%; /* naranja tostado más suave */
+    --accent-foreground: 0 0% 0%;
 
-    --primary: 220 100% 44%;
-    --primary-foreground: 220 10% 97.2%;
+    --destructive: 354 65% 65%;
+    --destructive-foreground: 0 0% 0%;
 
-    --secondary: 220 50% 13.2%;
-    --secondary-foreground: 220 10% 97.2%;
+    --ring: 170 40% 70%;
+    --ring-foreground: 0 0% 0%;
 
-    --accent: 220 50% 13.2%;
-    --accent-foreground: 220 10% 97.2%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 220 10% 97.2%;
-
-    --ring: 220 100% 44%;
+    --selector-bg: 30 70% 60%;
+    --selector-fg: 0 0% 0%;
   }
 }
 

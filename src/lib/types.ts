@@ -48,8 +48,9 @@ Prisma.PromiseReturnType<
 
 export type GetMediaFiles = Prisma.PromiseReturnType<typeof getMedia>
 
-export type createMediaType = Prisma.MediaCreateWithoutSubaccountInput & {
+export type createMediaType = Prisma.MediaCreateInput & {
   agencyId?: string
+  subAccountId?: string
 }
 
 export type TicketAndTags = Ticket & {
@@ -127,6 +128,6 @@ export type StripeCustomerType = {
 export type PricesList = Stripe.ApiList<Stripe.Price>
 
 export const FunnelPageSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().trim().min(1, { message: 'El nombre de la página es obligatorio.' }),
   pathName: z.string().optional(),
 })

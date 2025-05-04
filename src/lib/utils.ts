@@ -20,17 +20,9 @@ export function getPaymentGatewayOAuthLink(gateway: string, entityType: string, 
   
   // Cada pasarela tiene su propia URL y parámetros
   switch(gateway) {
-    case 'wompi':
-      return getWompiOAuthLink(entityType, state)
-    case 'epayco':
-      return `https://secure.epayco.co/oauth2/authorize?client_id=test_client_id&response_type=code&redirect_uri=${redirectUri}&state=${state}`
     case 'mercadopago':
       return `https://auth.mercadopago.com/authorization?client_id=test_client_id&response_type=code&platform_id=mp&redirect_uri=${redirectUri}&state=${state}`
     case 'paypal':
       return `https://www.sandbox.paypal.com/connect?flowEntry=static&client_id=test_client_id&scope=openid&redirect_uri=${redirectUri}&state=${state}`
-    case 'payu':
-      return `https://api.payulatam.com/oauth/authorize?client_id=test_client_id&response_type=code&redirect_uri=${redirectUri}&state=${state}`
-    default:
-      return getWompiOAuthLink(entityType, state)
   }
 }

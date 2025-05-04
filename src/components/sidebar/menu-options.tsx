@@ -155,7 +155,7 @@ const getCategoryForOption = (optionName: string): string | null => {
     'Áreas de Inventario': 'Gestión de Inventario',
 
     // Tienda & E-Commerce
-    'Tiendas Físicas': 'Tienda & E-Commerce',
+    'Tiendas': 'Tienda & E-Commerce',
     'E-Commerce': 'Tienda & E-Commerce',
     'Envíos': 'Tienda & E-Commerce',
 
@@ -177,6 +177,7 @@ const getCategoryForOption = (optionName: string): string | null => {
     'Empleados': 'Personal & RRHH',
     'Horarios & Nómina': 'Personal & RRHH',
     'Contactos': 'Personal & RRHH',
+    'Pipelines': 'Personal & RRHH',
 
     // Comunicaciones
     'Campañas': 'Comunicaciones',
@@ -188,6 +189,8 @@ const getCategoryForOption = (optionName: string): string | null => {
     'Ventas': 'Reportes & Analíticas',
     'Inventario': 'Reportes & Analíticas',
     'Desempeño': 'Reportes & Analíticas',
+    'Finanzas': 'Reportes & Analíticas',
+    'Reportes Productos': 'Reportes & Analíticas',
 
     // Configuración & Administración
     'Ajustes de Empresa': 'Configuración & Administración',
@@ -196,7 +199,7 @@ const getCategoryForOption = (optionName: string): string | null => {
     'Configuración Inicial': 'Configuración & Administración',
     'General Settings': 'Configuración & Administración',
     'Automatización': 'Configuración & Administración',
-    'Pipelines': 'Configuración & Administración',
+    
   };
   return categoryMap[optionName] || null;
 };
@@ -242,6 +245,10 @@ const SidebarOptionItem = ({
 
   // Si es una categoría principal (link=#) o tiene hijos, mostrar como desplegable
   const isCategory = option.link === '#' || hasChildren;
+  
+  // Procesar la URL para eliminar los paréntesis en las rutas
+  const processedLink = option.link.replace(/\(([^)]+)\)\//g, '');
+  
 
   return (
     <div className="w-full">
@@ -256,7 +263,7 @@ const SidebarOptionItem = ({
         )}
       >
         <Link
-          href={option.link}
+          href={processedLink}
           className={clsx(
             "flex items-center gap-1.5 hover:bg-transparent rounded-md transition-all w-full py-1.5", // Reducido gap-2 a gap-1.5 y py-2 a py-1.5
             level === 0 ? "text-sm font-medium" : "text-xs text-muted-foreground" // Reducido tamaño de texto

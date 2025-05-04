@@ -37,7 +37,7 @@ export default function RootLayout({
         <head>
           <script src="/register-sw.js" defer></script>
         </head>
-        <body className={twMerge(font.className, "bg-black text-white antialiased")}>
+        <body className={twMerge(font.className, "antialiased")}>
           <ClerkProvider>
             <PayPalProvider>
               <ThemeProvider
