@@ -67,6 +67,11 @@ model Agency {
   settings         AgencySettings[]
   webhookEvents    PaymentGatewayWebhookEvent[]
   Reports          Report[]
+  Products         Product[]
+  Providers        Provider[]
+  Areas            Area[]
+  Stocks           Stock[]
+  Movements        Movement[]
 }
 
 model SubAccount {
@@ -97,6 +102,11 @@ model SubAccount {
   Tags             Tag[]
   Notification     Notification[]
   Reports          Report[]
+  Products         Product[]
+  Providers        Provider[]
+  Areas            Area[]
+  Stocks           Stock[]
+  Movements        Movement[]
 
   @@index([agencyId])
 }
@@ -520,4 +530,118 @@ enum ReportFormat {
   CSV
   WORD
   POWERPOINT
+}
+
+model Product {
+  id           String     @id @default(uuid())
+  name         String
+  sku          String
+  description  String?
+  price        Decimal    @default(0)
+  cost         Decimal?   @default(0)
+  minStock     Int?
+  images       String[]   @default([])
+  categoryId   String?
+  active       Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  agencyId     String
+  subAccountId String?
+  Agency       Agency     @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount   SubAccount? @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Stocks       Stock[]
+  Movements    Movement[]
+
+  @@index([agencyId])
+  @@index([subAccountId])
+}
+
+model Provider {
+  id           String     @id @default(uuid())
+  name         String
+  contactName  String?
+  email        String?
+  phone        String?
+  address      String?
+  active       Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  agencyId     String
+  subAccountId String?
+  Agency       Agency     @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount   SubAccount? @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Movements    Movement[]
+
+  @@index([agencyId])
+  @@index([subAccountId])
+}
+
+model Area {
+  id           String     @id @default(uuid())
+  name         String
+  description  String?
+  layout       Json?      @default("{\"items\":[]}")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  agencyId     String
+  subAccountId String?
+  Agency       Agency     @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount   SubAccount? @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Stocks       Stock[]
+  Movements    Movement[]
+
+  @@index([agencyId])
+  @@index([subAccountId])
+}
+
+model Stock {
+  id           String     @id @default(uuid())
+  quantity     Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  productId    String
+  areaId       String
+  agencyId     String
+  subAccountId String?
+  Product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  Area         Area       @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  Agency       Agency     @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount   SubAccount? @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+
+  @@unique([productId, areaId])
+  @@index([productId])
+  @@index([areaId])
+  @@index([agencyId])
+  @@index([subAccountId])
+}
+
+model Movement {
+  id           String       @id @default(uuid())
+  type         MovementType
+  quantity     Int
+  notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  productId    String
+  areaId       String
+  providerId   String?
+  agencyId     String
+  subAccountId String?
+  Product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  Area         Area         @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  Provider     Provider?    @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  Agency       Agency       @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount   SubAccount?  @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+
+  @@index([productId])
+  @@index([areaId])
+  @@index([providerId])
+  @@index([agencyId])
+  @@index([subAccountId])
+}
+
+enum MovementType {
+  ENTRADA
+  SALIDA
+  TRANSFERENCIA
 }

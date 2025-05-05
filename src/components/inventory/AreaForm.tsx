@@ -53,6 +53,7 @@ export default function AreaForm({ agencyId, area, isEditing = false }: AreaForm
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
+        credentials: 'include', // Incluir cookies y credenciales de autenticación
       });
 
       const result = await response.json();

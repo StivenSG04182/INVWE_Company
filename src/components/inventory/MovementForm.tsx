@@ -29,35 +29,41 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
     type,
     productId: productId || '',
     areaId: '',
-    quantity: 1,
+    quantity: '',
     providerId: '',
     notes: '',
   });
 
-  // Cargar datos necesarios
+  // Cargar productos, áreas y proveedores al montar el componente
   useEffect(() => {
     const fetchData = async () => {
       try {
         // Cargar productos
-        const productsRes = await fetch(`/api/inventory/${agencyId}?type=products`);
-        const productsData = await productsRes.json();
+        const productsResponse = await fetch(`/api/inventory/${agencyId}?type=products`, {
+          credentials: 'include',
+        });
+        const productsData = await productsResponse.json();
         if (productsData.success) {
-          setProducts(productsData.data);
+          setProducts(productsData.data || []);
         }
 
         // Cargar áreas
-        const areasRes = await fetch(`/api/inventory/${agencyId}?type=areas`);
-        const areasData = await areasRes.json();
+        const areasResponse = await fetch(`/api/inventory/${agencyId}?type=areas`, {
+          credentials: 'include',
+        });
+        const areasData = await areasResponse.json();
         if (areasData.success) {
-          setAreas(areasData.data);
+          setAreas(areasData.data || []);
         }
 
         // Cargar proveedores (solo para entradas)
         if (type === 'entrada') {
-          const providersRes = await fetch(`/api/inventory/${agencyId}?type=providers`);
-          const providersData = await providersRes.json();
+          const providersResponse = await fetch(`/api/inventory/${agencyId}?type=providers`, {
+            credentials: 'include',
+          });
+          const providersData = await providersResponse.json();
           if (providersData.success) {
-            setProviders(providersData.data);
+            setProviders(providersData.data || []);
           }
         }
       } catch (error) {
@@ -65,13 +71,14 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: 'No se pudieron cargar los datos necesarios.',
+          description: 'No se pudieron cargar los datos necesarios. Inténtalo de nuevo.',
         });
       }
     };
 
     fetchData();
   }, [agencyId, type, toast]);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -92,6 +99,17 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
     e.preventDefault();
     setIsLoading(true);
 
+    // Validar que se hayan seleccionado producto y área
+    if (!formData.productId || !formData.areaId) {
+      toast({
+        variant: 'destructive',
+        title: 'Campos requeridos',
+        description: 'Por favor selecciona un producto y un área para continuar.',
+      });
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const endpoint = `/api/inventory/${agencyId}`;
       const response = await fetch(endpoint, {
@@ -103,6 +121,7 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
           type: 'movement',
           data: formData,
         }),
+        credentials: 'include', // Incluir cookies y credenciales de autenticación
       });
 
       const result = await response.json();

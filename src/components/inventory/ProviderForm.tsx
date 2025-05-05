@@ -59,6 +59,7 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
+        credentials: 'include', // Incluir cookies y credenciales de autenticación
       });
 
       const result = await response.json();

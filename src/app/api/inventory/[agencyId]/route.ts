@@ -1,221 +1,233 @@
-import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
-import { ProductService, StockService, AreaService, ProviderService, MovementService } from '@/lib/services/inventory-service';
+import { NextRequest, NextResponse } from 'next/server';
+import { getAuthUserDetails } from '@/lib/queries';
+import { ProductService, AreaService, ProviderService, StockService, MovementService } from '@/lib/services/inventory-service';
+import { ObjectId } from 'mongodb';
 
-// Función para verificar la autorización del usuario
-async function checkAuthorization(agencyId: string) {
-  const { userId } = auth();
-  if (!userId) {
-    return { authorized: false, error: 'No autorizado', status: 401 };
-  }
+// Función para verificar si el usuario tiene acceso a la agencia
+async function hasAgencyAccess(agencyId: string) {
+    const user = await getAuthUserDetails();
+    if (!user) return false;
 
-  // Aquí podrías verificar si el usuario pertenece a la agencia
-  // Por ahora, simplemente autorizamos si hay un userId
-  return { authorized: true };
+    // Verificar si el usuario tiene acceso a esta agencia
+    return user.Agency?.id === agencyId || user.Agency?.some((agency: any) => agency.id === agencyId);
 }
 
-// Manejador para obtener datos del inventario
-export async function GET(
-  req: Request,
-  { params }: { params: { agencyId: string } }
-) {
-  try {
-    const { authorized, error, status } = await checkAuthorization(params.agencyId);
-    if (!authorized) {
-      return NextResponse.json({ error }, { status });
-    }
+// GET: Obtener datos de inventario (productos, áreas, proveedores, stock, movimientos)
+export async function GET(req: NextRequest, { params }: { params: { agencyId: string } }) {
+    try {
+        const agencyId = params.agencyId;
 
-    const { searchParams } = new URL(req.url);
-    const type = searchParams.get('type');
-    const id = searchParams.get('id');
-
-    let data;
-    switch (type) {
-      case 'products':
-        data = id
-          ? await ProductService.getProductById(id)
-          : await ProductService.getProducts(params.agencyId);
-        break;
-      case 'stock':
-        if (id && searchParams.get('by') === 'product') {
-          data = await StockService.getStockByProductId(id);
-        } else if (id && searchParams.get('by') === 'area') {
-          data = await StockService.getStockByAreaId(id);
-        } else {
-          data = await StockService.getStocks(params.agencyId);
+        // Verificar acceso
+        const hasAccess = await hasAgencyAccess(agencyId);
+        if (!hasAccess) {
+            return NextResponse.json({ success: false, error: 'No tienes acceso a esta agencia' }, { status: 403 });
         }
-        break;
-      case 'areas':
-        data = id
-          ? await AreaService.getAreaById(id)
-          : await AreaService.getAreas(params.agencyId);
-        break;
-      case 'providers':
-        data = id
-          ? await ProviderService.getProviderById(id)
-          : await ProviderService.getProviders(params.agencyId);
-        break;
-      case 'movements':
-        data = id
-          ? await MovementService.getMovementById(id)
-          : await MovementService.getMovements(params.agencyId);
-        break;
-      default:
-        return NextResponse.json(
-          { error: 'Tipo de datos no válido' },
-          { status: 400 }
-        );
-    }
 
-    return NextResponse.json({ success: true, data });
-  } catch (error) {
-    console.error(`Error en la API de inventario:`, error);
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
-  }
+        // Obtener tipo de datos solicitados desde query params
+        const url = new URL(req.url);
+        const type = url.searchParams.get('type');
+
+        let data;
+        switch (type) {
+            case 'products':
+                data = await ProductService.getProducts(agencyId);
+                break;
+            case 'areas':
+                data = await AreaService.getAreas(agencyId);
+                break;
+            case 'providers':
+                data = await ProviderService.getProviders(agencyId);
+                break;
+            case 'stock':
+                data = await StockService.getStocks(agencyId);
+                break;
+            case 'movements':
+                data = await MovementService.getMovements(agencyId);
+                break;
+            default:
+                return NextResponse.json({ success: false, error: 'Tipo de datos no válido' }, { status: 400 });
+        }
+
+        return NextResponse.json({ success: true, data });
+    } catch (error: any) {
+        console.error('Error en GET inventory:', error);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
 }
 
-// Manejador para crear nuevos elementos en el inventario
-export async function POST(
-  req: Request,
-  { params }: { params: { agencyId: string } }
-) {
-  try {
-    const { authorized, error, status } = await checkAuthorization(params.agencyId);
-    if (!authorized) {
-      return NextResponse.json({ error }, { status });
+// POST: Crear nuevos elementos (productos, áreas, proveedores, movimientos)
+export async function POST(req: NextRequest, { params }: { params: { agencyId: string } }) {
+    try {
+        const agencyId = params.agencyId;
+
+        // Verificar acceso
+        const hasAccess = await hasAgencyAccess(agencyId);
+        if (!hasAccess) {
+            return NextResponse.json({ success: false, error: 'No tienes acceso a esta agencia' }, { status: 403 });
+        }
+
+        const body = await req.json();
+        const { type, data } = body;
+
+        // Agregar agencyId a los datos
+        const dataWithAgencyId = { ...data, agencyId };
+
+        let result;
+        switch (type) {
+            case 'product':
+                result = await ProductService.createProduct(dataWithAgencyId);
+                break;
+            case 'area':
+                result = await AreaService.createArea(dataWithAgencyId);
+                break;
+            case 'provider':
+                result = await ProviderService.createProvider(dataWithAgencyId);
+                break;
+            case 'movement':
+                // Para movimientos, también actualizamos el stock
+                result = await MovementService.createMovement(dataWithAgencyId);
+
+                // Actualizar stock según el tipo de movimiento
+                const { productId, areaId, quantity, type: movementType } = dataWithAgencyId;
+                const stockData = {
+                    agencyId,
+                    productId,
+                    areaId,
+                    quantity: movementType === 'entrada' ? quantity : -quantity,
+                };
+
+                await StockService.updateStock(stockData);
+                break;
+            default:
+                return NextResponse.json({ success: false, error: 'Tipo de operación no válido' }, { status: 400 });
+        }
+
+        return NextResponse.json({ success: true, data: result });
+    } catch (error: any) {
+        console.error('Error en POST inventory:', error);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
-
-    const body = await req.json();
-    const { type } = body;
-    let data;
-
-    // Asegurarse de que el agencyId esté incluido en los datos
-    body.data.agencyId = params.agencyId;
-
-    switch (type) {
-      case 'product':
-        data = await ProductService.createProduct(body.data);
-        break;
-      case 'area':
-        data = await AreaService.createArea(body.data);
-        break;
-      case 'provider':
-        data = await ProviderService.createProvider(body.data);
-        break;
-      case 'movement':
-        data = await MovementService.createMovement(body.data);
-        break;
-      case 'stock':
-        data = await StockService.updateStock(body.data);
-        break;
-      default:
-        return NextResponse.json(
-          { error: 'Tipo de operación no válido' },
-          { status: 400 }
-        );
-    }
-
-    return NextResponse.json({ success: true, data });
-  } catch (error) {
-    console.error(`Error en la API de inventario:`, error);
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
-  }
 }
 
-// Manejador para actualizar elementos existentes
-export async function PUT(
-  req: Request,
-  { params }: { params: { agencyId: string } }
-) {
-  try {
-    const { authorized, error, status } = await checkAuthorization(params.agencyId);
-    if (!authorized) {
-      return NextResponse.json({ error }, { status });
+// PUT: Actualizar elementos existentes
+export async function PUT(req: NextRequest, { params }: { params: { agencyId: string } }) {
+    try {
+        const agencyId = params.agencyId;
+
+        // Verificar acceso
+        const hasAccess = await hasAgencyAccess(agencyId);
+        if (!hasAccess) {
+            return NextResponse.json({ success: false, error: 'No tienes acceso a esta agencia' }, { status: 403 });
+        }
+
+        const body = await req.json();
+        const { type, id, data } = body;
+
+        if (!id) {
+            return NextResponse.json({ success: false, error: 'ID no proporcionado' }, { status: 400 });
+        }
+
+        // Verificar que el elemento pertenezca a esta agencia
+        let existingItem;
+        switch (type) {
+            case 'product':
+                existingItem = await ProductService.getProductById(id);
+                break;
+            case 'area':
+                existingItem = await AreaService.getAreaById(id);
+                break;
+            case 'provider':
+                existingItem = await ProviderService.getProviderById(id);
+                break;
+            default:
+                return NextResponse.json({ success: false, error: 'Tipo de operación no válido' }, { status: 400 });
+        }
+
+        if (!existingItem || existingItem.agencyId !== agencyId) {
+            return NextResponse.json({ success: false, error: 'Elemento no encontrado o sin acceso' }, { status: 404 });
+        }
+
+        // Actualizar el elemento
+        let result;
+        switch (type) {
+            case 'product':
+                result = await ProductService.updateProduct(id, data);
+                break;
+            case 'area':
+                result = await AreaService.updateArea(id, data);
+                break;
+            case 'provider':
+                result = await ProviderService.updateProvider(id, data);
+                break;
+            default:
+                return NextResponse.json({ success: false, error: 'Tipo de operación no válido' }, { status: 400 });
+        }
+
+        return NextResponse.json({ success: true, data: result });
+    } catch (error: any) {
+        console.error('Error en PUT inventory:', error);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
-
-    const body = await req.json();
-    const { type, id, data } = body;
-    let result;
-
-    switch (type) {
-      case 'product':
-        result = await ProductService.updateProduct(id, data);
-        break;
-      case 'area':
-        result = await AreaService.updateArea(id, data);
-        break;
-      case 'provider':
-        result = await ProviderService.updateProvider(id, data);
-        break;
-      default:
-        return NextResponse.json(
-          { error: 'Tipo de operación no válido' },
-          { status: 400 }
-        );
-    }
-
-    return NextResponse.json({ success: true, data: result });
-  } catch (error) {
-    console.error(`Error en la API de inventario:`, error);
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
-  }
 }
 
-// Manejador para eliminar elementos
-export async function DELETE(
-  req: Request,
-  { params }: { params: { agencyId: string } }
-) {
-  try {
-    const { authorized, error, status } = await checkAuthorization(params.agencyId);
-    if (!authorized) {
-      return NextResponse.json({ error }, { status });
+// DELETE: Eliminar elementos
+export async function DELETE(req: NextRequest, { params }: { params: { agencyId: string } }) {
+    try {
+        const agencyId = params.agencyId;
+
+        // Verificar acceso
+        const hasAccess = await hasAgencyAccess(agencyId);
+        if (!hasAccess) {
+            return NextResponse.json({ success: false, error: 'No tienes acceso a esta agencia' }, { status: 403 });
+        }
+
+        const url = new URL(req.url);
+        const type = url.searchParams.get('type');
+        const id = url.searchParams.get('id');
+
+        if (!id) {
+            return NextResponse.json({ success: false, error: 'ID no proporcionado' }, { status: 400 });
+        }
+
+        // Verificar que el elemento pertenezca a esta agencia
+        let existingItem;
+        switch (type) {
+            case 'product':
+                existingItem = await ProductService.getProductById(id);
+                break;
+            case 'area':
+                existingItem = await AreaService.getAreaById(id);
+                break;
+            case 'provider':
+                existingItem = await ProviderService.getProviderById(id);
+                break;
+            default:
+                return NextResponse.json({ success: false, error: 'Tipo de operación no válido' }, { status: 400 });
+        }
+
+        if (!existingItem || existingItem.agencyId !== agencyId) {
+            return NextResponse.json({ success: false, error: 'Elemento no encontrado o sin acceso' }, { status: 404 });
+        }
+
+        // Eliminar el elemento
+        let result;
+        switch (type) {
+            case 'product':
+                result = await ProductService.deleteProduct(id);
+                break;
+            case 'area':
+                result = await AreaService.deleteArea(id);
+                break;
+            case 'provider':
+                result = await ProviderService.deleteProvider(id);
+                break;
+            default:
+                return NextResponse.json({ success: false, error: 'Tipo de operación no válido' }, { status: 400 });
+        }
+
+        return NextResponse.json({ success: true, data: result });
+    } catch (error: any) {
+        console.error('Error en DELETE inventory:', error);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
-
-    const { searchParams } = new URL(req.url);
-    const type = searchParams.get('type');
-    const id = searchParams.get('id');
-
-    if (!type || !id) {
-      return NextResponse.json(
-        { error: 'Tipo y ID son requeridos' },
-        { status: 400 }
-      );
-    }
-
-    let result;
-    switch (type) {
-      case 'product':
-        result = await ProductService.deleteProduct(id);
-        break;
-      case 'area':
-        result = await AreaService.deleteArea(id);
-        break;
-      case 'provider':
-        result = await ProviderService.deleteProvider(id);
-        break;
-      default:
-        return NextResponse.json(
-          { error: 'Tipo de operación no válido' },
-          { status: 400 }
-        );
-    }
-
-    return NextResponse.json({ success: true, result });
-  } catch (error) {
-    console.error(`Error en la API de inventario:`, error);
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
-  }
 }

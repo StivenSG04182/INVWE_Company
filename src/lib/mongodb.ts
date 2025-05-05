@@ -1,95 +1,103 @@
-import { MongoClient, Db } from 'mongodb';
+import { MongoClient, Db, ObjectId } from 'mongodb';
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('Por favor, define la variable de entorno MONGODB_URI');
-}
-
-if (!process.env.MONGODB_DB) {
-  throw new Error('Por favor, define la variable de entorno MONGODB_DB');
-}
-
-const uri = process.env.MONGODB_URI;
-const dbName = process.env.MONGODB_DB;
-
-let cachedClient: MongoClient | null = null;
-let cachedDb: Db | null = null;
-
-export async function connectToDatabase() {
-  // Si ya tenemos una conexión, la reutilizamos
-  if (cachedClient && cachedDb) {
-    return { client: cachedClient, db: cachedDb };
-  }
-
-  // Creamos una nueva conexión
-  const client = new MongoClient(uri);
-  await client.connect();
-  
-  const db = client.db(dbName);
-  
-  // Guardamos la conexión en caché
-  cachedClient = client;
-  cachedDb = db;
-  
-  return { client, db };
-}
-
-// Modelos para el sistema de inventario
+// Interfaces para los modelos de datos
 export interface IProduct {
-  _id?: string;
+  _id?: ObjectId;
+  agencyId: string;
   name: string;
   description?: string;
   sku: string;
   barcode?: string;
   price: number;
   cost?: number;
-  categoryId?: string;
-  images?: string[];
   minStock?: number;
-  agencyId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface IStock {
-  _id?: string;
-  productId: string;
-  areaId: string;
-  quantity: number;
-  agencyId: string;
-  createdAt: Date;
-  updatedAt: Date;
+  images?: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface IArea {
-  _id?: string;
+  _id?: ObjectId;
+  agencyId: string;
   name: string;
   description?: string;
-  agencyId: string;
-  createdAt: Date;
-  updatedAt: Date;
+  layout?: {
+    items: Array<{
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      rotation?: number;
+      color?: string;
+    }>;
+  };
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface IProvider {
-  _id?: string;
+  _id?: ObjectId;
+  agencyId: string;
   name: string;
   contactName?: string;
   email?: string;
   phone?: string;
   address?: string;
+  active?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IStock {
+  _id?: ObjectId;
   agencyId: string;
-  createdAt: Date;
-  updatedAt: Date;
+  productId: string;
+  areaId: string;
+  quantity: number;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface IMovement {
-  _id?: string;
-  type: 'entrada' | 'salida';
+  _id?: ObjectId;
+  agencyId: string;
+  type: 'entrada' | 'salida' | 'transferencia';
   productId: string;
   areaId: string;
   quantity: number;
   providerId?: string;
   notes?: string;
-  agencyId: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+// Variables para la conexión a MongoDB
+let cachedClient: MongoClient | null = null;
+let cachedDb: Db | null = null;
+
+// URI de conexión a MongoDB
+const uri = process.env.MONGODB_URI || '';
+const dbName = process.env.MONGODB_DB || 'invwe_db';
+
+if (!uri) {
+  throw new Error('Por favor, define la variable de entorno MONGODB_URI');
+}
+
+// Función para conectar a la base de datos
+export async function connectToDatabase() {
+  // Si ya tenemos una conexión, la reutilizamos
+  if (cachedClient && cachedDb) {
+    return { client: cachedClient, db: cachedDb };
+  }
+
+  // Crear una nueva conexión
+  const client = new MongoClient(uri);
+  await client.connect();
+  const db = client.db(dbName);
+
+  // Guardar la conexión en caché
+  cachedClient = client;
+  cachedDb = db;
+
+  return { client, db };
 }
