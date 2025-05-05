@@ -35,7 +35,7 @@ export const menuSections: MenuSection[] = [
             },
         ],
     },
-    {
+/*     {
         items: [
             {
                 icon: Store,
@@ -48,7 +48,7 @@ export const menuSections: MenuSection[] = [
                 ],
             },
         ],
-    },
+    }, */
     {
         items: [
             {
@@ -87,18 +87,47 @@ export const menuSections: MenuSection[] = [
             },
         ],
     },
-    {
+/*     {
         items: [
             {
                 icon: Settings,
                 label: "Settings",
                 submenu: [
+                    { icon: Users, label: "Clientes", href: "/inventory/[companyName]/clients" },
+                    { icon: Mail, label: "CRM", href: "/inventory/[companyName]/crm" },
+                ],
+            },
+        ],
+    }, */
+    {
+        items: [
+            {
+                icon: FileText,
+                label: "Reportes & Analíticas",
+                submenu: [
+                    { icon: BarChart, label: "Ventas", href: "/inventory/[companyName]/sales" },
+                    { icon: PieChart, label: "Inventario", href: "/inventory/[companyName]/inventory" },
+                    { icon: TrendingUp, label: "Desempeño", href: "/inventory/[companyName]/performance" },
+                ],
+            },
+        ],
+    },
+/*     {
+        items: [
+            {
+                icon: Mail,
+                label: "Emails",
+                submenu: [
+                    { icon: Send, label: "Campañas", href: "/inventory/[companyName]/campaigns" },
+                    { icon: Inbox, label: "Bandeja de entrada", href: "/inventory/[companyName]/inbox" },
+                    { icon: Archive, label: "Archivos", href: "/inventory/[companyName]/archives" },
                     { icon: Shield, label: "Security", href: "/settings/security" },
                     { icon: Bell, label: "Notifications", href: "/settings/notifications" },
                     { icon: Users, label: "Team", href: "/settings/team" },
                 ],
             },
         ],
+    },  */
     },
 ]
 
