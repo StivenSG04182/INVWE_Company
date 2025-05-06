@@ -199,6 +199,7 @@ const getCategoryForOption = (optionName: string): string | null => {
     'Configuración Inicial': 'Configuración & Administración',
     'General Settings': 'Configuración & Administración',
     'Automatización': 'Configuración & Administración',
+    'Soporte': 'Configuración & Administración',
     
   };
   return categoryMap[optionName] || null;

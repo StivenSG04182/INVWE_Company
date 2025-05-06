@@ -10,7 +10,7 @@ export const Header = () => {
                     <span className="text-xl font-semibold">INVWE</span>
                 </Link>
 
-                <nav className="hidden md:flex items-center gap-6">
+                {/* <nav className="hidden md:flex items-center gap-6">
                     <Link href="/features" className="text-white hover:text-white transition-colors">
                         Características
                     </Link>
@@ -23,7 +23,7 @@ export const Header = () => {
                     <Link href="/change" className="text-white hover:text-white transition-colors">
                         Actualizaciones
                     </Link>
-                </nav>
+                </nav> */}
 
                 <div className="flex items-center gap-3">
                     <Link

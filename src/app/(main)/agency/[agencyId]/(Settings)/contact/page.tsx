@@ -90,18 +90,18 @@ const ContactPage = async ({ params, searchParams }: Props) => {
             <CardContent className="space-y-4">
               <div>
                 <h3 className="font-medium">Email</h3>
-                <p className="text-muted-foreground">soporte@tuempresa.com</p>
+                <p className="text-muted-foreground">soporte@invwe.com</p>
               </div>
               <div>
                 <h3 className="font-medium">Teléfono</h3>
-                <p className="text-muted-foreground">+1 (555) 123-4567</p>
+                <p className="text-muted-foreground">+54 316 252 5652</p>
               </div>
               <div>
                 <h3 className="font-medium">Dirección</h3>
                 <p className="text-muted-foreground">
-                  123 Calle Principal<br />
-                  Ciudad, Estado 12345<br />
-                  País
+                  Ejemplo calle<br />
+                  Medellín<br />
+                  Colombia
                 </p>
               </div>
             </CardContent>
