@@ -167,6 +167,7 @@ export const saveActivityLogsNotification = async ({
     });
   }
 };
+
 export const createTeamUser = async (agencyId: string, user: User) => {
   if (user.role === "AGENCY_OWNER") return null;
   const response = await db.user.create({ data: { ...user } });
@@ -176,12 +177,36 @@ export const createTeamUser = async (agencyId: string, user: User) => {
 export const verifyAndAcceptInvitation = async () => {
   const user = await currentUser();
   if (!user) return redirect("/sign-in");
-  const invitationExists = await db.invitation.findUnique({
-    where: {
-      email: user.emailAddresses[0].emailAddress,
-      status: "PENDING",
-    },
-  });
+  
+  console.log('Verificando invitaciones para:', user.emailAddresses[0].emailAddress);
+  
+  // Primero verificamos si hay metadata en el usuario que indique una invitación
+  const metadata = user.publicMetadata;
+  const invitationId = metadata?.invitationId as string | undefined;
+  
+  // Buscar la invitación por ID si está disponible en los metadatos
+  let invitationExists;
+  
+  if (invitationId) {
+    console.log('Buscando invitación por ID:', invitationId);
+    invitationExists = await db.invitation.findUnique({
+      where: {
+        id: invitationId,
+        status: "PENDING",
+      },
+    });
+  }
+  
+  // Si no se encontró por ID o no había ID, buscar por email
+  if (!invitationExists) {
+    console.log('Buscando invitación por email:', user.emailAddresses[0].emailAddress);
+    invitationExists = await db.invitation.findUnique({
+      where: {
+        email: user.emailAddresses[0].emailAddress,
+        status: "PENDING",
+      },
+    });
+  }
   if (invitationExists) {
     const userDetails = await createTeamUser(invitationExists.agencyId, {
       email: invitationExists.email,
@@ -638,36 +663,87 @@ export const getUser = async (id: string) => {
 
 
 export const sendInvitation = async (
-  role: Role,
+  role: Role | undefined,
   email: string,
   agencyId: string
 ) => {
-  // 1. Crear registro local en la DB
-  const invitationRecord = await db.invitation.create({
-    data: { email, agencyId, role },
-  })
+  console.log('1. [sendInvitation] Iniciando con parámetros:', { role, email, agencyId });
+  
+  // Validar parámetros
+  if (!email) {
+    console.error('2. [sendInvitation] Error: Email no proporcionado');
+    throw new Error('El email es obligatorio');
+  }
+  
+  if (!agencyId) {
+    console.error('2. [sendInvitation] Error: AgencyId no proporcionado');
+    throw new Error('El ID de agencia es obligatorio');
+  }
+  
+  // Validar que el rol tenga un valor válido
+  const validRole: Role = role || 'SUBACCOUNT_USER';
+  
+  console.log('3. [sendInvitation] Datos validados:', {
+    email,
+    agencyId,
+    role: validRole
+  });
 
   try {
-    // 2. Crear invitación en Clerk
-    const clerkInvitation = await clerkClient.invitations.createInvitation({
-      emailAddress: email,
-      // Redirect dinámico incluyendo el id de la invitación
-      redirectUrl: `${process.env.NEXT_PUBLIC_URL}/invitation/${invitationRecord.id}/accept`,
-      publicMetadata: {
-        throughInvitation: true,
-        role,
+    // 1. Crear registro local en la DB
+    console.log('4. [sendInvitation] Creando registro en base de datos local');
+    const invitationRecord = await db.invitation.create({
+      data: { 
+        email, 
+        agencyId, 
+        role: validRole,
+        status: "PENDING"
       },
     })
+    
+    console.log('5. [sendInvitation] Registro creado en DB:', invitationRecord);
 
-    // 3. Retornar ambos registros para mayor flexibilidad
-    return { invitationRecord, clerkInvitation }
-  } catch (error) {
-    console.error('Error creando invitación en Clerk:', error)
-    // Si falla Clerk, revertimos la DB local para evitar registros huérfanos
-    await db.invitation.delete({
-      where: { id: invitationRecord.id },
-    })
-    throw error
+    try {
+      // 2. Crear invitación en Clerk
+      console.log('6. [sendInvitation] Creando invitación en Clerk');
+      // Cambiamos la URL de redirección para usar la ruta existente en la aplicación
+      // que maneja la verificación y aceptación de invitaciones
+      const redirectUrl = `${process.env.NEXT_PUBLIC_URL}agency?invitationId=${invitationRecord.id}`;
+      console.log('URL de redirección:', redirectUrl);
+      
+      const clerkInvitation = await clerkClient.invitations.createInvitation({
+        emailAddress: email,
+        redirectUrl: redirectUrl,
+        publicMetadata: {
+          throughInvitation: true,
+          role: validRole,
+          invitationId: invitationRecord.id,
+          agencyId: agencyId
+        },
+      })
+      
+      console.log('7. [sendInvitation] Invitación creada en Clerk:', {
+        id: clerkInvitation.id,
+        status: clerkInvitation.status
+      });
+
+      // 3. Retornar ambos registros para mayor flexibilidad
+      console.log('8. [sendInvitation] Proceso completado con éxito');
+      return { invitationRecord, clerkInvitation }
+    } catch (clerkError) {
+      console.error('7. [sendInvitation] Error creando invitación en Clerk:', clerkError);
+      
+      // Si falla Clerk, revertimos la DB local para evitar registros huérfanos
+      console.log('8. [sendInvitation] Eliminando registro local debido al error');
+      await db.invitation.delete({
+        where: { id: invitationRecord.id },
+      })
+      
+      throw clerkError;
+    }
+  } catch (dbError) {
+    console.error('4. [sendInvitation] Error creando registro en base de datos:', dbError);
+    throw dbError;
   }
 }
 
