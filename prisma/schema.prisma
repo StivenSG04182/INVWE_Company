@@ -493,6 +493,7 @@ enum Icon {
   category
   contact
   clipboardIcon
+  store
 }
 
 enum TriggerTypes {

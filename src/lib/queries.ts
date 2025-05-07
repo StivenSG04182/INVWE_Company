@@ -420,39 +420,51 @@ export const getNotificationAndUser = async (agencyId: string) => {
 
 
 export const upsertSubAccount = async (subAccount: SubAccount) => {
-  if (!subAccount.companyEmail) return null
-  const agencyOwner = await db.user.findFirst({
-    where: {
-      Agency: {
-        id: subAccount.agencyId,
-      },
-      role: 'AGENCY_OWNER'
-    }
+  console.log('1. Iniciando upsertSubAccount con:', {
+    id: subAccount.id,
+    companyEmail: subAccount.companyEmail,
+    agencyId: subAccount.agencyId,
   })
-  if (!agencyOwner) return console.log('Error could not create subaccount because currently not agency owner')
-  const permissionId = v4();
-  const response = await db.subAccount.upsert({
-    where: {
-      id: subAccount.id
-    },
-    update: subAccount,
-    create: {
-      ...subAccount,
-      Permissions: {
-        create: {
-          access: true,
-          email: agencyOwner.email,
-          id: permissionId,
-        },
-        connect: {
-          subAccountId: subAccount.id,
-          id: permissionId
-        },
+
+  if (!subAccount.companyEmail) {
+    console.log('2. Error: No se proporcionó email de compañía')
+    return null
+  }
+
+  try {
+    console.log('3. Buscando propietario de la agencia:', subAccount.agencyId)
+    const agencyOwner = await db.user.findFirst({
+      where: {
+        Agency: { id: subAccount.agencyId },
+        role: 'AGENCY_OWNER',
       },
-      Pipeline: {
-        create: { name: 'Lead Cycle' },
-      },
-      SidebarOption: {
+    })
+
+    if (!agencyOwner) {
+      console.error(
+        '4. Error: No se pudo crear subcuenta porque no se encontró propietario'
+      )
+      return null
+    }
+
+    console.log('5. Propietario encontrado:', agencyOwner.email)
+    const permissionId = v4()
+    console.log('6. Creando subcuenta con ID de permiso:', permissionId)
+
+    const response = await db.subAccount.upsert({
+      where: { id: subAccount.id },
+      update: subAccount,
+      create: {
+        ...subAccount,
+        Permissions: {
+          create: {
+            id: permissionId,
+            email: agencyOwner.email,
+            access: true,
+          },
+        },
+        Pipeline: { create: { name: 'Lead Cycle' } },
+        SidebarOption: {
           create: [
             // 1. Dashboard & Visión general
             { name: "Dashboard & Visión general", icon: "chart", link: "#" },
@@ -514,10 +526,28 @@ export const upsertSubAccount = async (subAccount: SubAccount) => {
             { name: "Usuarios & Permisos", icon: "settings", link: `/subaccount/${subAccount.id}/(Settings)/users` },
             { name: "General Settings", icon: "tune", link: `/subaccount/${subAccount.id}/(Settings)/settings` },
           ],
+        },
       },
+    })
+
+    console.log('7. Subcuenta creada/actualizada:', {
+      id: response.id,
+      name: response.name,
+    })
+    return response
+  } catch (error) {
+    console.error('8. Error al crear/actualizar subcuenta:', error)
+    if (error instanceof Prisma.PrismaClientValidationError) {
+      console.error(
+        'Error de validación de Prisma. Verifica los campos obligatorios.'
+      )
+    } else if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.error(
+        `Error conocido de Prisma: ${error.message}. Código: ${error.code}`
+      )
     }
-  })
-  return response
+    return null
+  }
 }
 
 export const getUserPermissions = async (userId: string) => {

@@ -363,7 +363,7 @@ const MenuOptions = ({
         )}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-center mb-8 ">
+          <div className="flex items-center justify-center mb-8">
             <AspectRatio ratio={16 / 5} className="w-full max-w-[200px]">
               <Image
                 src={sidebarLogo}

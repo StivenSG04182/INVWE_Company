@@ -2,6 +2,9 @@ import { db } from '@/lib/db'
 import { redirect } from 'next/navigation'
 import React from 'react'
 import BlurPage from '@/components/global/blur-page'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+import { PlusCircleIcon } from 'lucide-react'
 
 type Props = {
   params: { agencyId: string }
@@ -18,13 +21,22 @@ const Pipelines = async ({ params }: Props) => {
     }
   })
   
-  // Si no hay subcuentas, mostrar mensaje informativo
+  // Si no hay subcuentas, mostrar mensaje informativo y botón para crear subcuentas
   if (subAccounts.length === 0) {
     return (
       <BlurPage>
         <div className="flex flex-col items-center justify-center h-full p-4 text-center">
           <h2 className="text-2xl font-bold mb-2">No hay subcuentas disponibles</h2>
-          <p>Necesita crear al menos una subcuenta para poder gestionar pipelines.</p>
+          <p className="mb-6">Necesita crear al menos una subcuenta para poder gestionar pipelines.</p>
+          <Button asChild className="gap-2">
+            <Link href={`/agency/${params.agencyId}/stores`}>
+              <PlusCircleIcon size={20} />
+              Crear Subcuenta
+            </Link>
+          </Button>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Al crear una subcuenta, podrá gestionar pipelines y otros recursos asociados a ella.
+          </p>
         </div>
       </BlurPage>
     )

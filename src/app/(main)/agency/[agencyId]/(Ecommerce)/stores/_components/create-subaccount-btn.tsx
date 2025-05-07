@@ -32,7 +32,7 @@ const CreateSubaccountButton = ({ className, id, user }: Props) => {
 
   return (
     <Button
-      className={twMerge('w-full flex gap-4', className)}
+      className={twMerge('w-full flex gap-4 overflow-y-auto', className)}
       onClick={() => {
         setOpen(
           <CustomModal
