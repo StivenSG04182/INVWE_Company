@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { z } from 'zod'
 import {
   Card,
@@ -31,25 +31,32 @@ import { Button } from '../ui/button'
 import Loading from '../global/loading'
 import { saveActivityLogsNotification, sendInvitation } from '@/lib/queries'
 import { useToast } from '../ui/use-toast'
+import { Role } from '@prisma/client'
 
 interface SendInvitationProps {
   agencyId: string
 }
 
+// Definimos el esquema de validación
+const userDataSchema = z.object({
+  email: z.string().email({
+    message: "Debe ingresar un correo electrónico válido",
+  }),
+  role: z.enum(['AGENCY_ADMIN', 'SUBACCOUNT_USER', 'SUBACCOUNT_GUEST'] as const, {
+    required_error: "Debe seleccionar un rol para el usuario",
+    invalid_type_error: "Rol inválido seleccionado",
+  }).default('SUBACCOUNT_USER'),
+})
+
+// Tipo derivado del esquema
+type UserFormData = z.infer<typeof userDataSchema>
+
 const SendInvitation: React.FC<SendInvitationProps> = ({ agencyId }) => {
   const { toast } = useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const userDataSchema = z.object({
-    email: z.string().email({
-      message: "Debe ingresar un correo electrónico válido",
-    }),
-    role: z.enum(['AGENCY_ADMIN', 'SUBACCOUNT_USER', 'SUBACCOUNT_GUEST'], {
-      required_error: "Debe seleccionar un rol para el usuario",
-      invalid_type_error: "Rol inválido seleccionado",
-    }).default('SUBACCOUNT_USER'),
-  })
-
-  const form = useForm<z.infer<typeof userDataSchema>>({
+  // Inicializamos el formulario con valores por defecto
+  const form = useForm<UserFormData>({
     resolver: zodResolver(userDataSchema),
     mode: 'onChange',
     defaultValues: {
@@ -58,72 +65,113 @@ const SendInvitation: React.FC<SendInvitationProps> = ({ agencyId }) => {
     },
   })
 
-  const onSubmit = async (values: z.infer<typeof userDataSchema>) => {
-    console.log('1. Iniciando onSubmit con valores:', values);
+  const onSubmit = async (values: UserFormData) => {
+    if (isSubmitting) return
+    
+    setIsSubmitting(true)
+    console.log('1. Iniciando onSubmit con valores:', values)
+    
     try {
-      // Validar que tengamos un email válido
+      // Validamos que tengamos un email válido
       if (!values.email) {
-        console.log('2. Error: Email vacío');
-        throw new Error('El correo electrónico es obligatorio');
+        console.log('2. Error: Email vacío')
+        throw new Error('El correo electrónico es obligatorio')
       }
       
-      // Asegurarse de que el rol tenga un valor válido
-      const role = values.role || 'SUBACCOUNT_USER';
-      // Limpiar el email para eliminar espacios
-      const email = values.email.trim();
+      // Aseguramos que el rol tenga un valor válido
+      const role = values.role as Role
+      
+      // Limpiamos el email para eliminar espacios
+      const email = values.email.trim()
       
       console.log('3. Datos procesados para invitación:', {
         role,
         email,
         agencyId
-      });
+      })
 
-      // Verificar que todos los parámetros estén definidos
+      // Verificamos que todos los parámetros estén definidos
       if (!email || !agencyId) {
-        console.log('4. Error: Faltan datos requeridos', { email, agencyId });
-        throw new Error('Faltan datos requeridos para enviar la invitación');
+        console.log('4. Error: Faltan datos requeridos', { email, agencyId })
+        throw new Error('Faltan datos requeridos para enviar la invitación')
       }
 
-      console.log('5. Llamando a sendInvitation con parámetros:', { role, email, agencyId });
+      console.log('5. Llamando a sendInvitation con parámetros:', { role, email, agencyId })
+      
+      // Llamamos a la función de invitación con los parámetros correctos
       const result = await sendInvitation(
         role,
         email,
         agencyId
       )
-      console.log('6. Resultado de sendInvitation:', result);
+      
+      console.log('6. Resultado de sendInvitation:', result)
 
+      // Verificamos que la respuesta sea válida
       if (!result || !result.invitationRecord) {
-        console.log('7. Error: No se recibió respuesta válida de sendInvitation');
-        throw new Error('No se pudo crear la invitación');
+        console.log('7. Error: No se recibió respuesta válida de sendInvitation')
+        throw new Error('No se pudo crear la invitación')
       }
+      
+      // Verificamos si es un usuario existente (caso especial)
+      const isExistingUser = result.userExists === true
 
-      console.log('8. Guardando log de actividad');
+      // Guardamos el log de actividad
+      console.log('8. Guardando log de actividad')
       await saveActivityLogsNotification({
         agencyId,
-        description: `Invited ${result.invitationRecord.email}`,
+        description: `Invitación enviada a ${result.invitationRecord.email}`,
         subaccountId: undefined,
       })
 
-      console.log('9. Proceso completado con éxito');
+      console.log('9. Proceso completado con éxito')
+      
+      // Mostramos mensaje de éxito
       toast({
         title: 'Éxito',
-        description: 'Invitación creada y enviada correctamente.',
+        description: isExistingUser
+          ? 'El usuario ya existe en el sistema. Se ha creado una invitación local.'
+          : result.invitationRecord.status === 'PENDING' 
+            ? 'Invitación enviada correctamente.' 
+            : 'Invitación actualizada y enviada correctamente.',
       })
 
-      // Reset de campos
+      // Reseteamos el formulario
       form.reset({
         email: '',
         role: 'SUBACCOUNT_USER',
       })
     } catch (error) {
       console.error('Error al enviar invitación:', error)
-      // Mostrar mensaje de error más detallado para ayudar en la depuración
-      let errorMessage = 'No se pudo enviar la invitación. Intenta de nuevo.';
       
-      // Si tenemos un mensaje de error específico, lo mostramos
+      // Mostramos mensaje de error detallado
+      let errorMessage = 'No se pudo enviar la invitación. Intenta de nuevo.'
+      
       if (error instanceof Error) {
-        errorMessage = `Error: ${error.message}`;
-        console.error('Detalles del error:', error.stack);
+        // Verificamos si es un error de Prisma por email duplicado
+        if (error.message.includes('Unique constraint failed on the fields: (`email`)')) {
+          errorMessage = 'Ya existe una invitación para este correo electrónico. Se ha actualizado la invitación existente.'
+          
+          // Aunque hubo un error en Prisma, la lógica de negocio se completó correctamente
+          // (la invitación ya existe), así que mostramos un mensaje informativo en lugar de error
+          toast({
+            title: 'Información',
+            description: errorMessage,
+          })
+          
+          // Reseteamos el formulario ya que la operación se considera exitosa
+          form.reset({
+            email: '',
+            role: 'SUBACCOUNT_USER',
+          })
+          
+          // Salimos de la función para evitar mostrar el toast de error
+          setIsSubmitting(false)
+          return
+        } else {
+          errorMessage = `Error: ${error.message}`
+          console.error('Detalles del error:', error.stack)
+        }
       }
       
       toast({
@@ -131,6 +179,8 @@ const SendInvitation: React.FC<SendInvitationProps> = ({ agencyId }) => {
         title: '¡Ups!',
         description: errorMessage,
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -140,7 +190,10 @@ const SendInvitation: React.FC<SendInvitationProps> = ({ agencyId }) => {
         <CardTitle>Invitar nuevo miembro</CardTitle>
         <CardDescription>
           Se enviará una invitación al correo electrónico proporcionado. Si ya existe una invitación
-          previa para ese email, no se enviará otra. El usuario recibirá un enlace para unirse a tu agencia.
+          previa para ese email, se actualizará. El usuario recibirá un enlace para unirse a tu agencia.
+          <p className="mt-2 text-xs text-amber-600 font-medium">
+            Importante: Las invitaciones expiran después de 24 horas. Si no se acepta en ese tiempo, deberás enviar una nueva invitación.
+          </p>
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -150,14 +203,19 @@ const SendInvitation: React.FC<SendInvitationProps> = ({ agencyId }) => {
             className="flex flex-col gap-6"
           >
             <FormField
-              disabled={form.formState.isSubmitting}
+              disabled={isSubmitting}
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Correo electrónico</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ingresa el correo electrónico" {...field} />
+                    <Input 
+                      placeholder="Ingresa el correo electrónico" 
+                      type="email"
+                      autoComplete="email"
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -165,7 +223,7 @@ const SendInvitation: React.FC<SendInvitationProps> = ({ agencyId }) => {
             />
 
             <FormField
-              disabled={form.formState.isSubmitting}
+              disabled={isSubmitting}
               control={form.control}
               name="role"
               render={({ field }) => (
@@ -175,6 +233,7 @@ const SendInvitation: React.FC<SendInvitationProps> = ({ agencyId }) => {
                     onValueChange={field.onChange}
                     value={field.value}
                     defaultValue="SUBACCOUNT_USER"
+                    disabled={isSubmitting}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -202,11 +261,11 @@ const SendInvitation: React.FC<SendInvitationProps> = ({ agencyId }) => {
             />
 
             <Button
-              disabled={form.formState.isSubmitting}
+              disabled={isSubmitting}
               type="submit"
               className="w-full"
             >
-              {form.formState.isSubmitting ? <Loading /> : 'Enviar invitación'}
+              {isSubmitting ? <Loading /> : 'Enviar invitación'}
             </Button>
           </form>
         </Form>

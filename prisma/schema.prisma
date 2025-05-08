@@ -333,6 +333,7 @@ model Invitation {
   agencyId String
   status   InvitationStatus @default(PENDING)
   role     Role             @default(SUBACCOUNT_USER)
+  createdAt DateTime        @default(now())
   Agency   Agency           @relation(fields: [agencyId], references: [id], onDelete: Cascade)
 
   @@index([agencyId])

@@ -1,6 +1,7 @@
 "use server";
 
-import { clerkClient, currentUser } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
+import { clerkClient } from "@clerk/clerk-sdk-node";
 import { db } from "./db";
 import { redirect } from "next/navigation";
 import { Agency, Lane, Plan, Prisma, Role, SubAccount, Tag, Ticket, User } from "@prisma/client";
@@ -207,7 +208,35 @@ export const verifyAndAcceptInvitation = async () => {
       },
     });
   }
+  
   if (invitationExists) {
+    // Verificar si la invitación ha expirado (24 horas desde su creación)
+    const now = new Date();
+    const createdAt = invitationExists.createdAt;
+    const expirationTime = new Date(createdAt);
+    expirationTime.setHours(expirationTime.getHours() + 24);
+    
+    if (now > expirationTime) {
+      console.log('Invitación expirada:', invitationExists.email, 'Creada el:', createdAt, 'Expiró el:', expirationTime);
+      
+      // Actualizamos el estado de la invitación a REVOKED (usamos este estado en lugar de EXPIRED ya que no requiere migración)
+      await db.invitation.update({
+        where: { id: invitationExists.id },
+        data: { status: "REVOKED" }
+      });
+      
+      // Guardamos un log de la expiración
+      await saveActivityLogsNotification({
+        agencyId: invitationExists.agencyId,
+        description: `Invitación para ${invitationExists.email} expirada (más de 24 horas)`,
+        subaccountId: undefined,
+      });
+      
+      // Redirigimos con un mensaje de error
+      throw new Error('La invitación ha expirado. Por favor, solicita una nueva invitación.');
+    }
+    
+    // La invitación es válida, procedemos a aceptarla
     const userDetails = await createTeamUser(invitationExists.agencyId, {
       email: invitationExists.email,
       agencyId: invitationExists.agencyId,
@@ -218,6 +247,7 @@ export const verifyAndAcceptInvitation = async () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+    
     await saveActivityLogsNotification({
       agencyId: invitationExists?.agencyId,
       description: `Joined`,
@@ -300,8 +330,7 @@ export const initUser = async (newUser: Partial<User>) => {
     if (user.id) {
       console.log('6. Preparando actualización de metadatos en Clerk');
       try {
-        const clerk = await clerkClient();
-        await clerk.users.updateUser(user.id, {
+        await clerkClient.users.updateUser(user.id, {
           privateMetadata: {
             role: newUser.role || "SUBACCOUNT_USER",
             agencyId: userData.agencyId,
@@ -347,9 +376,9 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "Dashboard & Visión general", icon: "chart", link: "#" },
             { name: "Dashboard", icon: "category", link: `/agency/${agency.id}` },
             { name: "Análisis", icon: "chart", link: `/agency/${agency.id}/(Dashboard)/analytics` },
-            /* { name: "Actividad", icon: "calendar", link: `/agency/${agency.id}/(Dashboard)/activity` }, */
+            { name: "Actividad", icon: "calendar", link: `/agency/${agency.id}/(Dashboard)/activity` },
             { name: "Visión general", icon: "chart", link: `/agency/${agency.id}/(Dashboard)/overview` }, 
-            /* { name: "Integraciones", icon: "link", link: `/agency/${agency.id}/(Dashboard)/integrations` }, */
+            { name: "Integraciones", icon: "link", link: `/agency/${agency.id}/(Dashboard)/integrations` },
 
             // 2. Gestión de Inventario
             { name: "Gestión de Inventario", icon: "database", link: "#" },
@@ -357,57 +386,57 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "Stock", icon: "database", link: `/agency/${agency.id}/(Inventory)/stock` },
             { name: "Movimientos", icon: "compass", link: `/agency/${agency.id}/(Inventory)/movements` },
             { name: "Proveedores", icon: "person", link: `/agency/${agency.id}/(Inventory)/providers` },
-            /* { name: "Áreas de Inventario", icon: "home", link: `/agency/${agency.id}/(Inventory)/areas` }, */
+            { name: "Áreas de Inventario", icon: "home", link: `/agency/${agency.id}/(Inventory)/areas` },
 
             // 3. Tienda & E-Commerce
-            /* { name: "Tienda & E-Commerce", icon: "category", link: "#" },
+            { name: "Tienda & E-Commerce", icon: "category", link: "#" },
             { name: "Tiendas", icon: "category", link: `/agency/${agency.id}/(Ecommerce)/stores` },
             { name: "E-Commerce", icon: "pipelines", link: `/agency/${agency.id}/(Ecommerce)/funnels` },
-            { name: "Envíos", icon: "send", link: `/agency/${agency.id}/(Ecommerce)/shipping` }, */
+            { name: "Envíos", icon: "send", link: `/agency/${agency.id}/(Ecommerce)/shipping` },
 
             // 4. Ventas & Facturación
             { name: "Ventas & Facturación", icon: "payment", link: "#" },
             { name: "Transacciones", icon: "receipt", link: `/agency/${agency.id}/(Billing)/transactions` },
             { name: "Facturas", icon: "receipt", link: `/agency/${agency.id}/(Billing)/invoices` },
-            /* { name: "Notas Crédito/Débito", icon: "receipt", link: `/agency/${agency.id}/(Billing)/notes` }, */
+            { name: "Notas Crédito/Débito", icon: "receipt", link: `/agency/${agency.id}/(Billing)/notes` },
             { name: "Configuración DIAN", icon: "settings", link: `/agency/${agency.id}/(Billing)/dian-config` },
             { name: "Reportes", icon: "chart", link: `/agency/${agency.id}/(Billing)/reports` },
             { name: "Pagos", icon: "payment", link: `/agency/${agency.id}/(Billing)/payments` },
             { name: "Billing", icon: "payment", link: `/agency/${agency.id}/(Billing)/billing-store` },
 
             // 5. Clientes & CRM
-            /*  { name: "Clientes & CRM", icon: "person", link: "#" },
+            { name: "Clientes & CRM", icon: "person", link: "#" },
             { name: "Clientes", icon: "person", link: `/agency/${agency.id}/(Customers)/clients` },
-            { name: "CRM", icon: "contact", link: `/agency/${agency.id}/(Customers)/crm` }, */
+            { name: "CRM", icon: "contact", link: `/agency/${agency.id}/(Customers)/crm` },
 
             // 6. Personal & RRHH
             { name: "Personal & RRHH", icon: "person", link: "#" },
             { name: "Empleados", icon: "person", link: `/agency/${agency.id}/(Staff)/team` },
             { name: "Horarios & Nómina", icon: "calendar", link: `/agency/${agency.id}/(Staff)/schedule` },
             { name: "Contactos", icon: "contact", link: `/agency/${agency.id}/(Staff)/contacts` },
-            /* { name: "Pipelines", icon: "flag", link: `/agency/${agency.id}/(Staff)/pipelines` }, */
+            { name: "Pipelines", icon: "flag", link: `/agency/${agency.id}/(Staff)/pipelines` },
 
             // 7. Comunicaciones
-            /* { name: "Comunicaciones", icon: "messages", link: "#" },
+            { name: "Comunicaciones", icon: "messages", link: "#" },
             { name: "Campañas", icon: "send", link: `/agency/${agency.id}/(Communications)/campaigns` },
             { name: "Bandeja de entrada", icon: "messages", link: `/agency/${agency.id}/(Communications)/inbox` },
             { name: "Medios", icon: "database", link: `/agency/${agency.id}/(Communications)/media` },
-            { name: "Chat", icon: "messages", link: `/agency/${agency.id}/(Communications)/chat` }, */
+            { name: "Chat", icon: "messages", link: `/agency/${agency.id}/(Communications)/chat` },
 
             // 8. Reportes & Analíticas
             { name: "Reportes & Analíticas", icon: "chart", link: "#" },
             { name: "Ventas", icon: "chart", link: `/agency/${agency.id}/(Reports)/sales-reports` },
-/*             { name: "Inventario", icon: "database", link: `/agency/${agency.id}/(Reports)/inventory-reports` },
+            { name: "Inventario", icon: "database", link: `/agency/${agency.id}/(Reports)/inventory-reports` },
             { name: "Desempeño", icon: "chart", link: `/agency/${agency.id}/(Reports)/performance` },
             { name: "Finanzas", icon: "chart", link: `/agency/${agency.id}/(Reports)/financial-reports` },
-            { name: "Reportes Productos", icon: "chart", link: `/agency/${agency.id}/(Reports)/product-reports` }, */
+            { name: "Reportes Productos", icon: "chart", link: `/agency/${agency.id}/(Reports)/product-reports` },
 
             // 9. Configuración & Administración
             { name: "Configuración & Administración", icon: "settings", link: "#" },
             { name: "Ajustes de Empresa", icon: "settings", link: `/agency/${agency.id}/(Settings)/company-settings` },
             { name: "Usuarios & Permisos", icon: "settings", link: `/agency/${agency.id}/(Settings)/users` },
-            /* { name: "Facturación", icon: "payment", link: `/agency/${agency.id}/(Settings)/billing` }, */
-            /* { name: "Configuración Inicial", icon: "settings", link: `/agency/${agency.id}/(Settings)/launchpad` }, */
+            { name: "Facturación", icon: "payment", link: `/agency/${agency.id}/(Settings)/billing` },
+            { name: "Configuración Inicial", icon: "settings", link: `/agency/${agency.id}/(Settings)/launchpad` }, 
             { name: "General Settings", icon: "tune", link: `/agency/${agency.id}/(Settings)/settings` },
             { name: "Soporte", icon: "settings", link: `/agency/${agency.id}/(Settings)/contact` },
           ],
@@ -690,27 +719,88 @@ export const sendInvitation = async (
   });
 
   try {
-    // 1. Crear registro local en la DB
-    console.log('4. [sendInvitation] Creando registro en base de datos local');
-    const invitationRecord = await db.invitation.create({
-      data: { 
-        email, 
-        agencyId, 
-        role: validRole,
-        status: "PENDING"
-      },
-    })
+    // Verificar si ya existe una invitación con este email
+    console.log('4. [sendInvitation] Verificando si ya existe una invitación para este email');
+    const existingInvitation = await db.invitation.findFirst({
+      where: { email },
+    });
     
-    console.log('5. [sendInvitation] Registro creado en DB:', invitationRecord);
+    let invitationRecord;
+    
+    if (existingInvitation) {
+      console.log('4.1 [sendInvitation] Invitación existente encontrada, actualizando:', existingInvitation);
+      // Actualizar la invitación existente
+      invitationRecord = await db.invitation.update({
+        where: { id: existingInvitation.id },
+        data: { 
+          role: validRole,
+          status: "PENDING",
+          agencyId: agencyId
+          // La fecha de creación se actualizará automáticamente
+        },
+      });
+      console.log('4.2 [sendInvitation] Invitación actualizada en DB:', invitationRecord);
+    } else {
+      // Crear una nueva invitación
+      console.log('4.3 [sendInvitation] Creando nuevo registro en base de datos');
+      invitationRecord = await db.invitation.create({
+        data: { 
+          email, 
+          agencyId, 
+          role: validRole,
+          status: "PENDING"
+          // La fecha de creación se establecerá automáticamente
+        },
+      });
+      console.log('4.4 [sendInvitation] Nuevo registro creado en DB:', invitationRecord);
+    }
+    
+    console.log('5. [sendInvitation] Registro en DB:', invitationRecord);
 
     try {
-      // 2. Crear invitación en Clerk
-      console.log('6. [sendInvitation] Creando invitación en Clerk');
-      // Cambiamos la URL de redirección para usar la ruta existente en la aplicación
-      // que maneja la verificación y aceptación de invitaciones
+      // Verificar si el usuario ya existe en Clerk
+      console.log('6. [sendInvitation] Verificando si el usuario ya existe en Clerk');
+      
+      // Intentar buscar el usuario por email en Clerk
+      let userExists = false;
+      try {
+        const users = await clerkClient.users.getUserList({
+          emailAddress: [email],
+        });
+        userExists = users.length > 0;
+        console.log('6.1 [sendInvitation] Resultado de búsqueda en Clerk:', { userExists, usersFound: users.length });
+      } catch (searchError) {
+        console.error('6.2 [sendInvitation] Error al buscar usuario en Clerk:', searchError);
+        // Continuamos el proceso aunque falle la búsqueda
+      }
+      
+      if (userExists) {
+        // Si el usuario ya existe en Clerk, no creamos una invitación en Clerk
+        // pero mantenemos el registro local para el proceso de verificación
+        console.log('7. [sendInvitation] Usuario ya existe en Clerk, omitiendo creación de invitación');
+        
+        // Registrar actividad
+        await saveActivityLogsNotification({
+          agencyId: agencyId,
+          description: `Invitación enviada a usuario existente: ${email}`,
+          subaccountId: undefined,
+        });
+        
+        // Retornar información de la invitación local
+        console.log('8. [sendInvitation] Proceso completado (usuario existente)');
+        return { 
+          invitationRecord,
+          userExists: true,
+          message: "El usuario ya existe en el sistema. Se ha creado una invitación local."
+        };
+      }
+      
+      // Si el usuario no existe, procedemos con la invitación normal en Clerk
+      console.log('6.3 [sendInvitation] Creando invitación en Clerk para nuevo usuario');
       const redirectUrl = `${process.env.NEXT_PUBLIC_URL}agency?invitationId=${invitationRecord.id}`;
       console.log('URL de redirección:', redirectUrl);
       
+      // Usamos el cliente de Clerk correctamente para crear invitaciones
       const clerkInvitation = await clerkClient.invitations.createInvitation({
         emailAddress: email,
         redirectUrl: redirectUrl,
@@ -720,24 +810,49 @@ export const sendInvitation = async (
           invitationId: invitationRecord.id,
           agencyId: agencyId
         },
-      })
+      });
       
       console.log('7. [sendInvitation] Invitación creada en Clerk:', {
         id: clerkInvitation.id,
         status: clerkInvitation.status
       });
 
-      // 3. Retornar ambos registros para mayor flexibilidad
+      // Retornar solo datos serializables para evitar errores de serialización
       console.log('8. [sendInvitation] Proceso completado con éxito');
-      return { invitationRecord, clerkInvitation }
-    } catch (clerkError) {
+      return { 
+        invitationRecord, 
+        clerkInvitationId: clerkInvitation.id,
+        clerkInvitationStatus: clerkInvitation.status
+      };
+    } catch (clerkError: any) {
       console.error('7. [sendInvitation] Error creando invitación en Clerk:', clerkError);
       
-      // Si falla Clerk, revertimos la DB local para evitar registros huérfanos
+      // Verificar si el error es porque el usuario ya existe
+      if (clerkError.status === 422 && 
+          clerkError.errors && 
+          clerkError.errors.some((e: any) => e.code === 'form_identifier_exists')) {
+        console.log('7.1 [sendInvitation] El error es porque el email ya existe en Clerk');
+        
+        // Registrar actividad
+        await saveActivityLogsNotification({
+          agencyId: agencyId,
+          description: `Invitación enviada a usuario existente: ${email}`,
+          subaccountId: undefined,
+        });
+        
+        // En este caso, mantenemos el registro local y retornamos un mensaje específico
+        return { 
+          invitationRecord,
+          userExists: true,
+          message: "El usuario ya existe en el sistema. Se ha creado una invitación local."
+        };
+      }
+      
+      // Para otros errores, revertimos la DB local para evitar registros huérfanos
       console.log('8. [sendInvitation] Eliminando registro local debido al error');
       await db.invitation.delete({
         where: { id: invitationRecord.id },
-      })
+      });
       
       throw clerkError;
     }
