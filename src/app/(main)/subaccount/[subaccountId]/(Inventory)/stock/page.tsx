@@ -6,56 +6,40 @@ import { ArrowUpDown, Filter, PlusCircle, Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { StockService, ProductService } from '@/lib/services/inventory-service'
 
 type Props = {
   params: { subaccountId: string }
 }
 
 const StockPage = async ({ params }: Props) => {
-  // En un sistema real, aquí se obtendrían los datos de stock de la base de datos
-  // Por ahora, usaremos datos de ejemplo
-  const stockItems = [
-    {
-      id: '1',
-      productName: 'Producto Ejemplo 1',
-      sku: 'SKU001',
-      currentStock: 25,
-      minStock: 10,
-      maxStock: 50,
-      location: 'Almacén Principal',
-      lastUpdated: '2023-10-15',
-    },
-    {
-      id: '2',
-      productName: 'Producto Ejemplo 2',
-      sku: 'SKU002',
-      currentStock: 5,
-      minStock: 15,
-      maxStock: 60,
-      location: 'Almacén Secundario',
-      lastUpdated: '2023-10-14',
-    },
-    {
-      id: '3',
-      productName: 'Producto Ejemplo 3',
-      sku: 'SKU003',
-      currentStock: 30,
-      minStock: 20,
-      maxStock: 80,
-      location: 'Almacén Principal',
-      lastUpdated: '2023-10-13',
-    },
-    {
-      id: '4',
-      productName: 'Producto Ejemplo 4',
-      sku: 'SKU004',
-      currentStock: 0,
-      minStock: 5,
-      maxStock: 30,
-      location: 'Almacén Principal',
-      lastUpdated: '2023-10-12',
-    },
-  ]
+  const subaccountId = params.subaccountId;
+  
+  // Obtener stock de la subaccount específica
+  let stockItems = [];
+  let products = [];
+  
+  try {
+    stockItems = await StockService.getStocksBySubaccount(subaccountId);
+    products = await ProductService.getProductsBySubaccount(subaccountId);
+    
+    // Enriquecer los datos de stock con información de productos
+    stockItems = await Promise.all(stockItems.map(async (stock) => {
+      const product = products.find(p => p._id?.toString() === stock.productId);
+      return {
+        id: stock._id?.toString(),
+        productName: product?.name || 'Producto desconocido',
+        sku: product?.sku || 'N/A',
+        currentStock: stock.quantity,
+        minStock: product?.minStock || 0,
+        maxStock: product?.minStock ? product.minStock * 3 : 100, // Estimación simple
+        location: stock.areaId, // Idealmente se obtendría el nombre del área
+        lastUpdated: stock.updatedAt ? new Date(stock.updatedAt).toISOString().split('T')[0] : 'N/A',
+      };
+    }));
+  } catch (error) {
+    console.error("Error al cargar datos de stock:", error);
+  }
 
   // Función para determinar el estado del stock
   const getStockStatus = (current: number, min: number) => {

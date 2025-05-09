@@ -24,6 +24,7 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
   const [products, setProducts] = useState<any[]>([]);
   const [areas, setAreas] = useState<any[]>([]);
   const [providers, setProviders] = useState<any[]>([]);
+  const [subaccounts, setSubaccounts] = useState<any[]>([]);
   
   const [formData, setFormData] = useState({
     type,
@@ -32,9 +33,10 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
     quantity: '',
     providerId: '',
     notes: '',
+    subaccountId: '',
   });
 
-  // Cargar productos, áreas y proveedores al montar el componente
+  // Cargar productos, áreas, proveedores y subcuentas al montar el componente
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -65,6 +67,17 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
           if (providersData.success) {
             setProviders(providersData.data || []);
           }
+        }
+
+        // Cargar subcuentas
+        const subaccountsResponse = await fetch(`/api/agency/${agencyId}/subaccounts`, {
+          credentials: 'include',
+        });
+        const subaccountsData = await subaccountsResponse.json();
+        if (subaccountsData.success) {
+          setSubaccounts(subaccountsData.data || []);
+        } else {
+          console.error('Error al cargar subcuentas:', subaccountsData.error);
         }
       } catch (error) {
         console.error('Error al cargar datos:', error);
@@ -99,12 +112,12 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
     e.preventDefault();
     setIsLoading(true);
 
-    // Validar que se hayan seleccionado producto y área
-    if (!formData.productId || !formData.areaId) {
+    // Validar que se hayan seleccionado producto, área y subcuenta
+    if (!formData.productId || !formData.areaId || !formData.subaccountId) {
       toast({
         variant: 'destructive',
         title: 'Campos requeridos',
-        description: 'Por favor selecciona un producto y un área para continuar.',
+        description: 'Por favor selecciona un producto, un área y una subcuenta para continuar.',
       });
       setIsLoading(false);
       return;
@@ -119,7 +132,7 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
         },
         body: JSON.stringify({
           type: 'movement',
-          data: formData,
+          data: { ...formData, agencyId },
         }),
         credentials: 'include', // Incluir cookies y credenciales de autenticación
       });
@@ -157,6 +170,37 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="subaccountId">Subcuenta *</Label>
+            <Select
+              value={formData.subaccountId}
+              onValueChange={(value) => handleSelectChange('subaccountId', value)}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar subcuenta" />
+              </SelectTrigger>
+              <SelectContent>
+                {subaccounts.length > 0 ? (
+                  subaccounts.map((subaccount) => (
+                    <SelectItem key={subaccount.id} value={subaccount.id}>
+                      {subaccount.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-subaccounts" disabled>
+                    No hay subcuentas disponibles. Por favor, crea una subcuenta primero.
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+            {subaccounts.length === 0 && (
+              <p className="text-sm text-destructive mt-1">
+                No hay subcuentas disponibles. Debes crear una subcuenta antes de continuar.
+              </p>
+            )}
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="productId">Producto *</Label>
             <Select

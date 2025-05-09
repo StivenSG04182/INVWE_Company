@@ -9,6 +9,7 @@ import { changeUserPermissions, getAuthUserDetails, getUserPermissions, saveActi
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import SidebarOptionsPermissions from './sidebar-options-permissions'
 import {
   Card,
   CardContent,
@@ -194,8 +195,8 @@ const UserDetails = ({id,type,userData,subAccounts,}: Props) => {
     return (
     <Card className='w-full'>
       <CardHeader>
-        <CardTitle>User Details</CardTitle>
-        <CardDescription>Add or Update your Information</CardDescription>
+        <CardTitle>Detalles del Usuario</CardTitle>
+        <CardDescription>Añadir o Actualizar la información</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -314,16 +315,16 @@ const UserDetails = ({id,type,userData,subAccounts,}: Props) => {
             disabled={form.formState.isSubmitting}
             type="submit"
             >
-              {form.formState.isSubmitting ? <Loading/> : 'Save User Details'}
+              {form.formState.isSubmitting ? <Loading/> : 'Guardar Detalles de Usuario'}
             </Button>
             {authUserData?.role === 'AGENCY_OWNER' && (
               <div>
                 <Separator className="my-4" />
-                <FormLabel> User Permissions</FormLabel>
+                <FormLabel>Permisos de Usuario</FormLabel>
                 <FormDescription className="mb-4">
-                  You can give Sub Account access to team member by turning on
-                  access control for each Sub Account. This is only visible to
-                  agency owners
+                  Puede dar acceso a subcuentas a los miembros del equipo activando
+                  el control de acceso para cada subcuenta. Esto solo es visible para
+                  los propietarios de la agencia
                 </FormDescription>
                 <div className='flex flex-col gap-4'>
                 {subAccounts?.map((subAccount) => {
@@ -334,22 +335,31 @@ const UserDetails = ({id,type,userData,subAccounts,}: Props) => {
                     return (
                       <div
                         key={subAccount.id}
-                        className="flex items-center justify-between rounded-lg border p-4"
+                        className="flex flex-col gap-2 rounded-lg border p-4"
                       >
-                        <div>
-                          <p>{subAccount.name}</p>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold">{subAccount.name}</p>
+                          </div>
+                          <Switch
+                            disabled={loadingPermissions}
+                            checked={subAccountPermissionsDetails?.access}
+                            onCheckedChange={(permission) => {
+                              onChangePermission(
+                                subAccount.id,
+                                permission,
+                                subAccountPermissionsDetails?.id
+                              )
+                            }}
+                          />
                         </div>
-                        <Switch
-                          disabled={loadingPermissions}
-                          checked={subAccountPermissionsDetails?.access}
-                          onCheckedChange={(permission) => {
-                            onChangePermission(
-                              subAccount.id,
-                              permission,
-                              subAccountPermissionsDetails?.id
-                            )
-                          }}
-                        />
+                        
+                        {subAccountPermissionsDetails?.access && subAccountPermissionsDetails?.id && (
+                          <SidebarOptionsPermissions 
+                            subAccountId={subAccount.id} 
+                            permissionId={subAccountPermissionsDetails.id} 
+                          />
+                        )}
                       </div>
                     )
                   })}

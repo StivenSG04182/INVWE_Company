@@ -75,20 +75,20 @@ const CreatePipelineForm: React.FC<CreatePipelineFormProps> = ({
 
       await saveActivityLogsNotification({
         agencyId: undefined,
-        description: `Updates a pipeline | ${response?.name}`,
+        description: `Actualizado pipeline | ${response?.name}`,
         subaccountId: subAccountId,
       })
 
       toast({
-        title: 'Success',
-        description: 'Saved pipeline details',
+        title: 'Éxito',
+        description: 'Detalles del pipeline guardados',
       })
       router.refresh()
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Oppse!',
-        description: 'Could not save pipeline details',
+        title: '¡Ups!',
+        description: 'No se pudieron guardar los detalles del pipeline',
       })
     }
 
@@ -97,7 +97,7 @@ const CreatePipelineForm: React.FC<CreatePipelineFormProps> = ({
   return (
     <Card className="w-full ">
       <CardHeader>
-        <CardTitle>Pipeline Details</CardTitle>
+        <CardTitle>Detalles del Pipeline</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -111,10 +111,10 @@ const CreatePipelineForm: React.FC<CreatePipelineFormProps> = ({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Pipeline Name</FormLabel>
+                  <FormLabel>Nombre del Pipeline</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Name"
+                      placeholder="Nombre"
                       {...field}
                     />
                   </FormControl>
@@ -128,7 +128,7 @@ const CreatePipelineForm: React.FC<CreatePipelineFormProps> = ({
               disabled={isLoading}
               type="submit"
             >
-              {form.formState.isSubmitting ? <Loading /> : 'Save'}
+              {form.formState.isSubmitting ? <Loading /> : 'Guardar'}
             </Button>
           </form>
         </Form>

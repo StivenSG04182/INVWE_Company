@@ -691,176 +691,73 @@ export const getUser = async (id: string) => {
 }
 
 
-export const sendInvitation = async (
-  role: Role | undefined,
-  email: string,
-  agencyId: string
-) => {
-  console.log('1. [sendInvitation] Iniciando con parámetros:', { role, email, agencyId });
-  
-  // Validar parámetros
+export const sendInvitation = async (role: Role, email: string, agencyId: string) => {
+  console.log("Creando invitación con:", { role, email, agencyId })
+
   if (!email) {
-    console.error('2. [sendInvitation] Error: Email no proporcionado');
-    throw new Error('El email es obligatorio');
+    throw new Error("El email es requerido para crear una invitación")
   }
-  
+
   if (!agencyId) {
-    console.error('2. [sendInvitation] Error: AgencyId no proporcionado');
-    throw new Error('El ID de agencia es obligatorio');
+    throw new Error("El ID de la agencia es requerido para crear una invitación")
   }
-  
-  // Validar que el rol tenga un valor válido
-  const validRole: Role = role || 'SUBACCOUNT_USER';
-  
-  console.log('3. [sendInvitation] Datos validados:', {
-    email,
-    agencyId,
-    role: validRole
-  });
 
   try {
-    // Verificar si ya existe una invitación con este email
-    console.log('4. [sendInvitation] Verificando si ya existe una invitación para este email');
+    // Primero verificamos si ya existe una invitación para este email
     const existingInvitation = await db.invitation.findFirst({
-      where: { email },
-    });
-    
-    let invitationRecord;
-    
+      where: {
+        email,
+        agencyId,
+        status: "PENDING", // Solo nos importan las invitaciones pendientes
+      },
+    })
+
     if (existingInvitation) {
-      console.log('4.1 [sendInvitation] Invitación existente encontrada, actualizando:', existingInvitation);
-      // Actualizar la invitación existente
-      invitationRecord = await db.invitation.update({
-        where: { id: existingInvitation.id },
-        data: { 
-          role: validRole,
-          status: "PENDING",
-          agencyId: agencyId
-          // La fecha de creación se actualizará automáticamente
-        },
-      });
-      console.log('4.2 [sendInvitation] Invitación actualizada en DB:', invitationRecord);
-    } else {
-      // Crear una nueva invitación
-      console.log('4.3 [sendInvitation] Creando nuevo registro en base de datos');
-      invitationRecord = await db.invitation.create({
-        data: { 
-          email, 
-          agencyId, 
-          role: validRole,
-          status: "PENDING"
-          // La fecha de creación se establecerá automáticamente
-        },
-      });
-      console.log('4.4 [sendInvitation] Nuevo registro creado en DB:', invitationRecord);
+      throw new Error("Ya existe una invitación pendiente para este email")
     }
-    
-    console.log('5. [sendInvitation] Registro en DB:', invitationRecord);
+
+    // Si no existe, creamos la invitación en la base de datos
+    const response = await db.invitation.create({
+      data: {
+        email,
+        agencyId,
+        role,
+      },
+    })
 
     try {
-      // Verificar si el usuario ya existe en Clerk
-      console.log('6. [sendInvitation] Verificando si el usuario ya existe en Clerk');
-      
-      // Intentar buscar el usuario por email en Clerk
-      let userExists = false;
-      try {
-        const users = await clerkClient.users.getUserList({
-          emailAddress: [email],
-        });
-        userExists = users.length > 0;
-        console.log('6.1 [sendInvitation] Resultado de búsqueda en Clerk:', { userExists, usersFound: users.length });
-      } catch (searchError) {
-        console.error('6.2 [sendInvitation] Error al buscar usuario en Clerk:', searchError);
-        // Continuamos el proceso aunque falle la búsqueda
-      }
-      
-      if (userExists) {
-        // Si el usuario ya existe en Clerk, no creamos una invitación en Clerk
-        // pero mantenemos el registro local para el proceso de verificación
-        console.log('7. [sendInvitation] Usuario ya existe en Clerk, omitiendo creación de invitación');
-        
-        // Registrar actividad
-        await saveActivityLogsNotification({
-          agencyId: agencyId,
-          description: `Invitación enviada a usuario existente: ${email}`,
-          subaccountId: undefined,
-        });
-        
-        // Retornar información de la invitación local
-        console.log('8. [sendInvitation] Proceso completado (usuario existente)');
-        return { 
-          invitationRecord,
-          userExists: true,
-          message: "El usuario ya existe en el sistema. Se ha creado una invitación local."
-        };
-      }
-      
-      // Si el usuario no existe, procedemos con la invitación normal en Clerk
-      console.log('6.3 [sendInvitation] Creando invitación en Clerk para nuevo usuario');
-      const redirectUrl = `${process.env.NEXT_PUBLIC_URL}agency?invitationId=${invitationRecord.id}`;
-      console.log('URL de redirección:', redirectUrl);
-      
-      // Usamos el cliente de Clerk correctamente para crear invitaciones
-      const clerkInvitation = await clerkClient.invitations.createInvitation({
+      // Intentamos crear la invitación en Clerk
+      await clerkClient.invitations.createInvitation({
         emailAddress: email,
-        redirectUrl: redirectUrl,
+        redirectUrl: process.env.NEXT_PUBLIC_URL,
         publicMetadata: {
           throughInvitation: true,
-          role: validRole,
-          invitationId: invitationRecord.id,
-          agencyId: agencyId
+          role,
         },
-      });
-      
-      console.log('7. [sendInvitation] Invitación creada en Clerk:', {
-        id: clerkInvitation.id,
-        status: clerkInvitation.status
-      });
-
-      // Retornar solo datos serializables para evitar errores de serialización
-      console.log('8. [sendInvitation] Proceso completado con éxito');
-      return { 
-        invitationRecord, 
-        clerkInvitationId: clerkInvitation.id,
-        clerkInvitationStatus: clerkInvitation.status
-      };
+      })
     } catch (clerkError: any) {
-      console.error('7. [sendInvitation] Error creando invitación en Clerk:', clerkError);
-      
-      // Verificar si el error es porque el usuario ya existe
-      if (clerkError.status === 422 && 
-          clerkError.errors && 
-          clerkError.errors.some((e: any) => e.code === 'form_identifier_exists')) {
-        console.log('7.1 [sendInvitation] El error es porque el email ya existe en Clerk');
-        
-        // Registrar actividad
-        await saveActivityLogsNotification({
-          agencyId: agencyId,
-          description: `Invitación enviada a usuario existente: ${email}`,
-          subaccountId: undefined,
-        });
-        
-        // En este caso, mantenemos el registro local y retornamos un mensaje específico
-        return { 
-          invitationRecord,
-          userExists: true,
-          message: "El usuario ya existe en el sistema. Se ha creado una invitación local."
-        };
+      // Si Clerk falla porque ya existe una invitación, manejamos el error
+      if (clerkError.errors && clerkError.errors[0] && clerkError.errors[0].code === "duplicate_record") {
+        // Eliminamos la invitación que acabamos de crear en nuestra base de datos
+        // para mantener la consistencia
+        await db.invitation.delete({
+          where: { id: response.id },
+        })
+
+        throw new Error("Ya existe una invitación pendiente para este email")
       }
-      
-      // Para otros errores, revertimos la DB local para evitar registros huérfanos
-      console.log('8. [sendInvitation] Eliminando registro local debido al error');
-      await db.invitation.delete({
-        where: { id: invitationRecord.id },
-      });
-      
-      throw clerkError;
+
+      // Si es otro tipo de error de Clerk, lo propagamos
+      throw clerkError
     }
-  } catch (dbError) {
-    console.error('4. [sendInvitation] Error creando registro en base de datos:', dbError);
-    throw dbError;
+
+    return response
+  } catch (error) {
+    console.error("Error en sendInvitation:", error)
+    throw error
   }
 }
+
 
 
 export const getMedia = async (subaccountIdOrAgencyId: string, isAgencyId: boolean = false) => {

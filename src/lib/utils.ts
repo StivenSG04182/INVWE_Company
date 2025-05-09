@@ -5,12 +5,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Función para generar enlaces OAuth para Wompi
-export function getWompiOAuthLink(entityType: string, state: string) {
-  const clientId = process.env.WOMPI_CLIENT_ID || 'test_client_id'
-  const redirectUri = `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/${entityType}/${entityType === 'agency' ? state.split('___')[1] : state.split('___')[1]}/launchpad`
+// Función para formatear precios en formato de moneda
+export function formatPrice(amount: number | string) {
+  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
   
-  return `https://id.wompi.co/connect/authorize?client_id=${clientId}&response_type=code&scope=read_merchant&redirect_uri=${redirectUri}&state=${state}`
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(numericAmount);
 }
 
 // Función para generar enlaces OAuth para cualquier pasarela de pago

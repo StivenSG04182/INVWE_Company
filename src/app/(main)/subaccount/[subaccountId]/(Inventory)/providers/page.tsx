@@ -5,49 +5,22 @@ import { Button } from '@/components/ui/button'
 import { PlusCircle, Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { ProviderService } from '@/lib/services/inventory-service'
 
 type Props = {
   params: { subaccountId: string }
 }
 
 const ProvidersPage = async ({ params }: Props) => {
-  // En un sistema real, aquí se obtendrían los proveedores de la base de datos
-  // Por ahora, usaremos datos de ejemplo
-  const providers = [
-    {
-      id: '1',
-      name: 'Distribuidora Nacional S.A.',
-      contact: 'Juan Pérez',
-      email: 'juan.perez@disnacional.com',
-      phone: '+57 300 123 4567',
-      address: 'Calle 45 #23-67, Bogotá',
-      status: 'Activo',
-      productsCount: 12,
-      lastOrder: '2023-10-10',
-    },
-    {
-      id: '2',
-      name: 'Importadora Global Ltda.',
-      contact: 'María Rodríguez',
-      email: 'maria@importadoraglobal.com',
-      phone: '+57 315 987 6543',
-      address: 'Carrera 15 #78-45, Medellín',
-      status: 'Activo',
-      productsCount: 8,
-      lastOrder: '2023-09-28',
-    },
-    {
-      id: '3',
-      name: 'Suministros Industriales',
-      contact: 'Carlos Gómez',
-      email: 'cgomez@suministros.co',
-      phone: '+57 320 456 7890',
-      address: 'Av. Industrial #34-12, Cali',
-      status: 'Inactivo',
-      productsCount: 5,
-      lastOrder: '2023-08-15',
-    },
-  ]
+  const subaccountId = params.subaccountId;
+  
+  // Obtener proveedores de la subaccount específica
+  let providers = [];
+  try {
+    providers = await ProviderService.getProvidersBySubaccount(subaccountId);
+  } catch (error) {
+    console.error("Error al cargar proveedores:", error);
+  }
 
   return (
     <BlurPage>

@@ -33,9 +33,23 @@ model Permissions {
   access       Boolean
   User         User       @relation(fields: [email], references: [email], onDelete: Cascade)
   SubAccount   SubAccount @relation(fields: [subAccountId], references: [id], onDelete: Cascade)
+  SidebarPermissions SidebarPermission[]
 
   @@index([subAccountId])
   @@index([email])
+}
+
+model SidebarPermission {
+  id                String     @id @default(uuid())
+  permissionId      String
+  sidebarOptionId   String
+  access            Boolean    @default(false)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  Permission        Permissions @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  
+  @@unique([permissionId, sidebarOptionId])
+  @@index([permissionId])
 }
 
 model Agency {
@@ -72,6 +86,11 @@ model Agency {
   Areas            Area[]
   Stocks           Stock[]
   Movements        Movement[]
+  Invoices         Invoice[]
+  Payments         Payment[]
+  Taxes            Tax[]
+  ProductCategories ProductCategory[]
+  DianConfig      DianConfig?
 }
 
 model SubAccount {
@@ -107,6 +126,10 @@ model SubAccount {
   Areas            Area[]
   Stocks           Stock[]
   Movements        Movement[]
+  Invoices         Invoice[]
+  Payments         Payment[]
+  Taxes            Tax[]
+  ProductCategories ProductCategory[]
 
   @@index([agencyId])
 }
@@ -229,11 +252,19 @@ model Contact {
   id           String     @id @default(uuid())
   name         String
   email        String
+  phone        String?
+  address      String?
+  city         String?
+  state        String?
+  zipCode      String?
+  country      String?
+  notes        String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   subAccountId String
   Subaccount   SubAccount @relation(fields: [subAccountId], references: [id], onDelete: Cascade)
   Ticket       Ticket[]
+  Invoices     Invoice[]
 
   @@index([subAccountId])
 }
@@ -534,6 +565,22 @@ enum ReportFormat {
   POWERPOINT
 }
 
+model ProductCategory {
+  id           String     @id @default(uuid())
+  name         String
+  description  String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  agencyId     String
+  subAccountId String?
+  Agency       Agency     @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount   SubAccount? @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Products     Product[]
+
+  @@index([agencyId])
+  @@index([subAccountId])
+}
+
 model Product {
   id           String     @id @default(uuid())
   name         String
@@ -543,6 +590,7 @@ model Product {
   cost         Decimal?   @default(0)
   minStock     Int?
   images       String[]   @default([])
+  productImage String?    
   categoryId   String?
   active       Boolean    @default(true)
   createdAt    DateTime   @default(now())
@@ -551,11 +599,14 @@ model Product {
   subAccountId String?
   Agency       Agency     @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   SubAccount   SubAccount? @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Category     ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   Stocks       Stock[]
   Movements    Movement[]
+  InvoiceItems InvoiceItem[]
 
-  @@index([agencyId])
-  @@index([subAccountId])
+  @@index([categoryId])
+  @@index([agencyId], map: "Product_agencyId_idx1")
+  @@index([subAccountId], map: "Product_subAccountId_idx1")
 }
 
 model Provider {
@@ -646,4 +697,154 @@ enum MovementType {
   ENTRADA
   SALIDA
   TRANSFERENCIA
+}
+
+model Invoice {
+  id           String       @id @default(uuid())
+  invoiceNumber String      @unique
+  status       InvoiceStatus @default(DRAFT)
+  subtotal     Decimal      @default(0)
+  tax          Decimal      @default(0)
+  discount     Decimal      @default(0)
+  total        Decimal      @default(0)
+  notes        String?
+  dueDate      DateTime?
+  issuedDate   DateTime     @default(now())
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  customerId   String?
+  agencyId     String
+  subAccountId String?
+  Agency       Agency       @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount   SubAccount?  @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Customer     Contact?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  Items        InvoiceItem[]
+  Payments     Payment[]
+  Taxes        InvoiceTax[]
+
+  @@index([agencyId])
+  @@index([subAccountId])
+  @@index([customerId])
+}
+
+model InvoiceItem {
+  id           String     @id @default(uuid())
+  quantity     Int
+  unitPrice    Decimal
+  discount     Decimal    @default(0)
+  tax          Decimal    @default(0)
+  total        Decimal
+  description  String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  invoiceId    String
+  productId    String
+  Invoice      Invoice    @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  Product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([productId])
+}
+
+model Payment {
+  id           String       @id @default(uuid())
+  amount       Decimal
+  method       PaymentMethod
+  status       PaymentStatus @default(PENDING)
+  reference    String?
+  notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  invoiceId    String
+  agencyId     String
+  subAccountId String?
+  Invoice      Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  Agency       Agency       @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount   SubAccount?  @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+  @@index([agencyId])
+  @@index([subAccountId])
+}
+
+model Tax {
+  id           String     @id @default(uuid())
+  name         String
+  rate         Decimal
+  description  String?
+  isDefault    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  agencyId     String
+  subAccountId String?
+  Agency       Agency     @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount   SubAccount? @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  InvoiceTaxes InvoiceTax[]
+
+  @@index([agencyId])
+  @@index([subAccountId])
+}
+
+model InvoiceTax {
+  id           String     @id @default(uuid())
+  amount       Decimal
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  invoiceId    String
+  taxId        String
+  Invoice      Invoice    @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  Tax          Tax        @relation(fields: [taxId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([taxId])
+}
+
+model DianConfig {
+  id                String     @id @default(uuid())
+  resolutionNumber  String
+  resolutionDate    DateTime
+  prefix            String?
+  startNumber       Int
+  endNumber         Int
+  currentNumber     Int
+  expirationDate    DateTime
+  environment       DianEnvironment @default(TESTING)
+  technicalKey      String?
+  softwareId        String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  agencyId          String     @unique
+  Agency            Agency     @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([agencyId])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  PENDING
+  PAID
+  CANCELLED
+  OVERDUE
+}
+
+enum PaymentMethod {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  CHECK
+  ONLINE
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum DianEnvironment {
+  TESTING
+  PRODUCTION
 }

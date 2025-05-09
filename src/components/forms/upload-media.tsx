@@ -80,7 +80,7 @@ const UploadMediaForm = ({ subaccountId, agencyId }: Props) => {
                   <FormLabel>Nombre del archivo</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Nombre de su agencia"
+                      placeholder="Nombre del archivo multimedia"
                       {...field}
                     />
                   </FormControl>

@@ -1,4 +1,4 @@
-import { connectToDatabase, IProduct, IStock, IArea, IProvider, IMovement } from '../mongodb';
+import { connectToDatabase, IProduct, IStock, IArea, IProvider, IMovement, ICategory } from '../mongodb';
 import { ObjectId } from 'mongodb';
 
 // Servicio para gestionar productos
@@ -9,6 +9,16 @@ export const ProductService = {
     return db
       .collection('products')
       .find({ agencyId })
+      .sort({ createdAt: -1 })
+      .toArray();
+  },
+
+  // Obtener todos los productos de una subaccount específica
+  async getProductsBySubaccount(subaccountId: string) {
+    const { db } = await connectToDatabase();
+    return db
+      .collection('products')
+      .find({ subaccountId })
       .sort({ createdAt: -1 })
       .toArray();
   },
@@ -59,6 +69,16 @@ export const StockService = {
     return db
       .collection('stocks')
       .find({ agencyId })
+      .sort({ createdAt: -1 })
+      .toArray();
+  },
+
+  // Obtener todo el stock de una subaccount específica
+  async getStocksBySubaccount(subaccountId: string) {
+    const { db } = await connectToDatabase();
+    return db
+      .collection('stocks')
+      .find({ subaccountId })
       .sort({ createdAt: -1 })
       .toArray();
   },
@@ -116,6 +136,16 @@ export const AreaService = {
       .toArray();
   },
 
+  // Obtener todas las áreas de una subaccount específica
+  async getAreasBySubaccount(subaccountId: string) {
+    const { db } = await connectToDatabase();
+    return db
+      .collection('areas')
+      .find({ subaccountId })
+      .sort({ name: 1 })
+      .toArray();
+  },
+
   // Obtener un área por ID
   async getAreaById(id: string) {
     const { db } = await connectToDatabase();
@@ -154,6 +184,66 @@ export const AreaService = {
   },
 };
 
+// Servicio para gestionar categorías
+export const CategoryService = {
+  // Obtener todas las categorías de una agencia
+  async getCategories(agencyId: string) {
+    const { db } = await connectToDatabase();
+    return db
+      .collection('categories')
+      .find({ agencyId })
+      .sort({ name: 1 })
+      .toArray();
+  },
+
+  // Obtener todas las categorías de una subaccount específica
+  async getCategoriesBySubaccount(subaccountId: string) {
+    const { db } = await connectToDatabase();
+    return db
+      .collection('categories')
+      .find({ subaccountId })
+      .sort({ name: 1 })
+      .toArray();
+  },
+
+  // Obtener una categoría por ID
+  async getCategoryById(id: string) {
+    const { db } = await connectToDatabase();
+    return db.collection('categories').findOne({ _id: new ObjectId(id) });
+  },
+
+  // Crear una nueva categoría
+  async createCategory(category: ICategory) {
+    const { db } = await connectToDatabase();
+    const newCategory = {
+      ...category,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const result = await db.collection('categories').insertOne(newCategory);
+    return { ...newCategory, _id: result.insertedId };
+  },
+
+  // Actualizar una categoría existente
+  async updateCategory(id: string, category: Partial<ICategory>) {
+    const { db } = await connectToDatabase();
+    const updatedCategory = {
+      ...category,
+      updatedAt: new Date(),
+    };
+    await db
+      .collection('categories')
+      .updateOne({ _id: new ObjectId(id) }, { $set: updatedCategory });
+    return this.getCategoryById(id);
+  },
+
+  // Eliminar una categoría
+  async deleteCategory(id: string) {
+    const { db } = await connectToDatabase();
+    return db.collection('categories').deleteOne({ _id: new ObjectId(id) });
+  },
+};
+
 // Servicio para gestionar proveedores
 export const ProviderService = {
   // Obtener todos los proveedores de una agencia
@@ -162,6 +252,16 @@ export const ProviderService = {
     return db
       .collection('providers')
       .find({ agencyId })
+      .sort({ name: 1 })
+      .toArray();
+  },
+
+  // Obtener todos los proveedores de una subaccount específica
+  async getProvidersBySubaccount(subaccountId: string) {
+    const { db } = await connectToDatabase();
+    return db
+      .collection('providers')
+      .find({ subaccountId })
       .sort({ name: 1 })
       .toArray();
   },
@@ -212,6 +312,16 @@ export const MovementService = {
     return db
       .collection('movements')
       .find({ agencyId })
+      .sort({ createdAt: -1 })
+      .toArray();
+  },
+
+  // Obtener todos los movimientos de una subaccount específica
+  async getMovementsBySubaccount(subaccountId: string) {
+    const { db } = await connectToDatabase();
+    return db
+      .collection('movements')
+      .find({ subaccountId })
       .sort({ createdAt: -1 })
       .toArray();
   },

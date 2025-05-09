@@ -163,11 +163,9 @@ const getCategoryForOption = (optionName: string): string | null => {
     'Transacciones': 'Ventas & Facturación',
     'Facturas': 'Ventas & Facturación',
     'Notas Crédito/Débito': 'Ventas & Facturación',
-    'Configuración DIAN': 'Ventas & Facturación',
-    'Reportes': 'Ventas & Facturación',
     'Pagos': 'Ventas & Facturación',
     'Billing': 'Ventas & Facturación',
-
+    
     // Clientes & CRM
     'Clientes': 'Clientes & CRM',
     'CRM': 'Clientes & CRM',
@@ -191,7 +189,8 @@ const getCategoryForOption = (optionName: string): string | null => {
     'Desempeño': 'Reportes & Analíticas',
     'Finanzas': 'Reportes & Analíticas',
     'Reportes Productos': 'Reportes & Analíticas',
-
+    'Reportes': 'Reportes & Analíticas',
+    
     // Configuración & Administración
     'Ajustes de Empresa': 'Configuración & Administración',
     'Usuarios & Permisos': 'Configuración & Administración',
@@ -200,6 +199,7 @@ const getCategoryForOption = (optionName: string): string | null => {
     'General Settings': 'Configuración & Administración',
     'Automatización': 'Configuración & Administración',
     'Soporte': 'Configuración & Administración',
+    'Configuración DIAN': 'Configuración & Administración',
     
   };
   return categoryMap[optionName] || null;

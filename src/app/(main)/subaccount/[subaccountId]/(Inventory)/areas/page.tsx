@@ -5,60 +5,22 @@ import { Button } from '@/components/ui/button'
 import { Edit, MapPin, PlusCircle, Search, Trash2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { AreaService } from '@/lib/services/inventory-service'
 
 type Props = {
   params: { subaccountId: string }
 }
 
 const InventoryAreasPage = async ({ params }: Props) => {
-  // En un sistema real, aquí se obtendrían las áreas de inventario de la base de datos
-  // Por ahora, usaremos datos de ejemplo
-  const areas = [
-    {
-      id: '1',
-      name: 'Almacén Principal',
-      code: 'ALP-001',
-      location: 'Bogotá - Sede Central',
-      manager: 'Carlos Rodríguez',
-      capacity: '500 m²',
-      occupancy: 75, // porcentaje
-      status: 'Activo',
-      productCount: 120,
-    },
-    {
-      id: '2',
-      name: 'Almacén Secundario',
-      code: 'ALS-002',
-      location: 'Medellín - Sucursal Norte',
-      manager: 'Ana Martínez',
-      capacity: '300 m²',
-      occupancy: 60,
-      status: 'Activo',
-      productCount: 85,
-    },
-    {
-      id: '3',
-      name: 'Bodega Temporal',
-      code: 'BOD-003',
-      location: 'Bogotá - Zona Industrial',
-      manager: 'Luis Pérez',
-      capacity: '200 m²',
-      occupancy: 90,
-      status: 'Activo',
-      productCount: 45,
-    },
-    {
-      id: '4',
-      name: 'Área de Devoluciones',
-      code: 'DEV-004',
-      location: 'Bogotá - Sede Central',
-      manager: 'María López',
-      capacity: '100 m²',
-      occupancy: 30,
-      status: 'Activo',
-      productCount: 25,
-    },
-  ]
+  const subaccountId = params.subaccountId;
+  
+  // Obtener áreas de la subaccount específica
+  let areas = [];
+  try {
+    areas = await AreaService.getAreasBySubaccount(subaccountId);
+  } catch (error) {
+    console.error("Error al cargar áreas:", error);
+  }
 
   return (
     <BlurPage>

@@ -5,60 +5,34 @@ import { Button } from '@/components/ui/button'
 import { ArrowDownUp, Filter, PlusCircle, Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { MovementService } from '@/lib/services/inventory-service'
 
 type Props = {
   params: { subaccountId: string }
 }
 
 const MovementsPage = async ({ params }: Props) => {
-  // En un sistema real, aquí se obtendrían los movimientos de inventario de la base de datos
-  // Por ahora, usaremos datos de ejemplo
-  const movements = [
-    {
-      id: '1',
-      date: '2023-10-15',
-      type: 'Entrada',
-      productName: 'Producto Ejemplo 1',
-      sku: 'SKU001',
-      quantity: 10,
-      location: 'Almacén Principal',
-      reference: 'Compra #12345',
-      user: 'Carlos Rodríguez',
-    },
-    {
-      id: '2',
-      date: '2023-10-14',
-      type: 'Salida',
-      productName: 'Producto Ejemplo 2',
-      sku: 'SKU002',
-      quantity: 5,
-      location: 'Almacén Principal',
-      reference: 'Venta #67890',
-      user: 'Ana Martínez',
-    },
-    {
-      id: '3',
-      date: '2023-10-13',
-      type: 'Traslado',
-      productName: 'Producto Ejemplo 1',
-      sku: 'SKU001',
-      quantity: 3,
-      location: 'Almacén Principal → Almacén Secundario',
-      reference: 'Traslado #54321',
-      user: 'Carlos Rodríguez',
-    },
-    {
-      id: '4',
-      date: '2023-10-12',
-      type: 'Ajuste',
-      productName: 'Producto Ejemplo 3',
-      sku: 'SKU003',
-      quantity: -2,
-      location: 'Almacén Principal',
-      reference: 'Inventario #98765',
-      user: 'Ana Martínez',
-    },
-  ]
+  const subaccountId = params.subaccountId;
+  
+  // Obtener movimientos de la subaccount específica
+  let movements = [];
+  try {
+    movements = await MovementService.getMovementsBySubaccount(subaccountId);
+    
+    // Transformar los datos para la visualización
+    movements = movements.map(movement => ({
+      id: movement._id?.toString(),
+      date: movement.createdAt ? new Date(movement.createdAt).toISOString().split('T')[0] : 'N/A',
+      type: movement.type.charAt(0).toUpperCase() + movement.type.slice(1),
+      productId: movement.productId,
+      quantity: movement.quantity,
+      location: movement.areaId,
+      reference: movement.notes || 'Sin referencia',
+      user: 'Sistema'
+    }));
+  } catch (error) {
+    console.error("Error al cargar movimientos:", error);
+  }
 
   return (
     <BlurPage>

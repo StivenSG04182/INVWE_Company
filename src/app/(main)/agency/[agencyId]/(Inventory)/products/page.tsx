@@ -139,12 +139,20 @@ const ProductsPage = async ({ params }: { params: { agencyId: string } }) => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Link href={`/agency/${agencyId}/products/new`}>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Producto
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link href={`/agency/${agencyId}/products/bulk`}>
+              <Button size="sm" variant="outline">
+                <Upload className="h-4 w-4 mr-2" />
+                Carga Masiva
+              </Button>
+            </Link>
+            <Link href={`/agency/${agencyId}/products/new`}>
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Producto
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 

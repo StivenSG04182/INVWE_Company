@@ -3,6 +3,8 @@ import React from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { db } from '@/lib/db'
+import AnalyticsCharts from './analytics-charts'
+import { AnalyticsService } from '@/lib/services/analytics-service'
 
 type Props = {
   params: { subaccountId: string }
@@ -15,20 +17,31 @@ const AnalyticsPage = async ({ params }: Props) => {
       id: params.subaccountId,
     },
     include: {
-      Contact: true,
-      Ticket: true,
+      Agency: true,
     },
   })
 
-  // Estadísticas básicas
-  const totalContacts = subaccount?.Contact.length || 0
-  const totalTickets = subaccount?.Ticket.length || 0
+  if (!subaccount) {
+    return (
+      <BlurPage>
+        <div className="flex flex-col gap-4 p-4">
+          <h1 className="text-4xl font-bold">Análisis de Rendimiento</h1>
+          <p className="text-muted-foreground">No se encontró la subcuenta</p>
+        </div>
+      </BlurPage>
+    )
+  }
+
+  // Obtener estadísticas generales
+  const stats = await AnalyticsService.getGeneralStats(params.subaccountId)
   
-  // Calcular valor total de tickets
-  const ticketValues = subaccount?.Ticket.map((ticket) => {
-    return parseFloat(ticket.value) || 0
-  })
-  const totalValue = ticketValues?.reduce((acc, curr) => acc + curr, 0) || 0
+  // Obtener datos para gráficos
+  const monthlyData = await AnalyticsService.getMonthlySalesData(params.subaccountId)
+  const categoryData = await AnalyticsService.getCategorySalesData(params.subaccountId)
+  const topProducts = await AnalyticsService.getTopProducts(params.subaccountId, 5)
+  
+  // Extraer estadísticas
+  const { totalContacts, totalTickets, totalProducts, totalValue } = stats
 
   return (
     <BlurPage>
@@ -73,19 +86,11 @@ const AnalyticsPage = async ({ params }: Props) => {
           </Card>
         </div>
 
-        <div className="mt-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Rendimiento Mensual</CardTitle>
-              <CardDescription>Visualización de métricas a lo largo del tiempo</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] flex items-center justify-center border rounded-md">
-                <p className="text-muted-foreground">Los gráficos de análisis detallados estarán disponibles próximamente</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <AnalyticsCharts 
+          monthlyData={monthlyData}
+          categoryData={categoryData}
+          topProducts={topProducts}
+        />
       </div>
     </BlurPage>
   )

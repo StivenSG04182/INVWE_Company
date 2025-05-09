@@ -73,19 +73,19 @@ const FunnelForm: React.FC<CreateFunnelProps> = ({
     )
     await saveActivityLogsNotification({
       agencyId: undefined,
-      description: `Update funnel | ${response.name}`,
+      description: `Actualizado embudo | ${response.name}`,
       subaccountId: subAccountId,
     })
     if (response)
       toast({
-        title: 'Success',
-        description: 'Saved funnel details',
+        title: 'Éxito',
+        description: 'Detalles del embudo guardados',
       })
     else
       toast({
         variant: 'destructive',
-        title: 'Oppse!',
-        description: 'Could not save funnel details',
+        title: '¡Ups!',
+        description: 'No se pudieron guardar los detalles del embudo',
       })
     setClose()
     router.refresh()
@@ -93,7 +93,7 @@ const FunnelForm: React.FC<CreateFunnelProps> = ({
   return (
     <Card className="flex-1">
       <CardHeader>
-        <CardTitle>Funnel Details</CardTitle>
+        <CardTitle>Detalles del Embudo</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -107,10 +107,10 @@ const FunnelForm: React.FC<CreateFunnelProps> = ({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Funnel Name</FormLabel>
+                  <FormLabel>Nombre del Embudo</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Name"
+                      placeholder="Nombre"
                       {...field}
                     />
                   </FormControl>
@@ -123,10 +123,10 @@ const FunnelForm: React.FC<CreateFunnelProps> = ({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Funnel Description</FormLabel>
+                  <FormLabel>Descripción del Embudo</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Tell us a little bit more about this funnel."
+                      placeholder="Cuéntanos un poco más sobre este embudo."
                       {...field}
                     />
                   </FormControl>
@@ -139,10 +139,10 @@ const FunnelForm: React.FC<CreateFunnelProps> = ({
               name="subDomainName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Sub domain</FormLabel>
+                  <FormLabel>Subdominio</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Sub domain for funnel"
+                      placeholder="Subdominio para el embudo"
                       {...field}
                     />
                   </FormControl>
@@ -155,7 +155,7 @@ const FunnelForm: React.FC<CreateFunnelProps> = ({
               name="favicon"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Favicon</FormLabel>
+                  <FormLabel>Icono de Favorito</FormLabel>
                   <FormControl>
                     <FileUpload
                       apiEndpoint="subaccountLogo"
@@ -172,7 +172,7 @@ const FunnelForm: React.FC<CreateFunnelProps> = ({
               disabled={isLoading}
               type="submit"
             >
-              {form.formState.isSubmitting ? <Loading /> : 'Save'}
+              {form.formState.isSubmitting ? <Loading /> : 'Guardar'}
             </Button>
           </form>
         </Form>

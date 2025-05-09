@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,7 @@ import { UploadButton } from "@/lib/uploadthing"
 import Image from "next/image"
 import { Loader2, ArrowLeft, Trash2, DollarSign, Barcode, Package, Tag, ImageIcon } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 
@@ -29,6 +30,8 @@ interface ProductFormProps {
     cost?: number
     minStock?: number
     images?: string[]
+    subaccountId?: string
+    categoryId?: string
   }
   isEditing?: boolean
 }
@@ -38,6 +41,9 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [subaccounts, setSubaccounts] = useState<any[]>([])
+  const [categories, setCategories] = useState<any[]>([])
+  const [newCategory, setNewCategory] = useState("")
   const [formData, setFormData] = useState({
     name: product?.name || "",
     description: product?.description || "",
@@ -47,13 +53,60 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
     cost: product?.cost || "",
     minStock: product?.minStock || "",
     images: product?.images || [],
+    subaccountId: product?.subaccountId || "",
+    categoryId: product?.categoryId || "",
   })
+
+  // Cargar subcuentas y categorías al montar el componente
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Cargar subcuentas
+        const subaccountsResponse = await fetch(`/api/agency/${agencyId}/subaccounts`, {
+          credentials: 'include',
+        });
+        const subaccountsData = await subaccountsResponse.json();
+        if (subaccountsData.success) {
+          setSubaccounts(subaccountsData.data || []);
+        } else {
+          console.error('Error al cargar subcuentas:', subaccountsData.error);
+        }
+        
+        // Cargar categorías
+        const categoriesResponse = await fetch(`/api/inventory/${agencyId}/categories`, {
+          credentials: 'include',
+        });
+        const categoriesData = await categoriesResponse.json();
+        if (categoriesData.success) {
+          setCategories(categoriesData.data || []);
+        } else {
+          console.error('Error al cargar categorías:', categoriesData.error);
+        }
+      } catch (error) {
+        console.error('Error al cargar datos:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'No se pudieron cargar los datos necesarios. Inténtalo de nuevo.',
+        });
+      }
+    };
+
+    fetchData();
+  }, [agencyId, toast]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
       [name]: name === "price" || name === "cost" || name === "minStock" ? Number.parseFloat(value) : value,
+    }))
+  }
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
     }))
   }
 
@@ -71,12 +124,23 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
     e.preventDefault()
     setIsLoading(true)
 
+    // Validar que se haya seleccionado una subcuenta
+    if (!formData.subaccountId) {
+      toast({
+        variant: "destructive",
+        title: "Subcuenta requerida",
+        description: "Por favor selecciona una subcuenta para continuar.",
+      })
+      setIsLoading(false)
+      return
+    }
+
     try {
       const endpoint = `/api/inventory/${agencyId}`
       const method = isEditing ? "PUT" : "POST"
       const body = isEditing
-        ? { type: "product", id: product?._id, data: formData }
-        : { type: "product", data: formData }
+        ? { type: "product", id: product?._id, data: { ...formData, agencyId } }
+        : { type: "product", data: { ...formData, agencyId } }
 
       const response = await fetch(endpoint, {
         method,
@@ -271,34 +335,143 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
                         rows={4}
                       />
                     </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="subaccountId">Subcuenta *</Label>
+                      <Select
+                        value={formData.subaccountId}
+                        onValueChange={(value) => handleSelectChange('subaccountId', value)}
+                        required
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar subcuenta" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {subaccounts.length > 0 ? (
+                            subaccounts.map((subaccount) => (
+                              <SelectItem key={subaccount.id} value={subaccount.id}>
+                                {subaccount.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="no-subaccounts" disabled>
+                              No hay subcuentas disponibles. Por favor, crea una subcuenta primero.
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {subaccounts.length === 0 && (
+                        <p className="text-sm text-destructive mt-1">
+                          No hay subcuentas disponibles. Debes crear una subcuenta antes de continuar.
+                        </p>
+                      )}
+                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="sku" className="flex items-center">
-                          <Tag className="h-4 w-4 mr-2" />
-                          SKU *
-                        </Label>
-                        <Input
-                          id="sku"
-                          name="sku"
-                          value={formData.sku}
-                          onChange={handleChange}
-                          placeholder=""
-                          required
-                        />
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="sku" className="flex items-center">
+                            <Tag className="h-4 w-4 mr-2" />
+                            SKU *
+                          </Label>
+                          <Input
+                            id="sku"
+                            name="sku"
+                            value={formData.sku}
+                            onChange={handleChange}
+                            placeholder=""
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="barcode" className="flex items-center">
+                            <Barcode className="h-4 w-4 mr-2" />
+                            Código de Barras
+                          </Label>
+                          <Input
+                            id="barcode"
+                            name="barcode"
+                            value={formData.barcode}
+                            onChange={handleChange}
+                            placeholder=""
+                          />
+                        </div>
                       </div>
+                      
                       <div className="space-y-2">
-                        <Label htmlFor="barcode" className="flex items-center">
-                          <Barcode className="h-4 w-4 mr-2" />
-                          Código de Barras
-                        </Label>
-                        <Input
-                          id="barcode"
-                          name="barcode"
-                          value={formData.barcode}
-                          onChange={handleChange}
-                          placeholder=""
-                        />
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="categoryId">Categoría</Label>
+                          <div className="flex items-center space-x-2">
+                            <Input
+                              placeholder="Nueva categoría"
+                              value={newCategory}
+                              onChange={(e) => setNewCategory(e.target.value)}
+                              className="w-48"
+                            />
+                            <Button 
+                              type="button" 
+                              size="sm" 
+                              onClick={async () => {
+                                if (!newCategory.trim()) return;
+                                try {
+                                  const response = await fetch(`/api/inventory/${agencyId}/categories`, {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                      name: newCategory,
+                                      subaccountId: formData.subaccountId,
+                                    }),
+                                    credentials: "include",
+                                  });
+                                  
+                                  const result = await response.json();
+                                  
+                                  if (result.success) {
+                                    toast({
+                                      title: "Categoría creada",
+                                      description: `La categoría ${newCategory} ha sido creada exitosamente.`,
+                                    });
+                                    setCategories([...categories, result.data]);
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      categoryId: result.data.id
+                                    }));
+                                    setNewCategory("");
+                                  } else {
+                                    throw new Error(result.error || "Error al crear la categoría");
+                                  }
+                                } catch (error) {
+                                  console.error("Error al crear categoría:", error);
+                                  toast({
+                                    variant: "destructive",
+                                    title: "Error",
+                                    description: "Hubo un problema al crear la categoría. Inténtalo de nuevo.",
+                                  });
+                                }
+                              }}
+                            >
+                              Crear
+                            </Button>
+                          </div>
+                        </div>
+                        <Select
+                          value={formData.categoryId}
+                          onValueChange={(value) => handleSelectChange('categoryId', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar categoría" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="no-category">Sin categoría</SelectItem>
+                            {categories.map((category) => (
+                              <SelectItem key={category.id} value={category.id}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   </CardContent>

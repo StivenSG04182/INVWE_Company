@@ -4,6 +4,7 @@ import { MongoClient, Db, ObjectId } from 'mongodb';
 export interface IProduct {
   _id?: ObjectId;
   agencyId: string;
+  subaccountId: string;
   name: string;
   description?: string;
   sku: string;
@@ -12,6 +13,18 @@ export interface IProduct {
   cost?: number;
   minStock?: number;
   images?: string[];
+  productImage?: string;
+  categoryId?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface ICategory {
+  _id?: ObjectId;
+  agencyId: string;
+  subaccountId?: string;
+  name: string;
+  description?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -19,6 +32,7 @@ export interface IProduct {
 export interface IArea {
   _id?: ObjectId;
   agencyId: string;
+  subaccountId: string;
   name: string;
   description?: string;
   layout?: {
@@ -38,6 +52,7 @@ export interface IArea {
 export interface IProvider {
   _id?: ObjectId;
   agencyId: string;
+  subaccountId: string;
   name: string;
   contactName?: string;
   email?: string;
@@ -51,6 +66,7 @@ export interface IProvider {
 export interface IStock {
   _id?: ObjectId;
   agencyId: string;
+  subaccountId: string;
   productId: string;
   areaId: string;
   quantity: number;
@@ -61,6 +77,7 @@ export interface IStock {
 export interface IMovement {
   _id?: ObjectId;
   agencyId: string;
+  subaccountId: string;
   type: 'entrada' | 'salida' | 'transferencia';
   productId: string;
   areaId: string;

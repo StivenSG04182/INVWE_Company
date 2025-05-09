@@ -1,6 +1,6 @@
 import BlurPage from '@/components/global/blur-page'
-import { getNotificationAndUser } from '@/lib/queries'
 import { db } from '@/lib/db'
+import { connectToDatabase } from '@/lib/mongodb'
 import React from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,6 +8,16 @@ import { format } from 'date-fns'
 
 type Props = {
   params: { subaccountId: string }
+}
+
+interface Notification {
+  id: string;
+  notification: string;
+  createdAt: Date;
+  User: {
+    name: string;
+    avatarUrl: string;
+  };
 }
 
 const ActivityPage = async ({ params }: Props) => {
@@ -32,12 +42,35 @@ const ActivityPage = async ({ params }: Props) => {
     )
   }
 
-  // Obtener notificaciones de la agencia
-  const notifications = await getNotificationAndUser(subaccount.agencyId)
+  // Conectar a MongoDB
+  const { db: mongodb } = await connectToDatabase()
 
-  // Filtrar notificaciones relacionadas con esta subcuenta
-  const filteredNotifications = notifications?.filter(
-    (notification) => notification.subAccountId === params.subaccountId
+  // Obtener notificaciones relacionadas con esta subcuenta
+  const notificationsData = await mongodb
+    .collection('notifications')
+    .find({ subaccountId: params.subaccountId })
+    .sort({ createdAt: -1 })
+    .toArray()
+
+  // Obtener información de usuarios para cada notificación
+  const filteredNotifications: Notification[] = await Promise.all(
+    notificationsData.map(async (notification) => {
+      // Obtener usuario de Prisma (ya que los usuarios se manejan en Prisma)
+      const user = await db.user.findUnique({
+        where: { id: notification.userId },
+        select: { name: true, avatarUrl: true },
+      })
+
+      return {
+        id: notification._id.toString(),
+        notification: notification.notification,
+        createdAt: notification.createdAt,
+        User: {
+          name: user?.name || 'Usuario desconocido',
+          avatarUrl: user?.avatarUrl || '',
+        },
+      }
+    })
   )
 
   return (
@@ -56,12 +89,12 @@ const ActivityPage = async ({ params }: Props) => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col gap-4">
+            <div className="space-y-4">
               {filteredNotifications && filteredNotifications.length > 0 ? (
                 filteredNotifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className="flex gap-4 items-start border-b pb-4"
+                    className="flex gap-4 items-start border-b pb-4 mb-4"
                   >
                     <Avatar>
                       <AvatarImage src={notification.User.avatarUrl} />
