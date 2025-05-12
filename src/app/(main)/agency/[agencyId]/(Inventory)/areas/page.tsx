@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Grid3X3, Plus, Search, Filter, Edit, Package, LayoutGrid, ArrowUpDown, Pencil, Eye } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -146,9 +147,76 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
       </div>
 
       <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar áreas por nombre o descripción..." className="pl-10 w-full md:w-96" />
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Buscar áreas por nombre o descripción..." className="pl-10" />
+          </div>
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="min-w-[180px] justify-between">
+                  <span>Subcuentas</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="ml-2"
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Seleccionar subcuentas</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="p-2 space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="subcuenta-todas" />
+                    <label
+                      htmlFor="subcuenta-todas"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Todas las subcuentas
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="subcuenta1" />
+                    <label
+                      htmlFor="subcuenta1"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Subcuenta 1
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="subcuenta2" />
+                    <label
+                      htmlFor="subcuenta2"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Subcuenta 2
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="subcuenta3" />
+                    <label
+                      htmlFor="subcuenta3"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Subcuenta 3
+                    </label>
+                  </div>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
@@ -233,7 +301,7 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                       <Grid3X3 className="h-12 w-12 text-muted-foreground/30" />
                     )}
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <Link href={`/agency/${agencyId}/areas/${area._id}`}>
+                      <Link href={`/agency/${agencyId}/areas/workspace?areaId=${area._id}`}>
                         <Button size="sm" variant="secondary">
                           <Edit className="h-4 w-4 mr-2" />
                           Editar
@@ -301,7 +369,7 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Link href={`/agency/${agencyId}/areas/${area._id}`}>
+                            <Link href={`/agency/${agencyId}/areas/workspace?areaId=${area._id}`}>
                               <Button variant="outline" size="sm">
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Editar

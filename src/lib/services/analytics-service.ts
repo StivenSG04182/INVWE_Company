@@ -1,11 +1,23 @@
-import { connectToDatabase, IProduct, IStock, IMovement, ICategory } from '../mongodb';
+import { IProduct, IStock, IMovement, ICategory } from '../mongodb';
 import { ObjectId } from 'mongodb';
+
+// Verificar si estamos en el servidor
+const isServer = typeof window === 'undefined';
+
+// Importación dinámica para evitar errores en el cliente
+const getDatabase = async () => {
+  if (!isServer) {
+    throw new Error('Esta función solo puede ser ejecutada en el servidor');
+  }
+  const { connectToDatabase } = await import('../mongodb');
+  return connectToDatabase();
+};
 
 // Servicio para obtener datos analíticos
 export const AnalyticsService = {
   // Obtener datos de ventas mensuales
   async getMonthlySalesData(subaccountId: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     
     // Obtener fecha actual
     const now = new Date();
@@ -59,7 +71,7 @@ export const AnalyticsService = {
   
   // Obtener datos de ventas por categoría
   async getCategorySalesData(subaccountId: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     
     // Obtener todas las categorías
     const categories = await db
@@ -113,7 +125,7 @@ export const AnalyticsService = {
   
   // Obtener productos más vendidos
   async getTopProducts(subaccountId: string, limit: number = 5) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     
     // Obtener todos los productos
     const products = await db
@@ -153,7 +165,7 @@ export const AnalyticsService = {
   
   // Obtener estadísticas generales
   async getGeneralStats(subaccountId: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     
     // Obtener todos los productos
     const products = await db

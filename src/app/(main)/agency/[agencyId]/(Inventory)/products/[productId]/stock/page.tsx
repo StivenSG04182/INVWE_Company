@@ -36,8 +36,11 @@ const ProductStockPage = async ({ params }: { params: { agencyId: string; produc
   let stocks = []
   
   try {
-    product = await ProductService.getProductById(productId)
-    if (!product) {
+    // Importar el serializador para convertir objetos MongoDB a objetos planos
+    const { serializeMongoObject, serializeMongoArray } = await import('@/lib/serializers')
+    
+    const rawProduct = await ProductService.getProductById(productId)
+    if (!rawProduct) {
       return (
         <div className="container mx-auto p-6">
           <Alert variant="destructive">
@@ -57,8 +60,12 @@ const ProductStockPage = async ({ params }: { params: { agencyId: string; produc
       )
     }
     
+    // Serializar producto y stock
+    product = serializeMongoObject(rawProduct)
+    
     // Obtener stock del producto
-    stocks = await StockService.getStockByProductId(productId)
+    const rawStocks = await StockService.getStockByProductId(productId)
+    stocks = serializeMongoArray(rawStocks)
   } catch (error) {
     console.error("Error al cargar producto o stock:", error)
     return (
@@ -95,7 +102,7 @@ const ProductStockPage = async ({ params }: { params: { agencyId: string; produc
         </Button>
         <h1 className="text-2xl font-bold">Gestión de Stock</h1>
         <Badge variant="outline" className="ml-4">
-          ID: {product._id.toString().substring(0, 8)}
+          ID: {typeof product._id === 'string' ? product._id.substring(0, 8) : product._id.toString().substring(0, 8)}
         </Badge>
       </div>
 
@@ -109,9 +116,9 @@ const ProductStockPage = async ({ params }: { params: { agencyId: string; produc
           <CardContent>
             <div className="space-y-4">
               <div className="relative aspect-square rounded-md overflow-hidden border bg-muted/20">
-                {product.images && product.images.length > 0 ? (
+                {(product.images && product.images.length > 0) ? (
                   <Image
-                    src={product.images[0] || "/placeholder.svg"}
+                    src={product.images[0]}
                     alt={product.name}
                     fill
                     className="object-cover"

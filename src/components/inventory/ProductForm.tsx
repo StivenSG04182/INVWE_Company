@@ -325,7 +325,7 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="description">Descripción</Label>
+                      <Label htmlFor="description">Descripción *</Label>
                       <Textarea
                         id="description"
                         name="description"
@@ -333,6 +333,7 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
                         onChange={handleChange}
                         placeholder=""
                         rows={4}
+                        required
                       />
                     </div>
                     
@@ -386,7 +387,7 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
                         <div className="space-y-2">
                           <Label htmlFor="barcode" className="flex items-center">
                             <Barcode className="h-4 w-4 mr-2" />
-                            Código de Barras
+                            Código de Barras *
                           </Label>
                           <Input
                             id="barcode"
@@ -394,6 +395,7 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
                             value={formData.barcode}
                             onChange={handleChange}
                             placeholder=""
+                            required
                           />
                         </div>
                       </div>
@@ -507,7 +509,7 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="cost">Costo</Label>
+                        <Label htmlFor="cost">Costo *</Label>
                         <div className="relative">
                           <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                           <Input
@@ -519,11 +521,12 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
                             value={formData.cost}
                             onChange={handleChange}
                             className="pl-9"
+                            required
                           />
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="minStock">Stock Mínimo</Label>
+                        <Label htmlFor="minStock">Stock Mínimo *</Label>
                         <Input
                           id="minStock"
                           name="minStock"
@@ -531,6 +534,7 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
                           min="0"
                           value={formData.minStock}
                           onChange={handleChange}
+                          required
                         />
                       </div>
                     </div>

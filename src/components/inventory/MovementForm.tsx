@@ -256,10 +256,11 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
 
           {type === 'entrada' && (
             <div className="space-y-2">
-              <Label htmlFor="providerId">Proveedor</Label>
+              <Label htmlFor="providerId">Proveedor *</Label>
               <Select
                 value={formData.providerId}
                 onValueChange={(value) => handleSelectChange('providerId', value)}
+                required
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar proveedor (opcional)" />
@@ -276,7 +277,7 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="notes">Notas</Label>
+            <Label htmlFor="notes">Notas *</Label>
             <Textarea
               id="notes"
               name="notes"
@@ -284,6 +285,7 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
               onChange={handleChange}
               rows={3}
               placeholder="Información adicional sobre este movimiento"
+              required
             />
           </div>
         </CardContent>

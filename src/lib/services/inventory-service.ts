@@ -1,11 +1,23 @@
-import { connectToDatabase, IProduct, IStock, IArea, IProvider, IMovement, ICategory } from '../mongodb';
+import { IProduct, IStock, IArea, IProvider, IMovement, ICategory } from '../mongodb';
 import { ObjectId } from 'mongodb';
+
+// Verificar si estamos en el servidor
+const isServer = typeof window === 'undefined';
+
+// Importación dinámica para evitar errores en el cliente
+const getDatabase = async () => {
+  if (!isServer) {
+    throw new Error('Esta función solo puede ser ejecutada en el servidor');
+  }
+  const { connectToDatabase } = await import('../mongodb');
+  return connectToDatabase();
+};
 
 // Servicio para gestionar productos
 export const ProductService = {
   // Obtener todos los productos de una agencia
   async getProducts(agencyId: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db
       .collection('products')
       .find({ agencyId })
@@ -15,7 +27,7 @@ export const ProductService = {
 
   // Obtener todos los productos de una subaccount específica
   async getProductsBySubaccount(subaccountId: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db
       .collection('products')
       .find({ subaccountId })
@@ -25,13 +37,13 @@ export const ProductService = {
 
   // Obtener un producto por ID
   async getProductById(id: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db.collection('products').findOne({ _id: new ObjectId(id) });
   },
 
   // Crear un nuevo producto
   async createProduct(product: IProduct) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     const newProduct = {
       ...product,
       createdAt: new Date(),
@@ -43,7 +55,7 @@ export const ProductService = {
 
   // Actualizar un producto existente
   async updateProduct(id: string, product: Partial<IProduct>) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     const updatedProduct = {
       ...product,
       updatedAt: new Date(),
@@ -56,7 +68,7 @@ export const ProductService = {
 
   // Eliminar un producto
   async deleteProduct(id: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db.collection('products').deleteOne({ _id: new ObjectId(id) });
   },
 };
@@ -65,7 +77,7 @@ export const ProductService = {
 export const StockService = {
   // Obtener todo el stock de una agencia
   async getStocks(agencyId: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db
       .collection('stocks')
       .find({ agencyId })
@@ -75,7 +87,7 @@ export const StockService = {
 
   // Obtener todo el stock de una subaccount específica
   async getStocksBySubaccount(subaccountId: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db
       .collection('stocks')
       .find({ subaccountId })
@@ -85,19 +97,19 @@ export const StockService = {
 
   // Obtener stock por ID de producto
   async getStockByProductId(productId: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db.collection('stocks').find({ productId }).toArray();
   },
 
   // Obtener stock por ID de área
   async getStockByAreaId(areaId: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db.collection('stocks').find({ areaId }).toArray();
   },
 
   // Crear o actualizar stock
   async updateStock(stock: IStock) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     const existingStock = await db
       .collection('stocks')
       .findOne({ productId: stock.productId, areaId: stock.areaId });
@@ -128,7 +140,7 @@ export const StockService = {
 export const AreaService = {
   // Obtener todas las áreas de una agencia
   async getAreas(agencyId: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db
       .collection('areas')
       .find({ agencyId })
@@ -138,7 +150,7 @@ export const AreaService = {
 
   // Obtener todas las áreas de una subaccount específica
   async getAreasBySubaccount(subaccountId: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db
       .collection('areas')
       .find({ subaccountId })
@@ -148,13 +160,13 @@ export const AreaService = {
 
   // Obtener un área por ID
   async getAreaById(id: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db.collection('areas').findOne({ _id: new ObjectId(id) });
   },
 
   // Crear una nueva área
   async createArea(area: IArea) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     const newArea = {
       ...area,
       createdAt: new Date(),
@@ -166,7 +178,7 @@ export const AreaService = {
 
   // Actualizar un área existente
   async updateArea(id: string, area: Partial<IArea>) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     const updatedArea = {
       ...area,
       updatedAt: new Date(),
@@ -179,7 +191,7 @@ export const AreaService = {
 
   // Eliminar un área
   async deleteArea(id: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db.collection('areas').deleteOne({ _id: new ObjectId(id) });
   },
 };
@@ -188,7 +200,7 @@ export const AreaService = {
 export const CategoryService = {
   // Obtener todas las categorías de una agencia
   async getCategories(agencyId: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db
       .collection('categories')
       .find({ agencyId })
@@ -198,7 +210,7 @@ export const CategoryService = {
 
   // Obtener todas las categorías de una subaccount específica
   async getCategoriesBySubaccount(subaccountId: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db
       .collection('categories')
       .find({ subaccountId })
@@ -208,13 +220,13 @@ export const CategoryService = {
 
   // Obtener una categoría por ID
   async getCategoryById(id: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db.collection('categories').findOne({ _id: new ObjectId(id) });
   },
 
   // Crear una nueva categoría
   async createCategory(category: ICategory) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     const newCategory = {
       ...category,
       createdAt: new Date(),
@@ -226,7 +238,7 @@ export const CategoryService = {
 
   // Actualizar una categoría existente
   async updateCategory(id: string, category: Partial<ICategory>) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     const updatedCategory = {
       ...category,
       updatedAt: new Date(),
@@ -239,7 +251,7 @@ export const CategoryService = {
 
   // Eliminar una categoría
   async deleteCategory(id: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db.collection('categories').deleteOne({ _id: new ObjectId(id) });
   },
 };
@@ -248,7 +260,7 @@ export const CategoryService = {
 export const ProviderService = {
   // Obtener todos los proveedores de una agencia
   async getProviders(agencyId: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db
       .collection('providers')
       .find({ agencyId })
@@ -258,7 +270,7 @@ export const ProviderService = {
 
   // Obtener todos los proveedores de una subaccount específica
   async getProvidersBySubaccount(subaccountId: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db
       .collection('providers')
       .find({ subaccountId })
@@ -268,13 +280,13 @@ export const ProviderService = {
 
   // Obtener un proveedor por ID
   async getProviderById(id: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db.collection('providers').findOne({ _id: new ObjectId(id) });
   },
 
   // Crear un nuevo proveedor
   async createProvider(provider: IProvider) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     const newProvider = {
       ...provider,
       createdAt: new Date(),
@@ -286,7 +298,7 @@ export const ProviderService = {
 
   // Actualizar un proveedor existente
   async updateProvider(id: string, provider: Partial<IProvider>) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     const updatedProvider = {
       ...provider,
       updatedAt: new Date(),
@@ -299,7 +311,7 @@ export const ProviderService = {
 
   // Eliminar un proveedor
   async deleteProvider(id: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db.collection('providers').deleteOne({ _id: new ObjectId(id) });
   },
 };
@@ -308,7 +320,7 @@ export const ProviderService = {
 export const MovementService = {
   // Obtener todos los movimientos de una agencia
   async getMovements(agencyId: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db
       .collection('movements')
       .find({ agencyId })
@@ -318,7 +330,7 @@ export const MovementService = {
 
   // Obtener todos los movimientos de una subaccount específica
   async getMovementsBySubaccount(subaccountId: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db
       .collection('movements')
       .find({ subaccountId })
@@ -328,17 +340,24 @@ export const MovementService = {
 
   // Obtener un movimiento por ID
   async getMovementById(id: string) {
-    const { db } = await connectToDatabase();
+    const { db } = await getDatabase();
     return db.collection('movements').findOne({ _id: new ObjectId(id) });
   },
 
   // Crear un nuevo movimiento y actualizar el stock
   async createMovement(movement: IMovement) {
-    const { db } = await connectToDatabase();
-    const session = cachedClient?.startSession();
+    const { db } = await getDatabase();
+    const { cachedClient } = await getDatabase();
 
+    // Inicializar session como null para evitar errores
+    let session = null;
+    
     try {
-      session?.startTransaction();
+      // Solo iniciar sesión si el cliente está disponible
+      if (cachedClient) {
+        session = cachedClient.startSession();
+        session.startTransaction();
+      }
 
       // Crear el movimiento
       const newMovement = {
@@ -381,13 +400,19 @@ export const MovementService = {
         });
       }
 
-      await session?.commitTransaction();
+      // Solo ejecutar operaciones de transacción si session existe
+      if (session) {
+        await session.commitTransaction();
+        await session.endSession();
+      }
       return { ...newMovement, _id: result.insertedId };
     } catch (error) {
-      await session?.abortTransaction();
+      // Solo abortar transacción si session existe
+      if (session) {
+        await session.abortTransaction();
+        await session.endSession();
+      }
       throw error;
-    } finally {
-      await session?.endSession();
     }
   },
 };

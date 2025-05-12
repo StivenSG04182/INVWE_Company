@@ -17,6 +17,7 @@ import {
   FileText,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +28,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FilteredMovements } from "@/components/inventory/filtered-movements"
+import { MovementService, ProductService, AreaService } from "@/lib/services/inventory-service"
 
 const MovementsPage = async ({ params }: { params: { agencyId: string } }) => {
   const user = await getAuthUserDetails()
@@ -37,46 +40,51 @@ const MovementsPage = async ({ params }: { params: { agencyId: string } }) => {
     return redirect("/agency")
   }
 
-  // Simulación de datos para la demostración
-  const movements = [
-    {
-      _id: "mov1",
-      type: "entrada",
-      productName: "Camiseta Algodón",
-      productSku: "CAM-001",
-      areaName: "Almacén Principal",
-      quantity: 50,
-      date: new Date(2023, 5, 15),
-      providerName: "Textiles XYZ",
-      notes: "Reposición de stock mensual",
-    },
-    {
-      _id: "mov2",
-      type: "salida",
-      productName: "Pantalón Vaquero",
-      productSku: "PAN-002",
-      areaName: "Tienda Centro",
-      quantity: 10,
-      date: new Date(2023, 5, 16),
-      notes: "Venta en tienda",
-    },
-    {
-      _id: "mov3",
-      type: "entrada",
-      productName: "Zapatillas Deportivas",
-      productSku: "ZAP-003",
-      areaName: "Almacén Principal",
-      quantity: 25,
-      date: new Date(2023, 5, 17),
-      providerName: "Calzados Deportivos S.A.",
-      notes: "Nuevo modelo temporada verano",
-    },
-  ]
+  // Obtener datos reales de movimientos desde MongoDB
+  const rawMovements = await MovementService.getMovements(agencyId)
+  
+  // Obtener productos y áreas para enriquecer los datos de movimientos
+  const products = await ProductService.getProducts(agencyId)
+  const areas = await AreaService.getAreas(agencyId)
+  
+  // Enriquecer los datos de movimientos con información de productos y áreas
+  const movements = await Promise.all(rawMovements.map(async (movement) => {
+    const product = products.find(p => p._id.toString() === movement.productId)
+    const area = areas.find(a => a._id.toString() === movement.areaId)
+    
+    // Asegurar que el tipo de movimiento esté en minúsculas para coincidir con la interfaz del componente
+    // En MongoDB puede estar como ENTRADA, SALIDA, TRANSFERENCIA (según el enum de Prisma)
+    let movementType = movement.type.toLowerCase()
+    if (movementType === 'entrada' || movementType === 'salida' || movementType === 'transferencia') {
+      // El tipo ya está correcto
+    } else if (movementType.includes('entrada') || movement.type === 'ENTRADA') {
+      movementType = 'entrada'
+    } else if (movementType.includes('salida') || movement.type === 'SALIDA') {
+      movementType = 'salida'
+    } else if (movementType.includes('transfer') || movement.type === 'TRANSFERENCIA') {
+      movementType = 'transferencia'
+    }
+    
+    return {
+      ...movement,
+      _id: movement._id.toString(),
+      type: movementType,
+      productName: product ? product.name : 'Producto desconocido',
+      productSku: product ? product.sku : 'Sin SKU',
+      areaName: area ? area.name : 'Área desconocida'
+    }
+  }))
 
-  // Calcular estadísticas
+  // Calcular estadísticas con los tipos normalizados
   const totalEntries = movements.filter((m) => m.type === "entrada").length
   const totalExits = movements.filter((m) => m.type === "salida").length
   const totalTransfers = movements.filter((m) => m.type === "transferencia").length
+  
+  // Obtener subcuentas del usuario actual
+  const subAccounts = user.Agency?.SubAccount?.map(subaccount => ({
+    id: subaccount.id,
+    name: subaccount.name
+  })) || []
 
   return (
     <div className="container mx-auto p-6">
@@ -224,102 +232,24 @@ const MovementsPage = async ({ params }: { params: { agencyId: string } }) => {
         </Card>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar por producto, área o notas..." className="pl-10" />
-        </div>
-        <div className="flex gap-2">
-          <Select defaultValue="all">
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Tipo de movimiento" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los tipos</SelectItem>
-              <SelectItem value="entrada">Entradas</SelectItem>
-              <SelectItem value="salida">Salidas</SelectItem>
-              <SelectItem value="transferencia">Transferencias</SelectItem>
-            </SelectContent>
-          </Select>
-          <Input type="date" className="w-[180px]" />
-        </div>
-      </div>
-
-      <Card>
-        <CardContent className="p-0">
-          {movements.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-10">
-              <ArrowLeftRight className="h-16 w-16 text-muted-foreground/30 mb-4" />
-              <h3 className="text-xl font-medium mb-2">No hay movimientos registrados</h3>
-              <p className="text-muted-foreground text-center mb-6">
-                Registre entradas y salidas de productos para comenzar a llevar un control de su inventario.
-              </p>
-              <div className="flex gap-2">
-                <Link href={`/agency/${agencyId}/movements/entrada`}>
-                  <Button variant="default">
-                    <ArrowDownToLine className="h-4 w-4 mr-2" />
-                    Registrar Entrada
-                  </Button>
-                </Link>
-                <Link href={`/agency/${agencyId}/movements/salida`}>
-                  <Button variant="outline">
-                    <ArrowUpFromLine className="h-4 w-4 mr-2" />
-                    Registrar Salida
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Producto</TableHead>
-                  <TableHead className="hidden md:table-cell">Ubicación</TableHead>
-                  <TableHead>Cantidad</TableHead>
-                  <TableHead className="hidden md:table-cell">Fecha</TableHead>
-                  <TableHead className="hidden lg:table-cell">Notas</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {movements.map((movement) => (
-                  <TableRow key={movement._id}>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          movement.type === "entrada"
-                            ? "default"
-                            : movement.type === "salida"
-                              ? "destructive"
-                              : "outline"
-                        }
-                        className="flex items-center gap-1 w-fit"
-                      >
-                        {movement.type === "entrada" && <ArrowDownToLine className="h-3 w-3" />}
-                        {movement.type === "salida" && <ArrowUpFromLine className="h-3 w-3" />}
-                        {movement.type === "transferencia" && <ArrowLeftRight className="h-3 w-3" />}
-                        <span className="capitalize">{movement.type}</span>
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">{movement.productName}</div>
-                      <div className="text-xs text-muted-foreground">{movement.productSku}</div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">{movement.areaName}</TableCell>
-                    <TableCell className="font-medium">
-                      {movement.quantity} {movement.type === "entrada" ? "+" : "-"}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">{movement.date.toLocaleDateString()}</TableCell>
-                    <TableCell className="hidden lg:table-cell text-muted-foreground truncate max-w-xs">
-                      {movement.notes}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      {/* Componente de movimientos filtrados */}
+      {movements.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center p-10">
+            <h3 className="text-xl font-medium mb-2">No hay movimientos registrados</h3>
+            <p className="text-muted-foreground text-center mb-6">
+              Comience registrando entradas, salidas o transferencias de productos.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <FilteredMovements 
+          agencyId={agencyId}
+          movements={movements}
+          areas={areas}
+          subAccounts={subAccounts}
+        />
+      )}
     </div>
   )
 }

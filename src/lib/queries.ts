@@ -255,12 +255,60 @@ export const verifyAndAcceptInvitation = async () => {
     });
 
     if (userDetails) {
+      // Actualizar metadatos del usuario en Clerk
       await clerkClient.users.updateUserMetadata(user.id, {
         privateMetadata: {
           role: userDetails.role || "SUBACCOUNT_USER",
         },
       });
 
+      try {
+        // Intentar revocar la invitación en Clerk
+        console.log('Revocando invitación en Clerk para:', userDetails.email);
+        
+        // Obtener todas las invitaciones pendientes para este email
+        const invitations = await clerkClient.invitations.getInvitationList({
+          emailAddress: userDetails.email,
+        });
+        
+        console.log(`Se encontraron ${invitations.length} invitaciones en Clerk para ${userDetails.email}`);
+        
+        // Filtrar solo las invitaciones pendientes
+        const pendingInvitations = invitations.filter(inv => inv.status === 'pending');
+        console.log(`De las cuales ${pendingInvitations.length} están pendientes`);
+        
+        if (pendingInvitations.length > 0) {
+          // Revocar todas las invitaciones pendientes para este email
+          for (const invitation of pendingInvitations) {
+            try {
+              console.log(`Revocando invitación ID: ${invitation.id}, Status: ${invitation.status}`);
+              await clerkClient.invitations.revokeInvitation(invitation.id);
+              console.log('✅ Invitación revocada exitosamente en Clerk, ID:', invitation.id);
+            } catch (revocationError) {
+              console.error(`Error al revocar invitación específica ${invitation.id}:`, revocationError);
+            }
+          }
+          
+          // Verificar que se hayan revocado todas las invitaciones
+          const checkInvitations = await clerkClient.invitations.getInvitationList({
+            emailAddress: userDetails.email,
+            status: 'pending'
+          });
+          
+          if (checkInvitations.length > 0) {
+            console.warn(`⚠️ Aún quedan ${checkInvitations.length} invitaciones pendientes después de intentar revocarlas`);
+          } else {
+            console.log('✅ Todas las invitaciones fueron revocadas correctamente');
+          }
+        } else {
+          console.log('No se encontraron invitaciones pendientes en Clerk para:', userDetails.email);
+        }
+      } catch (clerkError) {
+        // Si hay un error al revocar la invitación en Clerk, lo registramos pero continuamos
+        console.error('Error al obtener o revocar invitaciones en Clerk:', clerkError);
+      }
+
+      // Eliminar la invitación de nuestra base de datos
       await db.invitation.delete({
         where: { email: userDetails.email },
       });

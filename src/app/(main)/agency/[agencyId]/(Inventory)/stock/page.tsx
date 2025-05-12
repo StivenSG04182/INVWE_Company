@@ -1,6 +1,6 @@
-import { getAuthUserDetails } from "@/lib/queries"
-import { redirect } from "next/navigation"
-import { StockService, ProductService, AreaService } from "@/lib/services/inventory-service"
+"use client"
+
+import { getStockPageData } from "./page-server"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -21,6 +21,8 @@ import {
   Plus,
   Minus,
   Eye,
+  Edit,
+  LayoutGrid,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -36,53 +38,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Image from "next/image"
 
-const StockPage = async ({ params }: { params: { agencyId: string } }) => {
-  const user = await getAuthUserDetails()
-  if (!user) return redirect("/sign-in")
-
+const StockPage = ({ params }: { params: { agencyId: string } }) => {
   const agencyId = params.agencyId
-  if (!user.Agency) {
-    return redirect("/agency")
-  }
-
-  // Obtener datos de stock, productos y áreas de MongoDB
-  let stocks = []
-  let products = []
-  let areas = []
-  let totalItems = 0
-  let totalValue = 0
-  let lowStockItems = 0
-
-  try {
-    // Obtener stock
-    stocks = await StockService.getStocks(agencyId)
-
-    // Obtener productos y áreas para mostrar nombres
-    products = await ProductService.getProducts(agencyId)
-    areas = await AreaService.getAreas(agencyId)
-
-    // Calcular estadísticas
-    totalItems = stocks.reduce((sum: number, item: any) => sum + item.quantity, 0)
-
-    // Calcular valor total del inventario
-    const productsMap = new Map(products.map((p: any) => [p._id.toString(), p]))
-    totalValue = stocks.reduce((sum: number, item: any) => {
-      const product = productsMap.get(item.productId)
-      return sum + (product ? product.price * item.quantity : 0)
-    }, 0)
-
-    // Contar productos bajo mínimo
-    lowStockItems = stocks.filter((item: any) => {
-      const product = productsMap.get(item.productId)
-      return product && product.minStock && item.quantity <= product.minStock
-    }).length
-  } catch (error) {
-    console.error("Error al cargar datos de inventario:", error)
-  }
-
-  // Crear mapas para buscar nombres de productos y áreas
-  const productsMap = new Map(products.map((p: any) => [p._id.toString(), p]))
-  const areasMap = new Map(areas.map((a: any) => [a._id.toString(), a]))
+  
+  // Utilizamos el hook useEffect para cargar los datos del servidor
+  const { user, stocks, products, areas, totalItems, totalValue, lowStockItems, productsMap, areasMap, subAccounts } = 
+    // @ts-expect-error - Server Component
+    getStockPageData(agencyId)
 
   return (
     <div className="container mx-auto p-6">
@@ -174,6 +136,13 @@ const StockPage = async ({ params }: { params: { agencyId: string } }) => {
                   Registrar Salida
                 </DropdownMenuItem>
               </Link>
+              <DropdownMenuSeparator />
+              <Link href={`/agency/${agencyId}/areas/workspace`}>
+                <DropdownMenuItem>
+                  <LayoutGrid className="h-4 w-4 mr-2 text-blue-500" />
+                  Diseñar Área de Trabajo
+                </DropdownMenuItem>
+              </Link>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -199,7 +168,7 @@ const StockPage = async ({ params }: { params: { agencyId: string } }) => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Valor del Inventario</p>
-                <p className="text-2xl font-bold">${totalValue.toFixed(2)}</p>
+                <p className="text-2xl font-bold">${totalValue ? totalValue.toFixed(2) : '0.00'}</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <DollarSign className="h-6 w-6 text-primary" />
@@ -235,11 +204,11 @@ const StockPage = async ({ params }: { params: { agencyId: string } }) => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas las ubicaciones</SelectItem>
-              {areas.map((area: any) => (
+              {areas && areas.length > 0 ? areas.map((area: any) => (
                 <SelectItem key={area._id} value={area._id}>
                   {area.name}
                 </SelectItem>
-              ))}
+              )) : null}
             </SelectContent>
           </Select>
           <Select defaultValue="all">
@@ -251,6 +220,19 @@ const StockPage = async ({ params }: { params: { agencyId: string } }) => {
               <SelectItem value="low">Bajo mínimo</SelectItem>
               <SelectItem value="normal">Normal</SelectItem>
               <SelectItem value="zero">Sin existencias</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select defaultValue="all">
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Subcuentas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las subcuentas</SelectItem>
+              {user && user.Agency && user.Agency.SubAccount && user.Agency.SubAccount.map((subaccount: any) => (
+                <SelectItem key={subaccount.id} value={subaccount.id}>
+                  {subaccount.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -305,13 +287,13 @@ const StockPage = async ({ params }: { params: { agencyId: string } }) => {
               </div>
             </TabsTrigger>
           </TabsList>
-          <div className="text-sm text-muted-foreground">Mostrando {stocks.length} registros</div>
+          <div className="text-sm text-muted-foreground">Mostrando {stocks && stocks.length ? stocks.length : 0} registros</div>
         </div>
 
         <TabsContent value="table" className="mt-0">
           <Card>
             <CardContent className="p-0">
-              {stocks.length === 0 ? (
+              {!stocks || stocks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-10">
                   <Package className="h-16 w-16 text-muted-foreground/30 mb-4" />
                   <h3 className="text-xl font-medium mb-2">No hay registros de stock disponibles</h3>
@@ -432,10 +414,16 @@ const StockPage = async ({ params }: { params: { agencyId: string } }) => {
                                     </DropdownMenuItem>
                                   </Link>
                                   <DropdownMenuSeparator />
-                                  <Link href={`/agency/${agencyId}/products/${stock.productId}`}>
+                                  <Link href={`/agency/${agencyId}/stock/${stock.productId}`}>
                                     <DropdownMenuItem>
                                       <Eye className="h-4 w-4 mr-2" />
-                                      Ver Producto
+                                      Ver Detalle de Stock
+                                    </DropdownMenuItem>
+                                  </Link>
+                                  <Link href={`/agency/${agencyId}/products/${stock.productId}`}>
+                                    <DropdownMenuItem>
+                                      <Edit className="h-4 w-4 mr-2" />
+                                      Editar Producto
                                     </DropdownMenuItem>
                                   </Link>
                                 </DropdownMenuContent>
@@ -453,7 +441,7 @@ const StockPage = async ({ params }: { params: { agencyId: string } }) => {
         </TabsContent>
 
         <TabsContent value="cards" className="mt-0">
-          {stocks.length === 0 ? (
+          {!stocks || stocks.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center p-10">
                 <Package className="h-16 w-16 text-muted-foreground/30 mb-4" />

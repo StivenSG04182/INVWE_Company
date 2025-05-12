@@ -21,6 +21,7 @@ import {
   Package,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +32,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ProviderService } from "@/lib/services/inventory-service"
+import { IProvider } from "@/lib/mongodb"
 
 const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
   const user = await getAuthUserDetails()
@@ -41,47 +44,21 @@ const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
     return redirect("/agency")
   }
 
-  // Simulación de datos para la demostración
-  const providers = [
-    {
-      _id: "prov1",
-      name: "Textiles XYZ",
-      contactName: "Juan Pérez",
-      email: "juan@textilesxyz.com",
-      phone: "+52 55 1234 5678",
-      address: "Av. Insurgentes Sur 1234, Ciudad de México",
-      active: true,
-      pendingOrders: 2,
-      createdAt: new Date(2023, 1, 15),
-    },
-    {
-      _id: "prov2",
-      name: "Calzados Deportivos S.A.",
-      contactName: "María Rodríguez",
-      email: "maria@calzadosdeportivos.com",
-      phone: "+52 55 8765 4321",
-      address: "Calle Reforma 567, Guadalajara, Jalisco",
-      active: true,
-      pendingOrders: 0,
-      createdAt: new Date(2023, 2, 20),
-    },
-    {
-      _id: "prov3",
-      name: "Accesorios Moda",
-      contactName: "Carlos López",
-      email: "carlos@accesoriosmoda.com",
-      phone: "+52 55 2468 1357",
-      address: "Blvd. Kukulcán Km 12, Cancún, Quintana Roo",
-      active: false,
-      pendingOrders: 0,
-      createdAt: new Date(2023, 3, 10),
-    },
-  ]
+  // Obtener proveedores reales desde la base de datos
+  let providers: IProvider[] = []
+  try {
+    providers = await ProviderService.getProviders(agencyId)
+  } catch (error) {
+    console.error("Error al cargar proveedores:", error)
+  }
 
   // Calcular estadísticas
   const totalProviders = providers.length
-  const activeProviders = providers.filter((p) => p.active).length
-  const pendingOrders = providers.reduce((sum, p) => sum + p.pendingOrders, 0)
+  const activeProviders = providers.filter((p) => p.active === true).length
+  
+  // Nota: pendingOrders no está en el modelo de datos actual, se podría implementar
+  // en el futuro consultando los movimientos pendientes relacionados con cada proveedor
+  const pendingOrders = 0
 
   return (
     <div className="container mx-auto p-6">
@@ -211,9 +188,76 @@ const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
       </div>
 
       <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar proveedores por nombre, contacto o email..." className="pl-10 w-full md:w-96" />
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Buscar proveedores por nombre, contacto o email..." className="pl-10" />
+          </div>
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="min-w-[180px] justify-between">
+                  <span>Subcuentas</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="ml-2"
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Seleccionar subcuentas</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="p-2 space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="subcuenta-todas" />
+                    <label
+                      htmlFor="subcuenta-todas"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Todas las subcuentas
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="subcuenta1" />
+                    <label
+                      htmlFor="subcuenta1"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Subcuenta 1
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="subcuenta2" />
+                    <label
+                      htmlFor="subcuenta2"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Subcuenta 2
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="subcuenta3" />
+                    <label
+                      htmlFor="subcuenta3"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Subcuenta 3
+                    </label>
+                  </div>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
@@ -289,13 +333,13 @@ const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {providers.map((provider) => (
-                <Card key={provider._id} className="overflow-hidden">
+                <Card key={provider._id?.toString()} className="overflow-hidden">
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className="font-medium text-lg">{provider.name}</h3>
                         <p className="text-sm text-muted-foreground">
-                          {new Date(provider.createdAt).toLocaleDateString()}
+                          {provider.createdAt ? new Date(provider.createdAt).toLocaleDateString() : 'Fecha no disponible'}
                         </p>
                       </div>
                       <Badge variant={provider.active ? "default" : "secondary"}>
@@ -323,16 +367,9 @@ const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
                     </div>
 
                     <div className="flex justify-between items-center mt-6">
-                      {provider.pendingOrders > 0 ? (
-                        <Badge variant="outline" className="bg-amber-50">
-                          <Package className="h-3 w-3 mr-1 text-amber-600" />
-                          {provider.pendingOrders} órdenes pendientes
-                        </Badge>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">Sin órdenes pendientes</span>
-                      )}
+                      <span className="text-sm text-muted-foreground">Sin órdenes pendientes</span>
 
-                      <Link href={`/agency/${agencyId}/providers/${provider._id}`}>
+                      <Link href={`/agency/${agencyId}/providers/${provider._id?.toString()}`}>
                         <Button variant="outline" size="sm">
                           <Pencil className="h-4 w-4 mr-2" />
                           Editar
@@ -377,7 +414,7 @@ const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
                   </TableHeader>
                   <TableBody>
                     {providers.map((provider) => (
-                      <TableRow key={provider._id}>
+                      <TableRow key={provider._id?.toString()}>
                         <TableCell className="font-medium">{provider.name}</TableCell>
                         <TableCell className="hidden md:table-cell">{provider.contactName || "—"}</TableCell>
                         <TableCell className="hidden md:table-cell">
@@ -394,7 +431,7 @@ const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Link href={`/agency/${agencyId}/providers/${provider._id}`}>
+                            <Link href={`/agency/${agencyId}/providers/${provider._id?.toString()}`}>
                               <Button variant="outline" size="sm">
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Editar

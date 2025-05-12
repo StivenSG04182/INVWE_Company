@@ -1,13 +1,23 @@
-import { connectToDatabase } from '../mongodb';
-import { db } from '../db';
 import { ObjectId } from 'mongodb';
+
+// Verificar si estamos en el servidor
+const isServer = typeof window === 'undefined';
+
+// Importación dinámica para evitar errores en el cliente
+const getDatabase = async () => {
+  if (!isServer) {
+    throw new Error('Esta función solo puede ser ejecutada en el servidor');
+  }
+  const { connectToDatabase } = await import('../mongodb');
+  return connectToDatabase();
+};
 
 // Servicio para obtener datos de ventas para reportes
 export const SalesReportService = {
     // Obtener estadísticas generales de ventas
     async getSalesStats(agencyId: string) {
         try {
-            const { db } = await connectToDatabase();
+            const { db } = await getDatabase();
 
             // Obtener todas las ventas
             const sales = await db
