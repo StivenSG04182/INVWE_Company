@@ -1333,8 +1333,17 @@ export const upsertContact = async (
   return response
 }
 export const getFunnels = async (agencyId: string) => {
-  const funnels = await db.funnel.findMany({
+  // Primero obtenemos todas las subcuentas asociadas a esta agencia
+  const subAccounts = await db.subAccount.findMany({
     where: { agencyId: agencyId },
+    select: { id: true },
+  })
+  
+  // Luego obtenemos los funnels para todas estas subcuentas
+  const funnels = await db.funnel.findMany({
+    where: { 
+      subAccountId: { in: subAccounts.map(subAccount => subAccount.id) } 
+    },
     include: { FunnelPages: true },
   })
 

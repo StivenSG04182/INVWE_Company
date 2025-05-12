@@ -92,10 +92,13 @@ const mercadoPagoGateway: PaymentGateway = {
         currency: 'USD'
     },
     authUrl: (agencyId: string) => {
+        // Usar nuestra página de simulación en lugar de la URL real de MercadoPago
+        const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
         const redirectUri = encodeURIComponent(getRedirectUrl(agencyId));
         const scope = encodeURIComponent('read write payments');
-
-        return `${MERCADOPAGO_OAUTH_URL}?client_id=${MERCADOPAGO_CLIENT_ID}&response_type=code&scope=${scope}&redirect_uri=${redirectUri}&state=${agencyId}`;
+        
+        // Redirigir a nuestra página de simulación con los parámetros necesarios
+        return `${baseUrl}/mercadopago-auth-mock?redirect_uri=${redirectUri}&state=${agencyId}&scope=${scope}`;
     },
     validateConnection: async (agencyId: string) => {
         try {

@@ -154,17 +154,11 @@ const PaymentGatewayModal = ({
               {paymentGateways.map((gateway) => (
                 <div key={gateway.id} className="flex justify-between items-center w-full border p-4 rounded-lg gap-2">
                   <div className="flex md:items-center gap-4 flex-col md:!flex-row">
-                    <Image 
-                      src={gateway.logo} 
-                      alt={`${gateway.name} logo`} 
-                      height={80} 
-                      width={80} 
-                      className="rounded-md object-contain" 
-                      onError={(e) => {
-                        // Fallback para logos que no existan
-                        e.currentTarget.src = '/placeholder-logo.png'
-                      }}
-                    />
+                    <div 
+                      className={`h-20 w-20 rounded-md flex items-center justify-center text-white font-bold ${gateway.id === 'paypal' ? 'bg-blue-500' : 'bg-[#009ee3]'}`}
+                    >
+                      {gateway.name}
+                    </div>
                     <div>
                       <h3 className="font-medium">{gateway.name}</h3>
                       <p className="text-sm text-muted-foreground">{gateway.description}</p>
