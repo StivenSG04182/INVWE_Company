@@ -442,7 +442,14 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "E-Commerce", icon: "pipelines", link: `/agency/${agency.id}/(Ecommerce)/funnels` },
             { name: "Envíos", icon: "send", link: `/agency/${agency.id}/(Ecommerce)/shipping` },
 
-            // 4. Ventas & Facturación
+            // 4. POS (Punto de Venta)
+            { name: "POS (Punto de Venta)", icon: "store", link: "#" },
+            { name: "Terminal", icon: "payment", link: `/agency/${agency.id}/(POS)/terminal` },
+            { name: "Ventas", icon: "receipt", link: `/agency/${agency.id}/(POS)/sales-pos` },
+            { name: "Cierre de Caja", icon: "chart", link: `/agency/${agency.id}/(POS)/cash-closing` },  
+            
+
+            // 5. Ventas & Facturación
             { name: "Ventas & Facturación", icon: "payment", link: "#" },
             { name: "Transacciones", icon: "receipt", link: `/agency/${agency.id}/(Billing)/transactions` },
             { name: "Facturas", icon: "receipt", link: `/agency/${agency.id}/(Billing)/invoices` },
@@ -452,34 +459,35 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "Pagos", icon: "payment", link: `/agency/${agency.id}/(Billing)/payments` },
             { name: "Billing", icon: "payment", link: `/agency/${agency.id}/(Billing)/billing-store` },
 
-            // 5. Clientes & CRM
+            // 6. Clientes & CRM
             { name: "Clientes & CRM", icon: "person", link: "#" },
             { name: "Clientes", icon: "person", link: `/agency/${agency.id}/(Customers)/clients` },
             { name: "CRM", icon: "contact", link: `/agency/${agency.id}/(Customers)/crm` },
 
-            // 6. Personal & RRHH
+            // 7. Personal & RRHH
             { name: "Personal & RRHH", icon: "person", link: "#" },
             { name: "Empleados", icon: "person", link: `/agency/${agency.id}/(Staff)/team` },
             { name: "Horarios & Nómina", icon: "calendar", link: `/agency/${agency.id}/(Staff)/schedule` },
             { name: "Contactos", icon: "contact", link: `/agency/${agency.id}/(Staff)/contacts` },
-            { name: "Pipelines", icon: "flag", link: `/agency/${agency.id}/(Staff)/pipelines` },
+            { name: "Objetivos", icon: "flag", link: `/agency/${agency.id}/(Staff)/pipelines` },
 
-            // 7. Comunicaciones
+            // 8. Comunicaciones
             { name: "Comunicaciones", icon: "messages", link: "#" },
             { name: "Campañas", icon: "send", link: `/agency/${agency.id}/(Communications)/campaigns` },
             { name: "Bandeja de entrada", icon: "messages", link: `/agency/${agency.id}/(Communications)/inbox` },
             { name: "Medios", icon: "database", link: `/agency/${agency.id}/(Communications)/media` },
             { name: "Chat", icon: "messages", link: `/agency/${agency.id}/(Communications)/chat` },
 
-            // 8. Reportes & Analíticas
+            // 9. Reportes & Analíticas
             { name: "Reportes & Analíticas", icon: "chart", link: "#" },
             { name: "Ventas", icon: "chart", link: `/agency/${agency.id}/(Reports)/sales-reports` },
             { name: "Inventario", icon: "database", link: `/agency/${agency.id}/(Reports)/inventory-reports` },
             { name: "Desempeño", icon: "chart", link: `/agency/${agency.id}/(Reports)/performance` },
             { name: "Finanzas", icon: "chart", link: `/agency/${agency.id}/(Reports)/financial-reports` },
             { name: "Reportes Productos", icon: "chart", link: `/agency/${agency.id}/(Reports)/product-reports` },
+            { name: "Reportes POS", icon: "chart", link: `/agency/${agency.id}/(POS)/reports-pos` },
 
-            // 9. Configuración & Administración
+            // 10. Configuración & Administración
             { name: "Configuración & Administración", icon: "settings", link: "#" },
             { name: "Ajustes de Empresa", icon: "settings", link: `/agency/${agency.id}/(Settings)/company-settings` },
             { name: "Usuarios & Permisos", icon: "settings", link: `/agency/${agency.id}/(Settings)/users` },
@@ -487,6 +495,7 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "Configuración Inicial", icon: "settings", link: `/agency/${agency.id}/(Settings)/launchpad` }, 
             { name: "General Settings", icon: "tune", link: `/agency/${agency.id}/(Settings)/settings` },
             { name: "Soporte", icon: "settings", link: `/agency/${agency.id}/(Settings)/contact` },
+            { name: "Configuración POS", icon: "settings", link: `/agency/${agency.id}/(POS)/settings-pos` },
           ],
         },
       },
@@ -587,7 +596,14 @@ export const upsertSubAccount = async (subAccount: SubAccount) => {
             { name: "Tiendas", icon: "store", link: `/subaccount/${subAccount.id}/(Ecommerce)/stores` },
             { name: "Envíos", icon: "send", link: `/subaccount/${subAccount.id}/(Ecommerce)/shipping` },
 
-            // 4. Ventas & Facturación
+            // 4. POS (Punto de Venta)
+            { name: "POS (Punto de Venta)", icon: "store", link: "#" },
+            { name: "Terminal POS", icon: "payment", link: `/subaccount/${subAccount.id}/(POS)/terminal` },
+            { name: "Ventas POS", icon: "receipt", link: `/subaccount/${subAccount.id}/(POS)/sales` },
+            { name: "Configuración POS", icon: "settings", link: `/subaccount/${subAccount.id}/(POS)/settings` },
+            { name: "Reportes POS", icon: "chart", link: `/subaccount/${subAccount.id}/(POS)/reports` },
+
+            // 5. Ventas & Facturación
             { name: "Ventas & Facturación", icon: "payment", link: "#" },
             { name: "Transacciones", icon: "receipt", link: `/subaccount/${subAccount.id}/(Billing)/transactions` },
             { name: "Facturas", icon: "receipt", link: `/subaccount/${subAccount.id}/(Billing)/invoices` },
@@ -597,32 +613,33 @@ export const upsertSubAccount = async (subAccount: SubAccount) => {
             { name: "Pagos", icon: "payment", link: `/subaccount/${subAccount.id}/(Billing)/payments` },
             { name: "Billing", icon: "payment", link: `/subaccount/${subAccount.id}/(Billing)/billing-store` },
 
-            // 5. Clientes & CRM
+            // 6. Clientes & CRM
             { name: "Clientes & CRM", icon: "person", link: "#" },
             { name: "Clientes", icon: "person", link: `/subaccount/${subAccount.id}/(Customers)/clients` },
             { name: "CRM", icon: "contact", link: `/subaccount/${subAccount.id}/(Customers)/crm` },
+            { name: "PQR", icon: "contact", link: `/subaccount/${subAccount.id}/(Customers)/pqr` },
 
-            // 6. Personal & RRHH
+            // 7. Personal & RRHH
             { name: "Personal & RRHH", icon: "person", link: "#" },
             { name: "Empleados", icon: "person", link: `/subaccount/${subAccount.id}/(Staff)/team` },
             { name: "Horarios & Nómina", icon: "calendar", link: `/subaccount/${subAccount.id}/(Staff)/schedule` },
             { name: "Contactos", icon: "contact", link: `/subaccount/${subAccount.id}/(Staff)/contacts` },
-            { name: "Pipelines", icon: "flag", link: `/subaccount/${subAccount.id}/(Staff)/pipelines` },
+            { name: "Objetivos", icon: "flag", link: `/subaccount/${subAccount.id}/(Staff)/pipelines` },
 
-            // 7. Comunicaciones
+            // 8. Comunicaciones
             { name: "Comunicaciones", icon: "messages", link: "#" },
             { name: "Campañas", icon: "send", link: `/subaccount/${subAccount.id}/(Communications)/campaigns` },
             { name: "Bandeja de entrada", icon: "messages", link: `/subaccount/${subAccount.id}/(Communications)/inbox` },
             { name: "Medios", icon: "database", link: `/subaccount/${subAccount.id}/(Communications)/media` },
             { name: "Chat", icon: "messages", link: `/subaccount/${subAccount.id}/(Communications)/chat` },
 
-            // 8. Reportes & Analíticas
+            // 9. Reportes & Analíticas
             { name: "Reportes & Analíticas", icon: "chart", link: "#" },
             { name: "Ventas", icon: "chart", link: `/subaccount/${subAccount.id}/(Reports)/sales-reports` },
             { name: "Inventario", icon: "database", link: `/subaccount/${subAccount.id}/(Reports)/inventory-reports` },
             { name: "Desempeño", icon: "chart", link: `/subaccount/${subAccount.id}/(Reports)/performance` },
 
-            // 9. Configuración & Administración
+            // 10. Configuración & Administración
             { name: "Configuración & Administración", icon: "settings", link: "#" },
             { name: "Ajustes de Empresa", icon: "settings", link: `/subaccount/${subAccount.id}/(Settings)/company-settings` },
             { name: "Usuarios & Permisos", icon: "settings", link: `/subaccount/${subAccount.id}/(Settings)/users` },
@@ -1099,17 +1116,41 @@ export const upsertFunnel = async (
   funnel: z.infer<typeof CreateFunnelFormSchema> & { liveProducts: string },
   funnelId: string
 ) => {
-  const response = await db.funnel.upsert({
-    where: { id: funnelId },
-    update: funnel,
-    create: {
-      ...funnel,
-      id: funnelId || v4(),
-      agencyId: agencyId,
-    },
-  })
+  console.log('=== INICIO upsertFunnel ===');
+  console.log('Parámetros recibidos:', { agencyId, funnelId });
+  console.log('Datos del funnel:', JSON.stringify(funnel, null, 2));
+  
+  try {
+    // Aseguramos que el embudo esté conectado a la agencia correcta
+    console.log('Intentando operación upsert en la base de datos...');
+    const response = await db.funnel.upsert({
+      where: { id: funnelId },
+      update: {
+        ...funnel,
+        agencyId: agencyId, // Aseguramos que el agencyId se actualice correctamente
+      },
+      create: {
+        ...funnel,
+        id: funnelId || v4(),
+        agencyId: agencyId,
+      },
+    });
 
-  return response
+    console.log('Operación upsert completada con éxito');
+    console.log('Respuesta de la base de datos:', JSON.stringify(response, null, 2));
+
+    // Revalidamos la ruta para asegurar que los cambios se reflejen inmediatamente
+    console.log(`Revalidando ruta: /agency/${agencyId}/funnels`);
+    revalidatePath(`/agency/${agencyId}/funnels`, 'page');
+    
+    console.log('=== FIN upsertFunnel (éxito) ===');
+    return response;
+  } catch (error) {
+    console.error('=== ERROR en upsertFunnel ===');
+    console.error('Detalles del error:', error);
+    console.error('Parámetros que causaron el error:', { agencyId, funnelId, funnel });
+    throw error; // Re-lanzamos el error para que pueda ser manejado por el componente
+  }
 }
 
 
@@ -1333,16 +1374,10 @@ export const upsertContact = async (
   return response
 }
 export const getFunnels = async (agencyId: string) => {
-  // Primero obtenemos todas las subcuentas asociadas a esta agencia
-  const subAccounts = await db.subAccount.findMany({
-    where: { agencyId: agencyId },
-    select: { id: true },
-  })
-  
-  // Luego obtenemos los funnels para todas estas subcuentas
+  // Buscamos directamente los funnels asociados a esta agencia
   const funnels = await db.funnel.findMany({
     where: { 
-      subAccountId: { in: subAccounts.map(subAccount => subAccount.id) } 
+      agencyId: agencyId 
     },
     include: { FunnelPages: true },
   })
@@ -1375,47 +1410,102 @@ export const updateFunnelProducts = async (
 }
 
 export const upsertFunnelPage = async (
-  subaccountId: string,
+  agencyId: string,
   funnelPage: UpsertFunnelPage,
   funnelId: string
 ) => {
-  if (!subaccountId || !funnelId) return
-  const response = await db.funnelPage.upsert({
-    where: { id: funnelPage.id || '' },
-    update: { ...funnelPage },
-    create: {
-      ...funnelPage,
-      content: funnelPage.content
-        ? funnelPage.content
-        : JSON.stringify([
-            {
-              content: [],
-              id: '__body',
-              name: 'Body',
-              styles: { backgroundColor: 'white' },
-              type: '__body',
-            },
-          ]),
-      funnelId,
-    },
-  })
-
-  revalidatePath(`/subaccount/${subaccountId}/funnels/${funnelId}`, 'page')
-  return response
+  console.log('=== INICIO upsertFunnelPage ===');
+  console.log('agencyId:', agencyId);
+  console.log('funnelId:', funnelId);
+  console.log('funnelPage:', JSON.stringify(funnelPage, null, 2));
+  
+  if (!agencyId || !funnelId) {
+    console.error('Error: agencyId o funnelId no proporcionados');
+    return;
+  }
+  
+  try {
+    const response = await db.funnelPage.upsert({
+      where: { id: funnelPage.id || '' },
+      update: { ...funnelPage },
+      create: {
+        ...funnelPage,
+        content: funnelPage.content
+          ? funnelPage.content
+          : JSON.stringify([
+              {
+                content: [],
+                id: '__body',
+                name: 'Body',
+                styles: { backgroundColor: 'white' },
+                type: '__body',
+              },
+            ]),
+        funnelId,
+      },
+    });
+    
+    console.log('Respuesta de upsert:', response);
+    revalidatePath(`/agency/${agencyId}/funnels/${funnelId}`, 'page');
+    console.log('=== FIN upsertFunnelPage ===');
+    return response;
+  } catch (error) {
+    console.error('Error en upsertFunnelPage:', error);
+    throw error;
+  }
 }
 
 export const deleteFunnelePage = async (funnelPageId: string) => {
-  const response = await db.funnelPage.delete({ where: { id: funnelPageId } })
+  console.log('=== INICIO deleteFunnelePage ===');
+  console.log('funnelPageId:', funnelPageId);
+  
+  // Obtenemos la página del embudo para poder obtener el funnelId
+  try {
+    const funnelPage = await db.funnelPage.findUnique({
+      where: { id: funnelPageId },
+      include: { Funnel: true }
+    });
+    
+    console.log('funnelPage encontrado:', funnelPage);
 
-  return response
+    if (!funnelPage) {
+      console.error('No se encontró la página del embudo');
+      return null;
+    }
+
+    const response = await db.funnelPage.delete({ where: { id: funnelPageId } });
+    console.log('Respuesta de delete:', response);
+
+    // Si tenemos el funnel asociado, revalidamos la ruta
+    if (funnelPage.Funnel?.agencyId) {
+      console.log('Revalidando ruta con agencyId:', funnelPage.Funnel.agencyId);
+      revalidatePath(`/agency/${funnelPage.Funnel.agencyId}/funnels/${funnelPage.funnelId}`, 'page');
+    }
+    
+    console.log('=== FIN deleteFunnelePage ===');
+    return response;
+  } catch (error) {
+    console.error('Error en deleteFunnelePage:', error);
+    throw error;
+  }
 }
 
 export const getFunnelPageDetails = async (funnelPageId: string) => {
-  const response = await db.funnelPage.findUnique({
-    where: {
-      id: funnelPageId,
-    },
-  })
-
-  return response
+  console.log('=== INICIO getFunnelPageDetails ===');
+  console.log('funnelPageId:', funnelPageId);
+  
+  try {
+    const response = await db.funnelPage.findUnique({
+      where: {
+        id: funnelPageId,
+      },
+    });
+    
+    console.log('Detalles de la página encontrados:', response);
+    console.log('=== FIN getFunnelPageDetails ===');
+    return response;
+  } catch (error) {
+    console.error('Error en getFunnelPageDetails:', error);
+    throw error;
+  }
 }

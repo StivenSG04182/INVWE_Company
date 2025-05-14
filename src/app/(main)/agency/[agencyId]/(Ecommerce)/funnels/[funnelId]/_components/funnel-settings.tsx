@@ -13,26 +13,64 @@ import {
 import FunnelProductsTable from './funnel-products-table'
 
 interface FunnelSettingsProps {
-  subaccountId: string
+  subaccountId: string // Mantenemos por compatibilidad
+  agencyId?: string // Agregamos agencyId explícitamente
   defaultData: Funnel
 }
 
 const FunnelSettings: React.FC<FunnelSettingsProps> = async ({
   subaccountId,
+  agencyId,
   defaultData,
 }) => {
   //Conecta tu pasarela de pagos para vender productos
+  console.log('=== INICIO FunnelSettings ===');
+  console.log('Props recibidas:', { subaccountId, agencyId, defaultDataId: defaultData?.id });
+  
+  // Usamos agencyId si está disponible, de lo contrario subaccountId
+  const effectiveId = agencyId || subaccountId;
+  console.log('ID efectivo a utilizar:', effectiveId);
+  
+  // Intentamos buscar primero como agencia
+  let accountDetails = null;
+  try {
+    accountDetails = await db.agency.findUnique({
+      where: {
+        id: effectiveId,
+      },
+    });
+    
+    if (accountDetails) {
+      console.log('Encontrados detalles de agencia');
+    } else {
+      // Si no encontramos como agencia, buscamos como subaccount
+      console.log('No se encontró como agencia, buscando como subcuenta...');
+      accountDetails = await db.subAccount.findUnique({
+        where: {
+          id: effectiveId,
+        },
+      });
+    }
+  } catch (error) {
+    console.error('Error al buscar detalles de cuenta:', error);
+  }
 
-  const subaccountDetails = await db.subAccount.findUnique({
-    where: {
-      id: subaccountId,
-    },
-  })
-
-  if (!subaccountDetails) return <h1>Detalles de la agencia no encontrados</h1>
-  if (!subaccountDetails.connectAccountId) return
-
-  console.log(subaccountDetails)
+  if (!accountDetails) {
+    console.error('Detalles de la cuenta no encontrados');
+    return <h1>Detalles de la cuenta no encontrados</h1>;
+  }
+  
+  // Verificamos si tiene connectAccountId (puede estar en diferentes lugares según el tipo)
+  const connectAccountId = 'connectAccountId' in accountDetails 
+    ? accountDetails.connectAccountId 
+    : null;
+    
+  if (!connectAccountId) {
+    console.log('No se encontró connectAccountId');
+    return;
+  }
+  
+  console.log('Detalles de cuenta encontrados:', accountDetails);
   return (
     <div className="flex gap-4 flex-col xl:!flex-row">
       <Card className="flex-1 flex-shrink">
@@ -45,7 +83,7 @@ const FunnelSettings: React.FC<FunnelSettingsProps> = async ({
         </CardHeader>
         <CardContent>
           <>
-            {subaccountDetails.connectAccountId ? (
+            {connectAccountId ? (
               <FunnelProductsTable
                 defaultData={defaultData}
               />
@@ -56,6 +94,7 @@ const FunnelSettings: React.FC<FunnelSettingsProps> = async ({
         </CardContent>
       </Card>
       <FunnelForm
+        agencyId={agencyId}
         subAccountId={subaccountId}
         defaultData={defaultData}
       />

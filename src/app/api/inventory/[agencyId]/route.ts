@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUserDetails } from '@/lib/queries';
 import { ProductService, AreaService, ProviderService, StockService, MovementService } from '@/lib/services/inventory-service';
-import { ObjectId } from 'mongodb';
 
 // Función para verificar si el usuario tiene acceso a la agencia
 async function hasAgencyAccess(agencyId: string) {
@@ -9,7 +8,7 @@ async function hasAgencyAccess(agencyId: string) {
     if (!user) return false;
 
     // Verificar si el usuario tiene acceso a esta agencia
-    return user.Agency?.id === agencyId || user.Agency?.some((agency: any) => agency.id === agencyId);
+    return user.Agency?.id === agencyId;
 }
 
 // GET: Obtener datos de inventario (productos, áreas, proveedores, stock, movimientos)

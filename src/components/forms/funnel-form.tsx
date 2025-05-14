@@ -29,13 +29,15 @@ import FileUpload from '../global/file-upload'
 
 interface CreateFunnelProps {
   defaultData?: Funnel
-  subAccountId: string
+  agencyId?: string
+  subAccountId?: string
 }
 
 //CHALLENGE: Use favicons
 
 const FunnelForm: React.FC<CreateFunnelProps> = ({
   defaultData,
+  agencyId,
   subAccountId,
 }) => {
   const { setClose } = useModal()
@@ -65,30 +67,70 @@ const FunnelForm: React.FC<CreateFunnelProps> = ({
   const isLoading = form.formState.isLoading
 
   const onSubmit = async (values: z.infer<typeof CreateFunnelFormSchema>) => {
-    if (!subAccountId) return
-    const response = await upsertFunnel(
-      subAccountId,
-      { ...values, liveProducts: defaultData?.liveProducts || '[]' },
-      defaultData?.id || v4()
-    )
-    await saveActivityLogsNotification({
-      agencyId: undefined,
-      description: `Actualizado embudo | ${response.name}`,
-      subaccountId: subAccountId,
-    })
-    if (response)
-      toast({
-        title: 'Éxito',
-        description: 'Detalles del embudo guardados',
-      })
-    else
+    try {
+      console.log('=== INICIO onSubmit en funnel-form ===');
+      console.log('Valores del formulario:', values);
+      
+      // Usar agencyId o subAccountId, dependiendo de cuál esté disponible
+      const effectiveAgencyId = agencyId || subAccountId;
+      
+      if (!effectiveAgencyId) {
+        console.error('Error: No se proporcionó ID de agencia o subcuenta');
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'ID de agencia no disponible',
+        });
+        return;
+      }
+      
+      const funnelId = defaultData?.id || v4();
+      console.log('Preparando datos para upsertFunnel:', { 
+        agencyId: effectiveAgencyId, 
+        funnelId,
+        liveProducts: defaultData?.liveProducts || '[]' 
+      });
+      
+      const response = await upsertFunnel(
+        effectiveAgencyId,
+        { ...values, liveProducts: defaultData?.liveProducts || '[]' },
+        funnelId
+      );
+      
+      console.log('Respuesta de upsertFunnel:', response);
+      
+      if (response) {
+        console.log('Guardando log de actividad...');
+        await saveActivityLogsNotification({
+          agencyId: effectiveAgencyId,
+          description: `Actualizado embudo | ${response.name}`,
+        });
+        
+        toast({
+          title: 'Éxito',
+          description: 'Detalles del embudo guardados',
+        });
+      } else {
+        console.error('No se recibió respuesta de upsertFunnel');
+        toast({
+          variant: 'destructive',
+          title: '¡Ups!',
+          description: 'No se pudieron guardar los detalles del embudo',
+        });
+      }
+      
+      console.log('Cerrando modal y refrescando página...');
+      setClose();
+      router.refresh();
+      console.log('=== FIN onSubmit en funnel-form ===');
+    } catch (error) {
+      console.error('=== ERROR en onSubmit de funnel-form ===', error);
       toast({
         variant: 'destructive',
-        title: '¡Ups!',
-        description: 'No se pudieron guardar los detalles del embudo',
-      })
-    setClose()
-    router.refresh()
+        title: 'Error al guardar',
+        description: 'Ocurrió un error al guardar el embudo. Por favor, intente nuevamente.',
+      });
+    }
   }
   return (
     <Card className="flex-1">

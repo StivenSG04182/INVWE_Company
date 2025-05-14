@@ -41,11 +41,14 @@ const organizeSidebarOptions = (options: AgencySidebarOption[] | SubAccountSideb
     'Dashboard & Visión general': 1,
     'Gestión de Inventario': 2,
     'Tienda & E-Commerce': 3,
-    'Ventas & Facturación': 4,
-    'Personal & RRHH': 5,
-    'Clientes & CRM': 6,
-    'Comunicaciones': 7,
-    'Reportes & Analíticas': 8,
+    'Punto de Venta': 4,
+    'Ventas & Facturación': 5,
+    'Personal & RRHH': 6,
+    'Clientes & CRM': 7,
+    'Comunicaciones': 8,
+    'Reportes & Analíticas': 9,
+    'Configuración & Administración': 10,
+    'POS (Punto de Venta)': 4, // Alias para Punto de Venta
   };
 
   // Lista de categorías a excluir
@@ -154,52 +157,80 @@ const getCategoryForOption = (optionName: string): string | null => {
     'Proveedores': 'Gestión de Inventario',
     'Áreas de Inventario': 'Gestión de Inventario',
 
-    // Tienda & E-Commerce
+    // Tienda & E-Commerce (Categoría 3 según el orden)
     'Tiendas': 'Tienda & E-Commerce',
     'E-Commerce': 'Tienda & E-Commerce',
     'Envíos': 'Tienda & E-Commerce',
-
-    // Ventas & Facturación
+    'Funnels': 'Tienda & E-Commerce',
+    'Stores': 'Tienda & E-Commerce',
+    'Tienda & E-Commerce': 'Tienda & E-Commerce',
+    
+    // Punto de Venta (Categoría 4 según el orden)
+    'Terminal': 'Punto de Venta',
+    'Ventas POS': 'Punto de Venta',
+    'Cierre de Caja': 'Punto de Venta',
+    
+    // Ventas & Facturación (Categoría 5 según el orden)
     'Transacciones': 'Ventas & Facturación',
     'Facturas': 'Ventas & Facturación',
     'Notas Crédito/Débito': 'Ventas & Facturación',
     'Pagos': 'Ventas & Facturación',
-    'Billing': 'Ventas & Facturación',
+    'Facturación': 'Ventas & Facturación',
+    'Configuración DIAN': 'Ventas & Facturación',
+    'Reportes de Facturación': 'Ventas & Facturación',
+    'Ventas & Facturación': 'Ventas & Facturación',
     
-    // Clientes & CRM
-    'Clientes': 'Clientes & CRM',
-    'CRM': 'Clientes & CRM',
-    'All Sub-Accounts': 'Clientes & CRM',
-
-    // Personal & RRHH
+    // Personal & RRHH (Categoría 6 según el orden)
     'Empleados': 'Personal & RRHH',
     'Horarios & Nómina': 'Personal & RRHH',
     'Contactos': 'Personal & RRHH',
+    'Objetivos': 'Personal & RRHH',
+    'Team': 'Personal & RRHH',
+    'Schedule': 'Personal & RRHH',
+    'Contacts': 'Personal & RRHH',
     'Pipelines': 'Personal & RRHH',
-
-    // Comunicaciones
+    'Personal & RRHH': 'Personal & RRHH',
+    
+    // Clientes & CRM (Categoría 7 según el orden)
+    'Clientes': 'Clientes & CRM',
+    'CRM': 'Clientes & CRM',
+    'All Sub-Accounts': 'Clientes & CRM',
+    'Clients': 'Clientes & CRM',
+    'PQR': 'Clientes & CRM',
+    
+    // Comunicaciones (Categoría 8 según el orden)
     'Campañas': 'Comunicaciones',
     'Bandeja de entrada': 'Comunicaciones',
     'Medios': 'Comunicaciones',
     'Chat': 'Comunicaciones',
-
-    // Reportes & Analíticas
+    'Campaigns': 'Comunicaciones',
+    'Inbox': 'Comunicaciones',
+    'Media': 'Comunicaciones',
+    
+    // Reportes & Analíticas (Categoría 9 según el orden)
     'Ventas': 'Reportes & Analíticas',
     'Inventario': 'Reportes & Analíticas',
     'Desempeño': 'Reportes & Analíticas',
     'Finanzas': 'Reportes & Analíticas',
     'Reportes Productos': 'Reportes & Analíticas',
     'Reportes': 'Reportes & Analíticas',
+    'Reportes POS': 'Reportes & Analíticas',
     
-    // Configuración & Administración
+    // Configuración & Administración (Categoría 10 según el orden)
     'Ajustes de Empresa': 'Configuración & Administración',
     'Usuarios & Permisos': 'Configuración & Administración',
-    'Facturación': 'Configuración & Administración',
+    'Facturación de Cuenta': 'Configuración & Administración',
     'Configuración Inicial': 'Configuración & Administración',
     'General Settings': 'Configuración & Administración',
+    'Configuración POS': 'Configuración & Administración',
     'Automatización': 'Configuración & Administración',
     'Soporte': 'Configuración & Administración',
-    'Configuración DIAN': 'Configuración & Administración',
+    'Company-Settings': 'Configuración & Administración',
+    'Users': 'Configuración & Administración',
+    'Billing': 'Configuración & Administración',
+    'Launchpad': 'Configuración & Administración',
+    'Settings': 'Configuración & Administración',
+    'Contact': 'Configuración & Administración',
     
   };
   return categoryMap[optionName] || null;

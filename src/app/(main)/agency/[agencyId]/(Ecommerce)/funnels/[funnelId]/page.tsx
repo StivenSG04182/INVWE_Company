@@ -37,7 +37,7 @@ const FunnelPage = async ({ params }: Props) => {
         <TabsContent value="steps">
           <FunnelSteps
             funnel={funnelPages}
-            subaccountId={params.agencyId}
+            subaccountId={params.agencyId} 
             pages={funnelPages.FunnelPages}
             funnelId={params.funnelId}
           />
@@ -45,8 +45,9 @@ const FunnelPage = async ({ params }: Props) => {
         <TabsContent value="settings">
           <h2>Opciones de Comercio Electrónico</h2>
           <FunnelSettings
-            subaccountId={params.agencyId}
+            subaccountId={params.agencyId} 
             defaultData={funnelPages}
+            agencyId={params.agencyId}
           />
         </TabsContent>
       </Tabs>

@@ -33,12 +33,15 @@ import FunnelStepCard from './funnel-step-card'
 
 type Props = {
   funnel: FunnelsForSubAccount
-  subaccountId: string
+  subaccountId: string 
   pages: FunnelPage[]
   funnelId: string
 }
 
 const FunnelSteps = ({ funnel, funnelId, pages, subaccountId }: Props) => {
+  console.log('=== INICIO FunnelSteps ===');
+  console.log('Props recibidas:', { funnel, funnelId, pagesLength: pages.length, subaccountId });
+  // Usamos subaccountId como agencyId
   const [clickedPage, setClickedPage] = useState<FunnelPage | undefined>(
     pages[0]
   )
@@ -72,8 +75,9 @@ const FunnelSteps = ({ funnel, funnelId, pages, subaccountId }: Props) => {
     setPagesState(newPageOrder)
     newPageOrder.forEach(async (page, index) => {
       try {
+        console.log(`Actualizando orden de página ${page.name} a ${index}`);
         await upsertFunnelPage(
-          subaccountId,
+          subaccountId, // Usamos como agencyId
           {
             id: page.id,
             order: index,
@@ -82,7 +86,7 @@ const FunnelSteps = ({ funnel, funnelId, pages, subaccountId }: Props) => {
           funnelId
         )
       } catch (error) {
-        console.log(error)
+        console.error('Error al actualizar orden de página:', error);
         toast({
           variant: 'destructive',
           title: 'Fallido',
