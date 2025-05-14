@@ -513,6 +513,7 @@ enum Role {
 }
 
 enum Icon {
+  shoppingCart
   settings
   chart
   calendar

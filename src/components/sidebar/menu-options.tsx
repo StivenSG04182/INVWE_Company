@@ -161,9 +161,6 @@ const getCategoryForOption = (optionName: string): string | null => {
     'Tiendas': 'Tienda & E-Commerce',
     'E-Commerce': 'Tienda & E-Commerce',
     'Envíos': 'Tienda & E-Commerce',
-    'Funnels': 'Tienda & E-Commerce',
-    'Stores': 'Tienda & E-Commerce',
-    'Tienda & E-Commerce': 'Tienda & E-Commerce',
     
     // Punto de Venta (Categoría 4 según el orden)
     'Terminal': 'Punto de Venta',
@@ -175,27 +172,16 @@ const getCategoryForOption = (optionName: string): string | null => {
     'Facturas': 'Ventas & Facturación',
     'Notas Crédito/Débito': 'Ventas & Facturación',
     'Pagos': 'Ventas & Facturación',
-    'Facturación': 'Ventas & Facturación',
-    'Configuración DIAN': 'Ventas & Facturación',
-    'Reportes de Facturación': 'Ventas & Facturación',
-    'Ventas & Facturación': 'Ventas & Facturación',
     
     // Personal & RRHH (Categoría 6 según el orden)
     'Empleados': 'Personal & RRHH',
     'Horarios & Nómina': 'Personal & RRHH',
     'Contactos': 'Personal & RRHH',
     'Objetivos': 'Personal & RRHH',
-    'Team': 'Personal & RRHH',
-    'Schedule': 'Personal & RRHH',
-    'Contacts': 'Personal & RRHH',
-    'Pipelines': 'Personal & RRHH',
-    'Personal & RRHH': 'Personal & RRHH',
     
     // Clientes & CRM (Categoría 7 según el orden)
     'Clientes': 'Clientes & CRM',
     'CRM': 'Clientes & CRM',
-    'All Sub-Accounts': 'Clientes & CRM',
-    'Clients': 'Clientes & CRM',
     'PQR': 'Clientes & CRM',
     
     // Comunicaciones (Categoría 8 según el orden)
@@ -203,8 +189,6 @@ const getCategoryForOption = (optionName: string): string | null => {
     'Bandeja de entrada': 'Comunicaciones',
     'Medios': 'Comunicaciones',
     'Chat': 'Comunicaciones',
-    'Campaigns': 'Comunicaciones',
-    'Inbox': 'Comunicaciones',
     'Media': 'Comunicaciones',
     
     // Reportes & Analíticas (Categoría 9 según el orden)
@@ -213,25 +197,18 @@ const getCategoryForOption = (optionName: string): string | null => {
     'Desempeño': 'Reportes & Analíticas',
     'Finanzas': 'Reportes & Analíticas',
     'Reportes Productos': 'Reportes & Analíticas',
-    'Reportes': 'Reportes & Analíticas',
     'Reportes POS': 'Reportes & Analíticas',
+    'Reportes de Facturación': 'Reportes & Analíticas',
     
     // Configuración & Administración (Categoría 10 según el orden)
     'Ajustes de Empresa': 'Configuración & Administración',
     'Usuarios & Permisos': 'Configuración & Administración',
-    'Facturación de Cuenta': 'Configuración & Administración',
+    'Facturación Cuenta': 'Configuración & Administración',
     'Configuración Inicial': 'Configuración & Administración',
     'General Settings': 'Configuración & Administración',
     'Configuración POS': 'Configuración & Administración',
-    'Automatización': 'Configuración & Administración',
+    'Configuración DIAN': 'Configuración & Administración',
     'Soporte': 'Configuración & Administración',
-    'Company-Settings': 'Configuración & Administración',
-    'Users': 'Configuración & Administración',
-    'Billing': 'Configuración & Administración',
-    'Launchpad': 'Configuración & Administración',
-    'Settings': 'Configuración & Administración',
-    'Contact': 'Configuración & Administración',
-    
   };
   return categoryMap[optionName] || null;
 };

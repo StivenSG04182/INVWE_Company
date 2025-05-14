@@ -6,7 +6,6 @@ import { db } from "./db";
 import { redirect } from "next/navigation";
 import { Agency, Lane, Plan, Prisma, Role, SubAccount, Tag, Ticket, User } from "@prisma/client";
 import { v4 } from "uuid";
-import { sub } from "date-fns";
 import { CreateFunnelFormSchema, UpsertFunnelPage, createMediaType } from "./types";
 import { z } from "zod";
 import { revalidatePath } from 'next/cache'
@@ -443,9 +442,9 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "Envíos", icon: "send", link: `/agency/${agency.id}/(Ecommerce)/shipping` },
 
             // 4. POS (Punto de Venta)
-            { name: "POS (Punto de Venta)", icon: "store", link: "#" },
+            { name: "POS (Punto de Venta)", icon: "shoppingCart", link: "#" },
             { name: "Terminal", icon: "payment", link: `/agency/${agency.id}/(POS)/terminal` },
-            { name: "Ventas", icon: "receipt", link: `/agency/${agency.id}/(POS)/sales-pos` },
+            { name: "Ventas POS", icon: "receipt", link: `/agency/${agency.id}/(POS)/sales-pos` },
             { name: "Cierre de Caja", icon: "chart", link: `/agency/${agency.id}/(POS)/cash-closing` },  
             
 
@@ -454,18 +453,16 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "Transacciones", icon: "receipt", link: `/agency/${agency.id}/(Billing)/transactions` },
             { name: "Facturas", icon: "receipt", link: `/agency/${agency.id}/(Billing)/invoices` },
             { name: "Notas Crédito/Débito", icon: "receipt", link: `/agency/${agency.id}/(Billing)/notes` },
-            { name: "Configuración DIAN", icon: "settings", link: `/agency/${agency.id}/(Billing)/dian-config` },
-            { name: "Reportes", icon: "chart", link: `/agency/${agency.id}/(Billing)/reports` },
             { name: "Pagos", icon: "payment", link: `/agency/${agency.id}/(Billing)/payments` },
-            { name: "Billing", icon: "payment", link: `/agency/${agency.id}/(Billing)/billing-store` },
 
             // 6. Clientes & CRM
             { name: "Clientes & CRM", icon: "person", link: "#" },
             { name: "Clientes", icon: "person", link: `/agency/${agency.id}/(Customers)/clients` },
             { name: "CRM", icon: "contact", link: `/agency/${agency.id}/(Customers)/crm` },
+            { name: "PQR", icon: "", link: `/agency/${agency.id}/(Customers)/pqr` },
 
             // 7. Personal & RRHH
-            { name: "Personal & RRHH", icon: "person", link: "#" },
+            { name: "Personal & RRHH", icon: "contact", link: "#" },
             { name: "Empleados", icon: "person", link: `/agency/${agency.id}/(Staff)/team` },
             { name: "Horarios & Nómina", icon: "calendar", link: `/agency/${agency.id}/(Staff)/schedule` },
             { name: "Contactos", icon: "contact", link: `/agency/${agency.id}/(Staff)/contacts` },
@@ -485,17 +482,18 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "Desempeño", icon: "chart", link: `/agency/${agency.id}/(Reports)/performance` },
             { name: "Finanzas", icon: "chart", link: `/agency/${agency.id}/(Reports)/financial-reports` },
             { name: "Reportes Productos", icon: "chart", link: `/agency/${agency.id}/(Reports)/product-reports` },
-            { name: "Reportes POS", icon: "chart", link: `/agency/${agency.id}/(POS)/reports-pos` },
+            { name: "Reportes POS", icon: "chart", link: `/agency/${agency.id}/(Reports)/reports-pos` },
 
             // 10. Configuración & Administración
             { name: "Configuración & Administración", icon: "settings", link: "#" },
             { name: "Ajustes de Empresa", icon: "settings", link: `/agency/${agency.id}/(Settings)/company-settings` },
             { name: "Usuarios & Permisos", icon: "settings", link: `/agency/${agency.id}/(Settings)/users` },
-            { name: "Facturación", icon: "payment", link: `/agency/${agency.id}/(Settings)/billing` },
+            { name: "Facturación Cuenta", icon: "payment", link: `/agency/${agency.id}/(Settings)/billing` },
             { name: "Configuración Inicial", icon: "settings", link: `/agency/${agency.id}/(Settings)/launchpad` }, 
             { name: "General Settings", icon: "tune", link: `/agency/${agency.id}/(Settings)/settings` },
             { name: "Soporte", icon: "settings", link: `/agency/${agency.id}/(Settings)/contact` },
-            { name: "Configuración POS", icon: "settings", link: `/agency/${agency.id}/(POS)/settings-pos` },
+            { name: "Configuración POS", icon: "settings", link: `/agency/${agency.id}/(Settings)/settings-pos` },
+            { name: "Configuración DIAN", icon: "settings", link: `/agency/${agency.id}/(Settings)/dian-config` },
           ],
         },
       },
