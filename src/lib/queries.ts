@@ -420,7 +420,7 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
         SidebarOption: {
           create: [
             // 1. Dashboard & Visión general
-            { name: "Dashboard & Visión general", icon: "chart", link: "#" },
+            { name: "Dashboard & Visión general", icon: "layoutDashboard", link: "#" },
             { name: "Dashboard", icon: "category", link: `/agency/${agency.id}` },
             { name: "Análisis", icon: "chart", link: `/agency/${agency.id}/(Dashboard)/analytics` },
             { name: "Actividad", icon: "calendar", link: `/agency/${agency.id}/(Dashboard)/activity` },
@@ -459,7 +459,7 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "Clientes & CRM", icon: "person", link: "#" },
             { name: "Clientes", icon: "person", link: `/agency/${agency.id}/(Customers)/clients` },
             { name: "CRM", icon: "contact", link: `/agency/${agency.id}/(Customers)/crm` },
-            { name: "PQR", icon: "", link: `/agency/${agency.id}/(Customers)/pqr` },
+            { name: "PQR", icon: "helpCircle", link: `/agency/${agency.id}/(Customers)/pqr` },
 
             // 7. Personal & RRHH
             { name: "Personal & RRHH", icon: "contact", link: "#" },
@@ -476,7 +476,7 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "Chat", icon: "messages", link: `/agency/${agency.id}/(Communications)/chat` },
 
             // 9. Reportes & Analíticas
-            { name: "Reportes & Analíticas", icon: "chart", link: "#" },
+            { name: "Reportes & Analíticas", icon: "chartLine", link: "#" },
             { name: "Ventas", icon: "chart", link: `/agency/${agency.id}/(Reports)/sales-reports` },
             { name: "Inventario", icon: "database", link: `/agency/${agency.id}/(Reports)/inventory-reports` },
             { name: "Desempeño", icon: "chart", link: `/agency/${agency.id}/(Reports)/performance` },

@@ -4,6 +4,7 @@ import CheckCircle from "@/components/icons/check_circled";
 import Chip from "@/components/icons/chip";
 import ClipboardIcon from "@/components/icons/clipboardIcon";
 import Compass from "@/components/icons/compass";
+import Contact from "@/components/icons/contact";
 import Database from "@/components/icons/database";
 import Flag from "@/components/icons/flag";
 import Headphone from "@/components/icons/headphone";
@@ -22,11 +23,14 @@ import Receipt from "@/components/icons/receipt";
 import Send from "@/components/icons/send";
 import Settings from "@/components/icons/settings";
 import Shield from "@/components/icons/shield";
+import ShoppingCart from "@/components/icons/shoppingCart";
 import Star from "@/components/icons/star";
 import Tune from "@/components/icons/tune";
 import Video from "@/components/icons/video_recorder";
 import Wallet from "@/components/icons/wallet";
 import Warning from "@/components/icons/warning";
+import LayoutDashboard from "@/components/icons/layoutDashboard";
+import ChartLine from "@/components/icons/chartLine";
 
 export const pricingCards = [
   {
@@ -197,6 +201,26 @@ export const icons = [
     value: "wallet",
     label: "Billetera",
     path: Wallet,
+  },
+  {
+    value: "layoutDashboard",
+    label: "Dashboard",
+    path: LayoutDashboard,
+  },
+  {
+    value: "shoppingCart",
+    label: "Carrito de Compras",
+    path: ShoppingCart,
+  },
+  {
+    value: "contact",
+    label: "Contacto",
+    path: Contact,
+  },
+  {
+    value: "chartLine",
+    label: "Gráfico de Línea",
+    path: ChartLine,
   },
   {
     value: "warning",

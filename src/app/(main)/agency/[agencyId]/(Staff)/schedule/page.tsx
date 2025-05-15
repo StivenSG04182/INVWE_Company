@@ -1,84 +1,80 @@
-import React from 'react';
-import { getAuthUserDetails } from '@/lib/queries';
-import { redirect } from 'next/navigation';
+import { getAuthUserDetails } from "@/lib/queries"
+import { redirect } from "next/navigation"
+import { db } from "@/lib/db"
+import { ScheduleDashboard } from "./components/schedule-dashboard"
+import { ScheduleCalendar } from "./components/schedule-calendar"
+import { EmployeeList } from "./components/employee-list"
+import { PayrollSummary } from "./components/payroll-summary"
 
 const SchedulePage = async ({ params }: { params: { agencyId: string } }) => {
-  const user = await getAuthUserDetails();
-  if (!user) return redirect('/sign-in');
+  const user = await getAuthUserDetails()
+  if (!user) return redirect("/sign-in")
 
-  const agencyId = params.agencyId;
+  const agencyId = params.agencyId
   if (!user.Agency) {
-    return redirect('/agency');
+    return redirect("/agency")
   }
 
+  // Obtener los miembros del equipo asociados a la agencia
+  const teamMembers = await db.user.findMany({
+    where: {
+      Agency: {
+        id: params.agencyId,
+      },
+    },
+    include: {
+      Agency: { include: { SubAccount: true } },
+      Permissions: { include: { SubAccount: true } },
+    },
+  })
+
+  // Datos de horarios simulados ya que no existe el modelo schedule en Prisma
+  const schedules = [
+    {
+      id: "1",
+      userId: teamMembers[0]?.id || "",
+      agencyId: params.agencyId,
+      startTime: "08:00",
+      endTime: "17:00",
+      days: ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"],
+      user: teamMembers[0] || null,
+    },
+    {
+      id: "2",
+      userId: teamMembers[1]?.id || "",
+      agencyId: params.agencyId,
+      startTime: "09:00",
+      endTime: "18:00",
+      days: ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"],
+      user: teamMembers[1] || null,
+    },
+  ]
+
+  // Obtener los días festivos de Colombia (simulado)
+  const holidays = [
+    { date: "2024-01-01", name: "Año Nuevo" },
+    { date: "2024-01-08", name: "Día de los Reyes Magos" },
+    { date: "2024-03-25", name: "Día de San José" },
+    { date: "2024-03-28", name: "Jueves Santo" },
+    { date: "2024-03-29", name: "Viernes Santo" },
+    { date: "2024-05-01", name: "Día del Trabajo" },
+    // Añadir más festivos según el calendario colombiano
+  ]
+
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Horarios & Nómina</h1>
-        <div className="flex gap-2">
-          <button className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/80">
-            Asignar Horario
-          </button>
-          <button className="bg-secondary text-white px-4 py-2 rounded-md hover:bg-secondary/80">
-            Generar Nómina
-          </button>
+    <div className="container mx-auto p-6 space-y-8">
+      <ScheduleDashboard teamMembers={teamMembers} schedules={schedules} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <ScheduleCalendar teamMembers={teamMembers} schedules={schedules} holidays={holidays} agencyId={agencyId} />
+          <EmployeeList teamMembers={teamMembers} />
         </div>
-      </div>
-
-      <div className="bg-card rounded-lg p-4 shadow-sm">
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold mb-2">Gestión de Horarios</h2>
-          <p className="text-muted-foreground">
-            Administre los horarios de trabajo del personal y genere nóminas de pago.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          <div className="bg-background p-4 rounded-md border">
-            <h3 className="font-medium">Total Empleados</h3>
-            <p className="text-2xl font-bold">0</p>
-          </div>
-          <div className="bg-background p-4 rounded-md border">
-            <h3 className="font-medium">Horas Programadas</h3>
-            <p className="text-2xl font-bold">0 hrs</p>
-          </div>
-          <div className="bg-background p-4 rounded-md border">
-            <h3 className="font-medium">Nómina Mensual</h3>
-            <p className="text-2xl font-bold">$0.00</p>
-          </div>
-        </div>
-
-        <div className="mt-8">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium">Calendario de Turnos</h3>
-            <div className="flex gap-2">
-              <select className="px-3 py-2 border rounded-md">
-                <option value="">Todos los empleados</option>
-              </select>
-              <input 
-                type="month" 
-                className="px-3 py-2 border rounded-md"
-              />
-            </div>
-          </div>
-          
-          <div className="border rounded-md">
-            <div className="grid grid-cols-7 gap-0 border-b">
-              {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map((day) => (
-                <div key={day} className="p-2 text-center font-medium border-r last:border-r-0">
-                  {day}
-                </div>
-              ))}
-            </div>
-            
-            <div className="p-4 text-center text-muted-foreground">
-              No hay horarios programados. Asigne turnos a sus empleados para visualizarlos en el calendario.
-            </div>
-          </div>
+        <div>
+          <PayrollSummary teamMembers={teamMembers} schedules={schedules} holidays={holidays} />
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default SchedulePage;
+export default SchedulePage

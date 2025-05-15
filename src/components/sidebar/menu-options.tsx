@@ -163,9 +163,9 @@ const getCategoryForOption = (optionName: string): string | null => {
     'Envíos': 'Tienda & E-Commerce',
     
     // Punto de Venta (Categoría 4 según el orden)
-    'Terminal': 'Punto de Venta',
-    'Ventas POS': 'Punto de Venta',
-    'Cierre de Caja': 'Punto de Venta',
+    'Terminal': 'POS (Punto de Venta)',
+    'Ventas POS': 'POS (Punto de Venta)',
+    'Cierre de Caja': 'POS (Punto de Venta)',
     
     // Ventas & Facturación (Categoría 5 según el orden)
     'Transacciones': 'Ventas & Facturación',

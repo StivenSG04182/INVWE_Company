@@ -10,14 +10,25 @@ datasource db {
 }
 
 model User {
-  id           String         @id @default(uuid())
-  name         String
-  avatarUrl    String
-  email        String         @unique
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  role         Role           @default(SUBACCOUNT_USER)
-  agencyId     String?
+  id                     String         @id @default(uuid())
+  name                   String
+  avatarUrl              String
+  email                  String         @unique
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  role                   Role           @default(SUBACCOUNT_USER)
+  agencyId               String?
+  birthDate              DateTime?      
+  gender                 String?
+  maritalStatus          String?
+  address                String?
+  phone                  String?
+  position               String?
+  hireDate               DateTime?
+  salary                 String?
+  workSchedule           String?
+  socialSecurityNumber   String?
+  socialSecurityAffiliation String?
   Agency       Agency?        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   Permissions  Permissions[]
   Ticket       Ticket[]
@@ -27,7 +38,7 @@ model User {
   PQR          PQR[]
   Sale         Sale[]
   CashRegister CashRegister[]
-
+  Schedule     Schedule[]
   @@index([agencyId])
 }
 
@@ -94,7 +105,7 @@ model Agency {
   Invoices          Invoice[]
   Payments          Payment[]
   Taxes             Tax[]
-  ProductCategories ProductCategory[]
+  ProductCategories  ProductCategory[]
   Clients           Client[]
   Opportunities     Opportunity[]
   Cases             Case[]
@@ -103,6 +114,8 @@ model Agency {
   DianConfig        DianConfig?
   Sale              Sale[]
   CashRegister      CashRegister[]
+  Schedule          Schedule[]
+  Holiday           Holiday[]
 }
 
 model SubAccount {
@@ -545,6 +558,9 @@ enum Icon {
   contact
   clipboardIcon
   store
+  layoutDashboard
+  chartLine
+  helpCircle
 }
 
 enum TriggerTypes {
@@ -629,6 +645,35 @@ enum Priority {
   MEDIUM
   HIGH
   URGENT
+}
+
+model Schedule {
+  id          String    @id @default(uuid())
+  userId      String
+  agencyId    String
+  startTime   String
+  endTime     String
+  days        String    // Almacenado como JSON string ["Lunes", "Martes", ...]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agency      Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([agencyId])
+}
+
+model Holiday {
+  id          String    @id @default(uuid())
+  date        DateTime
+  name        String
+  description String?
+  agencyId    String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  agency      Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([agencyId])
 }
 
 model ProductCategory {
