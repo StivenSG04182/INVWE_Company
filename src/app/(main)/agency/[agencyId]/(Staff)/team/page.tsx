@@ -43,7 +43,7 @@ const TeamPage = async ({ params }: Props) => {
           <p className="text-muted-foreground">Administra los miembros del equipo y sus permisos</p>
         </div>
       </div>
-      <div className="rounded-xl border bg-card shadow-sm">
+      <div className="rounded-xl px-4 border bg-card shadow-sm">
         <DataTable
           actionButtonText={
             <>
