@@ -386,7 +386,7 @@ const MenuOptions = ({
             <PopoverTrigger asChild>
               <Button
                 className="w-full mb-6 flex items-center justify-between py-6 hover:bg-accent/40 overflow-hidden"
-                variant="ghost">
+                variant="outline">
                 <div className="flex items-center text-left gap-3">
                   <div className="flex items-center justify-center w-10 h-10 rounded-md bg-primary/10">
                     <Compass className="text-primary" />
@@ -408,7 +408,7 @@ const MenuOptions = ({
                     user?.role === 'AGENCY_ADMIN') &&
                     user?.Agency && (
                       <CommandGroup heading="Agencia">
-                        <CommandItem className="!bg-transparent my-2 text-primary border-[1px] border-border p-2 rounded-md hover:!bg-muted cursor-pointer transition-all">
+                        <CommandItem className="!bg-transparent my-2 !text-foreground border-[1px] border-border p-2 rounded-md hover:!bg-accent cursor-pointer transition-all">
                           {defaultOpen ? (
                             <Link
                               href={`/agency/${user?.Agency?.id}`}
@@ -424,7 +424,7 @@ const MenuOptions = ({
                               </div>
                               <div className="flex flex-col flex-1">
                                 <span className="font-semibold">{user?.Agency?.name}</span>
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-normal text-muted-foreground">
                                   {user?.Agency?.address}
                                 </span>
                               </div>
@@ -511,6 +511,7 @@ const MenuOptions = ({
                   user?.role === 'AGENCY_ADMIN') && (
                     <SheetClose>
                       <Button
+                        variant="outline"
                         className="w-full flex gap-2"
                         onClick={() => {
                           setOpen(
