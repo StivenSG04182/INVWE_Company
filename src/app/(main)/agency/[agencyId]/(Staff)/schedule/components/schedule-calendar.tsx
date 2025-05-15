@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { addDays, format, startOfWeek, isSameDay } from "date-fns"
 import { es } from "date-fns/locale"
 import { CalendarIcon, ChevronLeft, ChevronRight, Plus } from "lucide-react"
@@ -21,12 +21,38 @@ interface ScheduleCalendarProps {
     agencyId: string
 }
 
-export function ScheduleCalendar({ teamMembers, schedules, holidays, agencyId }: ScheduleCalendarProps) {
+export function ScheduleCalendar({ teamMembers, schedules: initialSchedules, holidays, agencyId }: ScheduleCalendarProps) {
     const [currentDate, setCurrentDate] = useState(new Date())
     const [selectedEmployee, setSelectedEmployee] = useState("all")
     const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false)
     const [selectedDay, setSelectedDay] = useState<Date | null>(null)
     const [selectedEmployeeForAssign, setSelectedEmployeeForAssign] = useState<string | null>(null)
+    const [schedules, setSchedules] = useState(initialSchedules)
+    
+    // Cargar horarios desde localStorage al iniciar
+    useEffect(() => {
+        const loadSchedules = () => {
+            try {
+                const savedSchedules = localStorage.getItem("schedules")
+                if (savedSchedules) {
+                    const parsedSchedules = JSON.parse(savedSchedules)
+                    setSchedules(parsedSchedules)
+                }
+            } catch (error) {
+                console.error("Error al cargar horarios:", error)
+            }
+        }
+        
+        loadSchedules()
+        
+        // Escuchar cambios en localStorage (para actualizaciones en otras pestañas)
+        const handleStorageChange = () => loadSchedules()
+        window.addEventListener("storage", handleStorageChange)
+        
+        return () => {
+            window.removeEventListener("storage", handleStorageChange)
+        }
+    }, [])
 
     // Obtener el inicio de la semana (lunes)
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
@@ -42,9 +68,12 @@ export function ScheduleCalendar({ teamMembers, schedules, holidays, agencyId }:
     // Función para obtener los horarios de un día específico
     const getDaySchedules = (date: Date) => {
         return schedules.filter(
-            (schedule) =>
-                isSameDay(new Date(schedule.date), date) &&
-                (selectedEmployee === "all" || schedule.userId === selectedEmployee),
+            (schedule) => {
+                // Convertir la fecha del horario a objeto Date para comparación
+                const scheduleDate = new Date(schedule.date)
+                return isSameDay(scheduleDate, date) &&
+                    (selectedEmployee === "all" || schedule.userId === selectedEmployee)
+            }
         )
     }
 
@@ -162,11 +191,13 @@ export function ScheduleCalendar({ teamMembers, schedules, holidays, agencyId }:
                                                 <Avatar className="h-6 w-6">
                                                     <AvatarImage src={employee?.avatarUrl || "/placeholder.svg"} alt={employee?.name} />
                                                     <AvatarFallback className="text-[10px]">
-                                                        {employee?.name?.slice(0, 2).toUpperCase()}
+                                                        {employee ? employee.name.slice(0, 2).toUpperCase() : schedule.userId.slice(0, 2).toUpperCase()}
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <div className="font-medium">{employee?.name}</div>
+                                                    <div className="font-medium">
+                                                        {employee ? employee.name : "Empleado ID: " + schedule.userId.slice(0, 6)}
+                                                    </div>
                                                     <div>
                                                         {schedule.startTime} - {schedule.endTime}
                                                     </div>

@@ -71,18 +71,50 @@ export function AssignScheduleDialog({
         setIsLoading(true)
 
         try {
-            // Aquí iría la lógica para guardar el horario en la base de datos
-            // Por ahora simulamos una operación asíncrona
-            await new Promise((resolve) => setTimeout(resolve, 1000))
-
+            // Crear el objeto de horario para guardar
+            const scheduleData = {
+                id: `${employeeId}-${format(selectedDay, "yyyy-MM-dd")}-${Date.now()}`,
+                userId: employeeId,
+                agencyId: agencyId,
+                date: format(selectedDay, "yyyy-MM-dd"),
+                startTime: startTime,
+                endTime: endTime,
+                breakTime: breakTime,
+                isOvertime: isOvertime,
+                hourlyRate: parseFloat(hourlyRate),
+                createdAt: new Date().toISOString(),
+            }
+            
+            // En un entorno real, aquí se enviaría a la API
+            // Por ahora, simulamos guardarlo en localStorage para persistencia temporal
+            const existingSchedules = JSON.parse(localStorage.getItem("schedules") || "[]") 
+            
+            // Eliminar horario existente para el mismo empleado y día si existe
+            const filteredSchedules = existingSchedules.filter(
+                (schedule: any) => !(schedule.userId === employeeId && schedule.date === format(selectedDay, "yyyy-MM-dd"))
+            )
+            
+            // Agregar el nuevo horario
+            filteredSchedules.push(scheduleData)
+            
+            // Guardar en localStorage
+            localStorage.setItem("schedules", JSON.stringify(filteredSchedules))
+            
+            // Notificar éxito
             toast({
                 title: "Horario asignado",
                 description: `Horario asignado correctamente para el ${format(selectedDay, "PPP", { locale: es })}.`,
             })
 
+            // Cerrar el diálogo y resetear el formulario
             onClose()
             resetForm()
+            
+            // Recargar la página para mostrar los cambios
+            // En una implementación real, usaríamos un estado global o context
+            window.location.reload()
         } catch (error) {
+            console.error("Error al guardar el horario:", error)
             toast({
                 title: "Error",
                 description: "No se pudo asignar el horario. Inténtelo de nuevo.",
