@@ -51,7 +51,7 @@ const AllSubaccountsPage = async ({ params }: Props) => {
                 user.Agency.SubAccount.map((subaccount: SubAccount) => (
                   <CommandItem
                     key={subaccount.id}
-                    className="h-32 !bg-background my-2 text-primary border-[1px] border-border p-4 rounded-lg hover:!bg-background cursor-pointer transition-all"
+                    className="h-32 !bg-card my-2 !text-foreground !font-normal border-[1px] border-border p-4 rounded-lg hover:!bg-card cursor-pointer transition-all"
                   >
                     <Link
                       href={`/subaccount/${subaccount.id}`}

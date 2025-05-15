@@ -16,10 +16,10 @@ const NotesPage = async ({ params }: { params: { agencyId: string } }) => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Notas Crédito/Débito</h1>
         <div className="flex gap-2">
-          <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+          <button className="!bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/80">
             Nueva Nota Crédito
-          </button>
-          <button className="bg-amber-600 text-white px-4 py-2 rounded-md hover:bg-amber-700">
+          </button>              
+          <button className="border border-border px-4 py-2 rounded-md hover:!bg-accent">
             Nueva Nota Débito
           </button>
         </div>

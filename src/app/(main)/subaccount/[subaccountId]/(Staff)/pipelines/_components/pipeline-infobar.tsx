@@ -80,7 +80,7 @@ const PipelineInfoBar = ({pipelineId, subAccountId, pipelines}: Props) => {
                             ))}
                             <Button
                                 variant="secondary"
-                                className="flex gap-2 w-full mt-4"
+                                className="flex !bg-card gap-2 w-full mt-4"
                                 onClick={handleClickCreatePipeline}
                             >
                                 <Plus size={15} />
