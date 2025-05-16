@@ -130,13 +130,13 @@ export async function PUT(req: NextRequest, { params }: { params: { agencyId: st
         let existingItem;
         switch (type) {
             case 'product':
-                existingItem = await ProductService.getProductById(id);
+                existingItem = await ProductService.getProductById(agencyId, id);
                 break;
             case 'area':
-                existingItem = await AreaService.getAreaById(id);
+                existingItem = await AreaService.getAreaById(agencyId, id);
                 break;
             case 'provider':
-                existingItem = await ProviderService.getProviderById(id);
+                existingItem = await ProviderService.getProviderById(agencyId, id);
                 break;
             default:
                 return NextResponse.json({ success: false, error: 'Tipo de operación no válido' }, { status: 400 });
@@ -192,13 +192,13 @@ export async function DELETE(req: NextRequest, { params }: { params: { agencyId:
         let existingItem;
         switch (type) {
             case 'product':
-                existingItem = await ProductService.getProductById(id);
+                existingItem = await ProductService.getProductById(agencyId, id);
                 break;
             case 'area':
-                existingItem = await AreaService.getAreaById(id);
+                existingItem = await AreaService.getAreaById(agencyId, id);
                 break;
             case 'provider':
-                existingItem = await ProviderService.getProviderById(id);
+                existingItem = await ProviderService.getProviderById(agencyId, id);
                 break;
             default:
                 return NextResponse.json({ success: false, error: 'Tipo de operación no válido' }, { status: 400 });

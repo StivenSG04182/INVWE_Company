@@ -15,8 +15,31 @@ export interface IProduct {
   images?: string[];
   productImage?: string;
   categoryId?: string;
+  active?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
+  brand?: string;
+  model?: string;
+  tags?: string[];
+  unit?: string;
+  quantity?: number;
+  locationId?: string;
+  warehouseId?: string;
+  batchNumber?: string;
+  expirationDate?: Date | string;
+  serialNumber?: string;
+  warrantyMonths?: number;
+  isReturnable?: boolean;
+  discount?: number;
+  taxRate?: number;
+  supplierId?: string;
+  variants?: Array<{
+    name: string;
+    value: string;
+  }>;
+  documents?: string[];
+  customFields?: Record<string, any>;
+  externalIntegrations?: Record<string, string>;
 }
 
 export interface ICategory {

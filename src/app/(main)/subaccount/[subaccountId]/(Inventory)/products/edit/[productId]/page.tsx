@@ -13,7 +13,14 @@ const EditProductPage = async ({ params }: Props) => {
     // Obtener el producto a editar
     let product = null
     try {
-        product = await ProductService.getProductById(productId)
+        // Importar el serializador para convertir objetos MongoDB a objetos planos
+        const { serializeMongoObject } = await import("@/lib/serializers")
+        
+        // Obtener y serializar producto
+        const rawProduct = await ProductService.getProductById(subaccountId, productId)
+        
+        // Serializar para eliminar métodos y propiedades no serializables
+        product = serializeMongoObject(rawProduct)
     } catch (error) {
         console.error("Error al cargar el producto:", error)
     }

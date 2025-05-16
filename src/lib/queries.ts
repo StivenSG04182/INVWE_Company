@@ -419,18 +419,12 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
         ...agency,
         SidebarOption: {
           create: [
-            // 1. Dashboard & Visión general
-            { name: "Dashboard & Visión general", icon: "layoutDashboard", link: "#" },
+            // 1. Dashboard
             { name: "Dashboard", icon: "category", link: `/agency/${agency.id}` },
-            { name: "Análisis", icon: "chart", link: `/agency/${agency.id}/(Dashboard)/analytics` },
-            { name: "Actividad", icon: "calendar", link: `/agency/${agency.id}/(Dashboard)/activity` },
-            { name: "Visión general", icon: "chart", link: `/agency/${agency.id}/(Dashboard)/overview` }, 
-            { name: "Integraciones", icon: "link", link: `/agency/${agency.id}/(Dashboard)/integrations` },
 
             // 2. Gestión de Inventario
             { name: "Gestión de Inventario", icon: "database", link: "#" },
             { name: "Productos", icon: "category", link: `/agency/${agency.id}/(Inventory)/products` },
-            { name: "Stock", icon: "database", link: `/agency/${agency.id}/(Inventory)/stock` },
             { name: "Movimientos", icon: "compass", link: `/agency/${agency.id}/(Inventory)/movements` },
             { name: "Proveedores", icon: "person", link: `/agency/${agency.id}/(Inventory)/providers` },
             { name: "Áreas de Inventario", icon: "home", link: `/agency/${agency.id}/(Inventory)/areas` },
@@ -446,20 +440,12 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "Terminal", icon: "payment", link: `/agency/${agency.id}/(POS)/terminal` },
             { name: "Ventas POS", icon: "receipt", link: `/agency/${agency.id}/(POS)/sales-pos` },
             { name: "Cierre de Caja", icon: "chart", link: `/agency/${agency.id}/(POS)/cash-closing` },  
-            
 
             // 5. Ventas & Facturación
-            { name: "Ventas & Facturación", icon: "payment", link: "#" },
-            { name: "Transacciones", icon: "receipt", link: `/agency/${agency.id}/(Billing)/transactions` },
-            { name: "Facturas", icon: "receipt", link: `/agency/${agency.id}/(Billing)/invoices` },
-            { name: "Notas Crédito/Débito", icon: "receipt", link: `/agency/${agency.id}/(Billing)/notes` },
-            { name: "Pagos", icon: "payment", link: `/agency/${agency.id}/(Billing)/payments` },
+            { name: "Ventas & Facturación", icon: "payment", link: `/agency/${agency.id}/(Billing)/finance` },
 
             // 6. Clientes & CRM
-            { name: "Clientes & CRM", icon: "person", link: "#" },
-            { name: "Clientes", icon: "person", link: `/agency/${agency.id}/(Customers)/clients` },
-            { name: "CRM", icon: "contact", link: `/agency/${agency.id}/(Customers)/crm` },
-            { name: "PQR", icon: "helpCircle", link: `/agency/${agency.id}/(Customers)/pqr` },
+            { name:  "Clientes", icon: "person", link: `/agency/${agency.id}/(Customers)/clients` },
 
             // 7. Personal & RRHH
             { name: "Personal & RRHH", icon: "contact", link: "#" },
@@ -476,24 +462,13 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "Chat", icon: "messages", link: `/agency/${agency.id}/(Communications)/chat` },
 
             // 9. Reportes & Analíticas
-            { name: "Reportes & Analíticas", icon: "chartLine", link: "#" },
-            { name: "Ventas", icon: "chart", link: `/agency/${agency.id}/(Reports)/sales-reports` },
-            { name: "Inventario", icon: "database", link: `/agency/${agency.id}/(Reports)/inventory-reports` },
-            { name: "Desempeño", icon: "chart", link: `/agency/${agency.id}/(Reports)/performance` },
-            { name: "Finanzas", icon: "chart", link: `/agency/${agency.id}/(Reports)/financial-reports` },
-            { name: "Reportes Productos", icon: "chart", link: `/agency/${agency.id}/(Reports)/product-reports` },
-            { name: "Reportes POS", icon: "chart", link: `/agency/${agency.id}/(Reports)/reports-pos` },
+            { name: "Reportes & Analíticas", icon: "chartLine", link: `/agency/${agency.id}/(Reports)/reports-all` },
 
             // 10. Configuración & Administración
             { name: "Configuración & Administración", icon: "settings", link: "#" },
-            { name: "Ajustes de Empresa", icon: "settings", link: `/agency/${agency.id}/(Settings)/company-settings` },
-            { name: "Usuarios & Permisos", icon: "settings", link: `/agency/${agency.id}/(Settings)/users` },
             { name: "Facturación Cuenta", icon: "payment", link: `/agency/${agency.id}/(Settings)/billing` },
-            { name: "Configuración Inicial", icon: "settings", link: `/agency/${agency.id}/(Settings)/launchpad` }, 
-            { name: "General Settings", icon: "tune", link: `/agency/${agency.id}/(Settings)/settings` },
-            { name: "Soporte", icon: "settings", link: `/agency/${agency.id}/(Settings)/contact` },
-            { name: "Configuración POS", icon: "settings", link: `/agency/${agency.id}/(Settings)/settings-pos` },
-            { name: "Configuración DIAN", icon: "settings", link: `/agency/${agency.id}/(Settings)/dian-config` },
+            { name: "Configuración Pasarela de pagos", icon: "settings", link: `/agency/${agency.id}/(Settings)/launchpad` }, 
+            { name: "Configuración General", icon: "tune", link: `/agency/${agency.id}/(Settings)/settings` },
           ],
         },
       },

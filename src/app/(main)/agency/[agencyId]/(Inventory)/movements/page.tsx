@@ -1,257 +1,296 @@
 import { getAuthUserDetails } from "@/lib/queries"
 import { redirect } from "next/navigation"
-import Link from "next/link"
+import { Suspense } from "react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import {
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  Plus,
-  Search,
-  Filter,
-  Download,
-  Calendar,
-  MoreHorizontal,
-  ArrowLeftRight,
-  FileText,
-} from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FilteredMovements } from "@/components/inventory/filtered-movements"
-import { MovementService, ProductService, AreaService } from "@/lib/services/inventory-service"
+import { Skeleton } from "@/components/ui/skeleton"
+import { StockService, ProductService, AreaService } from "@/lib/services/inventory-service"
+import StockOverview from "@/components/inventory/stock-overview"
+import MovementRegistration from "@/components/inventory/movement-registration"
+import ProductStockDetails from "@/components/inventory/product-stock-details"
+import { Package, ArrowLeftRight, Search, Filter, DollarSign, AlertTriangle } from "lucide-react"
 
-const MovementsPage = async ({ params }: { params: { agencyId: string } }) => {
+// Servicio para obtener datos de stock
+export async function getStockPageData(agencyId: string) {
+  const user = await getAuthUserDetails()
+  if (!user) return { redirect: "/sign-in" }
+
+  if (!user.Agency) {
+    return { redirect: "/agency" }
+  }
+
+  // Obtener datos de stock, productos y áreas de MongoDB
+  let stocks = []
+  let products = []
+  let areas = []
+  let totalItems = 0
+  let totalValue = 0
+  let lowStockItems = 0
+
+  try {
+    // Obtener stock
+    stocks = await StockService.getStocks(agencyId)
+
+    // Obtener productos y áreas para mostrar nombres
+    products = await ProductService.getProducts(agencyId)
+    areas = await AreaService.getAreas(agencyId)
+
+    // Calcular estadísticas
+    totalItems = stocks.reduce((sum: number, item: any) => sum + item.quantity, 0)
+
+    // Calcular valor total del inventario
+    const productsMap = new Map(products.map((p: any) => [p._id.toString(), p]))
+    totalValue = stocks.reduce((sum: number, item: any) => {
+      const product = productsMap.get(item.productId)
+      return sum + (product ? product.price * item.quantity : 0)
+    }, 0)
+
+    // Contar productos bajo mínimo
+    lowStockItems = stocks.filter((item: any) => {
+      const product = productsMap.get(item.productId)
+      return product && product.minStock && item.quantity <= product.minStock
+    }).length
+  } catch (error) {
+    console.error("Error al cargar datos de inventario:", error)
+  }
+
+  // Crear mapas para buscar nombres de productos y áreas
+  const productsMap = new Map(products.map((p: any) => [p._id.toString(), p]))
+  const areasMap = new Map(areas.map((a: any) => [a._id.toString(), a]))
+
+  return {
+    user,
+    stocks,
+    products,
+    areas,
+    totalItems,
+    totalValue,
+    lowStockItems,
+    productsMap,
+    areasMap,
+    subAccounts: user.Agency.SubAccount || [],
+  }
+}
+
+export default async function InventoryPage({
+  params,
+  searchParams,
+}: {
+  params: { agencyId: string }
+  searchParams: { tab?: string; productId?: string; type?: string }
+}) {
   const user = await getAuthUserDetails()
   if (!user) return redirect("/sign-in")
 
   const agencyId = params.agencyId
-  if (!user.Agency) {
-    return redirect("/agency")
-  }
+  if (!user.Agency) return redirect("/agency")
 
-  // Obtener datos reales de movimientos desde MongoDB
-  const rawMovements = await MovementService.getMovements(agencyId)
-  
-  // Obtener productos y áreas para enriquecer los datos de movimientos
-  const products = await ProductService.getProducts(agencyId)
-  const areas = await AreaService.getAreas(agencyId)
-  
-  // Enriquecer los datos de movimientos con información de productos y áreas
-  const movements = await Promise.all(rawMovements.map(async (movement) => {
-    const product = products.find(p => p._id.toString() === movement.productId)
-    const area = areas.find(a => a._id.toString() === movement.areaId)
-    
-    // Asegurar que el tipo de movimiento esté en minúsculas para coincidir con la interfaz del componente
-    // En MongoDB puede estar como ENTRADA, SALIDA, TRANSFERENCIA (según el enum de Prisma)
-    let movementType = movement.type.toLowerCase()
-    if (movementType === 'entrada' || movementType === 'salida' || movementType === 'transferencia') {
-      // El tipo ya está correcto
-    } else if (movementType.includes('entrada') || movement.type === 'ENTRADA') {
-      movementType = 'entrada'
-    } else if (movementType.includes('salida') || movement.type === 'SALIDA') {
-      movementType = 'salida'
-    } else if (movementType.includes('transfer') || movement.type === 'TRANSFERENCIA') {
-      movementType = 'transferencia'
-    }
-    
-    return {
-      ...movement,
-      _id: movement._id.toString(),
-      type: movementType,
-      productName: product ? product.name : 'Producto desconocido',
-      productSku: product ? product.sku : 'Sin SKU',
-      areaName: area ? area.name : 'Área desconocida'
-    }
-  }))
+  // Obtener datos de stock
+  const stockData = await getStockPageData(agencyId)
 
-  // Calcular estadísticas con los tipos normalizados
-  const totalEntries = movements.filter((m) => m.type === "entrada").length
-  const totalExits = movements.filter((m) => m.type === "salida").length
-  const totalTransfers = movements.filter((m) => m.type === "transferencia").length
-  
-  // Obtener subcuentas del usuario actual
-  const subAccounts = user.Agency?.SubAccount?.map(subaccount => ({
-    id: subaccount.id,
-    name: subaccount.name
-  })) || []
+  // Determinar la pestaña activa basada en los parámetros de búsqueda
+  const activeTab =
+    searchParams.tab || (searchParams.productId ? "product" : searchParams.type ? "movement" : "overview")
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div className="container mx-auto p-6 space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Movimientos de Inventario</h1>
-          <p className="text-muted-foreground">Registro de entradas, salidas y transferencias de productos</p>
+          <h1 className="text-4xl font-bold tracking-tight">Inventario</h1>
+          <p className="text-muted-foreground mt-1">Gestión completa de productos, stock y movimientos</p>
         </div>
-        <div className="flex gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-2" />
-                Filtrar
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Filtrar por</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <ArrowDownToLine className="h-4 w-4 mr-2 text-green-500" />
-                Entradas
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <ArrowUpFromLine className="h-4 w-4 mr-2 text-red-500" />
-                Salidas
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <ArrowLeftRight className="h-4 w-4 mr-2 text-blue-500" />
-                Transferencias
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Calendar className="h-4 w-4 mr-2" />
-                Periodo
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Filtrar por fecha</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Hoy</DropdownMenuItem>
-              <DropdownMenuItem>Última semana</DropdownMenuItem>
-              <DropdownMenuItem>Último mes</DropdownMenuItem>
-              <DropdownMenuItem>Último trimestre</DropdownMenuItem>
-              <DropdownMenuItem>Personalizado...</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Download className="h-4 w-4 mr-2" />
-                Exportar a Excel
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <FileText className="h-4 w-4 mr-2" />
-                Generar reporte
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo Movimiento
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <Link href={`/agency/${agencyId}/movements/entrada`}>
-                <DropdownMenuItem>
-                  <ArrowDownToLine className="h-4 w-4 mr-2 text-green-500" />
-                  Registrar Entrada
-                </DropdownMenuItem>
-              </Link>
-              <Link href={`/agency/${agencyId}/movements/salida`}>
-                <DropdownMenuItem>
-                  <ArrowUpFromLine className="h-4 w-4 mr-2 text-red-500" />
-                  Registrar Salida
-                </DropdownMenuItem>
-              </Link>
-              <Link href={`/agency/${agencyId}/movements/transferencia`}>
-                <DropdownMenuItem>
-                  <ArrowLeftRight className="h-4 w-4 mr-2 text-blue-500" />
-                  Registrar Transferencia
-                </DropdownMenuItem>
-              </Link>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        <div className="flex flex-wrap gap-2">
+          <div className="relative w-full md:w-auto">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input type="search" placeholder="Buscar productos..." className="w-full md:w-[200px] pl-8" />
+          </div>
+          <Button variant="outline" size="sm">
+            <Filter className="h-4 w-4 mr-2" />
+            Filtrar
+          </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card>
-          <CardContent className="p-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-white dark:bg-gray-950 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Productos</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Entradas</p>
-                <p className="text-2xl font-bold">{totalEntries}</p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                <ArrowDownToLine className="h-6 w-6 text-green-600" />
+              <div className="text-2xl font-bold">{stockData.products.length}</div>
+              <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
+            <p className="text-xs text-muted-foreground mt-2">Productos registrados en el sistema</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="bg-white dark:bg-gray-950 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Valor del Inventario</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Salidas</p>
-                <p className="text-2xl font-bold">{totalExits}</p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
-                <ArrowUpFromLine className="h-6 w-6 text-red-600" />
+              <div className="text-2xl font-bold">${stockData.totalValue.toLocaleString("es-CO")}</div>
+              <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
             </div>
+            <p className="text-xs text-muted-foreground mt-2">Valor total de productos en stock</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="bg-white dark:bg-gray-950 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Productos Bajo Mínimo</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Transferencias</p>
-                <p className="text-2xl font-bold">{totalTransfers}</p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                <ArrowLeftRight className="h-6 w-6 text-blue-600" />
+              <div className="text-2xl font-bold">{stockData.lowStockItems}</div>
+              <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
               </div>
             </div>
+            <p className="text-xs text-muted-foreground mt-2">Productos que requieren reposición</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Componente de movimientos filtrados */}
-      {movements.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center p-10">
-            <h3 className="text-xl font-medium mb-2">No hay movimientos registrados</h3>
-            <p className="text-muted-foreground text-center mb-6">
-              Comience registrando entradas, salidas o transferencias de productos.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <FilteredMovements 
-          agencyId={agencyId}
-          movements={movements}
-          areas={areas}
-          subAccounts={subAccounts}
-        />
-      )}
+      <Tabs defaultValue={activeTab} className="w-full">
+        <TabsList className="mb-6 bg-muted/60 p-1 rounded-lg">
+          <TabsTrigger value="overview" className="rounded-md data-[state=active]:bg-background">
+            <Package className="h-4 w-4 mr-2" />
+            Inventario
+          </TabsTrigger>
+          <TabsTrigger value="movement" className="rounded-md data-[state=active]:bg-background">
+            <ArrowLeftRight className="h-4 w-4 mr-2" />
+            Movimientos
+          </TabsTrigger>
+          {searchParams.productId && (
+            <TabsTrigger value="product" className="rounded-md data-[state=active]:bg-background">
+              <Package className="h-4 w-4 mr-2" />
+              Detalle de Producto
+            </TabsTrigger>
+          )}
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <Suspense fallback={<StockOverviewSkeleton />}>
+            <StockOverview
+              agencyId={agencyId}
+              stocks={stockData.stocks}
+              products={stockData.products}
+              areas={stockData.areas}
+              productsMap={stockData.productsMap}
+              areasMap={stockData.areasMap}
+            />
+          </Suspense>
+        </TabsContent>
+
+        <TabsContent value="movement" className="space-y-6">
+          <Suspense fallback={<MovementRegistrationSkeleton />}>
+            <MovementRegistration
+              agencyId={agencyId}
+              type={searchParams.type as "entrada" | "salida" | "transferencia" | undefined}
+              productId={searchParams.productId}
+              products={stockData.products}
+              areas={stockData.areas}
+            />
+          </Suspense>
+        </TabsContent>
+
+        {searchParams.productId && (
+          <TabsContent value="product" className="space-y-6">
+            <Suspense fallback={<ProductStockDetailsSkeleton />}>
+              <ProductStockDetails
+                agencyId={agencyId}
+                productId={searchParams.productId}
+                products={stockData.products}
+                stocks={stockData.stocks.filter((s: any) => s.productId === searchParams.productId)}
+                areas={stockData.areas}
+                productsMap={stockData.productsMap}
+                areasMap={stockData.areasMap}
+              />
+            </Suspense>
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   )
 }
 
-export default MovementsPage
+// Componentes Skeleton para carga suspendida
+const StockOverviewSkeleton = () => (
+  <div className="space-y-4">
+    <div className="flex justify-between items-center">
+      <Skeleton className="h-8 w-48" />
+      <div className="flex gap-2">
+        <Skeleton className="h-9 w-24" />
+        <Skeleton className="h-9 w-24" />
+      </div>
+    </div>
+    <div className="border rounded-lg p-4">
+      <div className="space-y-4">
+        {Array(5)
+          .fill(0)
+          .map((_, i) => (
+            <div key={i} className="flex justify-between items-center">
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-48" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <div className="flex gap-2">
+                <Skeleton className="h-9 w-24" />
+                <Skeleton className="h-9 w-24" />
+              </div>
+            </div>
+          ))}
+      </div>
+    </div>
+  </div>
+)
+
+const MovementRegistrationSkeleton = () => (
+  <div className="space-y-4">
+    <Skeleton className="h-8 w-48" />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    </div>
+    <div className="flex justify-end">
+      <Skeleton className="h-10 w-32" />
+    </div>
+  </div>
+)
+
+const ProductStockDetailsSkeleton = () => (
+  <div className="space-y-4">
+    <div className="flex items-center">
+      <Skeleton className="h-9 w-32 mr-4" />
+      <Skeleton className="h-8 w-48" />
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Skeleton className="h-32 w-full" />
+      <Skeleton className="h-32 w-full" />
+      <Skeleton className="h-32 w-full" />
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <Skeleton className="h-96 w-full" />
+      <Skeleton className="h-96 w-full lg:col-span-2" />
+    </div>
+  </div>
+)

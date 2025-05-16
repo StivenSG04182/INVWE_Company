@@ -36,9 +36,21 @@ export const ProductService = {
   },
 
   // Obtener un producto por ID
-  async getProductById(id: string) {
+  async getProductById(agencyId: string, productId: string) {
     const { db } = await getDatabase();
-    return db.collection('products').findOne({ _id: new ObjectId(id) });
+    try {
+      // Validar que productId sea un ObjectId válido
+      if (!ObjectId.isValid(productId)) {
+        throw new Error(`ID de producto inválido: ${productId}`);
+      }
+      return db.collection('products').findOne({ 
+        _id: new ObjectId(productId),
+        agencyId: agencyId 
+      });
+    } catch (error) {
+      console.error('Error en getProductById:', error);
+      return null;
+    }
   },
 
   // Crear un nuevo producto
@@ -60,16 +72,34 @@ export const ProductService = {
       ...product,
       updatedAt: new Date(),
     };
-    await db
-      .collection('products')
-      .updateOne({ _id: new ObjectId(id) }, { $set: updatedProduct });
-    return this.getProductById(id);
+    try {
+      // Validar que id sea un ObjectId válido
+      if (!ObjectId.isValid(id)) {
+        throw new Error(`ID de producto inválido: ${id}`);
+      }
+      await db
+        .collection('products')
+        .updateOne({ _id: new ObjectId(id) }, { $set: updatedProduct });
+      return this.getProductById(product.agencyId || '', id);
+    } catch (error) {
+      console.error('Error en updateProduct:', error);
+      return null;
+    }
   },
 
   // Eliminar un producto
   async deleteProduct(id: string) {
     const { db } = await getDatabase();
-    return db.collection('products').deleteOne({ _id: new ObjectId(id) });
+    try {
+      // Validar que id sea un ObjectId válido
+      if (!ObjectId.isValid(id)) {
+        throw new Error(`ID de producto inválido: ${id}`);
+      }
+      return db.collection('products').deleteOne({ _id: new ObjectId(id) });
+    } catch (error) {
+      console.error('Error en deleteProduct:', error);
+      return { acknowledged: false, deletedCount: 0 };
+    }
   },
 };
 
@@ -159,9 +189,21 @@ export const AreaService = {
   },
 
   // Obtener un área por ID
-  async getAreaById(id: string) {
+  async getAreaById(agencyId: string, id: string) {
     const { db } = await getDatabase();
-    return db.collection('areas').findOne({ _id: new ObjectId(id) });
+    try {
+      // Validar que id sea un ObjectId válido
+      if (!ObjectId.isValid(id)) {
+        throw new Error(`ID de área inválido: ${id}`);
+      }
+      return db.collection('areas').findOne({ 
+        _id: new ObjectId(id),
+        agencyId: agencyId 
+      });
+    } catch (error) {
+      console.error('Error en getAreaById:', error);
+      return null;
+    }
   },
 
   // Crear una nueva área
@@ -183,10 +225,19 @@ export const AreaService = {
       ...area,
       updatedAt: new Date(),
     };
-    await db
-      .collection('areas')
-      .updateOne({ _id: new ObjectId(id) }, { $set: updatedArea });
-    return this.getAreaById(id);
+    try {
+      // Validar que id sea un ObjectId válido
+      if (!ObjectId.isValid(id)) {
+        throw new Error(`ID de área inválido: ${id}`);
+      }
+      await db
+        .collection('areas')
+        .updateOne({ _id: new ObjectId(id) }, { $set: updatedArea });
+      return this.getAreaById(area.agencyId || '', id);
+    } catch (error) {
+      console.error('Error en updateArea:', error);
+      return null;
+    }
   },
 
   // Eliminar un área
@@ -279,9 +330,21 @@ export const ProviderService = {
   },
 
   // Obtener un proveedor por ID
-  async getProviderById(id: string) {
+  async getProviderById(agencyId: string, id: string) {
     const { db } = await getDatabase();
-    return db.collection('providers').findOne({ _id: new ObjectId(id) });
+    try {
+      // Validar que id sea un ObjectId válido
+      if (!ObjectId.isValid(id)) {
+        throw new Error(`ID de proveedor inválido: ${id}`);
+      }
+      return db.collection('providers').findOne({ 
+        _id: new ObjectId(id),
+        agencyId: agencyId 
+      });
+    } catch (error) {
+      console.error('Error en getProviderById:', error);
+      return null;
+    }
   },
 
   // Crear un nuevo proveedor
@@ -303,10 +366,19 @@ export const ProviderService = {
       ...provider,
       updatedAt: new Date(),
     };
-    await db
-      .collection('providers')
-      .updateOne({ _id: new ObjectId(id) }, { $set: updatedProvider });
-    return this.getProviderById(id);
+    try {
+      // Validar que id sea un ObjectId válido
+      if (!ObjectId.isValid(id)) {
+        throw new Error(`ID de proveedor inválido: ${id}`);
+      }
+      await db
+        .collection('providers')
+        .updateOne({ _id: new ObjectId(id) }, { $set: updatedProvider });
+      return this.getProviderById(provider.agencyId || '', id);
+    } catch (error) {
+      console.error('Error en updateProvider:', error);
+      return null;
+    }
   },
 
   // Eliminar un proveedor

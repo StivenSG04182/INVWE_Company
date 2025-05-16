@@ -809,6 +809,27 @@ model Product {
   updatedAt    DateTime         @updatedAt
   agencyId     String
   subAccountId String?
+  brand        String?
+  model        String?
+  tags         String[]         @default([])
+  unit         String?          // ej. "pieza", "kg", "litro"
+  barcode      String?
+  quantity     Int?             @default(0)
+  locationId   String?
+  warehouseId  String?
+  batchNumber  String?
+  expirationDate DateTime?
+  serialNumber String?
+  warrantyMonths Int?
+  isReturnable Boolean          @default(false)
+  discount     Decimal?         @default(0)
+  taxRate      Decimal?         @default(0)
+  supplierId   String?
+  variants     Json?            // Array de objetos {name: string, value: string}
+  documents    String[]         @default([])
+  customFields Json?            // Record<string, any>
+  externalIntegrations Json?    // Record<string, string>
+  
   Agency       Agency           @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   SubAccount   SubAccount?      @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
   Category     ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)

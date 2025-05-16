@@ -86,7 +86,7 @@ export async function POST(
             where: {
                 name,
                 agencyId,
-                subaccountId: subaccountId || undefined,
+                subAccountId: subaccountId || undefined,
             },
         });
 
@@ -97,14 +97,31 @@ export async function POST(
             );
         }
 
-        // Crear la nueva categoría
+        // Crear la nueva categoría en Prisma
         const newCategory = await db.productCategory.create({
             data: {
                 name,
                 agencyId,
-                subaccountId: subaccountId || undefined,
+                subAccountId: subaccountId || undefined,
             },
         });
+
+        // También guardar en MongoDB para mantener sincronización
+        try {
+            const { connectToDatabase } = await import('@/lib/mongodb');
+            const { db: mongodb } = await connectToDatabase();
+            
+            await mongodb.collection('categories').insertOne({
+                name,
+                agencyId,
+                subaccountId: subaccountId || undefined, // Nota: en minúscula para MongoDB
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+        } catch (mongoError) {
+            console.error('Error al guardar categoría en MongoDB:', mongoError);
+            // Continuamos aunque falle MongoDB para no interrumpir el flujo
+        }
 
         return NextResponse.json({ success: true, data: newCategory });
     } catch (error) {

@@ -38,17 +38,16 @@ const organizeSidebarOptions = (options: AgencySidebarOption[] | SubAccountSideb
 
   // Definimos el orden específico de las categorías según lo solicitado
   const categoryOrder: Record<string, number> = {
-    'Dashboard & Visión general': 1,
+    'Dashboard': 1,
     'Gestión de Inventario': 2,
     'Tienda & E-Commerce': 3,
-    'Punto de Venta': 4,
+    'POS (Punto de Venta)': 4,
     'Ventas & Facturación': 5,
     'Personal & RRHH': 6,
-    'Clientes & CRM': 7,
+    'Clientes': 7,
     'Comunicaciones': 8,
     'Reportes & Analíticas': 9,
     'Configuración & Administración': 10,
-    'POS (Punto de Venta)': 4, // Alias para Punto de Venta
   };
 
   // Lista de categorías a excluir
@@ -76,21 +75,6 @@ const organizeSidebarOptions = (options: AgencySidebarOption[] | SubAccountSideb
     }
   });
 
-  // Crear categorías principales que no existen pero son necesarias
-  // Verificamos si existe la categoría 'Dashboard & Visión general'
-  if (!mainCategories.find(cat => cat.name === 'Dashboard & Visión general')) {
-    // Creamos una categoría virtual para agrupar las opciones de Dashboard
-    mainCategories.push({
-      id: 'dashboard-category',
-      name: 'Dashboard & Visión general',
-      link: '#',
-      icon: 'chart',
-      order: categoryOrder['Dashboard & Visión general'],
-      children: []
-    });
-  }
-
-  // Asignamos las subopciones a sus categorías principales correspondientes
   // basándonos en los comentarios y la estructura en queries.ts
   subOptions.forEach(subOption => {
     // Buscamos la categoría principal a la que pertenece esta subopción
@@ -144,15 +128,10 @@ const getCategoryForOption = (optionName: string): string | null => {
   // Mapeo de opciones a sus categorías principales
   const categoryMap: Record<string, string> = {
     // Dashboard & Visión general
-    'Dashboard': 'Dashboard & Visión general',
-    'Análisis': 'Dashboard & Visión general',
-    'Actividad': 'Dashboard & Visión general',
-    'Visión general': 'Dashboard & Visión general',
-    'Integraciones': 'Dashboard & Visión general',
-
+    'Dashboard': 'Dashboard',
+    
     // Gestión de Inventario
     'Productos': 'Gestión de Inventario',
-    'Stock': 'Gestión de Inventario',
     'Movimientos': 'Gestión de Inventario',
     'Proveedores': 'Gestión de Inventario',
     'Áreas de Inventario': 'Gestión de Inventario',
@@ -168,10 +147,7 @@ const getCategoryForOption = (optionName: string): string | null => {
     'Cierre de Caja': 'POS (Punto de Venta)',
     
     // Ventas & Facturación (Categoría 5 según el orden)
-    'Transacciones': 'Ventas & Facturación',
-    'Facturas': 'Ventas & Facturación',
-    'Notas Crédito/Débito': 'Ventas & Facturación',
-    'Pagos': 'Ventas & Facturación',
+    'Ventas & Facturación': 'Ventas & Facturación',
     
     // Personal & RRHH (Categoría 6 según el orden)
     'Empleados': 'Personal & RRHH',
@@ -181,8 +157,6 @@ const getCategoryForOption = (optionName: string): string | null => {
     
     // Clientes & CRM (Categoría 7 según el orden)
     'Clientes': 'Clientes & CRM',
-    'CRM': 'Clientes & CRM',
-    'PQR': 'Clientes & CRM',
     
     // Comunicaciones (Categoría 8 según el orden)
     'Campañas': 'Comunicaciones',
@@ -192,23 +166,12 @@ const getCategoryForOption = (optionName: string): string | null => {
     'Media': 'Comunicaciones',
     
     // Reportes & Analíticas (Categoría 9 según el orden)
-    'Ventas': 'Reportes & Analíticas',
-    'Inventario': 'Reportes & Analíticas',
-    'Desempeño': 'Reportes & Analíticas',
-    'Finanzas': 'Reportes & Analíticas',
-    'Reportes Productos': 'Reportes & Analíticas',
-    'Reportes POS': 'Reportes & Analíticas',
-    'Reportes de Facturación': 'Reportes & Analíticas',
+    'Reportes & Analíticas': 'Reportes & Analíticas',
     
     // Configuración & Administración (Categoría 10 según el orden)
-    'Ajustes de Empresa': 'Configuración & Administración',
-    'Usuarios & Permisos': 'Configuración & Administración',
     'Facturación Cuenta': 'Configuración & Administración',
-    'Configuración Inicial': 'Configuración & Administración',
-    'General Settings': 'Configuración & Administración',
-    'Configuración POS': 'Configuración & Administración',
-    'Configuración DIAN': 'Configuración & Administración',
-    'Soporte': 'Configuración & Administración',
+    'Configuración Pasarela de pagos': 'Configuración & Administración',
+    'Configuración General': 'Configuración & Administración',
   };
   return categoryMap[optionName] || null;
 };

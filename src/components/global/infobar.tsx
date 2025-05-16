@@ -1,22 +1,22 @@
-'use client'
-import { NotificationWithUser } from '@/lib/types'
-import { UserButton } from '@clerk/nextjs'
-import React, { useState } from 'react'
-import { twMerge } from 'tailwind-merge'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '../ui/sheet'
-import { Bell } from 'lucide-react'
-import { Role } from '@prisma/client'
-import { Card } from '../ui/card'
-import { Switch } from '../ui/switch'
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
-import { ModeToggle } from './mode-toggle'
+"use client"
+
+import type { NotificationWithUser } from "@/lib/types"
+import { UserButton } from "@clerk/nextjs"
+import { useState, useEffect } from "react"
+import { twMerge } from "tailwind-merge"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "../ui/sheet"
+import { Bell, Check, Clock, Filter, MoreHorizontal } from "lucide-react"
+import type { Role } from "@prisma/client"
+import { Card, CardContent } from "../ui/card"
+import { Switch } from "../ui/switch"
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
+import { ModeToggle } from "./mode-toggle"
+import { Badge } from "../ui/badge"
+import { Button } from "../ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu"
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs"
+import { motion, AnimatePresence } from "framer-motion"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
 
 type Props = {
   notifications: NotificationWithUser | []
@@ -26,95 +26,264 @@ type Props = {
 }
 
 const InfoBar = ({ notifications, subAccountId, className, role }: Props) => {
-  const [allNotifications, setAllNotifications] = useState(notifications)
+  const [allNotifications, setAllNotifications] = useState<NotificationWithUser>([])
   const [showAll, setShowAll] = useState(true)
+  const [isOpen, setIsOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [activeTab, setActiveTab] = useState("all")
+
+  useEffect(() => {
+    if (notifications) {
+      setAllNotifications(notifications)
+      // Count unread notifications
+      const count = notifications.filter((n) => !n.read).length
+      setUnreadCount(count)
+    }
+  }, [notifications])
 
   const handleClick = () => {
     if (!showAll) {
-      setAllNotifications(notifications)
+      setAllNotifications(notifications as NotificationWithUser)
     } else {
       if (notifications?.length !== 0) {
         setAllNotifications(
-          notifications?.filter((item) => item.subAccountId === subAccountId) ??
-            []
+          (notifications as NotificationWithUser)?.filter((item) => item.subAccountId === subAccountId) ?? [],
         )
       }
     }
     setShowAll((prev) => !prev)
   }
 
+  const handleMarkAllRead = () => {
+    // In a real app, you would call an API to mark notifications as read
+    // For now, we'll just update the local state
+    setAllNotifications((prev) =>
+      prev.map((notification) => ({
+        ...notification,
+        read: true,
+      })),
+    )
+    setUnreadCount(0)
+  }
+
+  const handleMarkAsRead = (id: string) => {
+    setAllNotifications((prev) =>
+      prev.map((notification) => (notification.id === id ? { ...notification, read: true } : notification)),
+    )
+    setUnreadCount((prev) => Math.max(0, prev - 1))
+  }
+
+  const getTimeAgo = (date: Date) => {
+    const now = new Date()
+    const diffInSeconds = Math.floor((now.getTime() - new Date(date).getTime()) / 1000)
+
+    if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`
+    return `${Math.floor(diffInSeconds / 86400)} days ago`
+  }
+
+  const filteredNotifications = () => {
+    if (activeTab === "unread") {
+      return allNotifications.filter((n) => !n.read)
+    }
+    return allNotifications
+  }
+
   return (
     <>
       <div
         className={twMerge(
-          'fixed z-[20] md:left-[300px] left-0 right-0 top-0 p-4 bg-background/80 backdrop-blur-md flex  gap-4 items-center border-b-[1px] ',
-          className
+          "fixed z-[20] md:left-[300px] left-0 right-0 top-0 p-4 bg-background/80 backdrop-blur-md flex gap-4 items-center border-b-[1px]",
+          className,
         )}
       >
-        <div className="flex items-center gap-2 ml-auto">
-          <UserButton afterSignOutUrl="/" />
-          <Sheet>
-            <SheetTrigger>
-              <div className="rounded-full w-9 h-9 bg-primary flex items-center justify-center text-white">
-                <Bell size={17} />
-              </div>
-            </SheetTrigger>
-            <SheetContent className="mt-4 mr-4 pr-4 ">
-              <SheetHeader className="text-left">
-                <SheetTitle>Notifications</SheetTitle>
-                <SheetDescription>
-                  {(role === 'AGENCY_ADMIN' || role === 'AGENCY_OWNER') && (
-                    <Card className="flex items-center justify-between p-4">
-                      Current Subaccount
-                      <Switch onCheckedChange={handleClick} />
-                    </Card>
-                  )}
-                </SheetDescription>
-              </SheetHeader>
-              {allNotifications?.map((notification) => (
-                <div
-                  key={notification.id}
-                  className="flex flex-col gap-y-2 mb-2 overflow-x-scroll text-ellipsis"
-                >
-                  <div className="flex gap-2">
-                    <Avatar>
-                      <AvatarImage
-                        src={notification.User.avatarUrl}
-                        alt="Profile Picture"
-                      />
-                      <AvatarFallback className="bg-primary">
-                        {notification.User.name.slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                      <p>
-                        <span className="font-bold">
-                          {notification.notification.split('|')[0]}
-                        </span>
-                        <span className="text-muted-foreground">
-                          {notification.notification.split('|')[1]}
-                        </span>
-                        <span className="font-bold">
-                          {notification.notification.split('|')[2]}
-                        </span>
-                      </p>
-                      <small className="text-xs text-muted-foreground">
-                        {new Date(notification.createdAt).toLocaleDateString()}
-                      </small>
+        <div className="flex items-center gap-3 ml-auto">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                  <SheetTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="relative rounded-full h-9 w-9 flex items-center justify-center hover:bg-muted"
+                    >
+                      <Bell size={18} className="text-muted-foreground" />
+                      {unreadCount > 0 && (
+                        <Badge
+                          className="absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center p-0 text-[10px]"
+                          variant="destructive"
+                        >
+                          {unreadCount > 9 ? "9+" : unreadCount}
+                        </Badge>
+                      )}
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent className="w-full sm:max-w-md p-0 overflow-hidden">
+                    <div className="flex flex-col h-full">
+                      <SheetHeader className="px-6 py-4 border-b">
+                        <div className="flex items-center justify-between">
+                          <SheetTitle className="text-xl">Notifications</SheetTitle>
+                          <div className="flex items-center gap-2">
+                            {unreadCount > 0 && (
+                              <Button variant="ghost" size="sm" onClick={handleMarkAllRead} className="text-xs h-8">
+                                <Check size={14} className="mr-1" />
+                                Mark all read
+                              </Button>
+                            )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <Filter size={14} />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                {(role === "AGENCY_ADMIN" || role === "AGENCY_OWNER") && (
+                                  <div className="flex items-center justify-between px-3 py-2">
+                                    <span className="text-sm">Current Subaccount</span>
+                                    <Switch checked={!showAll} onCheckedChange={handleClick} />
+                                  </div>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mt-2">
+                          <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="all" className="text-xs">
+                              All
+                            </TabsTrigger>
+                            <TabsTrigger value="unread" className="text-xs">
+                              Unread
+                              {unreadCount > 0 && (
+                                <Badge variant="secondary" className="ml-1.5 h-5 text-[10px]">
+                                  {unreadCount}
+                                </Badge>
+                              )}
+                            </TabsTrigger>
+                          </TabsList>
+                        </Tabs>
+                      </SheetHeader>
+
+                      <div className="flex-1 overflow-y-auto">
+                        <AnimatePresence>
+                          {filteredNotifications().length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-[300px] text-center p-4">
+                              <div className="bg-muted/30 p-3 rounded-full mb-3">
+                                <Bell size={24} className="text-muted-foreground" />
+                              </div>
+                              <h3 className="font-medium mb-1">No notifications</h3>
+                              <p className="text-sm text-muted-foreground max-w-[250px]">
+                                {activeTab === "unread"
+                                  ? "You've read all your notifications"
+                                  : "You don't have any notifications yet"}
+                              </p>
+                            </div>
+                          ) : (
+                            filteredNotifications().map((notification) => (
+                              <motion.div
+                                key={notification.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.2 }}
+                                layout
+                              >
+                                <Card
+                                  className={twMerge(
+                                    "rounded-none border-x-0 border-t-0 relative",
+                                    !notification.read && "bg-muted/30",
+                                  )}
+                                >
+                                  {!notification.read && (
+                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
+                                  )}
+                                  <CardContent className="p-4 flex gap-3">
+                                    <Avatar className="h-9 w-9">
+                                      <AvatarImage
+                                        src={notification.User.avatarUrl || "/placeholder.svg"}
+                                        alt={notification.User.name}
+                                      />
+                                      <AvatarFallback className="bg-primary text-xs">
+                                        {notification.User.name.slice(0, 2).toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div>
+                                          <p className="text-sm leading-tight">
+                                            <span className="font-medium">
+                                              {notification.notification.split("|")[0]}
+                                            </span>
+                                            <span className="text-muted-foreground">
+                                              {notification.notification.split("|")[1]}
+                                            </span>
+                                            <span className="font-medium">
+                                              {notification.notification.split("|")[2]}
+                                            </span>
+                                          </p>
+                                          <div className="flex items-center mt-1 text-xs text-muted-foreground">
+                                            <Clock size={12} className="mr-1" />
+                                            {getTimeAgo(notification.createdAt)}
+                                          </div>
+                                        </div>
+
+                                        <div className="flex items-center">
+                                          {!notification.read && (
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-7 w-7"
+                                              onClick={() => handleMarkAsRead(notification.id)}
+                                            >
+                                              <Check size={14} />
+                                            </Button>
+                                          )}
+                                          <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                                                <MoreHorizontal size={14} />
+                                              </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                              <DropdownMenuItem
+                                                onClick={() => handleMarkAsRead(notification.id)}
+                                                disabled={notification.read}
+                                              >
+                                                Mark as read
+                                              </DropdownMenuItem>
+                                              <DropdownMenuItem className="text-destructive">Remove</DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                          </DropdownMenu>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </motion.div>
+                            ))
+                          )}
+                        </AnimatePresence>
+                      </div>
+
+                      <SheetFooter className="flex-shrink-0 border-t p-4">
+                        <Button variant="outline" size="sm" className="w-full" onClick={() => setIsOpen(false)}>
+                          Close
+                        </Button>
+                      </SheetFooter>
                     </div>
-                  </div>
-                </div>
-              ))}
-              {allNotifications?.length === 0 && (
-                <div
-                  className="flex items-center justify-center text-muted-foreground"
-                  mb-4
-                >
-                  You have no notifications
-                </div>
-              )}
-            </SheetContent>
-          </Sheet>
+                  </SheetContent>
+                </Sheet>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Notifications</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <UserButton afterSignOutUrl="/" />
           <ModeToggle />
         </div>
       </div>
