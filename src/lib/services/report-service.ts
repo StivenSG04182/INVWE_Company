@@ -1,145 +1,368 @@
-// Este archivo es solo para simular la estructura de servicios
-// En una implementación real, estos servicios harían llamadas a la API o base de datos
+import { prisma } from "@/lib/prisma"
+import { format, subDays, startOfDay, endOfDay, startOfMonth, startOfYear } from "date-fns"
+import { es } from "date-fns/locale"
 
-import type { ReportFormat, ReportType } from "@prisma/client"
+// Tipos para los reportes
+export type DateRange = "today" | "week" | "month" | "year" | "custom"
+export type ReportFormat = "json" | "csv" | "pdf" | "excel"
 
-// Interfaz para los reportes
-interface Report {
-    name: string
-    description: string
-    type: ReportType
-    format: ReportFormat
-    content: any
-    agencyId: string
+export interface ReportFilter {
+    dateRange: DateRange
+    startDate?: Date
+    endDate?: Date
+    categoryId?: string
+    productId?: string
+    areaId?: string
+    supplierId?: string
+    paymentMethod?: string
+    cashierId?: string
+    customerId?: string
 }
 
-// Servicio principal de reportes
-export const ReportService = {
-    // Guardar un reporte en la base de datos
-    saveReport: async (report: Report) => {
-        console.log("Guardando reporte:", report)
-        // Aquí iría la lógica para guardar en la base de datos
-        return { success: true, id: "report-" + Date.now() }
-    },
-
-    // Obtener un reporte por ID
-    getReportById: async (reportId: string) => {
-        console.log("Obteniendo reporte:", reportId)
-        // Aquí iría la lógica para obtener de la base de datos
-        return { id: reportId, name: "Reporte de ejemplo", createdAt: new Date() }
-    },
-
-    // Listar reportes por agencia
-    listReportsByAgency: async (agencyId: string) => {
-        console.log("Listando reportes para agencia:", agencyId)
-        // Aquí iría la lógica para listar de la base de datos
-        return [
-            { id: "report-1", name: "Reporte 1", createdAt: new Date() },
-            { id: "report-2", name: "Reporte 2", createdAt: new Date() },
-        ]
-    },
+export interface SalesReportItem {
+    date: string
+    totalSales: number
+    totalRevenue: number
+    averageTicket: number
+    itemsSold: number
 }
 
-// Servicios específicos para cada tipo de reporte
-export const FinancialReportService = {
-    getFinancialStats: async (agencyId: string) => {
-        console.log("Obteniendo estadísticas financieras para:", agencyId)
-        // Aquí iría la lógica para obtener datos financieros
-        return {
-            totalRevenue: 245890,
-            totalExpenses: 156720,
-            netProfit: 89170,
-            profitMargin: 36.3,
-            // Otros datos...
+export interface InventoryReportItem {
+    productId: string
+    productName: string
+    sku: string
+    categoryName: string
+    initialStock: number
+    currentStock: number
+    entries: number
+    exits: number
+    transfers: number
+    minStock: number
+    isLowStock: boolean
+    cost: number
+    price: number
+    totalValue: number
+}
+
+export interface ProductPerformanceItem {
+    productId: string
+    productName: string
+    sku: string
+    categoryName: string
+    quantitySold: number
+    revenue: number
+    profit: number
+    returnRate: number
+    stockTurnover: number
+}
+
+// Servicio para generación de reportes
+export class ReportService {
+    // Obtener fechas para el rango seleccionado
+    static getDateRangeFilter(filter: ReportFilter): { startDate: Date; endDate: Date } {
+        const now = new Date()
+        let startDate: Date
+        let endDate: Date = endOfDay(now)
+
+        switch (filter.dateRange) {
+            case "today":
+                startDate = startOfDay(now)
+                break
+            case "week":
+                startDate = startOfDay(subDays(now, 7))
+                break
+            case "month":
+                startDate = startOfMonth(now)
+                break
+            case "year":
+                startDate = startOfYear(now)
+                break
+            case "custom":
+                if (filter.startDate && filter.endDate) {
+                    startDate = startOfDay(filter.startDate)
+                    endDate = endOfDay(filter.endDate)
+                } else {
+                    // Si no se proporcionan fechas personalizadas, usar el mes actual
+                    startDate = startOfMonth(now)
+                }
+                break
+            default:
+                startDate = startOfMonth(now)
         }
-    },
 
-    getAvailableReports: async (agencyId: string) => {
-        console.log("Obteniendo reportes financieros disponibles para:", agencyId)
-        // Aquí iría la lógica para obtener reportes disponibles
-        return [
-            {
-                id: "income-statement",
-                title: "Estado de Resultados",
-                description: "Reporte detallado de ingresos y gastos del período.",
+        return { startDate, endDate }
+    }
+
+    // Generar reporte de ventas
+    static async generateSalesReport(agencyId: string, filter: ReportFilter): Promise<SalesReportItem[]> {
+        const { startDate, endDate } = this.getDateRangeFilter(filter)
+
+        // Construir la consulta base
+        const whereClause: any = {
+            agencyId,
+            createdAt: {
+                gte: startDate,
+                lte: endDate,
             },
-            // Otros reportes...
-        ]
-    },
-}
-
-export const InventoryReportService = {
-    getInventoryStats: async (agencyId: string) => {
-        console.log("Obteniendo estadísticas de inventario para:", agencyId)
-        // Aquí iría la lógica para obtener datos de inventario
-        return {
-            totalProducts: 1245,
-            optimalStock: 980,
-            lowStock: 185,
-            outOfStock: 80,
-            // Otros datos...
+            status: "COMPLETED",
         }
-    },
 
-    getInventoryRotation: async (agencyId: string, days: number) => {
-        console.log(`Obteniendo rotación de inventario para ${agencyId} en los últimos ${days} días`)
-        // Aquí iría la lógica para obtener datos de rotación
-        return [
-            { date: "2023-10-01", quantity: 85 },
-            // Otros datos...
-        ]
-    },
-}
+        // Aplicar filtros adicionales
+        if (filter.areaId) whereClause.areaId = filter.areaId
+        if (filter.cashierId) whereClause.cashierId = filter.cashierId
+        if (filter.customerId) whereClause.customerId = filter.customerId
+        if (filter.paymentMethod) whereClause.paymentMethod = filter.paymentMethod
 
-export const SalesReportService = {
-    getSalesStats: async (agencyId: string) => {
-        console.log("Obteniendo estadísticas de ventas para:", agencyId)
-        // Aquí iría la lógica para obtener datos de ventas
-        return {
-            totalRevenue: 128459,
-            growthPercentage: 12.5,
-            // Otros datos...
-        }
-    },
-
-    getAvailableReports: async (agencyId: string) => {
-        console.log("Obteniendo reportes de ventas disponibles para:", agencyId)
-        // Aquí iría la lógica para obtener reportes disponibles
-        return [
-            {
-                id: "sales-by-seller",
-                title: "Reporte de Ventas por Vendedor",
-                description: "Análisis detallado del rendimiento de cada vendedor.",
+        // Obtener todas las ventas en el período
+        const sales = await prisma.sale.findMany({
+            where: whereClause,
+            include: {
+                Items: {
+                    include: {
+                        Product: true,
+                    },
+                },
             },
-            // Otros reportes...
-        ]
-    },
-}
-
-export const ProductReportService = {
-    getProductStats: async (agencyId: string) => {
-        console.log("Obteniendo estadísticas de productos para:", agencyId)
-        // Aquí iría la lógica para obtener datos de productos
-        return {
-            totalProducts: 1245,
-            activeProducts: 980,
-            discontinuedProducts: 265,
-            // Otros datos...
-        }
-    },
-}
-
-export const PerformanceReportService = {
-    getPerformanceStats: async (agencyId: string) => {
-        console.log("Obteniendo estadísticas de desempeño para:", agencyId)
-        // Aquí iría la lógica para obtener datos de desempeño
-        return {
-            kpis: {
-                salesVsTarget: 85,
-                customerSatisfaction: 92,
-                // Otros datos...
+            orderBy: {
+                createdAt: "asc",
             },
-            // Otros datos...
+        })
+
+        // Agrupar ventas por fecha
+        const salesByDate = sales.reduce((acc, sale) => {
+            const dateKey = format(sale.createdAt, "yyyy-MM-dd")
+
+            if (!acc[dateKey]) {
+                acc[dateKey] = {
+                    date: dateKey,
+                    totalSales: 0,
+                    totalRevenue: 0,
+                    itemsSold: 0,
+                }
+            }
+
+            acc[dateKey].totalSales += 1
+            acc[dateKey].totalRevenue += Number(sale.total)
+            acc[dateKey].itemsSold += sale.Items.reduce((sum, item) => sum + item.quantity, 0)
+
+            return acc
+        }, {})
+
+        // Convertir a array y calcular ticket promedio
+        const report = Object.values(salesByDate).map((item: any) => ({
+            ...item,
+            averageTicket: item.totalSales > 0 ? item.totalRevenue / item.totalSales : 0,
+            date: format(new Date(item.date), "dd MMM yyyy", { locale: es }),
+            totalRevenue: Number(item.totalRevenue.toFixed(2)),
+            averageTicket: Number((item.totalRevenue / item.totalSales).toFixed(2)),
+        }))
+
+        return report
+    }
+
+    // Generar reporte de inventario
+    static async generateInventoryReport(agencyId: string, filter: ReportFilter): Promise<InventoryReportItem[]> {
+        const { startDate, endDate } = this.getDateRangeFilter(filter)
+
+        // Obtener productos con sus stocks
+        const products = await prisma.product.findMany({
+            where: {
+                agencyId,
+                ...(filter.categoryId && { categoryId: filter.categoryId }),
+                ...(filter.productId && { id: filter.productId }),
+            },
+            include: {
+                Category: true,
+                Stocks: true,
+            },
+        })
+
+        // Obtener movimientos en el período
+        const movements = await prisma.movement.findMany({
+            where: {
+                agencyId,
+                createdAt: {
+                    gte: startDate,
+                    lte: endDate,
+                },
+                ...(filter.areaId && { areaId: filter.areaId }),
+                ...(filter.supplierId && { providerId: filter.supplierId }),
+                ...(filter.productId && { productId: filter.productId }),
+            },
+        })
+
+        // Agrupar movimientos por producto
+        const movementsByProduct = movements.reduce((acc, movement) => {
+            if (!acc[movement.productId]) {
+                acc[movement.productId] = {
+                    entries: 0,
+                    exits: 0,
+                    transfers: 0,
+                }
+            }
+
+            if (movement.type === "ENTRADA") {
+                acc[movement.productId].entries += movement.quantity
+            } else if (movement.type === "SALIDA") {
+                acc[movement.productId].exits += movement.quantity
+            } else if (movement.type === "TRANSFERENCIA") {
+                acc[movement.productId].transfers += movement.quantity
+            }
+
+            return acc
+        }, {})
+
+        // Construir el reporte
+        const report = products.map((product) => {
+            const currentStock = product.Stocks.reduce((sum, stock) => sum + stock.quantity, 0)
+            const movements = movementsByProduct[product.id] || { entries: 0, exits: 0, transfers: 0 }
+            const initialStock = currentStock - movements.entries + movements.exits
+            const isLowStock = product.minStock ? currentStock <= product.minStock : false
+            const totalValue = currentStock * Number(product.price)
+
+            return {
+                productId: product.id,
+                productName: product.name,
+                sku: product.sku || "",
+                categoryName: product.Category?.name || "Sin categoría",
+                initialStock,
+                currentStock,
+                entries: movements.entries,
+                exits: movements.exits,
+                transfers: movements.transfers,
+                minStock: product.minStock || 0,
+                isLowStock,
+                cost: Number(product.cost) || 0,
+                price: Number(product.price),
+                totalValue: Number(totalValue.toFixed(2)),
+            }
+        })
+
+        return report
+    }
+
+    // Generar reporte de rendimiento de productos
+    static async generateProductPerformanceReport(
+        agencyId: string,
+        filter: ReportFilter,
+    ): Promise<ProductPerformanceItem[]> {
+        const { startDate, endDate } = this.getDateRangeFilter(filter)
+
+        // Obtener ventas en el período
+        const sales = await prisma.sale.findMany({
+            where: {
+                agencyId,
+                createdAt: {
+                    gte: startDate,
+                    lte: endDate,
+                },
+                status: "COMPLETED",
+                ...(filter.areaId && { areaId: filter.areaId }),
+            },
+            include: {
+                Items: {
+                    include: {
+                        Product: {
+                            include: {
+                                Category: true,
+                            },
+                        },
+                    },
+                },
+            },
+        })
+
+        // Agrupar ventas por producto
+        const productPerformance = {}
+
+        sales.forEach((sale) => {
+            sale.Items.forEach((item) => {
+                const productId = item.productId
+
+                if (!productPerformance[productId]) {
+                    productPerformance[productId] = {
+                        productId,
+                        productName: item.Product.name,
+                        sku: item.Product.sku || "",
+                        categoryName: item.Product.Category?.name || "Sin categoría",
+                        quantitySold: 0,
+                        revenue: 0,
+                        profit: 0,
+                        returnRate: 0, // Se calculará después si hay datos de devoluciones
+                        stockTurnover: 0, // Se calculará después con datos de inventario
+                    }
+                }
+
+                const unitCost = Number(item.Product.cost) || 0
+                const unitPrice = Number(item.unitPrice)
+                const quantity = item.quantity
+                const revenue = unitPrice * quantity
+                const profit = (unitPrice - unitCost) * quantity
+
+                productPerformance[productId].quantitySold += quantity
+                productPerformance[productId].revenue += revenue
+                productPerformance[productId].profit += profit
+            })
+        })
+
+        // Obtener datos de inventario para calcular rotación de stock
+        const products = await prisma.product.findMany({
+            where: {
+                agencyId,
+                id: { in: Object.keys(productPerformance) },
+            },
+            include: {
+                Stocks: true,
+            },
+        })
+
+        // Calcular rotación de stock
+        products.forEach((product) => {
+            if (productPerformance[product.id]) {
+                const currentStock = product.Stocks.reduce((sum, stock) => sum + stock.quantity, 0)
+                const quantitySold = productPerformance[product.id].quantitySold
+
+                // Fórmula de rotación: Cantidad vendida / Stock promedio
+                // Usamos stock actual como aproximación al stock promedio
+                const stockTurnover = currentStock > 0 ? quantitySold / currentStock : 0
+
+                productPerformance[product.id].stockTurnover = Number(stockTurnover.toFixed(2))
+            }
+        })
+
+        // Convertir a array y formatear valores numéricos
+        const report = Object.values(productPerformance).map((item: any) => ({
+            ...item,
+            revenue: Number(item.revenue.toFixed(2)),
+            profit: Number(item.profit.toFixed(2)),
+        }))
+
+        return report
+    }
+
+    // Exportar reporte a CSV
+    static exportToCSV(data: any[], filename: string): string {
+        if (!data || data.length === 0) return ""
+
+        // Obtener encabezados
+        const headers = Object.keys(data[0])
+
+        // Crear contenido CSV
+        const csvRows = []
+
+        // Añadir encabezados
+        csvRows.push(headers.join(","))
+
+        // Añadir filas
+        for (const row of data) {
+            const values = headers.map((header) => {
+                const value = row[header]
+                // Escapar comillas y formatear valores
+                return typeof value === "string" ? `"${value.replace(/"/g, '""')}"` : value
+            })
+            csvRows.push(values.join(","))
         }
-    },
+
+        return csvRows.join("\n")
+    }
 }

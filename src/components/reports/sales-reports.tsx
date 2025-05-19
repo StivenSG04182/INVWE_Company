@@ -1,236 +1,289 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DatePicker } from "@/components/ui/date-picker"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { BarChart, LineChart, PieChart } from "@/components/ui/charts"
+import { Download, FileText, RefreshCw } from "lucide-react"
 
-export default function SalesReports({
-    agencyId,
-    user,
-    dateRange,
-}: { agencyId: string; user: any; dateRange: string }) {
-    const [salesData, setSalesData] = useState<any>(null)
-    const [isLoading, setIsLoading] = useState(true)
-    const [availableReports, setAvailableReports] = useState<any[]>([])
+interface SalesReportProps {
+    agencyId: string
+}
 
+export default function SalesReport({ agencyId }: SalesReportProps) {
+    const [dateRange, setDateRange] = useState("month")
+    const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined)
+    const [reportData, setReportData] = useState([])
+    const [isLoading, setIsLoading] = useState(false)
+    const [view, setView] = useState("chart")
+    const [chartType, setChartType] = useState("bar")
+
+    // Cargar datos del reporte
     useEffect(() => {
-        // Simulación de carga de datos
-        const loadData = async () => {
-            try {
-                // En una implementación real, aquí se llamaría a la API
-                // await SalesReportService.getSalesStats(agencyId)
+        loadReportData()
+    }, [agencyId, dateRange, startDate, endDate])
 
-                // Datos de ejemplo
-                setSalesData({
-                    totalRevenue: 128459,
-                    growthPercentage: 12.5,
-                    topProducts: [
-                        { name: "Producto A", revenue: 32450 },
-                        { name: "Producto B", revenue: 28120 },
-                        { name: "Producto C", revenue: 21890 },
-                        { name: "Producto D", revenue: 18340 },
-                        { name: "Producto E", revenue: 15780 },
-                    ],
-                    channels: [
-                        { name: "Tienda física", percentage: 65 },
-                        { name: "E-commerce", percentage: 20 },
-                        { name: "Distribuidores", percentage: 10 },
-                        { name: "Otros", percentage: 5 },
-                    ],
-                    weekdaySales: [
-                        { day: "Lun", sales: 20, target: 25 },
-                        { day: "Mar", sales: 40, target: 50 },
-                        { day: "Mié", sales: 30, target: 40 },
-                        { day: "Jue", sales: 60, target: 70 },
-                        { day: "Vie", sales: 80, target: 90 },
-                        { day: "Sáb", sales: 90, target: 100 },
-                        { day: "Dom", sales: 50, target: 60 },
-                    ],
-                })
+    const loadReportData = async () => {
+        try {
+            setIsLoading(true)
 
-                setAvailableReports([
-                    {
-                        id: "sales-by-seller",
-                        title: "Reporte de Ventas por Vendedor",
-                        description: "Análisis detallado del rendimiento de cada vendedor.",
-                    },
-                    {
-                        id: "sales-by-category",
-                        title: "Reporte de Ventas por Categoría",
-                        description: "Distribución de ventas por categorías de productos.",
-                    },
-                    {
-                        id: "returns",
-                        title: "Reporte de Devoluciones",
-                        description: "Análisis de productos devueltos y motivos.",
-                    },
-                    {
-                        id: "sales-by-location",
-                        title: "Reporte de Ventas por Ubicación",
-                        description: "Distribución geográfica de las ventas.",
-                    },
-                    {
-                        id: "discounts",
-                        title: "Reporte de Descuentos Aplicados",
-                        description: "Análisis de descuentos y su impacto en ventas.",
-                    },
-                    {
-                        id: "trends",
-                        title: "Reporte de Tendencias",
-                        description: "Análisis de tendencias de ventas a lo largo del tiempo.",
-                    },
-                ])
+            let url = `/api/reports/${agencyId}?type=sales&dateRange=${dateRange}`
 
-                setIsLoading(false)
-            } catch (error) {
-                console.error("Error al cargar datos de ventas:", error)
-                setIsLoading(false)
+            if (dateRange === "custom" && startDate && endDate) {
+                url += `&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
             }
+
+            const response = await fetch(url)
+
+            if (!response.ok) {
+                throw new Error(`Error: ${response.status}`)
+            }
+
+            const result = await response.json()
+
+            if (result.success) {
+                setReportData(result.data)
+            } else {
+                console.error("Error al cargar reporte:", result.error)
+            }
+        } catch (error) {
+            console.error("Error al cargar reporte:", error)
+        } finally {
+            setIsLoading(false)
         }
-
-        loadData()
-    }, [agencyId, dateRange])
-
-    if (isLoading) {
-        return (
-            <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
-        )
     }
 
+    // Exportar reporte a CSV
+    const exportToCSV = async () => {
+        try {
+            let url = `/api/reports/${agencyId}?type=sales&dateRange=${dateRange}&format=csv`
+
+            if (dateRange === "custom" && startDate && endDate) {
+                url += `&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
+            }
+
+            window.open(url, "_blank")
+        } catch (error) {
+            console.error("Error al exportar reporte:", error)
+        }
+    }
+
+    // Preparar datos para gráficos
+    const chartData = {
+        labels: reportData.map((item) => item.date),
+        datasets: [
+            {
+                label: "Ventas",
+                data: reportData.map((item) => item.totalSales),
+                backgroundColor: "rgba(59, 130, 246, 0.5)",
+                borderColor: "rgb(59, 130, 246)",
+            },
+            {
+                label: "Ingresos",
+                data: reportData.map((item) => item.totalRevenue),
+                backgroundColor: "rgba(16, 185, 129, 0.5)",
+                borderColor: "rgb(16, 185, 129)",
+            },
+        ],
+    }
+
+    // Calcular totales
+    const totals = reportData.reduce(
+        (acc, item) => {
+            acc.totalSales += item.totalSales
+            acc.totalRevenue += item.totalRevenue
+            acc.itemsSold += item.itemsSold
+            return acc
+        },
+        { totalSales: 0, totalRevenue: 0, itemsSold: 0 },
+    )
+
+    const averageTicket = totals.totalSales > 0 ? totals.totalRevenue / totals.totalSales : 0
+
     return (
-        <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                <div className="border rounded-md p-4">
-                    <h3 className="font-medium text-lg mb-2">Ventas Totales</h3>
-                    <div className="flex items-end gap-2">
-                        <span className="text-3xl font-bold">${salesData.totalRevenue.toLocaleString()}</span>
-                        <span className="text-green-500 text-sm">+{salesData.growthPercentage.toFixed(1)}%</span>
+        <Card className="w-full">
+            <CardHeader>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <CardTitle>Reporte de Ventas</CardTitle>
+                        <CardDescription>Análisis de ventas por período</CardDescription>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">vs. mes anterior</p>
-                    <div className="h-32 mt-4 bg-muted rounded-md flex items-end">
-                        <div className="w-1/6 h-[20%] bg-primary mx-1 rounded-t-sm"></div>
-                        <div className="w-1/6 h-[40%] bg-primary mx-1 rounded-t-sm"></div>
-                        <div className="w-1/6 h-[30%] bg-primary mx-1 rounded-t-sm"></div>
-                        <div className="w-1/6 h-[60%] bg-primary mx-1 rounded-t-sm"></div>
-                        <div className="w-1/6 h-[50%] bg-primary mx-1 rounded-t-sm"></div>
-                        <div className="w-1/6 h-[80%] bg-primary mx-1 rounded-t-sm"></div>
-                    </div>
-                </div>
 
-                <div className="border rounded-md p-4">
-                    <h3 className="font-medium text-lg mb-2">Productos Más Vendidos</h3>
-                    <ul className="space-y-2 mt-4">
-                        {salesData.topProducts.length > 0 ? (
-                            salesData.topProducts.map((product: any, index: number) => (
-                                <li key={index} className="flex justify-between items-center">
-                                    <span>{product.name}</span>
-                                    <span className="font-medium">${product.revenue.toLocaleString()}</span>
-                                </li>
-                            ))
-                        ) : (
-                            <li className="text-center text-muted-foreground">No hay datos disponibles</li>
-                        )}
-                    </ul>
-                </div>
+                    <div className="flex flex-wrap gap-2">
+                        <Select value={dateRange} onValueChange={setDateRange}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Seleccionar período" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="today">Hoy</SelectItem>
+                                <SelectItem value="week">Última semana</SelectItem>
+                                <SelectItem value="month">Este mes</SelectItem>
+                                <SelectItem value="year">Este año</SelectItem>
+                                <SelectItem value="custom">Personalizado</SelectItem>
+                            </SelectContent>
+                        </Select>
 
-                <div className="border rounded-md p-4">
-                    <h3 className="font-medium text-lg mb-2">Canales de Venta</h3>
-                    <div className="h-40 mt-4 flex items-center justify-center">
-                        <div className="w-32 h-32 rounded-full border-8 border-primary relative flex items-center justify-center">
-                            <div className="absolute top-0 right-0 w-16 h-16 rounded-full border-8 border-blue-500"></div>
-                            <div className="absolute bottom-0 right-0 w-12 h-12 rounded-full border-8 border-green-500"></div>
-                            <div className="absolute bottom-0 left-0 w-8 h-8 rounded-full border-8 border-yellow-500"></div>
-                            <span className="text-xs font-medium">Distribución</span>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 mt-4 text-xs">
-                        {salesData.channels.length > 0 ? (
-                            salesData.channels.map((channel: any, index: number) => (
-                                <div key={index} className="flex items-center gap-1">
-                                    <div
-                                        className="w-3 h-3 rounded-full"
-                                        style={{
-                                            backgroundColor: [
-                                                "rgb(99, 102, 241)", // primary
-                                                "rgb(59, 130, 246)", // blue-500
-                                                "rgb(16, 185, 129)", // green-500
-                                                "rgb(245, 158, 11)", // yellow-500
-                                            ][index % 4],
-                                        }}
-                                    ></div>
-                                    <span>
-                                        {channel.name} ({channel.percentage}%)
-                                    </span>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="col-span-2 text-center text-muted-foreground">No hay datos disponibles</div>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            <div className="mt-8">
-                <h3 className="font-medium text-lg mb-4">Ventas por Período</h3>
-                <div className="flex gap-2 mb-4">
-                    <button className="px-3 py-1 rounded-md bg-primary text-white">Diario</button>
-                    <button className="px-3 py-1 rounded-md bg-muted">Semanal</button>
-                    <button className="px-3 py-1 rounded-md bg-muted">Mensual</button>
-                    <button className="px-3 py-1 rounded-md bg-muted">Trimestral</button>
-                    <button className="px-3 py-1 rounded-md bg-muted">Anual</button>
-                </div>
-                <div className="border rounded-md p-4">
-                    <div className="h-64 flex items-end">
-                        {salesData.weekdaySales.map((day: any, index: number) => {
-                            // Calcular altura relativa para las barras
-                            const maxSales = Math.max(...salesData.weekdaySales.map((d: any) => d.sales))
-                            const maxTarget = Math.max(...salesData.weekdaySales.map((d: any) => d.target))
-                            const maxValue = Math.max(maxSales, maxTarget) || 1 // Evitar división por cero
-
-                            const salesHeight = (day.sales / maxValue) * 100
-                            const targetHeight = (day.target / maxValue) * 100
-
-                            return (
-                                <div key={index} className="flex-1 flex flex-col items-center">
-                                    <div className="w-full bg-primary/20 relative" style={{ height: `${targetHeight}%` }}>
-                                        <div
-                                            className="absolute bottom-0 left-0 right-0 bg-primary"
-                                            style={{ height: `${salesHeight}%` }}
-                                        ></div>
-                                    </div>
-                                    <span className="text-xs mt-2">{day.day}</span>
-                                </div>
-                            )
-                        })}
-                    </div>
-                    <div className="flex justify-between mt-4 text-sm text-muted-foreground">
-                        <span>Ventas</span>
-                        <span>Objetivo</span>
-                    </div>
-                </div>
-            </div>
-
-            <div className="mt-8">
-                <h3 className="font-medium text-lg mb-4">Reportes Disponibles</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {availableReports.length > 0 ? (
-                        availableReports.map((report: any, index: number) => (
-                            <div key={index} className="border rounded-md p-4 hover:border-primary cursor-pointer transition-colors">
-                                <h4 className="font-medium">{report.title}</h4>
-                                <p className="text-sm text-muted-foreground mt-1">{report.description}</p>
-                                <Button variant="link" className="mt-4 p-0 h-auto text-primary text-sm hover:underline">
-                                    Generar Reporte
-                                </Button>
+                        {dateRange === "custom" && (
+                            <div className="flex gap-2">
+                                <DatePicker date={startDate} setDate={setStartDate} placeholder="Fecha inicial" />
+                                <DatePicker date={endDate} setDate={setEndDate} placeholder="Fecha final" />
                             </div>
-                        ))
-                    ) : (
-                        <div className="col-span-3 text-center text-muted-foreground p-4 border rounded-md">
-                            No hay reportes disponibles en este momento
-                        </div>
-                    )}
+                        )}
+
+                        <Button variant="outline" size="icon" onClick={loadReportData} disabled={isLoading}>
+                            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+                        </Button>
+
+                        <Button variant="outline" onClick={exportToCSV}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Exportar CSV
+                        </Button>
+                    </div>
                 </div>
-            </div>
-        </div>
+            </CardHeader>
+
+            <CardContent>
+                {/* Resumen de totales */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="text-2xl font-bold">{totals.totalSales}</div>
+                            <p className="text-muted-foreground">Total de ventas</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="text-2xl font-bold">${totals.totalRevenue.toFixed(2)}</div>
+                            <p className="text-muted-foreground">Ingresos totales</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="text-2xl font-bold">${averageTicket.toFixed(2)}</div>
+                            <p className="text-muted-foreground">Ticket promedio</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="text-2xl font-bold">{totals.itemsSold}</div>
+                            <p className="text-muted-foreground">Productos vendidos</p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Tabs para cambiar entre vista de gráfico y tabla */}
+                <Tabs value={view} onValueChange={setView}>
+                    <div className="flex justify-between items-center mb-4">
+                        <TabsList>
+                            <TabsTrigger value="chart">Gráfico</TabsTrigger>
+                            <TabsTrigger value="table">Tabla</TabsTrigger>
+                        </TabsList>
+
+                        {view === "chart" && (
+                            <Select value={chartType} onValueChange={setChartType}>
+                                <SelectTrigger className="w-[120px]">
+                                    <SelectValue placeholder="Tipo de gráfico" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="bar">Barras</SelectItem>
+                                    <SelectItem value="line">Líneas</SelectItem>
+                                    <SelectItem value="pie">Circular</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        )}
+                    </div>
+
+                    <TabsContent value="chart" className="mt-0">
+                        <div className="h-[400px]">
+                            {isLoading ? (
+                                <div className="h-full flex items-center justify-center">
+                                    <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+                                </div>
+                            ) : reportData.length === 0 ? (
+                                <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+                                    <FileText className="h-12 w-12 mb-2 opacity-20" />
+                                    <p>No hay datos disponibles para el período seleccionado</p>
+                                </div>
+                            ) : (
+                                <>
+                                    {chartType === "bar" && <BarChart data={chartData} />}
+                                    {chartType === "line" && <LineChart data={chartData} />}
+                                    {chartType === "pie" && (
+                                        <PieChart
+                                            data={{
+                                                labels: reportData.map((item) => item.date),
+                                                datasets: [
+                                                    {
+                                                        label: "Ventas",
+                                                        data: reportData.map((item) => item.totalSales),
+                                                        backgroundColor: [
+                                                            "rgba(59, 130, 246, 0.5)",
+                                                            "rgba(16, 185, 129, 0.5)",
+                                                            "rgba(249, 115, 22, 0.5)",
+                                                            "rgba(236, 72, 153, 0.5)",
+                                                            "rgba(139, 92, 246, 0.5)",
+                                                        ],
+                                                    },
+                                                ],
+                                            }}
+                                        />
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="table" className="mt-0">
+                        <div className="rounded-md border">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="border-b bg-muted/50">
+                                            <th className="py-3 px-4 text-left font-medium">Fecha</th>
+                                            <th className="py-3 px-4 text-left font-medium">Ventas</th>
+                                            <th className="py-3 px-4 text-left font-medium">Ingresos</th>
+                                            <th className="py-3 px-4 text-left font-medium">Ticket Promedio</th>
+                                            <th className="py-3 px-4 text-left font-medium">Productos Vendidos</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {isLoading ? (
+                                            <tr>
+                                                <td colSpan={5} className="py-10 text-center">
+                                                    <RefreshCw className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+                                                </td>
+                                            </tr>
+                                        ) : reportData.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={5} className="py-10 text-center text-muted-foreground">
+                                                    No hay datos disponibles para el período seleccionado
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            reportData.map((item, index) => (
+                                                <tr key={index} className="border-b hover:bg-muted/50">
+                                                    <td className="py-3 px-4">{item.date}</td>
+                                                    <td className="py-3 px-4">{item.totalSales}</td>
+                                                    <td className="py-3 px-4">${item.totalRevenue.toFixed(2)}</td>
+                                                    <td className="py-3 px-4">${item.averageTicket.toFixed(2)}</td>
+                                                    <td className="py-3 px-4">{item.itemsSold}</td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </TabsContent>
+                </Tabs>
+            </CardContent>
+        </Card>
     )
 }

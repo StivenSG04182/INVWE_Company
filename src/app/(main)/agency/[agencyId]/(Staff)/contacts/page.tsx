@@ -129,7 +129,7 @@ const ContactPage = async ({ params }: Props) => {
               {/* Información Laboral */}
               <TableCell>{member.position || '-'}</TableCell>
               <TableCell>{member.hireDate ? format(member.hireDate, 'dd/MM/yyyy') : '-'}</TableCell>
-              <TableCell>{member.salary ? `€${member.salary}` : '-'}</TableCell>
+              <TableCell>{member.salary ? `COL$ ${member.salary}` : '-'}</TableCell>
               <TableCell>{member.workSchedule || '-'}</TableCell>
               
               {/* Información Adicional */}

@@ -100,7 +100,6 @@ model Agency {
   Products          Product[]
   Providers         Provider[]
   Areas             Area[]
-  Stocks            Stock[]
   Movements         Movement[]
   Invoices          Invoice[]
   Payments          Payment[]
@@ -148,7 +147,6 @@ model SubAccount {
   Products          Product[]
   Providers         Provider[]
   Areas             Area[]
-  Stocks            Stock[]
   Movements         Movement[]
   Invoices          Invoice[]
   Payments          Payment[]
@@ -647,6 +645,23 @@ enum Priority {
   URGENT
 }
 
+model SavedSale {
+  id           String    @id @default(uuid())
+  agencyId     String
+  subAccountId String?
+  areaId       String
+  products     String    // JSON string de productos
+  client       String?   // JSON string del cliente
+  total        Decimal   @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([agencyId])
+  @@index([subAccountId])
+  @@index([areaId])
+}
+
+
 model Schedule {
   id          String    @id @default(uuid())
   userId      String
@@ -794,52 +809,54 @@ model PQR {
 }
 
 model Product {
-  id           String           @id @default(uuid())
-  name         String
-  sku          String
-  description  String?
-  price        Decimal          @default(0)
-  cost         Decimal?         @default(0)
-  minStock     Int?
-  images       String[]         @default([])
-  productImage String?
-  categoryId   String?
-  active       Boolean          @default(true)
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  agencyId     String
-  subAccountId String?
-  brand        String?
-  model        String?
-  tags         String[]         @default([])
-  unit         String?          // ej. "pieza", "kg", "litro"
-  barcode      String?
-  quantity     Int?             @default(0)
-  locationId   String?
-  warehouseId  String?
-  batchNumber  String?
+  id             String           @id @default(uuid())
+  name           String
+  sku            String
+  description    String?
+  price          Decimal          @default(0)
+  cost           Decimal?         @default(0)
+  minStock       Int?
+  images         String[]         @default([])
+  categoryId     String?
+  active         Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  agencyId       String
+  subAccountId   String?
+  brand          String?
+  model          String?
+  tags           String[]         @default([])
+  unit           String?
+  barcode        String?
+  isActive       Boolean?         @default(true)
+  quantity       Int?             @default(0)
+  locationId     String?
+  warehouseId    String?
+  batchNumber    String?
   expirationDate DateTime?
-  serialNumber String?
+  serialNumber   String?
   warrantyMonths Int?
-  isReturnable Boolean          @default(false)
-  discount     Decimal?         @default(0)
-  taxRate      Decimal?         @default(0)
-  supplierId   String?
-  variants     Json?            // Array de objetos {name: string, value: string}
-  documents    String[]         @default([])
-  customFields Json?            // Record<string, any>
-  externalIntegrations Json?    // Record<string, string>
-  
-  Agency       Agency           @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount   SubAccount?      @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-  Category     ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  Stocks       Stock[]
-  Movements    Movement[]
-  InvoiceItems InvoiceItem[]
-  SaleItem     SaleItem[]
+  isReturnable   Boolean          @default(false)
+  discount       Decimal?         @default(0)
+  discountStartDate DateTime?
+  discountEndDate   DateTime?
+  discountMinimumPrice Decimal?
+  taxRate        Decimal?         @default(0)
+  supplierId     String?
+  variants       Json?
+  documents      String[]         @default([])
+  customFields   Json?
+  externalIntegrations Json?
+
+  Agency         Agency           @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount     SubAccount?      @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Category       ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  Movements      Movement[]       @relation("ProductInventory")
+  InvoiceItems   InvoiceItem[]
+  SaleItems      SaleItem[]
 
   @@index([categoryId])
-  @@index([agencyId], map: "Product_agencyId_idx1")
+  @@index([agencyId],     map: "Product_agencyId_idx1")
   @@index([subAccountId], map: "Product_subAccountId_idx1")
 }
 
@@ -874,7 +891,6 @@ model Area {
   subAccountId  String?
   Agency        Agency         @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   SubAccount    SubAccount?    @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-  Stocks        Stock[]
   Movements     Movement[]
   Sales         Sale[]
   CashRegisters CashRegister[]
@@ -883,44 +899,24 @@ model Area {
   @@index([subAccountId])
 }
 
-model Stock {
-  id           String      @id @default(uuid())
-  quantity     Int         @default(0)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  productId    String
-  areaId       String
-  agencyId     String
-  subAccountId String?
-  Product      Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
-  Area         Area        @relation(fields: [areaId], references: [id], onDelete: Cascade)
-  Agency       Agency      @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount   SubAccount? @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-
-  @@unique([productId, areaId])
-  @@index([productId])
-  @@index([areaId])
-  @@index([agencyId])
-  @@index([subAccountId])
-}
-
 model Movement {
-  id           String       @id @default(uuid())
-  type         MovementType
+  id           String        @id @default(uuid())
+  type         MovementType? // null = stock, otro = movimiento
   quantity     Int
   notes        String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   productId    String
   areaId       String
   providerId   String?
   agencyId     String
   subAccountId String?
-  Product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
-  Area         Area         @relation(fields: [areaId], references: [id], onDelete: Cascade)
-  Provider     Provider?    @relation(fields: [providerId], references: [id], onDelete: SetNull)
-  Agency       Agency       @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount   SubAccount?  @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+
+  Product      Product       @relation("ProductInventory", fields: [productId], references: [id], onDelete: Cascade)
+  Area         Area          @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  Provider     Provider?     @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  Agency       Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount   SubAccount?   @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
 
   @@index([productId])
   @@index([areaId])

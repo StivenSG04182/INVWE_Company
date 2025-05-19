@@ -7,36 +7,25 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
     ArrowLeft,
     Save,
-    Plus,
     Trash2,
-    Move,
     Grid,
     Box,
     Shelf,
     Package,
     AlertTriangle,
-    Layers,
-    LayoutGrid,
     MousePointer,
     Square,
     Circle,
     Triangle,
-    Pencil,
     Check,
-    X,
 } from "lucide-react"
-import { useState, useEffect, useRef } from "react"
-import { DndProvider, useDrag, useDrop } from "react-dnd"
-import { HTML5Backend } from "react-dnd-html5-backend"
+import { useState, useRef } from "react"
 import { cn } from "@/lib/utils"
 
 // Componentes del lado del cliente

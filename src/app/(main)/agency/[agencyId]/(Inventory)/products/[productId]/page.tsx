@@ -37,29 +37,15 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
   // Obtener producto de MongoDB
   let product = null
   let categories = []
-  try {
-    // Importar el serializador para convertir objetos MongoDB a objetos planos
-    const { serializeMongoObject, serializeMongoArray } = await import("@/lib/serializers")
-
-    // Obtener y serializar producto y categorías
-    const rawProduct = await ProductService.getProductById(agencyId, productId)
-    const rawCategories = await CategoryService.getCategories(agencyId)
-
-    // Serializar para eliminar métodos y propiedades no serializables
-    product = serializeMongoObject(rawProduct)
-    categories = serializeMongoArray(rawCategories)
-  } catch (error) {
-    console.error("Error al cargar datos:", error)
-    return redirect(`/agency/${agencyId}/products`)
-  }
-
+  
   if (!product) {
     return redirect(`/agency/${agencyId}/products`)
   }
 
   // Obtener nombre de categoría
   const getCategoryName = (categoryId: string) => {
-    const category = categories.find((cat: any) => cat.id === categoryId)
+    // Convertir a string para asegurar una comparación consistente
+    const category = categories.find((cat: any) => String(cat._id) === String(categoryId))
     return category ? category.name : "Sin categoría"
   }
 
@@ -237,11 +223,11 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
                   )}
                 </div>
                 <div className="flex flex-col items-end">
-                  <div className="text-2xl font-bold">${product.price?.toFixed(2) || "0.00"}</div>
+                  <div className="text-2xl font-bold">${typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(product.price || 0).toFixed(2) || "0.00"}</div>
                   {product.discount > 0 && (
                     <div className="flex items-center">
                       <span className="text-sm text-muted-foreground line-through mr-2">
-                        ${((product.price || 0) / (1 - (product.discount || 0) / 100)).toFixed(2)}
+                        ${((parseFloat(product.price || 0)) / (1 - (product.discount || 0) / 100)).toFixed(2)}
                       </span>
                       <Badge className="bg-green-600 hover:bg-green-700">{product.discount}% descuento</Badge>
                     </div>
@@ -287,7 +273,7 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
                     <DollarSign className="h-8 w-8 mr-3 text-primary" />
                     <div>
                       <p className="text-sm text-muted-foreground">Costo Unitario</p>
-                      <p className="text-lg font-medium">${product.cost?.toFixed(2) || "0.00"}</p>
+                      <p className="text-lg font-medium">${typeof product.cost === 'number' ? product.cost.toFixed(2) : parseFloat(product.cost || 0).toFixed(2) || "0.00"}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -299,7 +285,7 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
                       <p className="text-sm text-muted-foreground">Margen</p>
                       <p className="text-lg font-medium">
                         {product.cost && product.price
-                          ? `${(((product.price - product.cost) / product.price) * 100).toFixed(2)}%`
+                          ? `${(((parseFloat(product.price || 0) - parseFloat(product.cost || 0)) / parseFloat(product.price || 0)) * 100).toFixed(2)}%`
                           : "N/A"}
                       </p>
                     </div>
@@ -393,11 +379,11 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
                         <TableBody>
                           <TableRow>
                             <TableCell className="font-medium">Precio de Venta</TableCell>
-                            <TableCell>${product.price?.toFixed(2) || "0.00"}</TableCell>
+                            <TableCell>${typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(product.price || 0).toFixed(2) || "0.00"}</TableCell>
                           </TableRow>
                           <TableRow>
                             <TableCell className="font-medium">Costo</TableCell>
-                            <TableCell>${product.cost?.toFixed(2) || "0.00"}</TableCell>
+                            <TableCell>${typeof product.cost === 'number' ? product.cost.toFixed(2) : parseFloat(product.cost || 0).toFixed(2) || "0.00"}</TableCell>
                           </TableRow>
                           <TableRow>
                             <TableCell className="font-medium">Ganancia</TableCell>

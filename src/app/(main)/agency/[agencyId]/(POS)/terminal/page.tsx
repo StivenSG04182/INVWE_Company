@@ -21,6 +21,9 @@ import {
     Clock,
     Filter,
     UserPlus,
+    Building,
+    Store,
+    RefreshCw,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -47,16 +50,19 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { MoreVertical, FileText } from "lucide-react"
 import { toast } from "sonner"
-import { getAuthUserDetails } from "@/lib/queries"
+import { useAuth } from "@clerk/nextjs"
+import Image from "next/image"
+
 
 const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
     const agencyId = params.agencyId
+    const { userId } = useAuth()
     const [user, setUser] = useState(null)
-    
+
     // Redirigir si no hay usuario después de cargar los datos
     useEffect(() => {
-        if (user === null) return; // Aún cargando
-        if (!user) redirect("/sign-in");
+        if (user === null) return // Aún cargando
+        if (!user) redirect("/sign-in")
     }, [user])
     const [cartOpen, setCartOpen] = useState(false)
     const [newClientOpen, setNewClientOpen] = useState(false)
@@ -71,17 +77,25 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
     const [savedSalesOpen, setSavedSalesOpen] = useState(false)
     const [savedSales, setSavedSales] = useState([])
     const [selectedProducts2, setSelectedProducts2] = useState([]) // IDs de productos seleccionados
-    
+
     // Estados para datos reales
     const [products, setProducts] = useState([])
     const [clients, setClients] = useState([])
     const [categories, setCategories] = useState([{ id: "Todos", name: "Todos" }])
-    const [subcuentas, setSubcuentas] = useState(["Todas"])
+    const [subaccounts, setSubaccounts] = useState([])
+    const [selectedSubaccount, setSelectedSubaccount] = useState("")
     const [selectedArea, setSelectedArea] = useState("")
     const [areas, setAreas] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCategory, setSelectedCategory] = useState("Todos")
+
+    // Estado para el modal de selección de subaccount
+    const [subaccountModalOpen, setSubaccountModalOpen] = useState(true)
+    const [useAgencyProducts, setUseAgencyProducts] = useState(false)
+
+    // Estado para el modal de creación de productos
+    const [productFormOpen, setProductFormOpen] = useState(false)
 
     // Referencia para detectar clics fuera del modal
     const modalRef = useRef(null)
@@ -90,46 +104,74 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
     useEffect(() => {
         const loadUser = async () => {
             try {
-                // Obtener detalles del usuario autenticado
-                const userDetails = await getAuthUserDetails()
-                setUser(userDetails)
+                // Usar useAuth hook en lugar de auth() del servidor
+                setUser(userId ? { id: userId } : null)
             } catch (error) {
                 console.error("Error loading user:", error)
             }
         }
 
         loadUser()
-    }, [])
+    }, [userId])
 
-    // Guardar el estado del carrito cuando se cierra
+    // Cargar subaccounts de la agencia
     useEffect(() => {
-        // Cargar carrito guardado al iniciar
-        const savedCart = localStorage.getItem("savedCart")
-        if (savedCart) {
+        const loadSubaccounts = async () => {
+            if (!agencyId) return
+
             try {
-                setSelectedProducts(JSON.parse(savedCart))
-            } catch (e) {
-                console.error("Error parsing saved cart", e)
+                const response = await fetch(`/api/agency/${agencyId}/subaccounts`, {
+                    credentials: "include",
+                })
+
+                if (!response.ok) {
+                    throw new Error(`Error en la respuesta de la API: ${response.status} ${response.statusText}`)
+                }
+
+                const result = await response.json()
+
+                if (result.success) {
+                    setSubaccounts(result.data || [])
+                    // Si hay subaccounts, abrir el modal de selección
+                    if (result.data && result.data.length > 0) {
+                        setSubaccountModalOpen(true)
+                    } else {
+                        // Si no hay subaccounts, usar productos de la agencia
+                        setUseAgencyProducts(true)
+                        setSubaccountModalOpen(false)
+                    }
+                } else {
+                    throw new Error(result.error || "Error desconocido al obtener subaccounts")
+                }
+            } catch (error) {
+                console.error("Error al cargar subaccounts:", error)
+                toast.error("Error al cargar subcuentas. Usando productos de la agencia.")
+                // En caso de error, usar productos de la agencia
+                setUseAgencyProducts(true)
+                setSubaccountModalOpen(false)
             }
         }
-    }, [])
+
+        loadSubaccounts()
+    }, [agencyId])
 
     // Función para guardar el carrito actual en la base de datos
     const saveCartState = async () => {
         // Solo guardar si hay productos en el carrito
         if (selectedProducts.length > 0) {
             try {
-                const response = await fetch('/api/pos/saved-sales', {
-                    method: 'POST',
+                const response = await fetch("/api/pos/saved-sales", {
+                    method: "POST",
                     headers: {
-                        'Content-Type': 'application/json'
+                        "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
                         agencyId,
+                        subAccountId: selectedSubaccount || null,
                         areaId: selectedArea,
                         products: selectedProducts,
-                        client: selectedClient
-                    })
+                        client: selectedClient,
+                    }),
                 })
 
                 const result = await response.json()
@@ -164,17 +206,17 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         try {
             setIsProcessing(true)
 
-            // Verificar stock disponible antes de procesar
+            // Verificar cantidad disponible antes de procesar
             for (const product of selectedProducts) {
-                const productData = products.find(p => p.id === product.id)
+                const productData = products.find((p) => p.id === product.id)
                 if (!productData) {
                     toast.error(`Producto no encontrado: ${product.name}`)
                     setIsProcessing(false)
                     return
                 }
 
-                if (productData.stock < product.quantity) {
-                    toast.error(`Stock insuficiente para ${product.name}. Disponible: ${productData.stock}`)
+                if (productData.quantity < product.quantity) {
+                    toast.error(`Cantidad insuficiente para ${product.name}. Disponible: ${productData.quantity}`)
                     setIsProcessing(false)
                     return
                 }
@@ -183,25 +225,26 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
             // Preparar datos para la API
             const saleData = {
                 agencyId,
+                subAccountId: selectedSubaccount || null,
                 areaId: selectedArea,
-                products: selectedProducts.map(p => ({
+                products: selectedProducts.map((p) => ({
                     id: p.id,
                     name: p.name,
                     price: p.price,
-                    quantity: p.quantity
+                    quantity: p.quantity,
                 })),
                 client: selectedClient,
                 paymentMethod: paymentMethod || "CASH",
-                total: total
+                total: total,
             }
 
             // Enviar a la API
-            const response = await fetch('/api/pos', {
-                method: 'POST',
+            const response = await fetch("/api/pos", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json'
+                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify(saleData)
+                body: JSON.stringify(saleData),
             })
 
             const result = await response.json()
@@ -214,62 +257,34 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                 // Mostrar mensaje de éxito
                 toast.success("Venta procesada correctamente")
 
-                // Actualizar la lista de productos para reflejar el nuevo stock
-                const loadProducts = async () => {
-                    try {
-                        let url = `/api/pos?agencyId=${agencyId}`
-                        if (selectedArea) url += `&areaId=${selectedArea}`
-                        if (selectedCategory && selectedCategory !== "Todos") url += `&categoryId=${selectedCategory}`
-                        if (searchTerm) url += `&search=${searchTerm}`
-
-                        const response = await fetch(url)
-                        const result = await response.json()
-
-                        if (result.success) {
-                            const productsWithStock = result.data.map(product => ({
-                                id: product.id,
-                                name: product.name,
-                                price: parseFloat(product.price),
-                                sku: product.sku,
-                                description: product.description,
-                                stock: product.stock,
-                                categoryId: product.categoryId,
-                                categoryName: product.categoryName || "Sin categoría",
-                                images: product.images || []
-                            }))
-                            setProducts(productsWithStock)
-                        }
-                    } catch (error) {
-                        console.error("Error actualizando productos:", error)
-                    }
-                }
-
+                // Actualizar la lista de productos para reflejar la nueva cantidad
                 loadProducts()
 
                 // Generar factura si es necesario
                 if (selectedClient.id) {
                     try {
                         // Crear factura
-                        const invoiceResponse = await fetch('/api/billing/invoices', {
-                            method: 'POST',
+                        const invoiceResponse = await fetch("/api/billing/invoices", {
+                            method: "POST",
                             headers: {
-                                'Content-Type': 'application/json'
+                                "Content-Type": "application/json",
                             },
                             body: JSON.stringify({
                                 agencyId,
+                                subAccountId: selectedSubaccount || null,
                                 customerId: selectedClient.id,
-                                items: selectedProducts.map(p => ({
+                                items: selectedProducts.map((p) => ({
                                     productId: p.id,
                                     description: p.name,
                                     quantity: p.quantity,
                                     unitPrice: p.price,
-                                    subtotal: p.subtotal
+                                    subtotal: p.subtotal,
                                 })),
                                 subtotal: subtotal,
                                 tax: iva,
                                 total: total,
-                                notes: `Venta POS - ${new Date().toLocaleDateString()}`
-                            })
+                                notes: `Venta POS - ${new Date().toLocaleDateString()}`,
+                            }),
                         })
 
                         const invoiceResult = await invoiceResponse.json()
@@ -280,7 +295,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                             // Enviar factura por correo si hay email
                             if (selectedClient.email) {
                                 await fetch(`/api/billing/invoices/${invoiceResult.data.id}/send-email`, {
-                                    method: 'POST'
+                                    method: "POST",
                                 })
                                 toast.success(`Factura enviada a ${selectedClient.email}`)
                             }
@@ -301,7 +316,6 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         }
     }
 
-
     // Función para cargar una venta guardada
     const loadSavedSale = (sale) => {
         setSelectedProducts(sale.products)
@@ -314,17 +328,27 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
     // Función para cargar ventas guardadas desde la API
     const loadSavedSales = async () => {
         try {
-            const response = await fetch(`/api/pos/saved-sales?agencyId=${agencyId}${selectedArea ? `&areaId=${selectedArea}` : ''}`)
+            let url = `/api/pos/saved-sales?agencyId=${agencyId}`
+            if (selectedArea) url += `&areaId=${selectedArea}`
+            if (selectedSubaccount) url += `&subAccountId=${selectedSubaccount}`
+
+            const response = await fetch(url, {
+                credentials: "include",
+            })
+
+            if (!response.ok) {
+                throw new Error(`Error en la respuesta de la API: ${response.status} ${response.statusText}`)
+            }
+
             const result = await response.json()
 
             if (result.success) {
                 setSavedSales(result.data)
             } else {
-                console.error("Error cargando ventas guardadas:", result.error)
-                toast.error("Error al cargar ventas guardadas")
+                throw new Error(result.error || "Error desconocido al cargar ventas guardadas")
             }
         } catch (error) {
-            console.error("Error fetching saved sales:", error)
+            console.error("Error al cargar ventas guardadas:", error)
             toast.error("Error al cargar ventas guardadas")
         }
     }
@@ -333,7 +357,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
     const deleteSavedSale = async (id) => {
         try {
             const response = await fetch(`/api/pos/saved-sales?id=${id}`, {
-                method: 'DELETE'
+                method: "DELETE",
             })
 
             const result = await response.json()
@@ -350,13 +374,13 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
             toast.error("Error al eliminar la venta")
         }
     }
-    
+
     // Cargar ventas guardadas al iniciar o cuando cambia el área seleccionada
     useEffect(() => {
         if (agencyId && selectedArea) {
             loadSavedSales()
         }
-    }, [agencyId, selectedArea])
+    }, [agencyId, selectedArea, selectedSubaccount])
 
     // Manejar clic fuera del modal para cerrarlo
     useEffect(() => {
@@ -385,22 +409,24 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
 
     // Función para actualizar cantidad de producto
     const updateQuantity = (id, newQuantity) => {
+        // Validar cantidad mínima
         if (newQuantity < 1) return
 
+        // Obtener datos del producto del inventario
+        const productData = products.find((p) => p.id === id);
+        if (!productData) return;
+
         // Obtener el producto del carrito
-        const product = selectedProducts.find(p => p.id === id)
+        const product = selectedProducts.find((p) => p.id === id)
         if (!product) return
 
-        // Obtener datos actualizados del producto (stock actual)
-        const productData = products.find(p => p.id === id)
-        if (!productData) return
-
-        // Verificar si hay suficiente stock
-        if (newQuantity > productData.stock) {
-            toast.error(`Solo hay ${productData.stock} unidades disponibles de ${product.name}`)
-            return
+        // Verificar si hay suficiente cantidad
+        if (newQuantity > productData.quantity) {
+            toast.error(`Cantidad insuficiente: solo hay ${productData.quantity} unidades disponibles de ${product.name}`);
+            return;
         }
 
+        // Actualizar el producto en el carrito
         setSelectedProducts((prev) =>
             prev.map((product) =>
                 product.id === id
@@ -408,7 +434,6 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                         ...product,
                         quantity: newQuantity,
                         subtotal: product.price * newQuantity,
-                        stock: productData.stock, // Actualizar el stock disponible
                     }
                     : product,
             ),
@@ -427,149 +452,183 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         setSelectedProducts2([])
     }
 
+    // Función para obtener el nombre de la categoría por su ID
+    const getCategoryName = (categoryId: string) => {
+        // Convertir a string para asegurar una comparación consistente
+        const category = categories.find(cat => String(cat.id) === String(categoryId))
+        return category ? category.name : "Sin categoría"
+    }
+
     // Función para seleccionar o deseleccionar un producto
     const toggleProductSelection = (product) => {
-        // Verificar si hay stock disponible
-        if (!selectedProducts2.includes(product.id) && product.stock <= 0) {
-            toast.error(`No hay stock disponible de ${product.name}`)
-            return
-        }
-
         // Si ya está en el carrito, removerlo (deseleccionar)
         if (selectedProducts2.includes(product.id)) {
             removeProduct(product.id)
-        } else {
-            // Verificar que haya un área seleccionada
-            if (!selectedArea) {
-                toast.error("Debes seleccionar un área para agregar productos")
-                return
+            return
+        }
+
+        // Verificar si hay quantity disponible antes de agregar al carrito
+        // Asegurarse de que product.quantity sea tratado como número
+        const quantity = parseInt(product.quantity, 10) || 0;
+        if (isNaN(quantity)) {
+            toast.error(`Cantidad inválida para ${product.name}`);
+            return;
+        }
+
+        // Verificar que haya un área seleccionada
+        if (!selectedArea) {
+            toast.error("Debes seleccionar un área para agregar productos")
+            return
+        }
+
+        // Agregar nuevo producto
+        setSelectedProducts((prev) => [
+            ...prev,
+            {
+                id: product.id,
+                name: product.name,
+                price: Number(product.price) || 0,
+                quantity: 1,
+                subtotal: Number(product.price) || 0,
+            },
+        ])
+        setSelectedProducts2((prev) => [...prev, product.id])
+
+        // Mostrar confirmación de producto agregado
+        toast.success(`${product.name} agregado al carrito`)
+    }
+
+    // Función para cargar productos desde la API según la selección de agencia o subcuenta
+    const loadProducts = async () => {
+        if (!agencyId) return
+
+        try {
+            setIsLoading(true)
+
+            // Construir URL de la API con los parámetros de filtrado
+            let url = `/api/products?`
+
+            // Si estamos usando productos de la agencia, consultar por agencyId
+            // Si estamos usando una subcuenta específica, consultar por subAccountId
+            if (useAgencyProducts) {
+                url += `agencyId=${agencyId}`
+            } else if (selectedSubaccount) {
+                // Asegurar que estamos usando el parámetro correcto para la API
+                url += `agencyId=${agencyId}&subAccountId=${selectedSubaccount}`
+                console.log("Usando subAccountId para filtrar productos:", selectedSubaccount)
+            } else {
+                // Si no hay selección, usar agencyId por defecto
+                url += `agencyId=${agencyId}`
             }
 
-            // Agregar nuevo producto
-            setSelectedProducts((prev) => [
-                ...prev,
-                {
-                    id: product.id,
-                    name: product.name,
-                    price: Number(product.price),
-                    quantity: 1,
-                    subtotal: Number(product.price),
-                    stock: product.stock, // Guardar el stock disponible
-                },
-            ])
-            setSelectedProducts2((prev) => [...prev, product.id])
+            // Añadir filtros adicionales
+            if (selectedCategory && selectedCategory !== "Todos") url += `&categoryId=${selectedCategory}`
+            if (searchTerm) url += `&search=${searchTerm}`
+
+            console.log("Cargando productos con URL:", url)
+
+            // Realizar la petición a la API
+            const response = await fetch(url, {
+                credentials: "include", // Incluir cookies y credenciales de autenticación
+                cache: "no-store", // Evitar caché
+                next: { revalidate: 0 } // Forzar revalidación en cada solicitud
+            })
+
+            if (!response.ok) {
+                throw new Error(`Error en la respuesta de la API: ${response.status} ${response.statusText}`)
+            }
+
+            const result = await response.json()
+            console.log("Respuesta de la API de productos:", result)
+
+            if (!result.success) {
+                throw new Error(result.error || "Error desconocido al obtener productos")
+            }
+
+            const productsData = result.data || []
+            console.log("Datos de productos recibidos:", productsData.length)
+
+            // Transformar los datos para el formato esperado por la UI
+            const productsWithQuantity = productsData
+                .map((product) => {
+                    if (!product || typeof product !== "object") {
+                        console.log("Producto inválido:", product)
+                        return null
+                    }
+
+                    return {
+                        id: product.id,
+                        name: product.name,
+                        description: product.description,
+                        sku: product.sku,
+                        price: Number.parseFloat(product.price),
+                        cost: Number.parseFloat(product.cost) || "",
+                        quantity: Number(product.quantity) || 0,
+                        categoryId: product.categoryId,
+                        categoryName: product.categoryName || "Sin categoría",
+                        unit: product.unit || "",
+                        tags: product.tags || [],
+                        model: product.model || "",
+                        brand: product.brand || "",
+                        images: product.images || [],
+                        productImage: product.productImage || "",
+                        discount: Number(product.discount) || "",
+                        discountStartDate: product.discountStartDate || null,
+                        discountEndDate: product.discountEndDate || null,
+                        discountMinimumPrice: Number(product.discountMinimumPrice) || "",
+                        taxRate: Number(product.taxRate) || "",
+                        supplierId: product.supplierId || null,
+                        isReturnable: product.isReturnable || false,
+                        isActive: product.isActive !== false,
+                        expirationDate: product.expirationDate || null,
+                        serialNumber: product.serialNumber || "",
+                    }
+                })
+                .filter(Boolean)
+
+            console.log("Productos procesados:", productsWithQuantity.length)
+            setProducts(productsWithQuantity)
+        } catch (error) {
+            console.error("Error cargando productos:", error)
+            toast.error("Error al cargar productos: " + (error instanceof Error ? error.message : "Error desconocido"))
+        } finally {
+            setIsLoading(false)
         }
     }
 
-    // Aquí se utilizan las funciones definidas anteriormente
-
-    // Cargar productos desde la API
+    // Cargar productos cuando cambian los filtros o la subaccount
     useEffect(() => {
-        const loadProducts = async () => {
-            if (!agencyId) return
+        if (agencyId && (selectedSubaccount || useAgencyProducts)) {
+            loadProducts()
+        }
+    }, [agencyId, selectedSubaccount, selectedCategory, searchTerm, useAgencyProducts])
 
-            try {
-                setIsLoading(true)
-                // Construir URL con parámetros de filtro
-                let url = `/api/pos?agencyId=${agencyId}`
-                if (selectedArea) url += `&areaId=${selectedArea}`
-                if (selectedCategory && selectedCategory !== "Todos") url += `&categoryId=${selectedCategory}`
-                if (searchTerm) url += `&search=${searchTerm}`
-
-                const response = await fetch(url)
-                const result = await response.json()
-
-                if (result.success) {
-                    // Transformar los datos para incluir el stock disponible
-                    const productsWithStock = result.data.map(product => ({
-                        id: product.id,
-                        name: product.name,
-                        price: parseFloat(product.price),
-                        sku: product.sku,
-                        description: product.description,
-                        stock: product.stock,
-                        categoryId: product.categoryId,
-                        categoryName: product.categoryName || "Sin categoría",
-                        images: product.images || []
-                    }))
-                    setProducts(productsWithStock)
-                } else {
-                    console.error("Error loading products:", result.error)
-                    toast.error("Error al cargar productos")
-                }
-            } catch (error) {
-                console.error("Error fetching products:", error)
-                toast.error("Error al cargar productos")
-            } finally {
-                setIsLoading(false)
-            }
+    // Función para cambiar la subaccount y actualizar la consulta de productos
+    const handleSubaccountChange = (subaccountId) => {
+        // Si seleccionamos "Usar productos de la agencia"
+        if (subaccountId === "agency") {
+            setUseAgencyProducts(true)
+            setSelectedSubaccount("")
+            // Al seleccionar agencia, la consulta se hará con agencyId
+        } else {
+            setUseAgencyProducts(false)
+            setSelectedSubaccount(subaccountId)
+            // Al seleccionar una subcuenta, la consulta se hará con subAccountId
         }
 
+        // Limpiar carrito al cambiar de subaccount
+        clearCart()
+
+        // Cerrar el modal
+        setSubaccountModalOpen(false)
+    }
+
+    // Función para manejar la creación exitosa de un producto
+    const handleProductCreated = () => {
+        setProductFormOpen(false)
+        toast.success("Producto creado correctamente. Actualizando lista...")
         loadProducts()
-    }, [agencyId, selectedArea, selectedCategory, searchTerm])
-
-    // Cargar categorías de productos
-    useEffect(() => {
-        const loadCategories = async () => {
-            if (!agencyId) return
-
-            try {
-                const response = await fetch(`/api/inventory/categories?agencyId=${agencyId}`)
-                const result = await response.json()
-
-                if (result.success) {
-                    const categoryList = [{ id: "Todos", name: "Todos" }, ...result.data.map(cat => ({ id: cat.id, name: cat.name }))]
-                    setCategories(categoryList)
-                }
-            } catch (error) {
-                console.error("Error loading categories:", error)
-            }
-        }
-
-        loadCategories()
-    }, [agencyId])
-
-    // Cargar áreas de inventario
-    useEffect(() => {
-        const loadAreas = async () => {
-            if (!agencyId) return
-
-            try {
-                const response = await fetch(`/api/inventory/areas?agencyId=${agencyId}`)
-                const result = await response.json()
-
-                if (result.success && result.data.length > 0) {
-                    setAreas(result.data)
-                    setSelectedArea(result.data[0].id) // Seleccionar la primera área por defecto
-                }
-            } catch (error) {
-                console.error("Error loading areas:", error)
-            }
-        }
-
-        loadAreas()
-    }, [agencyId])
-
-    // Cargar clientes
-    useEffect(() => {
-        const loadClients = async () => {
-            if (!agencyId) return
-
-            try {
-                const response = await fetch(`/api/contacts?agencyId=${agencyId}`)
-                const result = await response.json()
-
-                if (result.success) {
-                    setClients([{ id: null, name: "Cliente General" }, ...result.data])
-                }
-            } catch (error) {
-                console.error("Error loading clients:", error)
-            }
-        }
-
-        loadClients()
-    }, [agencyId])
-
+    }
 
     return (
         <div className="container mx-auto p-4">
@@ -579,6 +638,29 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                     <p className="text-muted-foreground">Gestiona ventas en tiempo real</p>
                 </div>
                 <div className="flex gap-2">
+                    {/* Selector de Subaccount */}
+                    <Select value={useAgencyProducts ? "agency" : selectedSubaccount} onValueChange={handleSubaccountChange}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Seleccionar subcuenta" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="agency">
+                                <div className="flex items-center">
+                                    <Building className="h-4 w-4 mr-2" />
+                                    <span>Agencia (Todos)</span>
+                                </div>
+                            </SelectItem>
+                            {subaccounts.map((subaccount) => (
+                                <SelectItem key={subaccount.id} value={subaccount.id}>
+                                    <div className="flex items-center">
+                                        <Store className="h-4 w-4 mr-2" />
+                                        <span>{subaccount.name}</span>
+                                    </div>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
                     <Link href={`/agency/${agencyId}/cash-closing`}>
                         <Button variant="outline" size="sm">
                             <Clock className="h-4 w-4 mr-2" />
@@ -617,8 +699,45 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                 <FileText className="h-4 w-4 mr-2" />
                                 Ventas guardadas
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setSubaccountModalOpen(true)}>
+                                <Store className="h-4 w-4 mr-2" />
+                                Cambiar subcuenta
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => loadProducts()}>
+                                <RefreshCw className="h-4 w-4 mr-2" />
+                                Actualizar productos
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => setProductFormOpen(true)}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Crear producto de prueba
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
+                </div>
+            </div>
+
+            {/* Indicador de subcuenta activa */}
+            <div className="mb-4 p-2 bg-muted rounded-md flex items-center justify-between">
+                <div className="flex items-center">
+                    {useAgencyProducts ? (
+                        <>
+                            <Building className="h-5 w-5 mr-2 text-primary" />
+                            <span className="font-medium">Mostrando productos de toda la agencia</span>
+                        </>
+                    ) : (
+                        <>
+                            <Store className="h-5 w-5 mr-2 text-primary" />
+                            <span className="font-medium">
+                                Subcuenta: {subaccounts.find((s) => s.id === selectedSubaccount)?.name || "No seleccionada"}
+                            </span>
+                        </>
+                    )}
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => setSubaccountModalOpen(true)}>
+                        Cambiar
+                    </Button>
                 </div>
             </div>
 
@@ -646,22 +765,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
 
                         {/* Filtros expandibles */}
                         {filtersOpen && (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                                <div>
-                                    <Label htmlFor="subcuenta">Subcuenta</Label>
-                                    <Select defaultValue={selectedArea} onValueChange={setSelectedArea}>
-                                        <SelectTrigger id="area">
-                                            <SelectValue placeholder="Seleccionar área" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {areas.map((area) => (
-                                                <SelectItem key={area.id} value={area.id}>
-                                                    {area.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                                 <div>
                                     <Label htmlFor="categoria">Categoría</Label>
                                     <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -687,7 +791,6 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                             <SelectItem value="nombre">Nombre</SelectItem>
                                             <SelectItem value="precio-asc">Precio: Menor a Mayor</SelectItem>
                                             <SelectItem value="precio-desc">Precio: Mayor a Menor</SelectItem>
-                                            <SelectItem value="stock">Stock</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -712,41 +815,118 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                     <div className="flex flex-col items-center justify-center py-12">
                                         <Package className="h-16 w-16 text-muted-foreground/30 mb-4" />
                                         <h3 className="text-xl font-medium mb-2">No se encontraron productos</h3>
-                                        <p className="text-muted-foreground text-center">Intenta con otros filtros o agrega productos al inventario.</p>
+                                        <p className="text-muted-foreground text-center mb-6">
+                                            No hay productos disponibles. Crea algunos productos para comenzar.
+                                        </p>
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                                         {products.map((product) => (
                                             <Card
                                                 key={product.id}
-                                                className={`cursor-pointer transition-colors ${selectedProducts2.includes(product.id)
-                                                    ? "bg-primary/10 border-primary relative after:content-['✓'] after:absolute after:top-2 after:right-2 after:bg-primary after:text-primary-foreground after:size-6 after:flex after:items-center after:justify-center after:rounded-full after:text-xs"
-                                                    : "hover:bg-muted/50"
+                                                className={`transition-colors ${product.quantity <= 0
+                                                    ? "opacity-70 cursor-not-allowed border-dashed border-muted-foreground/30"
+                                                    : "cursor-pointer " +
+                                                    (selectedProducts2.includes(product.id)
+                                                        ? "bg-primary/10 border-primary relative after:content-['✓'] after:absolute after:top-2 after:right-2 after:bg-primary after:text-primary-foreground after:size-6 after:flex after:items-center after:justify-center after:rounded-full after:text-xs"
+                                                        : "hover:bg-muted/50")
                                                     }`}
                                                 onClick={() => toggleProductSelection(product)}
                                             >
-                                                <CardContent className="p-3">
-                                                    <div className="aspect-square bg-muted rounded-md mb-2 flex items-center justify-center">
-                                                        {product.productImage ? (
-                                                            <img
-                                                                src={product.productImage}
+                                                {/* Primer CardContent */}
+                                                <CardContent className="p-0">
+                                                    <div className="relative aspect-square">
+                                                        {product.productImage || (product.images && product.images.length > 0) ? (
+                                                            <Image
+                                                                src={product.productImage || product.images[0] || "/placeholder.svg"}
                                                                 alt={product.name}
-                                                                className="h-full w-full object-cover rounded-md"
+                                                                fill
+                                                                className="object-cover"
                                                             />
                                                         ) : (
-                                                            <Package className="h-8 w-8 text-muted-foreground" />
+                                                            <div className="flex items-center justify-center h-full bg-muted">
+                                                                <Package className="h-12 w-12 text-muted-foreground/50" />
+                                                            </div>
+                                                        )}
+
+                                                        <div className="absolute top-2 left-2">
+                                                            <Badge
+                                                                variant={product.quantity > 0 ? "default" : "destructive"}
+                                                                className={`px-2 py-1 ${product.quantity > 0 ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
+                                                            >
+                                                                {product.quantity > 0 ? `Disponible: ${product.quantity}` : "Sin Stock"}
+                                                            </Badge>
+                                                        </div>
+
+                                                        {product.discount > 0 && (
+                                                            <div className="absolute top-2 right-2">
+                                                                <Badge variant="default" className="bg-green-600 hover:bg-green-700 px-2 py-1">
+                                                                    {product.discount}% descuento
+                                                                </Badge>
+                                                            </div>
+                                                        )}
+
+                                                        {product.expirationDate &&
+                                                            new Date(product.expirationDate) < new Date(new Date().setMonth(new Date().getMonth() + 3)) && (
+                                                                <div className="absolute bottom-2 right-2">
+                                                                    <Badge variant="destructive" className="px-2 py-1">
+                                                                        Vence: {new Date(product.expirationDate).toLocaleDateString()}
+                                                                    </Badge>
+                                                                </div>
+                                                            )}
+                                                    </div>
+                                                </CardContent> {/* ← Cierre del primer CardContent */}
+
+                                                {/* Segundo CardContent */}
+                                                <CardContent className="p-4">
+                                                    <div className="mb-2">
+                                                        <h3 className="font-medium truncate">{product.name}</h3>
+                                                        <p className="text-xs text-muted-foreground truncate">{product.description || "Sin descripción"}</p>
+                                                        {(product.brand || product.model) && (
+                                                            <p className="text-xs mt-1">
+                                                                {product.brand && <span className="font-medium">{product.brand}</span>}
+                                                                {product.brand && product.model && <span> - </span>}
+                                                                {product.model && <span>{product.model}</span>}
+                                                            </p>
+                                                        )}
+                                                        {product.serialNumber && (
+                                                            <p className="text-xs mt-1">
+                                                                <span className="font-medium">S/N:</span> {product.serialNumber}
+                                                            </p>
                                                         )}
                                                     </div>
-                                                    <h3 className="font-medium text-sm truncate">{product.name}</h3>
-                                                    <p className="text-xs text-muted-foreground truncate">{product.categoryName || "Sin categoría"}</p>
-                                                    <div className="flex justify-between items-center mt-1">
-                                                        <p className="text-sm font-bold">${Number(product.price).toLocaleString()}</p>
-                                                        <Badge
-                                                            variant={product.stock <= 0 ? "destructive" : product.stock <= (product.minStock || 5) ? "secondary" : "outline"}
-                                                            className="text-xs"
-                                                        >
-                                                            {product.stock <= 0 ? "Sin stock" : `Stock: ${product.stock}`}
-                                                        </Badge>
+
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <div className="text-sm">
+                                                            <span className="font-medium">
+                                                                ${typeof product.price === "number" ? product.price.toFixed(2) : "0.00"}
+                                                            </span>
+                                                            {product.discount > 0 && (
+                                                                <span className="text-xs text-muted-foreground line-through ml-1">
+                                                                    $
+                                                                    {typeof product.price === "number"
+                                                                        ? (product.price / (1 - (product.discount || 0) / 100)).toFixed(2)
+                                                                        : "0.00"}
+                                                                </span>
+                                                            )}
+                                                            {product.cost && (
+                                                                <div className="text-xs text-muted-foreground">
+                                                                    Costo: ${typeof product.cost === "number" ? product.cost.toFixed(2) : "0.00"}
+                                                                </div>
+                                                            )}
+                                                            {product.discount > 0 && product.discountStartDate && product.discountEndDate && (
+                                                                <div className="text-xs text-green-600">
+                                                                    {new Date(product.discountStartDate).toLocaleDateString()} -{" "}
+                                                                    {new Date(product.discountEndDate).toLocaleDateString()}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-sm">
+                                                            <span className="text-muted-foreground">Quantity:</span>{" "}
+                                                            <span className="font-medium">
+                                                                {product.quantity || 0} {product.unit || ""}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </CardContent>
                                             </Card>
@@ -754,6 +934,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                     </div>
                                 )}
                             </TabsContent>
+
 
                             <TabsContent value="favorites" className="w-full">
                                 <div className="flex flex-col items-center justify-center py-8">
@@ -770,17 +951,22 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                     {products.slice(0, 2).map((product) => (
                                         <Card
                                             key={product.id}
-                                            className={`cursor-pointer transition-colors ${selectedProducts2.includes(product.id)
-                                                ? "bg-primary/10 border-primary relative after:content-['✓'] after:absolute after:top-2 after:right-2 after:bg-primary after:text-primary-foreground after:size-6 after:flex after:items-center after:justify-center after:rounded-full after:text-xs"
-                                                : "hover:bg-muted/50"
+                                            className={`transition-colors ${product.quantity <= 0
+                                                ? "opacity-70 cursor-not-allowed border-dashed border-muted-foreground/30"
+                                                : "cursor-pointer " +
+                                                (
+                                                    selectedProducts2.includes(product.id)
+                                                        ? "bg-primary/10 border-primary relative after:content-['✓'] after:absolute after:top-2 after:right-2 after:bg-primary after:text-primary-foreground after:size-6 after:flex after:items-center after:justify-center after:rounded-full after:text-xs"
+                                                        : "hover:bg-muted/50"
+                                                )
                                                 }`}
                                             onClick={() => toggleProductSelection(product)}
                                         >
                                             <CardContent className="p-3">
                                                 <div className="aspect-square bg-muted rounded-md mb-2 flex items-center justify-center">
                                                     {product.productImage ? (
-                                                        <img
-                                                            src={product.productImage}
+                                                        <Image
+                                                            src={product.productImage || "/placeholder.svg"}
                                                             alt={product.name}
                                                             className="h-full w-full object-cover rounded-md"
                                                         />
@@ -789,14 +975,16 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                                     )}
                                                 </div>
                                                 <h3 className="font-medium text-sm truncate">{product.name}</h3>
-                                                <p className="text-xs text-muted-foreground truncate">{product.categoryName || "Sin categoría"}</p>
+                                                <p className="text-xs text-muted-foreground truncate">
+                                                    {product.categoryName || "Sin categoría"}
+                                                </p>
                                                 <div className="flex justify-between items-center mt-1">
                                                     <p className="text-sm font-bold">${Number(product.price).toLocaleString()}</p>
                                                     <Badge
-                                                        variant={product.stock <= 0 ? "destructive" : product.stock <= (product.minStock || 5) ? "secondary" : "outline"}
+                                                        variant={product.quantity <= 0 ? "destructive" : "default"}
                                                         className="text-xs"
                                                     >
-                                                        {product.stock <= 0 ? "Sin stock" : `Stock: ${product.stock}`}
+                                                        {product.quantity <= 0 ? "Sin cantidad" : `Cantidad: ${product.quantity}`}
                                                     </Badge>
                                                 </div>
                                             </CardContent>
@@ -808,6 +996,70 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Modal de Selección de Subaccount */}
+            <Dialog
+                open={subaccountModalOpen}
+                onOpenChange={(open) => {
+                    // Solo permitir cerrar el modal si ya hay una subaccount seleccionada o se está usando la agencia
+                    if (!open && !selectedSubaccount && !useAgencyProducts) {
+                        return
+                    }
+                    setSubaccountModalOpen(open)
+                }}
+            >
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>Seleccionar Subcuenta</DialogTitle>
+                        <DialogDescription>
+                            Selecciona la subcuenta para cargar sus productos o usa los productos de toda la agencia.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-1 gap-3">
+                            <Button
+                                variant={useAgencyProducts ? "default" : "outline"}
+                                className="flex items-center justify-start h-auto py-3 px-4"
+                                onClick={() => handleSubaccountChange("agency")}
+                            >
+                                <Building className="h-5 w-5 mr-3" />
+                                <div className="text-left">
+                                    <div className="font-medium">Usar productos de la agencia</div>
+                                    <div className="text-sm text-muted-foreground">Mostrar todos los productos de la agencia</div>
+                                </div>
+                            </Button>
+
+                            <Separator className="my-2" />
+
+                            {subaccounts.length === 0 ? (
+                                <div className="text-center py-4 text-muted-foreground">No hay subcuentas disponibles</div>
+                            ) : (
+                                subaccounts.map((subaccount) => (
+                                    <Button
+                                        key={subaccount.id}
+                                        variant={selectedSubaccount === subaccount.id ? "default" : "outline"}
+                                        className="flex items-center justify-start h-auto py-3 px-4"
+                                        onClick={() => handleSubaccountChange(subaccount.id)}
+                                    >
+                                        <Store className="h-5 w-5 mr-3" />
+                                        <div className="text-left">
+                                            <div className="font-medium">{subaccount.name}</div>
+                                            <div className="text-sm text-muted-foreground">{subaccount.address || "Sin dirección"}</div>
+                                        </div>
+                                    </Button>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button onClick={() => setSubaccountModalOpen(false)} disabled={!selectedSubaccount && !useAgencyProducts}>
+                            Continuar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Modal de Carrito */}
             <Dialog open={cartOpen} onOpenChange={setCartOpen}>
@@ -903,7 +1155,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                 <div className="flex gap-2">
                                     <Select
                                         onValueChange={(value) => {
-                                            const client = clients.find((c) => c.id.toString() === value)
+                                            const client = clients.find((c) => c.id && c.id.toString() === value)
                                             if (client) {
                                                 setSelectedClient({
                                                     name: client.name,
@@ -917,7 +1169,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                         </SelectTrigger>
                                         <SelectContent>
                                             {clients.map((client) => (
-                                                <SelectItem key={client.id} value={client.id.toString()}>
+                                                <SelectItem key={client.id || "general"} value={client.id ? client.id.toString() : "general"}>
                                                     {client.name}
                                                 </SelectItem>
                                             ))}
@@ -938,23 +1190,23 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                             <CardContent>
                                 <div className="grid grid-cols-2 gap-3 mb-4">
                                     <Button
-                                        variant={paymentMethod === "efectivo" ? "default" : "outline"}
+                                        variant={paymentMethod === "CASH" ? "default" : "outline"}
                                         className="flex flex-col h-auto py-3"
-                                        onClick={() => setPaymentMethod("efectivo")}
+                                        onClick={() => setPaymentMethod("CASH")}
                                     >
                                         <DollarSign className="h-5 w-5 mb-1" />
                                         <span>Efectivo</span>
                                     </Button>
                                     <Button
-                                        variant={paymentMethod === "tarjeta" ? "default" : "outline"}
+                                        variant={paymentMethod === "CREDIT_CARD" ? "default" : "outline"}
                                         className="flex flex-col h-auto py-3"
-                                        onClick={() => setPaymentMethod("tarjeta")}
+                                        onClick={() => setPaymentMethod("CREDIT_CARD")}
                                     >
                                         <CreditCard className="h-5 w-5 mb-1" />
                                         <span>Tarjeta</span>
                                     </Button>
                                 </div>
-                                {paymentMethod === "efectivo" && (
+                                {paymentMethod === "CASH" && (
                                     <div className="space-y-3">
                                         <div className="flex items-center space-x-2">
                                             <span className="text-muted-foreground">Monto recibido:</span>
@@ -1020,10 +1272,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                 Guardar
                             </Button>
                         </div>
-                        <Button
-                            disabled={selectedProducts.length === 0 || !paymentMethod || isProcessing}
-                            onClick={processSale}
-                        >
+                        <Button disabled={selectedProducts.length === 0 || !paymentMethod || isProcessing} onClick={processSale}>
                             {isProcessing ? (
                                 <>
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>

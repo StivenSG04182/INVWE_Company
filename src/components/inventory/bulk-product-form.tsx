@@ -141,7 +141,7 @@ export default function BulkProductForm({ agencyId, subaccountId }: BulkProductF
                 },
                 body: JSON.stringify({
                     name: newCategory,
-                    subaccountId: selectedSubaccount,
+                    subAccountId: selectedSubaccount,
                 }),
                 credentials: "include",
             })

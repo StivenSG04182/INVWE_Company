@@ -133,7 +133,37 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
 
     const handleAddClient = async () => {
         try {
+            // Validar campos obligatorios
+            if (!formData.name || !formData.name.trim()) {
+                toast({
+                    title: "Error de validación",
+                    description: "El nombre del cliente es obligatorio",
+                    variant: "destructive",
+                })
+                return
+            }
+
+            if (!formData.email || !formData.email.trim()) {
+                toast({
+                    title: "Error de validación",
+                    description: "El email del cliente es obligatorio",
+                    variant: "destructive",
+                })
+                return
+            }
+
+            if (!formData.phone || !formData.phone.trim()) {
+                toast({
+                    title: "Error de validación",
+                    description: "El teléfono del cliente es obligatorio",
+                    variant: "destructive",
+                })
+                return
+            }
+
+            console.log("Validación de campos completada correctamente")
             console.log("Creando cliente con datos:", { agencyId, formData, subAccountId })
+            
             // Asegurarse de que todos los campos requeridos estén presentes
             const clientData: ClientData = {
                 ...formData,
@@ -142,8 +172,56 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
                 status: formData.status || ClientStatus.ACTIVE
             }
             
+            console.log("Datos del cliente preparados:", clientData)
+            
+            // Intentar primero con fetch directo a la API
+            try {
+                console.log("Intentando crear cliente con fetch directo a la API")
+                const fetchResponse = await fetch(`/api/clients/${agencyId}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        ...clientData,
+                        subAccountId
+                    }),
+                })
+                
+                console.log("Respuesta de fetch recibida:", fetchResponse.status)
+                
+                if (fetchResponse.ok) {
+                    const data = await fetchResponse.json()
+                    console.log("Datos de respuesta de la API:", data)
+                    
+                    if (data.success) {
+                        console.log("Cliente creado exitosamente con fetch:", data.data)
+                        setClients([data.data, ...clients])
+                        toast({
+                            title: "Cliente creado",
+                            description: "El cliente ha sido creado exitosamente",
+                        })
+                        resetForm()
+                        setIsAddClientOpen(false)
+                        return
+                    }
+                }
+                
+                // Si llegamos aquí, el fetch no fue exitoso, intentamos con el servicio
+                console.log("Fetch no exitoso, intentando con ClientService")
+            } catch (fetchError) {
+                console.error("Error en fetch directo:", fetchError)
+                // Continuamos con el método del servicio
+            }
+            
+            // Método original usando el servicio
+            console.log("Llamando a ClientService.createClient con:", { agencyId, clientData, subAccountId })
             const response = await ClientService.createClient(agencyId, clientData, subAccountId)
+            console.log("Respuesta del servicio:", response)
+            
             if (response.success) {
+                console.log("Cliente creado exitosamente:", response.data)
                 setClients([response.data, ...clients])
                 toast({
                     title: "Cliente creado",
@@ -152,6 +230,7 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
                 resetForm()
                 setIsAddClientOpen(false)
             } else {
+                console.error("Error en la respuesta del servicio:", response.error)
                 toast({
                     title: "Error",
                     description: "No se pudo crear el cliente",
@@ -159,7 +238,7 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
                 })
             }
         } catch (error) {
-            console.error("Error creando cliente:", error)
+            console.error("Error creando cliente (excepción):", error)
             toast({
                 title: "Error",
                 description: "Ocurrió un error al crear el cliente",
@@ -534,7 +613,7 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
             </div>
 
             {/* Diálogo de edición de cliente */}
-            <Dialog open={isEditClientOpen} onOpenChange={setIsEditClientOpen}>
+             <Dialog open={isEditClientOpen} onOpenChange={setIsEditClientOpen}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
                         <DialogTitle>Editar Cliente</DialogTitle>
@@ -651,7 +730,7 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
             </Dialog>
 
             {/* Diálogo de confirmación de eliminación */}
-            <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+             <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
                         <DialogTitle>Confirmar eliminación</DialogTitle>
@@ -678,7 +757,7 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
             </Dialog>
 
             {/* Tabla de clientes */}
-            {isLoading ? (
+             {isLoading ? (
                 <div className="flex justify-center items-center h-64">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                 </div>

@@ -357,7 +357,7 @@ export default function SubaccountProductForm({ subaccountId, product, isEditing
                                     },
                                     body: JSON.stringify({
                                       name: newCategory,
-                                      subaccountId: subaccountId,
+                                      subAccountId: subaccountId,
                                     }),
                                     credentials: "include",
                                   });

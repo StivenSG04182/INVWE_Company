@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation"
 import { getAuthUserDetails, getAgencyDetails } from "@/lib/queries"
-import { connectToDatabase } from "@/lib/mongodb"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"

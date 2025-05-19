@@ -52,46 +52,33 @@ interface ProductFormProps {
         cost?: number
         minStock?: number
         images?: string[]
-        subaccountId?: string
+        productImage?: string           
+        subAccountId?: string            
         categoryId?: string
-
-        // 🧾 Información General Adicional
         brand?: string
         model?: string
         tags?: string[]
-        unit?: string // ej. "pieza", "kg", "litro"
-
-        // 📦 Detalles de Inventario
+        unit?: string
         quantity?: number
-        locationId?: string // enlace a ubicación dentro del almacén
-        warehouseId?: string // para múltiples almacenes
+        locationId?: string
+        warehouseId?: string
         batchNumber?: string
-        expirationDate?: string // ISO date string
+        expirationDate?: string          
         serialNumber?: string
-
-        // 🔁 Ciclo de Vida
         warrantyMonths?: number
         isReturnable?: boolean
-        isActive?: boolean
-
-        // 💸 Gestión Comercial
-        discount?: number // porcentaje
-        discountStartDate?: string // fecha de inicio del descuento
-        discountEndDate?: string // fecha de fin del descuento
-        discountMinimumPrice?: number // precio mínimo con descuento
-        taxRate?: number // porcentaje
+        active?: boolean                
+        discount?: number
+        discountStartDate?: string       
+        discountEndDate?: string        
+        discountMinimumPrice?: number
+        taxRate?: number
         supplierId?: string
-
-        // 📈 Variantes
         variants?: Array<{
-            name: string // ej. "color"
-            value: string // ej. "rojo"
+            name: string
+            value: string
         }>
-
-        // 📎 Documentos Adjuntos
-        documents?: string[] // URLs o IDs de fichas técnicas
-
-        // 💡 Extras SaaS
+        documents?: string[]
         customFields?: Record<string, any>
         externalIntegrations?: Record<string, string>
     }
@@ -132,7 +119,7 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
         unit: product?.unit || "pieza",
 
         // Detalles de inventario
-        quantity: product?.quantity || 0,
+        quantity: product?.quantity || "",
         locationId: product?.locationId || "",
         warehouseId: product?.warehouseId || "",
         batchNumber: product?.batchNumber || "",
@@ -140,16 +127,16 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
         serialNumber: product?.serialNumber || "",
 
         // Ciclo de vida
-        warrantyMonths: product?.warrantyMonths || 0,
+        warrantyMonths: product?.warrantyMonths || "",
         isReturnable: product?.isReturnable || false,
         isActive: product?.isActive !== false, // Por defecto activo
 
         // Gestión comercial
-        discount: product?.discount || 0,
+        discount: product?.discount || "",
         discountStartDate: product?.discountStartDate || "",
         discountEndDate: product?.discountEndDate || "",
-        discountMinimumPrice: product?.discountMinimumPrice || 0,
-        taxRate: product?.taxRate || 0,
+        discountMinimumPrice: product?.discountMinimumPrice || "",
+        taxRate: product?.taxRate || "",
         supplierId: product?.supplierId || "",
 
         // Variantes
@@ -353,6 +340,35 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
             const result = await response.json()
 
             if (result.success) {
+                // Si es un producto nuevo y tiene cantidad inicial, crear un registro de movimiento
+                if (!isEditing && formData.quantity > 0) {
+                    try {
+                        // Crear un movimiento de entrada para el stock inicial
+                        const movementEndpoint = `/api/inventory/${agencyId}/movements`
+                        const movementBody = {
+                            type: "ENTRADA",
+                            quantity: formData.quantity,
+                            notes: "Stock inicial al crear el producto",
+                            productId: result.data._id,
+                            areaId: formData.locationId || formData.warehouseId, // Usar locationId o warehouseId como areaId
+                            agencyId: agencyId,
+                            subAccountId: formData.subaccountId
+                        }
+
+                        await fetch(movementEndpoint, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify(movementBody),
+                            credentials: "include",
+                        })
+                    } catch (movementError) {
+                        console.error("Error al registrar el movimiento de stock inicial:", movementError)
+                        // No interrumpimos el flujo si falla el registro del movimiento
+                    }
+                }
+
                 toast({
                     title: isEditing ? "Producto actualizado" : "Producto creado",
                     description: `El producto ${formData.name} ha sido ${isEditing ? "actualizado" : "creado"} exitosamente.`,
@@ -703,7 +719,7 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
                                                                     },
                                                                     body: JSON.stringify({
                                                                         name: newCategory,
-                                                                        subaccountId: formData.subaccountId,
+                                                                        subAccountId: formData.subaccountId,
                                                                     }),
                                                                     credentials: "include",
                                                                 })
@@ -1187,8 +1203,20 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
                                                 </div>
                                                 <div>
                                                     <p className="text-sm text-muted-foreground">Estado</p>
-                                                    <Badge variant={formData.quantity <= formData.minStock ? "destructive" : "outline"}>
-                                                        {formData.quantity <= formData.minStock ? "Bajo Stock" : "Stock Normal"}
+                                                    <Badge
+                                                        variant={
+                                                            formData.quantity <= Math.max(formData.minStock * 0.1, 5)
+                                                                ? "destructive"
+                                                                : formData.quantity >= formData.minStock * 0.6
+                                                                    ? "default"
+                                                                    : "outline"
+                                                        }
+                                                    >
+                                                        {formData.quantity <= Math.max(formData.minStock * 0.1, 5)
+                                                            ? "Stock Bajo"
+                                                            : formData.quantity >= formData.minStock * 0.6
+                                                                ? "Stock Alto"
+                                                                : "Stock Normal"}
                                                     </Badge>
                                                 </div>
                                             </div>

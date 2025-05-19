@@ -96,7 +96,7 @@ export default function SubaccountBulkProductForm({ subaccountId }: SubaccountBu
                 },
                 body: JSON.stringify({
                     name: newCategory,
-                    subaccountId: subaccountId,
+                    subAccountId: subaccountId,
                 }),
                 credentials: "include",
             })

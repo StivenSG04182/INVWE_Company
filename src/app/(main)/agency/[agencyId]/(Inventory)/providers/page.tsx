@@ -33,7 +33,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProviderService } from "@/lib/services/inventory-service"
-import { IProvider } from "@/lib/mongodb"
+
 
 const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
   const user = await getAuthUserDetails()
@@ -44,13 +44,6 @@ const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
     return redirect("/agency")
   }
 
-  // Obtener proveedores reales desde la base de datos
-  let providers: IProvider[] = []
-  try {
-    providers = await ProviderService.getProviders(agencyId)
-  } catch (error) {
-    console.error("Error al cargar proveedores:", error)
-  }
 
   // Calcular estadísticas
   const totalProviders = providers.length

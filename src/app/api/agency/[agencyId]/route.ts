@@ -1,51 +1,116 @@
-import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { auth } from '@clerk/nextjs/server'
+import { type NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import {
+  ProductService,
+  StockService,
+  MovementService,
+  AreaService,
+  CategoryService,
+} from "@/lib/services/inventory-service"
 
-export async function GET(
-  req: Request,
-  { params }: { params: { agencyId: string } }
-) {
+export async function GET(req: NextRequest, { params }: { params: { agencyId: string } }) {
   try {
-    const { userId } = auth()
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      )
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ success: false, error: "No autorizado" }, { status: 401 })
     }
 
-    const agency = await db.agency.findUnique({
-      where: { id: params.agencyId },
-      select: {
-        name: true,
-        agencyLogo: true,
-        address: true,
-        city: true,
-        companyEmail: true,
-        companyPhone: true,
-        country: true,
-        state: true,
-        zipCode: true
-      },
-    })
+    const { agencyId } = params
+    const { searchParams } = new URL(req.url)
+    const type = searchParams.get("type")
 
-    if (!agency) {
-      return NextResponse.json(
-        { error: 'Agencia no encontrada' },
-        { status: 404 }
-      )
+    let data
+    switch (type) {
+      case "products":
+        data = await ProductService.getProducts(agencyId)
+        break
+      case "stocks":
+        data = await StockService.getStocks(agencyId)
+        break
+      case "movements":
+        data = await MovementService.getMovements(agencyId)
+        break
+      case "areas":
+        data = await AreaService.getAreas(agencyId)
+        break
+      case "categories":
+        data = await CategoryService.getCategories(agencyId)
+        break
+      case "low-stock":
+        data = await StockService.checkLowStockProducts(agencyId)
+        break
+      case "expiring":
+        const daysThreshold = searchParams.get("days") ? Number.parseInt(searchParams.get("days")) : 30
+        data = await ProductService.checkExpiringProducts(agencyId, daysThreshold)
+        break
+      default:
+        data = await ProductService.getProducts(agencyId)
     }
 
-    return NextResponse.json({
-      success: true,
-      agency,
-    })
-  } catch (error) {
-    console.error('Error fetching agency:', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    return NextResponse.json({ success: true, data })
+  } catch (error: any) {
+    console.error("Error en API de inventario:", error)
+    return NextResponse.json({ success: false, error: error.message || "Error en el servidor" }, { status: 500 })
+  }
+}
+
+export async function POST(req: NextRequest, { params }: { params: { agencyId: string } }) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ success: false, error: "No autorizado" }, { status: 401 })
+    }
+
+    const { agencyId } = params
+    const body = await req.json()
+    const { type, data } = body
+
+    let result
+    switch (type) {
+      case "product":
+        result = await ProductService.createProduct({ ...data, agencyId })
+        break
+      case "movement":
+        result = await MovementService.createMovement({ ...data, agencyId })
+        break
+      default:
+        return NextResponse.json({ success: false, error: "Tipo de operación no válido" }, { status: 400 })
+    }
+
+    return NextResponse.json({ success: true, data: result })
+  } catch (error: any) {
+    console.error("Error en API de inventario:", error)
+    return NextResponse.json({ success: false, error: error.message || "Error en el servidor" }, { status: 500 })
+  }
+}
+
+export async function PUT(req: NextRequest, { params }: { params: { agencyId: string } }) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ success: false, error: "No autorizado" }, { status: 401 })
+    }
+
+    const { agencyId } = params
+    const body = await req.json()
+    const { type, id, data } = body
+
+    let result
+    switch (type) {
+      case "product":
+        result = await ProductService.updateProduct(id, { ...data, agencyId })
+        break
+      case "stock":
+        result = await StockService.updateStock(id, data.quantity)
+        break
+      default:
+        return NextResponse.json({ success: false, error: "Tipo de operación no válido" }, { status: 400 })
+    }
+
+    return NextResponse.json({ success: true, data: result })
+  } catch (error: any) {
+    console.error("Error en API de inventario:", error)
+    return NextResponse.json({ success: false, error: error.message || "Error en el servidor" }, { status: 500 })
   }
 }

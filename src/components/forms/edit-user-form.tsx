@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useState } from 'react'
-import { toast } from '@/components/ui/sonner'
+import { useToast } from '@/components/ui/use-toast'
 import { User } from '@prisma/client'
 
 // Esquema de validación para el formulario
@@ -34,6 +34,7 @@ interface EditUserFormProps {
 
 export default function EditUserForm({ user }: EditUserFormProps) {
     const [loading, setLoading] = useState(false)
+    const { toast } = useToast()
     
     // Función para cerrar el diálogo modal
     const onClose = () => {
@@ -75,12 +76,20 @@ export default function EditUserForm({ user }: EditUserFormProps) {
                 throw new Error('Error al actualizar la información del usuario')
             }
 
-            toast.success('Información actualizada correctamente')
+            toast({
+                title: 'Éxito',
+                description: 'Información actualizada correctamente',
+                variant: 'default'
+            })
             // Cerrar el diálogo usando el DOM
             document.querySelector('[role="dialog"]')?.querySelector('button[aria-label="Close"]')?.click()
         } catch (error) {
             console.error('Error al actualizar usuario:', error)
-            toast.error('Error al actualizar la información')
+            toast({
+                title: 'Error',
+                description: 'Error al actualizar la información',
+                variant: 'destructive'
+            })
         } finally {
             setLoading(false)
         }

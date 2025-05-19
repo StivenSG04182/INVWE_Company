@@ -26,7 +26,7 @@ import {
     ThumbsUp,
     User,
 } from "lucide-react"
-import { DollarSign } from "lucide-react" // Import DollarSign here
+import { DollarSign } from "lucide-react" 
 
 export default function PqrChat({
     clients,

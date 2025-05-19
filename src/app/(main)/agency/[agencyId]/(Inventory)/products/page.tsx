@@ -3,12 +3,12 @@ import { redirect } from "next/navigation"
 import { ProductService, CategoryService } from "@/lib/services/inventory-service"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import StockAlertNotification from "@/components/inventory/stock-alert-notification"
 import {
   Package,
   Plus,
   Tag,
   BarChart3,
-  Upload,
   AlertTriangle,
   Truck,
   DollarSign,
@@ -29,42 +29,63 @@ const ProductsPage = async ({ params }: { params: { agencyId: string } }) => {
     return redirect("/agency")
   }
 
-  // Obtener productos de MongoDB
-  let products = []
-  let categories = []
-  try {
-    // Importar el serializador para convertir objetos MongoDB a objetos planos
-    const { serializeMongoArray } = await import("@/lib/serializers")
-
-    // Obtener y serializar productos y categorías
-    const rawProducts = await ProductService.getProducts(agencyId)
-    const rawCategories = await CategoryService.getCategories(agencyId)
-
-    // Serializar para eliminar métodos y propiedades no serializables
-    products = serializeMongoArray(rawProducts)
-    categories = serializeMongoArray(rawCategories)
-  } catch (error) {
-    console.error("Error al cargar datos:", error)
-  }
-
+  // Obtener productos y categorías usando los servicios de Prisma
+  const rawProducts = await ProductService.getProducts(agencyId)
+  const categories = await CategoryService.getCategories(agencyId)
+  
+  // Convertir valores Decimal a números normales para evitar errores de serialización
+  const products = rawProducts.map(product => ({
+    ...product,
+    price: product.price ? Number(product.price) : 0,
+    cost: product.cost ? Number(product.cost) : 0,
+    discount: product.discount ? Number(product.discount) : 0,
+    taxRate: product.taxRate ? Number(product.taxRate) : 0,
+    discountMinimumPrice: product.discountMinimumPrice ? Number(product.discountMinimumPrice) : null
+  }))
+  
   // Obtener subcuentas de la agencia
   const subAccounts = user.Agency.SubAccount || []
 
   // Calcular estadísticas
   const totalProducts = products.length
-  const activeProducts = products.filter((product: any) => product.isActive !== false).length
+  const activeProducts = products.filter((product: any) => product.active !== false).length
   const totalCategories = categories.length
 
-  // Calcular valor total del inventario
+  // Calcular valor total del inventario y estadísticas de stock basadas en movimientos
   const inventoryValue = products.reduce((total: number, product: any) => {
-    return total + (product.cost || 0) * (product.quantity || 0)
+    // Calcular cantidad actual basada en movimientos
+    const stockQuantity = product.Movements ? product.Movements.reduce((sum: number, movement: any) => {
+      if (movement.type === 'ENTRADA') return sum + movement.quantity
+      if (movement.type === 'SALIDA') return sum - movement.quantity
+      return sum
+    }, 0) : 0
+    
+    return total + (product.cost || 0) * (stockQuantity || 0)
   }, 0)
 
   // Calcular productos con bajo stock
-  const lowStockProducts = products.filter((product: any) => (product.quantity || 0) <= (product.minStock || 0)).length
+  const lowStockProducts = products.filter((product: any) => {
+    // Calcular cantidad actual basada en movimientos
+    const stockQuantity = product.Movements ? product.Movements.reduce((sum: number, movement: any) => {
+      if (movement.type === 'ENTRADA') return sum + movement.quantity
+      if (movement.type === 'SALIDA') return sum - movement.quantity
+      return sum
+    }, 0) : 0
+    
+    return stockQuantity <= (product.minStock || 0) && stockQuantity > 0
+  }).length
 
   // Calcular productos sin stock
-  const outOfStockProducts = products.filter((product: any) => (product.quantity || 0) === 0).length
+  const outOfStockProducts = products.filter((product: any) => {
+    // Calcular cantidad actual basada en movimientos
+    const stockQuantity = product.Movements ? product.Movements.reduce((sum: number, movement: any) => {
+      if (movement.type === 'ENTRADA') return sum + movement.quantity
+      if (movement.type === 'SALIDA') return sum - movement.quantity
+      return sum
+    }, 0) : 0
+    
+    return stockQuantity <= 0
+  }).length
 
   // Calcular productos con descuento
   const discountedProducts = products.filter((product: any) => (product.discount || 0) > 0).length
@@ -82,6 +103,8 @@ const ProductsPage = async ({ params }: { params: { agencyId: string } }) => {
 
   return (
     <div className="container mx-auto p-6">
+      {/* Componente de notificación de stock bajo */}
+      <StockAlertNotification products={products} threshold={10} minUnits={10} />
 
       <Tabs defaultValue="overview" className="w-full mb-6">
         <TabsList className="mb-4">

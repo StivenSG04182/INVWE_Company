@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import StockStatusBadge from "./stock-status-badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -20,7 +21,6 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-    AlertTriangle,
     Copy,
     Edit,
     Eye,
@@ -46,6 +46,13 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
     const router = useRouter()
     const searchParams = useSearchParams()
     const { toast } = useToast()
+    
+    // Función para obtener el nombre de la categoría por su ID
+    const getCategoryName = (categoryId: string) => {
+        // Convertir a string para asegurar una comparación consistente
+        const category = categories.find(cat => String(cat._id) === String(categoryId))
+        return category ? category.name : "Sin categoría"
+    }
 
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCategory, setSelectedCategory] = useState("all")
@@ -173,18 +180,6 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
         }
     }
 
-    // Obtener nombre de categoría
-    const getCategoryName = (categoryId: string) => {
-        const category = categories.find((cat) => cat._id === categoryId)
-        return category ? category.name : "Sin categoría"
-    }
-
-    // Obtener nombre de subcuenta
-    const getSubaccountName = (subaccountId: string) => {
-        const subaccount = subAccounts.find((sub) => sub._id === subaccountId)
-        return subaccount ? subaccount.name : "Sin subcuenta"
-    }
-
     return (
         <div className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between gap-4">
@@ -248,26 +243,27 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                             variant={viewMode === "table" ? "default" : "ghost"}
                             size="icon"
                             onClick={() => setViewMode("table")}
-                            className="rounded-r-none"
+                            className="rounded-l-none"
                         >
-                            <List className="h-4 w-4" />
+                            <Grid className="h-4 w-4" />
                         </Button>
                         <Separator orientation="vertical" className="h-full" />
                         <Button
                             variant={viewMode === "grid" ? "default" : "ghost"}
                             size="icon"
                             onClick={() => setViewMode("grid")}
-                            className="rounded-l-none"
+                            className="rounded-r-none"
                         >
-                            <Grid className="h-4 w-4" />
+                            <List className="h-4 w-4" />
                         </Button>
+
                     </div>
                 </div>
             </div>
 
             <div className="text-sm text-muted-foreground">{filteredProducts.length} productos encontrados</div>
 
-            {viewMode === "table" ? (
+            {viewMode === "grid" ? (
                 <Card>
                     <CardContent className="p-0">
                         <Table>
@@ -308,10 +304,22 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                                 <div className="text-xs text-muted-foreground truncate max-w-[200px]">
                                                     {product.description || "Sin descripción"}
                                                 </div>
+                                                {(product.brand || product.model) && (
+                                                    <div className="text-xs mt-1">
+                                                        {product.brand && <span className="font-medium">{product.brand}</span>}
+                                                        {product.brand && product.model && <span> - </span>}
+                                                        {product.model && <span>{product.model}</span>}
+                                                    </div>
+                                                )}
                                             </TableCell>
                                             <TableCell>
                                                 <div>{product.sku}</div>
                                                 {product.barcode && <div className="text-xs text-muted-foreground">{product.barcode}</div>}
+                                                {product.serialNumber && (
+                                                    <div className="text-xs text-muted-foreground mt-1">
+                                                        <span className="font-medium">S/N:</span> {product.serialNumber}
+                                                    </div>
+                                                )}
                                             </TableCell>
                                             <TableCell>
                                                 {product.categoryId ? (
@@ -320,14 +328,34 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                                         {getCategoryName(product.categoryId)}
                                                     </Badge>
                                                 ) : (
-                                                    <span className="text-muted-foreground text-xs">Sin categoría</span>
+                                                    <span className="text-muted-foreground text-xs"></span>
+                                                )}
+                                                {product.tags && product.tags.length > 0 && (
+                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                        {product.tags.slice(0, 2).map((tag: string, index: number) => (
+                                                            <Badge key={index} variant="outline" className="text-xs">{tag}</Badge>
+                                                        ))}
+                                                        {product.tags.length > 2 && (
+                                                            <Badge variant="outline" className="text-xs">+{product.tags.length - 2}</Badge>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <div className="font-medium">${product.price?.toFixed(2) || "0.00"}</div>
+                                                <div className="font-medium">${typeof product.price === 'number' ? product.price.toFixed(2) : "0.00"}</div>
+                                                {product.cost && (
+                                                    <div className="text-xs text-muted-foreground">
+                                                        Costo: ${typeof product.cost === 'number' ? product.cost.toFixed(2) : "0.00"}
+                                                    </div>
+                                                )}
                                                 {product.discount > 0 && (
-                                                    <div className="text-xs text-green-600 dark:text-green-500">
+                                                    <div className="text-xs text-green-600 dark:text-green-500 font-medium">
                                                         {product.discount}% descuento
+                                                        {product.discountStartDate && product.discountEndDate && (
+                                                            <span className="block text-[10px]">
+                                                                {new Date(product.discountStartDate).toLocaleDateString()} - {new Date(product.discountEndDate).toLocaleDateString()}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 )}
                                             </TableCell>
@@ -335,10 +363,22 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                                 <div className="font-medium">
                                                     {product.quantity || 0} {product.unit || "unidades"}
                                                 </div>
-                                                {(product.quantity || 0) <= (product.minStock || 0) && (
-                                                    <div className="text-xs text-amber-600 dark:text-amber-500 flex items-center justify-end">
-                                                        <AlertTriangle className="h-3 w-3 mr-1" />
-                                                        Stock bajo
+                                                <div className="flex justify-end mt-1">
+                                                    <StockStatusBadge product={product} className="text-xs" />
+                                                </div>
+                                                {product.minStock > 0 && (
+                                                    <div className="text-xs text-muted-foreground mt-1">
+                                                        Mín: {product.minStock} {product.unit || "unidades"}
+                                                    </div>
+                                                )}
+                                                {product.warehouseId && (
+                                                    <div className="text-xs text-muted-foreground mt-1">
+                                                        Ubicación: {product.locationId || "General"}
+                                                    </div>
+                                                )}
+                                                {product.batchNumber && (
+                                                    <div className="text-xs text-muted-foreground mt-1">
+                                                        Lote: {product.batchNumber}
                                                     </div>
                                                 )}
                                             </TableCell>
@@ -346,6 +386,19 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                                 <Badge variant={product.isActive !== false ? "default" : "secondary"}>
                                                     {product.isActive !== false ? "Activo" : "Inactivo"}
                                                 </Badge>
+                                                {product.expirationDate && (
+                                                    <div className="text-xs mt-1">
+                                                        <span className="font-medium">Vence:</span> {new Date(product.expirationDate).toLocaleDateString()}
+                                                    </div>
+                                                )}
+                                                {product.warrantyMonths > 0 && (
+                                                    <div className="text-xs mt-1">
+                                                        <span className="font-medium">Garantía:</span> {product.warrantyMonths} meses
+                                                    </div>
+                                                )}
+                                                <div className="text-xs mt-1">
+                                                    <span className="font-medium">Retornable:</span> {product.isReturnable ? "Sí" : "No"}
+                                                </div>
                                             </TableCell>
                                             <TableCell>
                                                 <DropdownMenu>
@@ -416,19 +469,22 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                         </div>
                                     )}
 
-                                    {(product.quantity || 0) <= (product.minStock || 0) && (
-                                        <div className="absolute top-2 left-2">
-                                            <Badge variant="destructive" className="px-2 py-1">
-                                                <AlertTriangle className="h-3 w-3 mr-1" />
-                                                Stock bajo
-                                            </Badge>
-                                        </div>
-                                    )}
+                                    <div className="absolute top-2 left-2">
+                                        <StockStatusBadge product={product} className="px-2 py-1" />
+                                    </div>
 
                                     {product.discount > 0 && (
                                         <div className="absolute top-2 right-2">
                                             <Badge variant="default" className="bg-green-600 hover:bg-green-700 px-2 py-1">
                                                 {product.discount}% descuento
+                                            </Badge>
+                                        </div>
+                                    )}
+                                    
+                                    {product.expirationDate && new Date(product.expirationDate) < new Date(new Date().setMonth(new Date().getMonth() + 3)) && (
+                                        <div className="absolute bottom-2 right-2">
+                                            <Badge variant="destructive" className="px-2 py-1">
+                                                Vence: {new Date(product.expirationDate).toLocaleDateString()}
                                             </Badge>
                                         </div>
                                     )}
@@ -438,24 +494,51 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                     <div className="mb-2">
                                         <h3 className="font-medium truncate">{product.name}</h3>
                                         <p className="text-xs text-muted-foreground truncate">{product.description || "Sin descripción"}</p>
+                                        {(product.brand || product.model) && (
+                                            <p className="text-xs mt-1">
+                                                {product.brand && <span className="font-medium">{product.brand}</span>}
+                                                {product.brand && product.model && <span> - </span>}
+                                                {product.model && <span>{product.model}</span>}
+                                            </p>
+                                        )}
+                                        {product.serialNumber && (
+                                            <p className="text-xs mt-1">
+                                                <span className="font-medium">S/N:</span> {product.serialNumber}
+                                            </p>
+                                        )}
                                     </div>
 
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="text-sm">
-                                            <span className="font-medium">${product.price?.toFixed(2) || "0.00"}</span>
+                                            <span className="font-medium">${typeof product.price === 'number' ? product.price.toFixed(2) : "0.00"}</span>
                                             {product.discount > 0 && (
                                                 <span className="text-xs text-muted-foreground line-through ml-1">
-                                                    ${((product.price || 0) / (1 - (product.discount || 0) / 100)).toFixed(2)}
+                                                    ${typeof product.price === 'number' ? (product.price / (1 - (product.discount || 0) / 100)).toFixed(2) : "0.00"}
                                                 </span>
+                                            )}
+                                            {product.cost && (
+                                                <div className="text-xs text-muted-foreground">
+                                                    Costo: ${typeof product.cost === 'number' ? product.cost.toFixed(2) : "0.00"}
+                                                </div>
+                                            )}
+                                            {product.discount > 0 && product.discountStartDate && product.discountEndDate && (
+                                                <div className="text-xs text-green-600">
+                                                    {new Date(product.discountStartDate).toLocaleDateString()} - {new Date(product.discountEndDate).toLocaleDateString()}
+                                                </div>
                                             )}
                                         </div>
                                         <div className="text-sm">
                                             <span className="text-muted-foreground">Stock:</span>{" "}
-                                            <span className="font-medium">{product.quantity || 0}</span>
+                                            <span className="font-medium">{product.quantity || 0} {product.unit || ""}</span>
+                                            {product.minStock > 0 && (
+                                                <div className="text-xs text-muted-foreground">
+                                                    Mín: {product.minStock}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center justify-between mb-3">
+                                    <div className="flex flex-wrap gap-1 mb-2">
                                         <Badge variant="outline" className="font-normal text-xs">
                                             <Tag className="h-3 w-3 mr-1" />
                                             {product.categoryId ? getCategoryName(product.categoryId) : "Sin categoría"}
@@ -463,7 +546,31 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                         <Badge variant={product.isActive !== false ? "default" : "secondary"} className="text-xs">
                                             {product.isActive !== false ? "Activo" : "Inactivo"}
                                         </Badge>
+                                        {product.warrantyMonths > 0 && (
+                                            <Badge variant="outline" className="text-xs">
+                                                Garantía: {product.warrantyMonths}m
+                                            </Badge>
+                                        )}
                                     </div>
+                                    
+                                    {product.tags && product.tags.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mb-3">
+                                            {product.tags.slice(0, 3).map((tag: string, index: number) => (
+                                                <Badge key={index} variant="outline" className="text-xs bg-muted/50">{tag}</Badge>
+                                            ))}
+                                            {product.tags.length > 3 && (
+                                                <Badge variant="outline" className="text-xs bg-muted/50">+{product.tags.length - 3}</Badge>
+                                            )}
+                                        </div>
+                                    )}
+                                    
+                                    {(product.batchNumber || product.locationId) && (
+                                        <div className="text-xs text-muted-foreground mb-3">
+                                            {product.batchNumber && <span>Lote: {product.batchNumber}</span>}
+                                            {product.batchNumber && product.locationId && <span> | </span>}
+                                            {product.locationId && <span>Ubicación: {product.locationId}</span>}
+                                        </div>
+                                    )}
 
                                     <div className="flex justify-between gap-2">
                                         <Button variant="outline" size="sm" className="flex-1" asChild>
@@ -477,7 +584,7 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                                 <Edit className="h-3.5 w-3.5 mr-1" />
                                                 Editar
                                             </Link>
-                                        </Button>
+                                        </Button> 
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="outline" size="icon" className="h-8 w-8">

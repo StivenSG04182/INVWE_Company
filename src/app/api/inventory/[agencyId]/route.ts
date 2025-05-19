@@ -26,10 +26,18 @@ export async function GET(req: NextRequest, { params }: { params: { agencyId: st
         const url = new URL(req.url);
         const type = url.searchParams.get('type');
 
+        // Obtener parámetros adicionales de filtrado
+        const categoryId = url.searchParams.get('categoryId');
+        const search = url.searchParams.get('search');
+        const areaId = url.searchParams.get('areaId');
+        
+        console.log('Parámetros de búsqueda:', { type, categoryId, search, areaId });
+        
         let data;
         switch (type) {
             case 'products':
-                data = await ProductService.getProducts(agencyId);
+                // Usar el método mejorado que incluye información de categorías y stock
+                data = await ProductService.getProducts(agencyId, { categoryId, search, areaId });
                 break;
             case 'areas':
                 data = await AreaService.getAreas(agencyId);
@@ -42,6 +50,11 @@ export async function GET(req: NextRequest, { params }: { params: { agencyId: st
                 break;
             case 'movements':
                 data = await MovementService.getMovements(agencyId);
+                break;
+            case 'categories':
+                // Agregar soporte para obtener categorías
+                const { CategoryService } = await import('@/lib/services/inventory-service');
+                data = await CategoryService.getCategories(agencyId);
                 break;
             default:
                 return NextResponse.json({ success: false, error: 'Tipo de datos no válido' }, { status: 400 });

@@ -14,19 +14,6 @@ const EditProductPage = async ({ params }: { params: { agencyId: string; product
 
     // Obtener producto de MongoDB
     let product = null
-    try {
-        // Importar el serializador para convertir objetos MongoDB a objetos planos
-        const { serializeMongoObject } = await import("@/lib/serializers")
-
-        // Obtener y serializar producto
-        const rawProduct = await ProductService.getProductById(agencyId, productId)
-
-        // Serializar para eliminar métodos y propiedades no serializables
-        product = serializeMongoObject(rawProduct)
-    } catch (error) {
-        console.error("Error al cargar datos del producto:", error)
-        return redirect(`/agency/${agencyId}/products`)
-    }
 
     if (!product) {
         return redirect(`/agency/${agencyId}/products`)

@@ -74,8 +74,10 @@ export async function POST(
             return new NextResponse('No autorizado', { status: 401 });
         }
 
-        const { name, subaccountId } = await req.json();
+        const { name, subaccountId, subAccountId } = await req.json();
         categoryName = name; // Guardar el nombre para usarlo en el bloque catch
+        // Usar subAccountId si viene directamente, o convertir subaccountId a subAccountId para coincidir con el modelo de Prisma
+        const finalSubAccountId = subAccountId || subaccountId;
 
         if (!name) {
             return new NextResponse('Nombre de categoría requerido', { status: 400 });
@@ -86,7 +88,7 @@ export async function POST(
             where: {
                 name,
                 agencyId,
-                subAccountId: subaccountId || undefined,
+                subAccountId: finalSubAccountId || undefined,
             },
         });
 
@@ -102,26 +104,10 @@ export async function POST(
             data: {
                 name,
                 agencyId,
-                subAccountId: subaccountId || undefined,
+                subAccountId: subAccountId || undefined,
             },
         });
 
-        // También guardar en MongoDB para mantener sincronización
-        try {
-            const { connectToDatabase } = await import('@/lib/mongodb');
-            const { db: mongodb } = await connectToDatabase();
-            
-            await mongodb.collection('categories').insertOne({
-                name,
-                agencyId,
-                subaccountId: subaccountId || undefined, // Nota: en minúscula para MongoDB
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
-        } catch (mongoError) {
-            console.error('Error al guardar categoría en MongoDB:', mongoError);
-            // Continuamos aunque falle MongoDB para no interrumpir el flujo
-        }
 
         return NextResponse.json({ success: true, data: newCategory });
     } catch (error) {
