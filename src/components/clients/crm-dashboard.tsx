@@ -30,80 +30,25 @@ export default function CrmDashboard({
     selectedClient,
     isLoading,
 }: {
-    clients: any[]
+    clients: any[] // Ahora recibe clientes reales de la base de datos
     selectedClient: any
     isLoading: boolean
 }) {
     const [activeTab, setActiveTab] = useState("overview")
     const [filterStatus, setFilterStatus] = useState("all")
 
-    // Mock data for opportunities
-    const opportunities = [
-        {
-            id: "opp1",
-            clientId: "client1",
-            title: "Renovación de contrato anual",
-            value: 5000000,
-            stage: "negotiation",
-            probability: 75,
-            expectedCloseDate: "2023-11-30",
-            assignedTo: "Ana Martínez",
-            createdAt: "2023-10-05",
-        },
-        {
-            id: "opp2",
-            clientId: "client3",
-            title: "Ampliación de servicios",
-            value: 3500000,
-            stage: "proposal",
-            probability: 50,
-            expectedCloseDate: "2023-12-15",
-            assignedTo: "Carlos Rodríguez",
-            createdAt: "2023-10-10",
-        },
-        {
-            id: "opp3",
-            clientId: "client5",
-            title: "Proyecto de implementación",
-            value: 12000000,
-            stage: "qualified",
-            probability: 30,
-            expectedCloseDate: "2024-01-20",
-            assignedTo: "Laura Gómez",
-            createdAt: "2023-10-12",
-        },
-        {
-            id: "opp4",
-            clientId: "client2",
-            title: "Venta de equipos",
-            value: 1800000,
-            stage: "closed",
-            probability: 100,
-            expectedCloseDate: "2023-10-25",
-            assignedTo: "Miguel Torres",
-            createdAt: "2023-09-28",
-        },
-        {
-            id: "opp5",
-            clientId: "client4",
-            title: "Servicio de consultoría",
-            value: 2500000,
-            stage: "prospect",
-            probability: 20,
-            expectedCloseDate: "2024-02-10",
-            assignedTo: "Ana Martínez",
-            createdAt: "2023-10-15",
-        },
-    ]
+    // Usar oportunidades reales del cliente seleccionado
+    // Si no hay oportunidades reales, usamos un array vacío
+    const opportunities = selectedClient?.Opportunities || []
 
-    // Filter opportunities by stage if needed
+    // Filter opportunities by status if needed
     const filteredOpportunities = opportunities.filter((opp) => {
         if (filterStatus === "all") return true
-        return opp.stage === filterStatus
+        return opp.status?.toLowerCase() === filterStatus
     })
 
-    // Get opportunities for selected client
-    const clientOpportunities = selectedClient ? opportunities.filter((opp) => opp.clientId === selectedClient.id) : []
+    // Ya no necesitamos filtrar por cliente, ya que opportunities ya contiene solo las del cliente seleccionado
+    const clientOpportunities = opportunities
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP" }).format(value)
@@ -115,40 +60,40 @@ export default function CrmDashboard({
         return new Intl.DateTimeFormat("es-CO", { year: "numeric", month: "short", day: "numeric" }).format(date)
     }
 
-    const getStageName = (stage: string) => {
-        const stageNames: Record<string, string> = {
-            prospect: "Prospecto",
+    const getStageName = (status: string) => {
+        const statusNames: Record<string, string> = {
+            new: "Nuevo",
             qualified: "Calificado",
             proposal: "Propuesta",
             negotiation: "Negociación",
-            closed: "Cerrado",
+            won: "Ganado",
             lost: "Perdido",
         }
-        return stageNames[stage] || stage
+        return statusNames[status?.toLowerCase()] || status
     }
 
-    const getStageColor = (stage: string) => {
-        const stageColors: Record<string, string> = {
-            prospect: "bg-blue-500",
+    const getStageColor = (status: string) => {
+        const statusColors: Record<string, string> = {
+            new: "bg-blue-500",
             qualified: "bg-purple-500",
             proposal: "bg-amber-500",
             negotiation: "bg-green-500",
-            closed: "bg-emerald-500",
+            won: "bg-emerald-500",
             lost: "bg-red-500",
         }
-        return stageColors[stage] || "bg-gray-500"
+        return statusColors[status?.toLowerCase()] || "bg-gray-500"
     }
 
-    const getBadgeVariant = (stage: string): "default" | "secondary" | "destructive" | "outline" => {
-        const stageVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-            prospect: "outline",
+    const getBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+        const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+            new: "outline",
             qualified: "secondary",
             proposal: "secondary",
             negotiation: "default",
-            closed: "default",
+            won: "default",
             lost: "destructive",
         }
-        return stageVariants[stage] || "outline"
+        return statusVariants[status?.toLowerCase()] || "outline"
     }
 
     if (isLoading) {
@@ -344,25 +289,25 @@ export default function CrmDashboard({
                                                     >
                                                         <div>
                                                             <div className="flex items-center gap-2">
-                                                                <div className={`h-3 w-3 rounded-full ${getStageColor(opportunity.stage)}`}></div>
-                                                                <h3 className="font-medium">{opportunity.title}</h3>
-                                                                <Badge variant={getBadgeVariant(opportunity.stage)}>
-                                                                    {getStageName(opportunity.stage)}
-                                                                </Badge>
+                                                                <div className={`h-3 w-3 rounded-full ${getStageColor(opportunity.status)}`}></div>
+                                                <h3 className="font-medium">{opportunity.title}</h3>
+                                                <Badge variant={getBadgeVariant(opportunity.status)}>
+                                                    {getStageName(opportunity.status)}
+                                                </Badge>
                                                             </div>
                                                             <div className="flex flex-wrap gap-4 mt-2 text-sm">
                                                                 <div className="flex items-center gap-1">
-                                                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                                                                    <span>{formatCurrency(opportunity.value)}</span>
-                                                                </div>
-                                                                <div className="flex items-center gap-1">
-                                                                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                                                                    <span>Cierre: {formatDate(opportunity.expectedCloseDate)}</span>
-                                                                </div>
-                                                                <div className="flex items-center gap-1">
-                                                                    <User className="h-4 w-4 text-muted-foreground" />
-                                                                    <span>Asignado a: {opportunity.assignedTo}</span>
-                                                                </div>
+                                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                                    <span>{formatCurrency(Number(opportunity.value))}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                                    <span>Cierre: {opportunity.dueDate ? formatDate(opportunity.dueDate) : 'No definido'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <User className="h-4 w-4 text-muted-foreground" />
+                                                    <span>Asignado a: {opportunity.AssignedUser?.name || 'Sin asignar'}</span>
+                                                </div>
                                                             </div>
                                                         </div>
                                                         <div className="flex flex-col items-end justify-center">

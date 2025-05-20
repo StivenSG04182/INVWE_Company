@@ -162,26 +162,23 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Cargar subcuentas
-                const subaccountsResponse = await fetch(`/api/agency/${agencyId}/subaccounts`, {
-                    credentials: "include",
-                })
-                const subaccountsData = await subaccountsResponse.json()
-                if (subaccountsData.success) {
-                    setSubaccounts(subaccountsData.data || [])
+                // Importar las funciones del servidor dinámicamente
+                const { getAgencyDetails, getCategories } = await import("@/lib/queries2")
+                
+                // Cargar detalles de la agencia para obtener subcuentas
+                const agencyDetails = await getAgencyDetails(agencyId)
+                if (agencyDetails && agencyDetails.SubAccount) {
+                    setSubaccounts(agencyDetails.SubAccount || [])
                 } else {
-                    console.error("Error al cargar subcuentas:", subaccountsData.error)
+                    console.error("Error al cargar subcuentas: No se encontraron subcuentas")
                 }
 
                 // Cargar categorías
-                const categoriesResponse = await fetch(`/api/inventory/${agencyId}/categories`, {
-                    credentials: "include",
-                })
-                const categoriesData = await categoriesResponse.json()
-                if (categoriesData.success) {
-                    setCategories(categoriesData.data || [])
+                const categoriesData = await getCategories(agencyId)
+                if (categoriesData) {
+                    setCategories(categoriesData || [])
                 } else {
-                    console.error("Error al cargar categorías:", categoriesData.error)
+                    console.error("Error al cargar categorías: No se encontraron categorías")
                 }
             } catch (error) {
                 console.error("Error al cargar datos:", error)
@@ -322,24 +319,20 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
         }
 
         try {
-            const endpoint = `/api/inventory/${agencyId}`
-            const method = isEditing ? "PUT" : "POST"
-            const body = isEditing
-                ? { type: "product", id: product?._id, data: { ...formData, agencyId } }
-                : { type: "product", data: { ...formData, agencyId } }
+            // Importar las funciones del servidor dinámicamente
+            const { createProduct, updateProduct } = await import("@/lib/queries2")
+            
+            let result;
+            
+            if (isEditing && product?._id) {
+                // Actualizar producto existente
+                result = await updateProduct(product._id, { ...formData, agencyId })
+            } else {
+                // Crear nuevo producto
+                result = await createProduct({ ...formData, agencyId })
+            }
 
-            const response = await fetch(endpoint, {
-                method,
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(body),
-                credentials: "include", // Incluir cookies y credenciales de autenticación
-            })
-
-            const result = await response.json()
-
-            if (result.success) {
+            if (result) {
                 // Si es un producto nuevo y tiene cantidad inicial, crear un registro de movimiento
                 if (!isEditing && formData.quantity > 0) {
                     try {
@@ -349,7 +342,7 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
                             type: "ENTRADA",
                             quantity: formData.quantity,
                             notes: "Stock inicial al crear el producto",
-                            productId: result.data._id,
+                            productId: result.id,
                             areaId: formData.locationId || formData.warehouseId, // Usar locationId o warehouseId como areaId
                             agencyId: agencyId,
                             subAccountId: formData.subaccountId
@@ -374,9 +367,9 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
                     description: `El producto ${formData.name} ha sido ${isEditing ? "actualizado" : "creado"} exitosamente.`,
                 })
                 router.refresh()
-                router.push(`/agency/${agencyId}/products/${isEditing ? product?._id : result.data._id}`)
+                router.push(`/agency/${agencyId}/products/${isEditing ? product?._id : result.id}`)
             } else {
-                throw new Error(result.error || "Error al procesar la solicitud")
+                throw new Error("Error al procesar la solicitud")
             }
         } catch (error) {
             console.error("Error al guardar el producto:", error)

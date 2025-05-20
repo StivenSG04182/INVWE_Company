@@ -55,83 +55,19 @@ export default function UnifiedClientsDashboard({ agencyId, user }: { agencyId: 
     }, [activeTab, selectedClientId, pathname, router, searchParams])
 
     useEffect(() => {
-        // Simulate loading client data
+        // Cargar datos reales de clientes
         const loadClients = async () => {
             try {
-                // In a real implementation, this would be an API call
-                // await ClientService.getClients(agencyId)
-
-                // Mock data for demonstration
-                setTimeout(() => {
-                    setClients([
-                        {
-                            id: "client1",
-                            name: "Empresa ABC",
-                            type: "empresa",
-                            email: "contacto@empresaabc.com",
-                            phone: "+57 300 123 4567",
-                            address: "Calle 123 #45-67, Bogotá",
-                            totalPurchases: 12500000,
-                            lastPurchase: "2023-10-15",
-                            status: "active",
-                            contactPerson: "Juan Pérez",
-                            createdAt: "2023-01-15",
-                        },
-                        {
-                            id: "client2",
-                            name: "María González",
-                            type: "individual",
-                            email: "maria.gonzalez@email.com",
-                            phone: "+57 311 987 6543",
-                            address: "Carrera 45 #12-34, Medellín",
-                            totalPurchases: 3500000,
-                            lastPurchase: "2023-09-28",
-                            status: "active",
-                            contactPerson: null,
-                            createdAt: "2023-03-22",
-                        },
-                        {
-                            id: "client3",
-                            name: "Distribuidora XYZ",
-                            type: "empresa",
-                            email: "info@distribuidoraxyz.com",
-                            phone: "+57 320 456 7890",
-                            address: "Avenida 67 #89-12, Cali",
-                            totalPurchases: 8750000,
-                            lastPurchase: "2023-10-05",
-                            status: "active",
-                            contactPerson: "Ana Martínez",
-                            createdAt: "2023-02-10",
-                        },
-                        {
-                            id: "client4",
-                            name: "Carlos Rodríguez",
-                            type: "individual",
-                            email: "carlos.rodriguez@email.com",
-                            phone: "+57 315 234 5678",
-                            address: "Calle 78 #23-45, Barranquilla",
-                            totalPurchases: 1200000,
-                            lastPurchase: "2023-08-17",
-                            status: "inactive",
-                            contactPerson: null,
-                            createdAt: "2023-04-05",
-                        },
-                        {
-                            id: "client5",
-                            name: "Tecnología Moderna S.A.",
-                            type: "empresa",
-                            email: "contacto@tecnomodern.com",
-                            phone: "+57 301 876 5432",
-                            address: "Carrera 34 #56-78, Bogotá",
-                            totalPurchases: 15800000,
-                            lastPurchase: "2023-10-12",
-                            status: "active",
-                            contactPerson: "Laura Gómez",
-                            createdAt: "2023-01-30",
-                        },
-                    ])
-                    setIsLoading(false)
-                }, 1000)
+                setIsLoading(true)
+                // Importar la función getClients de queries2.ts
+                const { getClients } = await import('@/lib/queries2')
+                
+                // Obtener los clientes reales de la base de datos
+                const clientsData = await getClients(agencyId)
+                
+                // Establecer los clientes obtenidos en el estado
+                setClients(clientsData)
+                setIsLoading(false)
             } catch (error) {
                 console.error("Error loading clients:", error)
                 setIsLoading(false)
@@ -149,19 +85,22 @@ export default function UnifiedClientsDashboard({ agencyId, user }: { agencyId: 
         }
     }
 
-    // Function to add a new client
-    const handleAddClient = (clientData: any) => {
-        const newClient = {
-            id: `client${clients.length + 1}`,
-            ...clientData,
-            totalPurchases: 0,
-            lastPurchase: null,
-            status: "active",
-            createdAt: new Date().toISOString().split("T")[0],
+    // Function to add a new client using real database function
+    const handleAddClient = async (clientData: any) => {
+        try {
+            // Importar la función createClient de queries2.ts
+            const { createClient } = await import('@/lib/queries2')
+            
+            // Crear el cliente usando la función real
+            const newClient = await createClient(agencyId, clientData)
+            
+            // Actualizar la lista de clientes
+            setClients([...clients, newClient])
+            return newClient
+        } catch (error) {
+            console.error("Error al crear cliente:", error)
+            return null
         }
-
-        setClients([...clients, newClient])
-        return newClient
     }
 
     const tabTitles = {

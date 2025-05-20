@@ -1,4 +1,5 @@
 import { getAuthUserDetails } from "@/lib/queries"
+import { getProviders } from "@/lib/queries2"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -32,8 +33,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ProviderService } from "@/lib/services/inventory-service"
-
 
 const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
   const user = await getAuthUserDetails()
@@ -43,14 +42,14 @@ const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
   if (!user.Agency) {
     return redirect("/agency")
   }
-
+  
+  // Obtener proveedores usando la nueva función del servidor
+  const providers = await getProviders(agencyId)
 
   // Calcular estadísticas
   const totalProviders = providers.length
   const activeProviders = providers.filter((p) => p.active === true).length
   
-  // Nota: pendingOrders no está en el modelo de datos actual, se podría implementar
-  // en el futuro consultando los movimientos pendientes relacionados con cada proveedor
   const pendingOrders = 0
 
   return (

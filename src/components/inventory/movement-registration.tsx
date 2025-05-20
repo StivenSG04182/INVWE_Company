@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { ArrowLeft, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Save, Package, AlertTriangle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+// Nota: Las funciones de queries2.ts se importan dinámicamente en los efectos y handlers
 
 interface MovementRegistrationProps {
     agencyId: string
@@ -162,10 +163,10 @@ export default function MovementRegistration({
         console.log("Validaciones completadas, iniciando proceso de guardado")
 
         try {
-            // Importar el servicio de movimientos
-            console.log("Importando MovementService...")
-            const { MovementService } = await import("@/lib/services/inventory-service")
-            console.log("MovementService importado correctamente")
+            // Importar la función createMovement de queries2.ts
+            console.log("Importando createMovement...")
+            const { createMovement } = await import("@/lib/queries2")
+            console.log("createMovement importado correctamente")
             
             // Obtener el subaccountId del producto seleccionado
             const selectedProduct = formData.productId ? products.find(p => p.id === formData.productId) : null
@@ -186,7 +187,7 @@ export default function MovementRegistration({
                 destinationAreaId: formData.type === "transferencia" ? formData.destinationAreaId : undefined,
                 quantity: formData.quantity,
                 notes: formData.notes,
-                date: formData.date,
+                date: new Date(formData.date),
                 agencyId: agencyId,
                 // Usar el subaccountId proporcionado o buscar en el producto seleccionado
                 subaccountId: finalSubaccountId
@@ -210,10 +211,10 @@ export default function MovementRegistration({
             });
             
             // Guardar el movimiento en la base de datos
-            console.log("Llamando a MovementService.createMovement...")
+            console.log("Llamando a createMovement...")
             let result;
             try {
-                result = await MovementService.createMovement(movementData)
+                result = await createMovement(movementData)
                 console.log("Movimiento registrado exitosamente:", result)
                 
                 // Actualizar el estado del stock después de registrar el movimiento

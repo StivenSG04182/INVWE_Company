@@ -25,15 +25,16 @@ import {
     Smile,
     ThumbsUp,
     User,
+    DollarSign,
 } from "lucide-react"
-import { DollarSign } from "lucide-react" 
+
 
 export default function PqrChat({
     clients,
     selectedClient,
     isLoading,
 }: {
-    clients: any[]
+    clients: any[] // Ahora recibe clientes reales de la base de datos
     selectedClient: any
     isLoading: boolean
 }) {
@@ -44,168 +45,49 @@ export default function PqrChat({
     const [selectedTicket, setSelectedTicket] = useState<any>(null)
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
-    // Mock data for tickets
-    const [tickets, setTickets] = useState<any[]>([
-        {
-            id: "ticket1",
-            clientId: "client1",
-            subject: "Problema con facturación",
-            status: "open",
-            priority: "high",
-            category: "billing",
-            createdAt: "2023-10-15T14:30:00",
-            lastUpdated: "2023-10-16T09:15:00",
-            assignedTo: "Ana Martínez",
-            messages: [
-                {
-                    id: "msg1",
-                    sender: "client",
-                    content:
-                        "Buenos días, he notado un error en mi última factura. El monto no coincide con lo acordado en el contrato.",
-                    timestamp: "2023-10-15T14:30:00",
-                    read: true,
-                },
-                {
-                    id: "msg2",
-                    sender: "agent",
-                    content:
-                        "Hola, gracias por contactarnos. Lamento el inconveniente con su factura. ¿Podría proporcionarme el número de factura para revisarla?",
-                    timestamp: "2023-10-15T15:45:00",
-                    read: true,
-                    agentName: "Ana Martínez",
-                },
-                {
-                    id: "msg3",
-                    sender: "client",
-                    content:
-                        "Claro, el número de factura es F-2023-10542. Según el contrato, el precio debería ser $1,500,000 pero en la factura aparece $1,750,000.",
-                    timestamp: "2023-10-15T16:20:00",
-                    read: true,
-                },
-                {
-                    id: "msg4",
-                    sender: "agent",
-                    content:
-                        "Gracias por la información. He revisado la factura y efectivamente hay un error en el monto. Procederé a generar una nota crédito y emitir una nueva factura con el monto correcto. Le enviaré ambos documentos por correo electrónico en las próximas 24 horas.",
-                    timestamp: "2023-10-16T09:15:00",
-                    read: true,
-                    agentName: "Ana Martínez",
-                },
-            ],
-        },
-        {
-            id: "ticket2",
-            clientId: "client3",
-            subject: "Solicitud de información sobre nuevos servicios",
-            status: "open",
-            priority: "medium",
-            category: "information",
-            createdAt: "2023-10-14T11:20:00",
-            lastUpdated: "2023-10-14T13:45:00",
-            assignedTo: "Carlos Rodríguez",
-            messages: [
-                {
-                    id: "msg1",
-                    sender: "client",
-                    content:
-                        "Hola, estoy interesado en conocer más sobre los nuevos servicios de consultoría que ofrecen. ¿Podrían enviarme información detallada?",
-                    timestamp: "2023-10-14T11:20:00",
-                    read: true,
-                },
-                {
-                    id: "msg2",
-                    sender: "agent",
-                    content:
-                        "Hola, gracias por su interés en nuestros servicios. Con gusto le enviaré información detallada sobre nuestros servicios de consultoría. ¿Hay algún área específica que le interese más?",
-                    timestamp: "2023-10-14T13:45:00",
-                    read: true,
-                    agentName: "Carlos Rodríguez",
-                },
-            ],
-        },
-        {
-            id: "ticket3",
-            clientId: "client5",
-            subject: "Problema técnico con la plataforma",
-            status: "closed",
-            priority: "high",
-            category: "technical",
-            createdAt: "2023-10-10T09:30:00",
-            lastUpdated: "2023-10-12T16:20:00",
-            assignedTo: "Laura Gómez",
-            messages: [
-                {
-                    id: "msg1",
-                    sender: "client",
-                    content:
-                        "Estamos experimentando problemas para acceder a la plataforma. Aparece un error de conexión cada vez que intentamos ingresar.",
-                    timestamp: "2023-10-10T09:30:00",
-                    read: true,
-                },
-                {
-                    id: "msg2",
-                    sender: "agent",
-                    content:
-                        "Lamento los inconvenientes. Estamos experimentando algunos problemas técnicos que ya están siendo atendidos por nuestro equipo. ¿Podría indicarme qué mensaje de error específico está recibiendo?",
-                    timestamp: "2023-10-10T10:15:00",
-                    read: true,
-                    agentName: "Laura Gómez",
-                },
-                {
-                    id: "msg3",
-                    sender: "client",
-                    content:
-                        "El error dice: 'Error de conexión: No se puede establecer una conexión segura con el servidor'. Adjunto una captura de pantalla.",
-                    timestamp: "2023-10-10T11:30:00",
-                    read: true,
-                    attachments: [{ name: "error-screenshot.png", type: "image/png", size: "245 KB" }],
-                },
-                {
-                    id: "msg4",
-                    sender: "agent",
-                    content:
-                        "Gracias por la información. Hemos identificado el problema y estamos trabajando en solucionarlo. Esperamos tener todo resuelto en las próximas horas. Le mantendré informado.",
-                    timestamp: "2023-10-11T09:45:00",
-                    read: true,
-                    agentName: "Laura Gómez",
-                },
-                {
-                    id: "msg5",
-                    sender: "agent",
-                    content:
-                        "Buenas noticias, el problema ha sido resuelto. Por favor intente acceder nuevamente a la plataforma y confirme si todo funciona correctamente.",
-                    timestamp: "2023-10-12T14:30:00",
-                    read: true,
-                    agentName: "Laura Gómez",
-                },
-                {
-                    id: "msg6",
-                    sender: "client",
-                    content:
-                        "Acabo de verificar y efectivamente ya podemos acceder a la plataforma sin problemas. Gracias por la pronta solución.",
-                    timestamp: "2023-10-12T15:45:00",
-                    read: true,
-                },
-                {
-                    id: "msg7",
-                    sender: "agent",
-                    content:
-                        "Excelente, me alegra que todo esté funcionando correctamente. Si tiene algún otro inconveniente, no dude en contactarnos. ¿Hay algo más en lo que pueda ayudarle?",
-                    timestamp: "2023-10-12T16:20:00",
-                    read: true,
-                    agentName: "Laura Gómez",
-                },
-            ],
-        },
-    ])
+    // Usar PQRs reales del cliente seleccionado
+    // Transformamos los PQRs a un formato compatible con la interfaz de tickets
+    const [tickets, setTickets] = useState<any[]>([])
+    
+    // Inicializar tickets con los PQRs del cliente seleccionado
+    useEffect(() => {
+        if (selectedClient?.PQRs && selectedClient.PQRs.length > 0) {
+            // Transformar PQRs a formato de tickets
+            const formattedTickets = selectedClient.PQRs.map((pqr: any) => ({
+                id: pqr.id,
+                clientId: pqr.clientId,
+                subject: pqr.title,
+                status: pqr.status.toLowerCase(),
+                priority: pqr.priority.toLowerCase(),
+                category: pqr.type.toLowerCase(),
+                createdAt: pqr.createdAt,
+                lastUpdated: pqr.updatedAt,
+                assignedTo: pqr.AssignedUser?.name || 'Sin asignar',
+                // Creamos un mensaje inicial con la descripción del PQR
+                messages: [
+                    {
+                        id: `msg-${pqr.id}-1`,
+                        sender: "client",
+                        content: pqr.description,
+                        timestamp: pqr.createdAt,
+                        read: true,
+                    }
+                ],
+            }))
+            setTickets(formattedTickets)
+        } else {
+            // Si no hay PQRs, establecer tickets como array vacío
+            setTickets([])
+        }
+    }, [selectedClient])
 
-    // Filter tickets by client and status
+    // Filter tickets by status and search term
+    // Ya no necesitamos filtrar por cliente, ya que tickets ya contiene solo los del cliente seleccionado
     const filteredTickets = tickets.filter((ticket) => {
-        const matchesClient = selectedClient ? ticket.clientId === selectedClient.id : true
         const matchesStatus = filterStatus === "all" ? true : ticket.status === filterStatus
         const matchesSearch = ticket.subject.toLowerCase().includes(searchTerm.toLowerCase())
 
-        return matchesClient && matchesStatus && matchesSearch
+        return matchesStatus && matchesSearch
     })
 
     // Auto scroll to bottom of messages

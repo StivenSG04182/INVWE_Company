@@ -9,17 +9,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { createProvider, updateProvider } from '@/lib/queries2';
 
 interface ProviderFormProps {
   agencyId: string;
   provider?: {
     _id?: string;
+    id?: string;
     name: string;
     contactName?: string;
     email?: string;
     phone?: string;
     address?: string;
     subaccountId?: string;
+    subAccountId?: string;
   };
   isEditing?: boolean;
 }
@@ -35,7 +38,7 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
     email: provider?.email || '',
     phone: provider?.phone || '',
     address: provider?.address || '',
-    subaccountId: provider?.subaccountId || '',
+    subaccountId: provider?.subaccountId || provider?.subAccountId || '',
   });
 
   // Cargar subcuentas al montar el componente
@@ -95,24 +98,28 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
     }
 
     try {
-      const endpoint = `/api/inventory/${agencyId}`;
-      const method = isEditing ? 'PUT' : 'POST';
-      const body = isEditing
-        ? { type: 'provider', id: provider?._id, data: { ...formData, agencyId } }
-        : { type: 'provider', data: { ...formData, agencyId } };
+      // Preparar datos para enviar
+      const providerData = {
+        ...formData,
+        agencyId,
+        active: true,
+      };
 
-      const response = await fetch(endpoint, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-        credentials: 'include', // Incluir cookies y credenciales de autenticación
-      });
+      let result;
+      
+      if (isEditing && provider) {
+        // Usar el ID correcto del proveedor (puede estar en _id o id)
+        const providerId = provider._id || provider.id;
+        if (!providerId) {
+          throw new Error('ID de proveedor no encontrado');
+        }
+        
+        result = await updateProvider(providerId, providerData);
+      } else {
+        result = await createProvider(providerData);
+      }
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (result) {
         toast({
           title: isEditing ? 'Proveedor actualizado' : 'Proveedor creado',
           description: `El proveedor ${formData.name} ha sido ${isEditing ? 'actualizado' : 'creado'} exitosamente.`,
@@ -120,7 +127,7 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
         router.refresh();
         router.push(`/agency/${agencyId}/providers`);
       } else {
-        throw new Error(result.error || 'Error al procesar la solicitud');
+        throw new Error('Error al procesar la solicitud');
       }
     } catch (error) {
       console.error('Error al guardar el proveedor:', error);
@@ -242,4 +249,5 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
       </form>
     </Card>
   );
+}
 }

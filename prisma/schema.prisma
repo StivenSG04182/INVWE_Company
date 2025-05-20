@@ -900,26 +900,30 @@ model Area {
 }
 
 model Movement {
-  id           String        @id @default(uuid())
-  type         MovementType? // null = stock, otro = movimiento
-  quantity     Int
-  notes        String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  productId    String
-  areaId       String
-  providerId   String?
-  agencyId     String
-  subAccountId String?
+  id               String        @id @default(uuid())
+  type             String        // "entrada", "salida", "transferencia"
+  quantity         Int
+  notes            String?
+  date             DateTime      @default(now())
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  productId        String
+  areaId           String
+  destinationAreaId String?      // Para transferencias
+  providerId       String?
+  agencyId         String
+  subAccountId     String?
 
-  Product      Product       @relation("ProductInventory", fields: [productId], references: [id], onDelete: Cascade)
-  Area         Area          @relation(fields: [areaId], references: [id], onDelete: Cascade)
-  Provider     Provider?     @relation(fields: [providerId], references: [id], onDelete: SetNull)
-  Agency       Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount   SubAccount?   @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Product          Product       @relation("ProductInventory", fields: [productId], references: [id], onDelete: Cascade)
+  Area             Area          @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  DestinationArea  Area?         @relation("DestinationArea", fields: [destinationAreaId], references: [id], onDelete: SetNull)
+  Provider         Provider?     @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  Agency           Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount       SubAccount?   @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
 
   @@index([productId])
   @@index([areaId])
+  @@index([destinationAreaId])
   @@index([providerId])
   @@index([agencyId])
   @@index([subAccountId])

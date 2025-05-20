@@ -19,6 +19,7 @@ import {
     AlertTriangle,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+// Nota: Las funciones de queries2.ts se importan dinámicamente cuando es necesario
 
 interface StockOverviewProps {
     agencyId: string

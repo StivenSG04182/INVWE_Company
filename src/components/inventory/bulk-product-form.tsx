@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Switch } from "@/components/ui/switch"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { createCategory, createProduct } from "@/lib/queries2"
 
 interface BulkProductFormProps {
     agencyId: string
@@ -134,29 +135,22 @@ export default function BulkProductForm({ agencyId, subaccountId }: BulkProductF
         if (!newCategory.trim()) return
 
         try {
-            const response = await fetch(`/api/inventory/${agencyId}/categories`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    name: newCategory,
-                    subAccountId: selectedSubaccount,
-                }),
-                credentials: "include",
+            // Usar la función del servidor para crear categoría
+            const result = await createCategory({
+                name: newCategory,
+                agencyId,
+                subaccountId: selectedSubaccount,
             })
 
-            const result = await response.json()
-
-            if (result.success) {
+            if (result) {
                 toast({
                     title: "Categoría creada",
                     description: `La categoría ${newCategory} ha sido creada exitosamente.`,
                 })
-                setCategories([...categories, result.data])
+                setCategories([...categories, result])
                 setNewCategory("")
             } else {
-                throw new Error(result.error || "Error al crear la categoría")
+                throw new Error("Error al crear la categoría")
             }
         } catch (error) {
             console.error("Error al crear categoría:", error)
@@ -291,24 +285,29 @@ export default function BulkProductForm({ agencyId, subaccountId }: BulkProductF
                 })
             }
 
-            const response = await fetch(`/api/inventory/${agencyId}/bulk-products`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    products: productsToSubmit,
-                    agencyId,
-                }),
-                credentials: "include",
-            })
+            // Crear productos uno por uno usando la función del servidor
+            const createdProducts = []
+            for (const productData of productsToSubmit) {
+                try {
+                    // Añadir el ID de la agencia a cada producto
+                    const productWithAgencyId = {
+                        ...productData,
+                        agencyId
+                    }
+                    
+                    const result = await createProduct(productWithAgencyId)
+                    if (result) {
+                        createdProducts.push(result)
+                    }
+                } catch (productError) {
+                    console.error("Error al crear producto individual:", productError)
+                }
+            }
 
-            const result = await response.json()
-
-            if (result.success) {
+            if (createdProducts.length > 0) {
                 toast({
                     title: "Productos creados",
-                    description: `Se han creado ${productsToSubmit.length} productos exitosamente.`,
+                    description: `Se han creado ${createdProducts.length} de ${productsToSubmit.length} productos exitosamente.`,
                 })
                 router.refresh()
 
@@ -319,7 +318,7 @@ export default function BulkProductForm({ agencyId, subaccountId }: BulkProductF
                     router.push(`/agency/${agencyId}/products`)
                 }
             } else {
-                throw new Error(result.error || "Error al procesar la solicitud")
+                throw new Error("No se pudo crear ningún producto")
             }
         } catch (error: any) {
             console.error("Error al guardar productos:", error)

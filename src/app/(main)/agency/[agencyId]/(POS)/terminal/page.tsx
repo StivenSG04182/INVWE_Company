@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { getProductsForPOS, processSale as processSaleQuery, saveSaleState, getSavedSales as getSavedSalesQuery, deleteSavedSale as deleteSavedSaleQuery, getCategoriesForPOS, getClientsForPOS, getSubAccountsForAgency, generateInvoice, sendInvoiceByEmail } from "@/lib/queries2"
 import {
     ShoppingCart,
     DollarSign,
@@ -38,7 +39,7 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import {
     DropdownMenu,
@@ -84,8 +85,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
     const [categories, setCategories] = useState([{ id: "Todos", name: "Todos" }])
     const [subaccounts, setSubaccounts] = useState([])
     const [selectedSubaccount, setSelectedSubaccount] = useState("")
-    const [selectedArea, setSelectedArea] = useState("")
-    const [areas, setAreas] = useState([])
+    // Se eliminó la referencia a áreas para simplificar el flujo de venta
     const [isLoading, setIsLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCategory, setSelectedCategory] = useState("Todos")
@@ -120,28 +120,20 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
             if (!agencyId) return
 
             try {
-                const response = await fetch(`/api/agency/${agencyId}/subaccounts`, {
-                    credentials: "include",
-                })
-
-                if (!response.ok) {
-                    throw new Error(`Error en la respuesta de la API: ${response.status} ${response.statusText}`)
-                }
-
-                const result = await response.json()
-
-                if (result.success) {
-                    setSubaccounts(result.data || [])
-                    // Si hay subaccounts, abrir el modal de selección
-                    if (result.data && result.data.length > 0) {
-                        setSubaccountModalOpen(true)
-                    } else {
-                        // Si no hay subaccounts, usar productos de la agencia
-                        setUseAgencyProducts(true)
-                        setSubaccountModalOpen(false)
-                    }
+                // Obtener subcuentas directamente usando la función del servidor
+                const subaccountsData = await getSubAccountsForAgency(agencyId)
+                
+                // Asegurarse de que las subcuentas se carguen correctamente
+                console.log("Subcuentas cargadas:", subaccountsData)
+                setSubaccounts(subaccountsData || [])
+                
+                // Si hay subaccounts, abrir el modal de selección
+                if (subaccountsData && subaccountsData.length > 0) {
+                    setSubaccountModalOpen(true)
                 } else {
-                    throw new Error(result.error || "Error desconocido al obtener subaccounts")
+                    // Si no hay subaccounts, usar productos de la agencia
+                    setUseAgencyProducts(true)
+                    setSubaccountModalOpen(false)
                 }
             } catch (error) {
                 console.error("Error al cargar subaccounts:", error)
@@ -155,53 +147,80 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         loadSubaccounts()
     }, [agencyId])
 
-    // Función para guardar el carrito actual en la base de datos
+    // Se eliminó la carga de áreas para simplificar el flujo de venta
+
+    // Cargar categorías para filtrado
+    useEffect(() => {
+        const loadCategories = async () => {
+            if (!agencyId) return
+
+            try {
+                // Usar la función de queries2.ts para obtener categorías
+                const categoriesData = await getCategoriesForPOS(agencyId, selectedSubaccount || undefined)
+                // Añadir la opción "Todos" al inicio
+                setCategories([{ id: "Todos", name: "Todos" }, ...categoriesData])
+            } catch (error) {
+                console.error("Error al cargar categorías:", error)
+                toast.error("Error al cargar categorías de productos")
+            }
+        }
+
+        loadCategories()
+    }, [agencyId, selectedSubaccount])
+
+    // Cargar clientes para selección
+    useEffect(() => {
+        const loadClients = async () => {
+            if (!agencyId) return
+
+            try {
+                // Usar la función de queries2.ts para obtener clientes
+                const clientsData = await getClientsForPOS(agencyId, selectedSubaccount || undefined)
+                setClients(clientsData)
+            } catch (error) {
+                console.error("Error al cargar clientes:", error)
+                toast.error("Error al cargar lista de clientes")
+            }
+        }
+
+        loadClients()
+    }, [agencyId, selectedSubaccount])
+
+    // Función para guardar el carrito actual en la base de datos usando la función de queries2.ts
     const saveCartState = async () => {
         // Solo guardar si hay productos en el carrito
         if (selectedProducts.length > 0) {
             try {
-                const response = await fetch("/api/pos/saved-sales", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        agencyId,
-                        subAccountId: selectedSubaccount || null,
-                        areaId: selectedArea,
-                        products: selectedProducts,
-                        client: selectedClient,
-                    }),
-                })
+                // Preparar datos para la función
+                const cartData = {
+                    agencyId,
+                    subAccountId: selectedSubaccount || null,
+                    products: selectedProducts,
+                    client: selectedClient,
+                }
 
-                const result = await response.json()
+                // Usar la función de queries2.ts para guardar el carrito
+                const result = await saveSaleState(cartData)
 
-                if (result.success) {
+                if (result) {
                     toast.success("Venta guardada correctamente")
                     // Actualizar la lista de ventas guardadas
                     loadSavedSales()
-                } else {
-                    console.error("Error guardando venta:", result.error)
-                    toast.error("Error al guardar la venta")
                 }
             } catch (error) {
                 console.error("Error saving cart:", error)
-                toast.error("Error al guardar la venta")
+                toast.error(error.message || "Error al guardar la venta")
             }
         }
     }
 
-    // Función para procesar la venta
+    // Función para procesar la venta utilizando la función de queries2.ts
     const [isProcessing, setIsProcessing] = useState(false)
 
     const processSale = async () => {
         if (selectedProducts.length === 0) return
 
-        // Verificar que haya un área seleccionada
-        if (!selectedArea) {
-            toast.error("Debes seleccionar un área para procesar la venta")
-            return
-        }
+        // Se eliminó la validación de área seleccionada
 
         try {
             setIsProcessing(true)
@@ -222,11 +241,10 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                 }
             }
 
-            // Preparar datos para la API
+            // Preparar datos para la función de procesamiento
             const saleData = {
                 agencyId,
                 subAccountId: selectedSubaccount || null,
-                areaId: selectedArea,
                 products: selectedProducts.map((p) => ({
                     id: p.id,
                     name: p.name,
@@ -238,18 +256,10 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                 total: total,
             }
 
-            // Enviar a la API
-            const response = await fetch("/api/pos", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(saleData),
-            })
+            // Usar la función de queries2.ts para procesar la venta
+            const result = await processSaleQuery(saleData)
 
-            const result = await response.json()
-
-            if (result.success) {
+            if (result) {
                 // Limpiar carrito
                 clearCart()
                 setCartOpen(false)
@@ -263,41 +273,33 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                 // Generar factura si es necesario
                 if (selectedClient.id) {
                     try {
-                        // Crear factura
-                        const invoiceResponse = await fetch("/api/billing/invoices", {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                            },
-                            body: JSON.stringify({
-                                agencyId,
-                                subAccountId: selectedSubaccount || null,
-                                customerId: selectedClient.id,
-                                items: selectedProducts.map((p) => ({
-                                    productId: p.id,
-                                    description: p.name,
-                                    quantity: p.quantity,
-                                    unitPrice: p.price,
-                                    subtotal: p.subtotal,
-                                })),
-                                subtotal: subtotal,
-                                tax: iva,
-                                total: total,
-                                notes: `Venta POS - ${new Date().toLocaleDateString()}`,
-                            }),
+                        // Crear factura usando la función del servidor
+                        const invoiceResult = await generateInvoice({
+                            agencyId,
+                            subAccountId: selectedSubaccount || null,
+                            customerId: selectedClient.id,
+                            items: selectedProducts.map((p) => ({
+                                productId: p.id,
+                                description: p.name,
+                                quantity: p.quantity,
+                                unitPrice: p.price,
+                                subtotal: p.subtotal,
+                            })),
+                            subtotal: subtotal,
+                            tax: iva,
+                            total: total,
+                            notes: `Venta POS - ${new Date().toLocaleDateString()}`,
                         })
-
-                        const invoiceResult = await invoiceResponse.json()
 
                         if (invoiceResult.success) {
                             toast.success("Factura generada correctamente")
 
                             // Enviar factura por correo si hay email
                             if (selectedClient.email) {
-                                await fetch(`/api/billing/invoices/${invoiceResult.data.id}/send-email`, {
-                                    method: "POST",
-                                })
-                                toast.success(`Factura enviada a ${selectedClient.email}`)
+                                const emailResult = await sendInvoiceByEmail(invoiceResult.data.id)
+                                if (emailResult.success) {
+                                    toast.success(`Factura enviada a ${selectedClient.email}`)
+                                }
                             }
                         }
                     } catch (error) {
@@ -305,12 +307,10 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                         toast.error("Error al generar la factura")
                     }
                 }
-            } else {
-                toast.error(result.error || "Error al procesar la venta")
             }
         } catch (error) {
             console.error("Error processing sale:", error)
-            toast.error("Error al procesar la venta")
+            toast.error(error.message || "Error al procesar la venta")
         } finally {
             setIsProcessing(false)
         }
@@ -325,62 +325,47 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         setCartOpen(true)
     }
 
-    // Función para cargar ventas guardadas desde la API
+    // Función para cargar ventas guardadas usando la función de queries2.ts
     const loadSavedSales = async () => {
         try {
-            let url = `/api/pos/saved-sales?agencyId=${agencyId}`
-            if (selectedArea) url += `&areaId=${selectedArea}`
-            if (selectedSubaccount) url += `&subAccountId=${selectedSubaccount}`
+            // Preparar opciones para la consulta
+            const options: {
+                subAccountId?: string;
+            } = {}
 
-            const response = await fetch(url, {
-                credentials: "include",
-            })
+            if (selectedSubaccount) options.subAccountId = selectedSubaccount
 
-            if (!response.ok) {
-                throw new Error(`Error en la respuesta de la API: ${response.status} ${response.statusText}`)
-            }
-
-            const result = await response.json()
-
-            if (result.success) {
-                setSavedSales(result.data)
-            } else {
-                throw new Error(result.error || "Error desconocido al cargar ventas guardadas")
-            }
+            // Usar la función de queries2.ts para obtener ventas guardadas
+            const savedSalesData = await getSavedSalesQuery(agencyId, options)
+            setSavedSales(savedSalesData)
         } catch (error) {
             console.error("Error al cargar ventas guardadas:", error)
-            toast.error("Error al cargar ventas guardadas")
+            toast.error(error.message || "Error al cargar ventas guardadas")
         }
     }
 
-    // Función para eliminar una venta guardada
+    // Función para eliminar una venta guardada usando la función de queries2.ts
     const deleteSavedSale = async (id) => {
         try {
-            const response = await fetch(`/api/pos/saved-sales?id=${id}`, {
-                method: "DELETE",
-            })
-
-            const result = await response.json()
-
-            if (result.success) {
+            // Usar la función de queries2.ts para eliminar la venta guardada
+            const result = await deleteSavedSaleQuery(id)
+            
+            if (result && result.success) {
                 toast.success("Venta eliminada correctamente")
                 setSavedSales((prev) => prev.filter((sale) => sale.id !== id))
-            } else {
-                console.error("Error eliminando venta:", result.error)
-                toast.error("Error al eliminar la venta")
             }
         } catch (error) {
             console.error("Error deleting saved sale:", error)
-            toast.error("Error al eliminar la venta")
+            toast.error(error.message || "Error al eliminar la venta")
         }
     }
 
-    // Cargar ventas guardadas al iniciar o cuando cambia el área seleccionada
+    // Cargar ventas guardadas al iniciar
     useEffect(() => {
-        if (agencyId && selectedArea) {
+        if (agencyId) {
             loadSavedSales()
         }
-    }, [agencyId, selectedArea, selectedSubaccount])
+    }, [agencyId, selectedSubaccount])
 
     // Manejar clic fuera del modal para cerrarlo
     useEffect(() => {
@@ -467,21 +452,9 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
             return
         }
 
-        // Verificar si hay quantity disponible antes de agregar al carrito
-        // Asegurarse de que product.quantity sea tratado como número
-        const quantity = parseInt(product.quantity, 10) || 0;
-        if (isNaN(quantity)) {
-            toast.error(`Cantidad inválida para ${product.name}`);
-            return;
-        }
+        // Se eliminó la validación de área seleccionada
 
-        // Verificar que haya un área seleccionada
-        if (!selectedArea) {
-            toast.error("Debes seleccionar un área para agregar productos")
-            return
-        }
-
-        // Agregar nuevo producto
+        // Agregar nuevo producto - Se eliminó la restricción de quantity=0
         setSelectedProducts((prev) => [
             ...prev,
             {
@@ -498,54 +471,34 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         toast.success(`${product.name} agregado al carrito`)
     }
 
-    // Función para cargar productos desde la API según la selección de agencia o subcuenta
+    // Función para cargar productos utilizando la función de queries2.ts
     const loadProducts = async () => {
         if (!agencyId) return
 
         try {
             setIsLoading(true)
 
-            // Construir URL de la API con los parámetros de filtrado
-            let url = `/api/products?`
+            // Preparar opciones para la consulta
+            const options: {
+                subAccountId?: string;
+                categoryId?: string;
+                search?: string;
+            } = {}
 
-            // Si estamos usando productos de la agencia, consultar por agencyId
-            // Si estamos usando una subcuenta específica, consultar por subAccountId
-            if (useAgencyProducts) {
-                url += `agencyId=${agencyId}`
-            } else if (selectedSubaccount) {
-                // Asegurar que estamos usando el parámetro correcto para la API
-                url += `agencyId=${agencyId}&subAccountId=${selectedSubaccount}`
+            // Si estamos usando una subcuenta específica, incluirla en las opciones
+            if (!useAgencyProducts && selectedSubaccount) {
+                options.subAccountId = selectedSubaccount
                 console.log("Usando subAccountId para filtrar productos:", selectedSubaccount)
-            } else {
-                // Si no hay selección, usar agencyId por defecto
-                url += `agencyId=${agencyId}`
             }
 
             // Añadir filtros adicionales
-            if (selectedCategory && selectedCategory !== "Todos") url += `&categoryId=${selectedCategory}`
-            if (searchTerm) url += `&search=${searchTerm}`
+            if (selectedCategory && selectedCategory !== "Todos") options.categoryId = selectedCategory
+            if (searchTerm) options.search = searchTerm
 
-            console.log("Cargando productos con URL:", url)
+            console.log("Cargando productos con opciones:", options)
 
-            // Realizar la petición a la API
-            const response = await fetch(url, {
-                credentials: "include", // Incluir cookies y credenciales de autenticación
-                cache: "no-store", // Evitar caché
-                next: { revalidate: 0 } // Forzar revalidación en cada solicitud
-            })
-
-            if (!response.ok) {
-                throw new Error(`Error en la respuesta de la API: ${response.status} ${response.statusText}`)
-            }
-
-            const result = await response.json()
-            console.log("Respuesta de la API de productos:", result)
-
-            if (!result.success) {
-                throw new Error(result.error || "Error desconocido al obtener productos")
-            }
-
-            const productsData = result.data || []
+            // Usar la función de queries2.ts para obtener productos
+            const productsData = await getProductsForPOS(agencyId, options)
             console.log("Datos de productos recibidos:", productsData.length)
 
             // Transformar los datos para el formato esperado por la UI
@@ -561,25 +514,25 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                         name: product.name,
                         description: product.description,
                         sku: product.sku,
-                        price: Number.parseFloat(product.price),
-                        cost: Number.parseFloat(product.cost) || "",
+                        price: Number(product.price),
+                        cost: product.cost ? Number(product.cost) : "",
                         quantity: Number(product.quantity) || 0,
                         categoryId: product.categoryId,
-                        categoryName: product.categoryName || "Sin categoría",
+                        categoryName: product.Category?.name || "Sin categoría",
                         unit: product.unit || "",
                         tags: product.tags || [],
                         model: product.model || "",
                         brand: product.brand || "",
                         images: product.images || [],
                         productImage: product.productImage || "",
-                        discount: Number(product.discount) || "",
+                        discount: Number(product.discount) || 0,
                         discountStartDate: product.discountStartDate || null,
                         discountEndDate: product.discountEndDate || null,
-                        discountMinimumPrice: Number(product.discountMinimumPrice) || "",
-                        taxRate: Number(product.taxRate) || "",
+                        discountMinimumPrice: product.discountMinimumPrice ? Number(product.discountMinimumPrice) : "",
+                        taxRate: Number(product.taxRate) || 0,
                         supplierId: product.supplierId || null,
                         isReturnable: product.isReturnable || false,
-                        isActive: product.isActive !== false,
+                        isActive: product.active !== false,
                         expirationDate: product.expirationDate || null,
                         serialNumber: product.serialNumber || "",
                     }
@@ -824,13 +777,10 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                         {products.map((product) => (
                                             <Card
                                                 key={product.id}
-                                                className={`transition-colors ${product.quantity <= 0
-                                                    ? "opacity-70 cursor-not-allowed border-dashed border-muted-foreground/30"
-                                                    : "cursor-pointer " +
-                                                    (selectedProducts2.includes(product.id)
-                                                        ? "bg-primary/10 border-primary relative after:content-['✓'] after:absolute after:top-2 after:right-2 after:bg-primary after:text-primary-foreground after:size-6 after:flex after:items-center after:justify-center after:rounded-full after:text-xs"
-                                                        : "hover:bg-muted/50")
-                                                    }`}
+                                                className={`transition-colors cursor-pointer ${selectedProducts2.includes(product.id)
+                                                    ? "bg-primary/10 border-primary relative after:content-['✓'] after:absolute after:top-2 after:right-2 after:bg-primary after:text-primary-foreground after:size-6 after:flex after:items-center after:justify-center after:rounded-full after:text-xs"
+                                                    : "hover:bg-muted/50"
+                                                }`}
                                                 onClick={() => toggleProductSelection(product)}
                                             >
                                                 {/* Primer CardContent */}
@@ -951,15 +901,11 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                     {products.slice(0, 2).map((product) => (
                                         <Card
                                             key={product.id}
-                                            className={`transition-colors ${product.quantity <= 0
-                                                ? "opacity-70 cursor-not-allowed border-dashed border-muted-foreground/30"
-                                                : "cursor-pointer " +
-                                                (
-                                                    selectedProducts2.includes(product.id)
-                                                        ? "bg-primary/10 border-primary relative after:content-['✓'] after:absolute after:top-2 after:right-2 after:bg-primary after:text-primary-foreground after:size-6 after:flex after:items-center after:justify-center after:rounded-full after:text-xs"
-                                                        : "hover:bg-muted/50"
-                                                )
-                                                }`}
+                                            className={`transition-colors cursor-pointer ${
+                                                selectedProducts2.includes(product.id)
+                                                    ? "bg-primary/10 border-primary relative after:content-['✓'] after:absolute after:top-2 after:right-2 after:bg-primary after:text-primary-foreground after:size-6 after:flex after:items-center after:justify-center after:rounded-full after:text-xs"
+                                                    : "hover:bg-muted/50"
+                                            }`}
                                             onClick={() => toggleProductSelection(product)}
                                         >
                                             <CardContent className="p-3">
@@ -1155,24 +1101,51 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                 <div className="flex gap-2">
                                     <Select
                                         onValueChange={(value) => {
+                                            if (value === "new-client") {
+                                                setNewClientOpen(true)
+                                                return
+                                            }
+                                            
                                             const client = clients.find((c) => c.id && c.id.toString() === value)
                                             if (client) {
                                                 setSelectedClient({
                                                     name: client.name,
                                                     id: client.id,
+                                                    email: client.email,
+                                                    phone: client.phone,
+                                                    address: client.address
                                                 })
                                             }
                                         }}
                                     >
-                                        <SelectTrigger>
+                                        <SelectTrigger className="w-full">
                                             <SelectValue placeholder="Seleccionar cliente" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {clients.map((client) => (
-                                                <SelectItem key={client.id || "general"} value={client.id ? client.id.toString() : "general"}>
-                                                    {client.name}
-                                                </SelectItem>
-                                            ))}
+                                            <SelectItem value="general" className="font-medium">
+                                                Cliente General
+                                            </SelectItem>
+                                            <SelectItem value="new-client" className="text-primary font-medium">
+                                                <div className="flex items-center">
+                                                    <UserPlus className="h-4 w-4 mr-2" />
+                                                    Crear Nuevo Cliente
+                                                </div>
+                                            </SelectItem>
+                                            <SelectSeparator />
+                                            {clients.length > 0 ? (
+                                                clients.map((client) => (
+                                                    <SelectItem key={client.id || "general"} value={client.id ? client.id.toString() : "general"}>
+                                                        <div>
+                                                            <span>{client.name}</span>
+                                                            {client.email && (
+                                                                <span className="text-xs text-muted-foreground block">{client.email}</span>
+                                                            )}
+                                                        </div>
+                                                    </SelectItem>
+                                                ))
+                                            ) : (
+                                                <div className="py-2 px-2 text-sm text-muted-foreground">No hay clientes registrados</div>
+                                            )}
                                         </SelectContent>
                                     </Select>
                                     <Button variant="outline" size="icon" onClick={() => setNewClientOpen(true)}>

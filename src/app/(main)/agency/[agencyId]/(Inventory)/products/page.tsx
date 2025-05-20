@@ -1,6 +1,5 @@
-import { getAuthUserDetails } from "@/lib/queries"
+import { getAuthUserDetails, getProducts, getCategories } from "@/lib/queries2"
 import { redirect } from "next/navigation"
-import { ProductService, CategoryService } from "@/lib/services/inventory-service"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import StockAlertNotification from "@/components/inventory/stock-alert-notification"
@@ -29,9 +28,9 @@ const ProductsPage = async ({ params }: { params: { agencyId: string } }) => {
     return redirect("/agency")
   }
 
-  // Obtener productos y categorías usando los servicios de Prisma
-  const rawProducts = await ProductService.getProducts(agencyId)
-  const categories = await CategoryService.getCategories(agencyId)
+  // Obtener productos y categorías usando las funciones del servidor
+  const rawProducts = await getProducts(agencyId)
+  const categories = await getCategories(agencyId)
   
   // Convertir valores Decimal a números normales para evitar errores de serialización
   const products = rawProducts.map(product => ({

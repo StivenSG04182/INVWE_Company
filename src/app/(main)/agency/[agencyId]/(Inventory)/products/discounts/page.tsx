@@ -1,6 +1,6 @@
 import { getAuthUserDetails } from "@/lib/queries"
+import { getProducts, getCategories, getActiveDiscounts } from "@/lib/queries2"
 import { redirect } from "next/navigation"
-import { ProductService, CategoryService } from "@/lib/services/inventory-service"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Calendar, Clock, Package, Tag } from "lucide-react"
@@ -27,10 +27,10 @@ const DiscountsPage = async ({ params }: { params: { agencyId: string } }) => {
         // Importar el serializador para convertir objetos MongoDB a objetos planos
         const { serializeMongoArray } = await import("@/lib/serializers")
 
-        // Obtener y serializar productos y categorías
-        const rawProducts = await ProductService.getProducts(agencyId)
-        const rawCategories = await CategoryService.getCategories(agencyId)
-        const rawDiscounts = await ProductService.getActiveDiscounts(agencyId)
+        // Obtener productos, categorías y descuentos usando las nuevas funciones del servidor
+        const rawProducts = await getProducts(agencyId)
+        const rawCategories = await getCategories(agencyId)
+        const rawDiscounts = await getActiveDiscounts(agencyId)
 
         // Serializar para eliminar métodos y propiedades no serializables
         products = serializeMongoArray(rawProducts)

@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+// Nota: Las funciones de queries2.ts se importan dinámicamente en los efectos y handlers
 
 interface MovementFormProps {
   agencyId: string;
@@ -43,53 +44,35 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Importar funciones necesarias de queries2.ts
+        const { getProducts, getAreas, getProviders, getSubAccounts } = await import('@/lib/queries2');
+        
         // Cargar productos
-        const productsResponse = await fetch(`/api/inventory/${agencyId}?type=products`, {
-          credentials: 'include',
-        });
-        const productsData = await productsResponse.json();
-        if (productsData.success) {
-          setProducts(productsData.data || []);
-          
-          // Si hay un productId preseleccionado, buscar sus detalles
-          if (productId) {
-            const selectedProd = productsData.data?.find((p: any) => p.id === productId || p._id === productId);
-            if (selectedProd) {
-              setSelectedProduct(selectedProd);
-            }
+        const productsData = await getProducts(agencyId);
+        setProducts(productsData || []);
+        
+        // Si hay un productId preseleccionado, buscar sus detalles
+        if (productId && productsData) {
+          const selectedProd = productsData.find((p: any) => p.id === productId || p._id === productId);
+          if (selectedProd) {
+            setSelectedProduct(selectedProd);
           }
         }
 
         // Cargar áreas
-        const areasResponse = await fetch(`/api/inventory/${agencyId}?type=areas`, {
-          credentials: 'include',
-        });
-        const areasData = await areasResponse.json();
-        if (areasData.success) {
-          setAreas(areasData.data || []);
-        }
+        const areasData = await getAreas(agencyId);
+        setAreas(areasData || []);
 
         // Cargar proveedores (solo para entradas)
         if (type === 'entrada') {
-          const providersResponse = await fetch(`/api/inventory/${agencyId}?type=providers`, {
-            credentials: 'include',
-          });
-          const providersData = await providersResponse.json();
-          if (providersData.success) {
-            setProviders(providersData.data || []);
-          }
+          const providersData = await getProviders(agencyId);
+          setProviders(providersData || []);
         }
 
         // Cargar subcuentas
-        const subaccountsResponse = await fetch(`/api/agency/${agencyId}/subaccounts`, {
-          credentials: 'include',
-        });
-        const subaccountsData = await subaccountsResponse.json();
-        if (subaccountsData.success) {
-          setSubaccounts(subaccountsData.data || []);
-        } else {
-          console.error('Error al cargar subcuentas:', subaccountsData.error);
-        }
+        const subaccountsData = await getSubAccounts(agencyId);
+        setSubaccounts(subaccountsData || []);
+        
       } catch (error) {
         console.error('Error al cargar datos:', error);
         toast({
@@ -169,37 +152,39 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
     }
 
     try {
-      const endpoint = `/api/inventory/${agencyId}`;
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'movement',
-          data: { ...formData, agencyId },
-        }),
-        credentials: 'include', // Incluir cookies y credenciales de autenticación
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
+      // Importar la función createMovement de queries2.ts
+      const { createMovement } = await import('@/lib/queries2');
+      
+      // Preparar los datos del movimiento
+      const movementData = {
+        type: formData.type,
+        productId: formData.productId,
+        areaId: formData.areaId,
+        quantity: Number(formData.quantity),
+        providerId: formData.providerId || undefined,
+        notes: formData.notes,
+        date: new Date(),
+        agencyId: agencyId,
+        subaccountId: formData.subaccountId
+      };
+      
+      // Crear el movimiento usando la función de queries2.ts
+      const result = await createMovement(movementData);
+      
+      if (result) {
         toast({
           title: 'Movimiento registrado',
           description: `Se ha registrado correctamente la ${type} de productos.`,
         });
         router.refresh();
         router.push(`/agency/${agencyId}/movements`);
-      } else {
-        throw new Error(result.error || 'Error al procesar la solicitud');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al registrar movimiento:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Hubo un problema al registrar el movimiento. Inténtalo de nuevo.',
+        description: error.message || 'Hubo un problema al registrar el movimiento. Inténtalo de nuevo.',
       });
     } finally {
       setIsLoading(false);

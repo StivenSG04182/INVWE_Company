@@ -6,13 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
-import { StockService, ProductService, AreaService } from "@/lib/services/inventory-service"
+import { getProducts, getAreas, getStocks, getMovements } from "@/lib/queries2"
 import StockOverview from "@/components/inventory/stock-overview"
 import MovementRegistration from "@/components/inventory/movement-registration"
 import ProductStockDetails from "@/components/inventory/product-stock-details"
 import { Package, ArrowLeftRight, Search, Filter, DollarSign, AlertTriangle } from "lucide-react"
 
-// Servicio para obtener datos de stock
+// Función para obtener datos de stock
 export async function getStockPageData(agencyId: string) {
   const user = await getAuthUserDetails()
   if (!user) return { redirect: "/sign-in" }
@@ -22,10 +22,10 @@ export async function getStockPageData(agencyId: string) {
   }
 
   try {
-    // Obtener stock
-    const rawStocks = await StockService.getStocks(agencyId)
-    const rawProducts = await ProductService.getProducts(agencyId)
-    const rawAreas = await AreaService.getAreas(agencyId)
+    // Obtener datos usando las funciones de queries2.ts
+    const rawStocks = await getStocks(agencyId)
+    const rawProducts = await getProducts(agencyId)
+    const rawAreas = await getAreas(agencyId)
     
     // Convertir valores Decimal a números normales para evitar errores de serialización
     const stocks = rawStocks.map(stock => ({

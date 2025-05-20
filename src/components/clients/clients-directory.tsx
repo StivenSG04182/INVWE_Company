@@ -82,21 +82,17 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
         status: ClientStatus.ACTIVE,
     })
 
-    // Cargar clientes desde la base de datos
+    // Cargar clientes desde la base de datos usando queries2.ts
     useEffect(() => {
         const loadClients = async () => {
             setIsLoading(true)
             try {
-                const response = await ClientService.getClients(agencyId, subAccountId)
-                if (response.success) {
-                    setClients(response.data)
-                } else {
-                    toast({
-                        title: "Error",
-                        description: "No se pudieron cargar los clientes",
-                        variant: "destructive",
-                    })
-                }
+                // Importar la función getClients de queries2.ts
+                const { getClients } = await import('@/lib/queries2')
+                
+                // Obtener los clientes reales de la base de datos
+                const clientsData = await getClients(agencyId, subAccountId)
+                setClients(clientsData)
             } catch (error) {
                 console.error("Error cargando clientes:", error)
                 toast({
@@ -161,9 +157,6 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
                 return
             }
 
-            console.log("Validación de campos completada correctamente")
-            console.log("Creando cliente con datos:", { agencyId, formData, subAccountId })
-            
             // Asegurarse de que todos los campos requeridos estén presentes
             const clientData: ClientData = {
                 ...formData,
@@ -172,68 +165,26 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
                 status: formData.status || ClientStatus.ACTIVE
             }
             
-            console.log("Datos del cliente preparados:", clientData)
-            
-            // Intentar primero con fetch directo a la API
             try {
-                console.log("Intentando crear cliente con fetch directo a la API")
-                const fetchResponse = await fetch(`/api/clients/${agencyId}`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    credentials: "include",
-                    body: JSON.stringify({
-                        ...clientData,
-                        subAccountId
-                    }),
-                })
+                // Importar la función createClient de queries2.ts
+                const { createClient } = await import('@/lib/queries2')
                 
-                console.log("Respuesta de fetch recibida:", fetchResponse.status)
+                // Crear el cliente usando la función de queries2.ts
+                const newClient = await createClient(agencyId, clientData, subAccountId)
                 
-                if (fetchResponse.ok) {
-                    const data = await fetchResponse.json()
-                    console.log("Datos de respuesta de la API:", data)
-                    
-                    if (data.success) {
-                        console.log("Cliente creado exitosamente con fetch:", data.data)
-                        setClients([data.data, ...clients])
-                        toast({
-                            title: "Cliente creado",
-                            description: "El cliente ha sido creado exitosamente",
-                        })
-                        resetForm()
-                        setIsAddClientOpen(false)
-                        return
-                    }
-                }
-                
-                // Si llegamos aquí, el fetch no fue exitoso, intentamos con el servicio
-                console.log("Fetch no exitoso, intentando con ClientService")
-            } catch (fetchError) {
-                console.error("Error en fetch directo:", fetchError)
-                // Continuamos con el método del servicio
-            }
-            
-            // Método original usando el servicio
-            console.log("Llamando a ClientService.createClient con:", { agencyId, clientData, subAccountId })
-            const response = await ClientService.createClient(agencyId, clientData, subAccountId)
-            console.log("Respuesta del servicio:", response)
-            
-            if (response.success) {
-                console.log("Cliente creado exitosamente:", response.data)
-                setClients([response.data, ...clients])
+                // Actualizar la lista de clientes
+                setClients([newClient, ...clients])
                 toast({
                     title: "Cliente creado",
                     description: "El cliente ha sido creado exitosamente",
                 })
                 resetForm()
                 setIsAddClientOpen(false)
-            } else {
-                console.error("Error en la respuesta del servicio:", response.error)
+            } catch (error) {
+                console.error("Error al crear el cliente:", error)
                 toast({
                     title: "Error",
-                    description: "No se pudo crear el cliente",
+                    description: error instanceof Error ? error.message : "No se pudo crear el cliente",
                     variant: "destructive",
                 })
             }
@@ -251,29 +202,28 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
         if (!selectedClient) return
         
         try {
-            const response = await ClientService.updateClient(selectedClient.id, formData)
-            if (response.success) {
-                setClients(clients.map(client => 
-                    client.id === selectedClient.id ? response.data : client
-                ))
-                toast({
-                    title: "Cliente actualizado",
-                    description: "El cliente ha sido actualizado exitosamente",
-                })
-                resetForm()
-                setIsEditClientOpen(false)
-            } else {
-                toast({
-                    title: "Error",
-                    description: "No se pudo actualizar el cliente",
-                    variant: "destructive",
-                })
-            }
+            // Importar la función updateClient de queries2.ts
+            const { updateClient } = await import('@/lib/queries2')
+            
+            // Actualizar el cliente usando la función de queries2.ts
+            const updatedClient = await updateClient(selectedClient.id, formData)
+            
+            // Actualizar la lista de clientes
+            setClients(clients.map(client => 
+                client.id === selectedClient.id ? updatedClient : client
+            ))
+            
+            toast({
+                title: "Cliente actualizado",
+                description: "El cliente ha sido actualizado exitosamente",
+            })
+            resetForm()
+            setIsEditClientOpen(false)
         } catch (error) {
             console.error("Error actualizando cliente:", error)
             toast({
                 title: "Error",
-                description: "Ocurrió un error al actualizar el cliente",
+                description: error instanceof Error ? error.message : "No se pudo actualizar el cliente",
                 variant: "destructive",
             })
         }
@@ -283,26 +233,25 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
         if (!selectedClient) return
         
         try {
-            const response = await ClientService.deleteClient(selectedClient.id)
-            if (response.success) {
-                setClients(clients.filter(client => client.id !== selectedClient.id))
-                toast({
-                    title: "Cliente eliminado",
-                    description: "El cliente ha sido eliminado exitosamente",
-                })
-                setIsDeleteConfirmOpen(false)
-            } else {
-                toast({
-                    title: "Error",
-                    description: "No se pudo eliminar el cliente",
-                    variant: "destructive",
-                })
-            }
+            // Importar la función deleteClient de queries2.ts
+            const { deleteClient } = await import('@/lib/queries2')
+            
+            // Eliminar el cliente usando la función de queries2.ts
+            await deleteClient(selectedClient.id)
+            
+            // Actualizar la lista de clientes
+            setClients(clients.filter(client => client.id !== selectedClient.id))
+            
+            toast({
+                title: "Cliente eliminado",
+                description: "El cliente ha sido eliminado exitosamente",
+            })
+            setIsDeleteConfirmOpen(false)
         } catch (error) {
             console.error("Error eliminando cliente:", error)
             toast({
                 title: "Error",
-                description: "Ocurrió un error al eliminar el cliente",
+                description: error instanceof Error ? error.message : "No se pudo eliminar el cliente",
                 variant: "destructive",
             })
         }

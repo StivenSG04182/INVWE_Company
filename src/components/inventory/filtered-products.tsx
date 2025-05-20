@@ -34,6 +34,7 @@ import {
     Plus,
 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
+import { duplicateProduct, deleteProduct } from "@/lib/queries2"
 
 interface FilteredProductsProps {
     agencyId: string
@@ -50,7 +51,7 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
     // Función para obtener el nombre de la categoría por su ID
     const getCategoryName = (categoryId: string) => {
         // Convertir a string para asegurar una comparación consistente
-        const category = categories.find(cat => String(cat._id) === String(categoryId))
+        const category = categories.find(cat => String(cat.id) === String(categoryId))
         return category ? category.name : "Sin categoría"
     }
 
@@ -115,28 +116,16 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
     })
 
     // Función para duplicar producto
-    const duplicateProduct = async (productId: string) => {
+    const handleDuplicateProduct = async (productId: string) => {
         try {
-            const response = await fetch(`/api/inventory/${agencyId}/duplicate-product`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ productId }),
-                credentials: "include",
+            // Usar la función del servidor en lugar del endpoint API
+            await duplicateProduct(agencyId, productId)
+            
+            toast({
+                title: "Producto duplicado",
+                description: "El producto se ha duplicado correctamente.",
             })
-
-            const result = await response.json()
-
-            if (result.success) {
-                toast({
-                    title: "Producto duplicado",
-                    description: "El producto se ha duplicado correctamente.",
-                })
-                router.refresh()
-            } else {
-                throw new Error(result.error || "Error al duplicar el producto")
-            }
+            router.refresh()
         } catch (error) {
             console.error("Error al duplicar producto:", error)
             toast({
@@ -148,28 +137,20 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
     }
 
     // Función para eliminar producto
-    const deleteProduct = async (productId: string) => {
+    const handleDeleteProduct = async (productId: string) => {
         if (!confirm("¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.")) {
             return
         }
 
         try {
-            const response = await fetch(`/api/inventory/${agencyId}/product/${productId}`, {
-                method: "DELETE",
-                credentials: "include",
+            // Usar la función del servidor en lugar del endpoint API
+            await deleteProduct(agencyId, productId)
+            
+            toast({
+                title: "Producto eliminado",
+                description: "El producto se ha eliminado correctamente.",
             })
-
-            const result = await response.json()
-
-            if (result.success) {
-                toast({
-                    title: "Producto eliminado",
-                    description: "El producto se ha eliminado correctamente.",
-                })
-                router.refresh()
-            } else {
-                throw new Error(result.error || "Error al eliminar el producto")
-            }
+            router.refresh()
         } catch (error) {
             console.error("Error al eliminar producto:", error)
             toast({
@@ -422,13 +403,13 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                                                 Editar
                                                             </Link>
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => duplicateProduct(product._id)}>
+                                                        <DropdownMenuItem onClick={() => handleDuplicateProduct(product._id)}>
                                                             <Copy className="h-4 w-4 mr-2" />
                                                             Duplicar
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem
-                                                            onClick={() => deleteProduct(product._id)}
+                                                            onClick={() => handleDeleteProduct(product._id)}
                                                             className="text-destructive focus:text-destructive"
                                                         >
                                                             <Trash2 className="h-4 w-4 mr-2" />
@@ -592,12 +573,12 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => duplicateProduct(product._id)}>
+                                                <DropdownMenuItem onClick={() => handleDuplicateProduct(product._id)}>
                                                     <Copy className="h-4 w-4 mr-2" />
                                                     Duplicar
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
-                                                    onClick={() => deleteProduct(product._id)}
+                                                    onClick={() => handleDeleteProduct(product._id)}
                                                     className="text-destructive focus:text-destructive"
                                                 >
                                                     <Trash2 className="h-4 w-4 mr-2" />

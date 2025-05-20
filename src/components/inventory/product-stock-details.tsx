@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { AlertTriangle, Package } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import type { Product, Stock } from "@/types"
+// Nota: Las funciones de queries2.ts se importan dinámicamente cuando es necesario
 
 interface ProductStockDetailsProps {
     product: Product
