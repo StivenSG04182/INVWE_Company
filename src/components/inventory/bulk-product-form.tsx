@@ -43,7 +43,7 @@ export default function BulkProductForm({ agencyId, subaccountId }: BulkProductF
             cost: "",
             minStock: "",
             categoryId: "",
-            images: [],
+            productImage: "",
             description: "",
             barcode: "",
             quantity: "0",
@@ -583,10 +583,7 @@ export default function BulkProductForm({ agencyId, subaccountId }: BulkProductF
                                                                                     variant="ghost"
                                                                                     size="sm"
                                                                                     className="absolute top-0 right-0 bg-background/80 p-1 rounded-bl-md"
-                                                                                    onClick={() => {
-                                const updatedImages = [...manualProducts[index].images || []].filter((_, i) => i !== 0);
-                                handleProductChange(index, "images", updatedImages);
-                              }}
+                                                                                    onClick={() => handleProductChange(index, "productImage", "")}
                                                                                 >
                                                                                     ×
                                                                                 </Button>
@@ -594,11 +591,10 @@ export default function BulkProductForm({ agencyId, subaccountId }: BulkProductF
                                                                         ) : (
                                                                             <div className="w-full">
                                                                                 <UploadButton
-                                                                                    endpoint="imageUploader"
+                                                                                    endpoint="productImage"
                                                                                     onClientUploadComplete={(res) => {
                                                                                         if (res && res.length > 0) {
-                                                                                            const updatedImages = [...(manualProducts[index].images || []), res[0].url];
-handleProductChange(index, "images", updatedImages)
+                                                                                            handleProductChange(index, "productImage", res[0].url)
                                                                                             toast({
                                                                                                 title: "Imagen subida",
                                                                                                 description: "La imagen se ha subido correctamente",

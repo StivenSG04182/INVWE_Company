@@ -131,50 +131,24 @@ export const saveActivityLogsNotification = async ({
     }
 
     if (subaccountId) {
-        // Verificar si la subcuenta existe antes de intentar conectarla
-        const subAccountExists = await db.subAccount.findUnique({
-            where: { id: subaccountId },
+        await db.notification.create({
+            data: {
+                notification: `${userData.name} | ${description}`,
+                User: {
+                    connect: {
+                        id: userData.id,
+                    },
+                },
+                Agency: {
+                    connect: {
+                        id: foundAgencyId,
+                    },
+                },
+                SubAccount: {
+                    connect: { id: subaccountId },
+                },
+            },
         });
-        
-        if (subAccountExists) {
-            // Si la subcuenta existe, crear la notificación con la conexión
-            await db.notification.create({
-                data: {
-                    notification: `${userData.name} | ${description}`,
-                    User: {
-                        connect: {
-                            id: userData.id,
-                        },
-                    },
-                    Agency: {
-                        connect: {
-                            id: foundAgencyId,
-                        },
-                    },
-                    SubAccount: {
-                        connect: { id: subaccountId },
-                    },
-                },
-            });
-        } else {
-            // Si la subcuenta no existe, crear la notificación sin la conexión
-            console.log(`SubAccount con ID ${subaccountId} no encontrada. Creando notificación sin referencia a subcuenta.`);
-            await db.notification.create({
-                data: {
-                    notification: `${userData.name} | ${description}`,
-                    User: {
-                        connect: {
-                            id: userData.id,
-                        },
-                    },
-                    Agency: {
-                        connect: {
-                            id: foundAgencyId,
-                        },
-                    },
-                },
-            });
-        }
     } else {
         await db.notification.create({
             data: {
@@ -194,37 +168,184 @@ export const saveActivityLogsNotification = async ({
     }
 };
 
+export const createTeamUser = async (agencyId: string, user: User) => {
+    if (user.role === "AGENCY_OWNER") return null;
+    const response = await db.user.create({ data: { ...user } });
+    return response;
+};
+
+export const verifyAndAcceptInvitation = async () => {
+    const user = await currentUser();
+    if (!user) return redirect("/sign-in");
+
+    console.log('Verificando invitaciones para:', user.emailAddresses[0].emailAddress);
+
+    // Primero verificamos si hay metadata en el usuario que indique una invitación
+    const metadata = user.publicMetadata;
+    const invitationId = metadata?.invitationId as string | undefined;
+
+    // Buscar la invitación por ID si está disponible en los metadatos
+    let invitationExists;
+
+    if (invitationId) {
+        console.log('Buscando invitación por ID:', invitationId);
+        invitationExists = await db.invitation.findUnique({
+            where: {
+                id: invitationId,
+                status: "PENDING",
+            },
+        });
+    }
+
+    // Si no se encontró por ID o no había ID, buscar por email
+    if (!invitationExists) {
+        console.log('Buscando invitación por email:', user.emailAddresses[0].emailAddress);
+        invitationExists = await db.invitation.findUnique({
+            where: {
+                email: user.emailAddresses[0].emailAddress,
+                status: "PENDING",
+            },
+        });
+    }
+
+    if (invitationExists) {
+        // Verificar si la invitación ha expirado (24 horas desde su creación)
+        const now = new Date();
+        const createdAt = invitationExists.createdAt;
+        const expirationTime = new Date(createdAt);
+        expirationTime.setHours(expirationTime.getHours() + 24);
+
+        if (now > expirationTime) {
+            console.log('Invitación expirada:', invitationExists.email, 'Creada el:', createdAt, 'Expiró el:', expirationTime);
+
+            // Actualizamos el estado de la invitación a REVOKED (usamos este estado en lugar de EXPIRED ya que no requiere migración)
+            await db.invitation.update({
+                where: { id: invitationExists.id },
+                data: { status: "REVOKED" }
+            });
+
+            // Guardamos un log de la expiración
+            await saveActivityLogsNotification({
+                agencyId: invitationExists.agencyId,
+                description: `Invitación para ${invitationExists.email} expirada (más de 24 horas)`,
+                subaccountId: undefined,
+            });
+
+            // Redirigimos con un mensaje de error
+            throw new Error('La invitación ha expirado. Por favor, solicita una nueva invitación.');
+        }
+
+        // La invitación es válida, procedemos a aceptarla
+        const userDetails = await createTeamUser(invitationExists.agencyId, {
+            email: invitationExists.email,
+            agencyId: invitationExists.agencyId,
+            avatarUrl: user.imageUrl,
+            id: user.id,
+            name: `${user.firstName} ${user.lastName}`,
+            role: invitationExists.role,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        await saveActivityLogsNotification({
+            agencyId: invitationExists?.agencyId,
+            description: `Joined`,
+            subaccountId: undefined,
+        });
+
+        if (userDetails) {
+            // Actualizar metadatos del usuario en Clerk
+            await clerkClient.users.updateUserMetadata(user.id, {
+                privateMetadata: {
+                    role: userDetails.role || "SUBACCOUNT_USER",
+                },
+            });
+
+            try {
+                // Intentar revocar la invitación en Clerk
+                console.log('Revocando invitación en Clerk para:', userDetails.email);
+
+                // Obtener todas las invitaciones pendientes para este email
+                const invitations = await clerkClient.invitations.getInvitationList({
+                    emailAddress: userDetails.email,
+                });
+
+                console.log(`Se encontraron ${invitations.length} invitaciones en Clerk para ${userDetails.email}`);
+
+                // Filtrar solo las invitaciones pendientes
+                const pendingInvitations = invitations.filter(inv => inv.status === 'pending');
+                console.log(`De las cuales ${pendingInvitations.length} están pendientes`);
+
+                if (pendingInvitations.length > 0) {
+                    // Revocar todas las invitaciones pendientes para este email
+                    for (const invitation of pendingInvitations) {
+                        try {
+                            console.log(`Revocando invitación ID: ${invitation.id}, Status: ${invitation.status}`);
+                            await clerkClient.invitations.revokeInvitation(invitation.id);
+                            console.log('✅ Invitación revocada exitosamente en Clerk, ID:', invitation.id);
+                        } catch (revocationError) {
+                            console.error(`Error al revocar invitación específica ${invitation.id}:`, revocationError);
+                        }
+                    }
+
+                    // Verificar que se hayan revocado todas las invitaciones
+                    const checkInvitations = await clerkClient.invitations.getInvitationList({
+                        emailAddress: userDetails.email,
+                        status: 'pending'
+                    });
+
+                    if (checkInvitations.length > 0) {
+                        console.warn(`⚠️ Aún quedan ${checkInvitations.length} invitaciones pendientes después de intentar revocarlas`);
+                    } else {
+                        console.log('✅ Todas las invitaciones fueron revocadas correctamente');
+                    }
+                } else {
+                    console.log('No se encontraron invitaciones pendientes en Clerk para:', userDetails.email);
+                }
+            } catch (clerkError) {
+                // Si hay un error al revocar la invitación en Clerk, lo registramos pero continuamos
+                console.error('Error al obtener o revocar invitaciones en Clerk:', clerkError);
+            }
+
+            // Eliminar la invitación de nuestra base de datos
+            await db.invitation.delete({
+                where: { email: userDetails.email },
+            });
+
+            return userDetails.agencyId;
+        } else return null;
+    } else {
+        const agency = await db.user.findUnique({
+            where: {
+                email: user.emailAddresses[0].emailAddress,
+            },
+        });
+        return agency ? agency.agencyId : null;
+    }
+};
+
+export const updateAgencyDetails = async (
+    agencyId: string,
+    agencyDetails: Partial<Agency>
+) => {
+    const response = await db.agency.update({
+        where: { id: agencyId },
+        data: { ...agencyDetails },
+    });
+    return response;
+};
+
 // Funciones para gestión de productos
 
 export const getProducts = async (agencyId: string) => {
-    // Usamos Prisma.raw para evitar problemas con campos que podrían no existir
-    const products = await db.$queryRaw`
-        SELECT * FROM "Product" 
-        WHERE "agencyId" = ${agencyId}
-    `;
-    
-    // Obtenemos las categorías y movimientos por separado
-    const productsWithRelations = await Promise.all(
-        products.map(async (product: any) => {
-            const category = product.categoryId 
-                ? await db.productCategory.findUnique({ where: { id: product.categoryId } })
-                : null;
-            
-            const movements = await db.movement.findMany({
-                where: { productId: product.id }
-            });
-            
-            return {
-                ...product,
-                Category: category,
-                Movements: movements
-            };
-        })
-    );
-    
-    return productsWithRelations;
+    return await db.product.findMany({
+        where: { agencyId },
+        include: {
+            Category: true,
+            Movements: true,
+        },
+    });
 };
-
 
 export const getProductById = async (agencyId: string, productId: string) => {
     return await db.product.findFirst({
@@ -240,50 +361,43 @@ export const getProductById = async (agencyId: string, productId: string) => {
 };
 
 export const createProduct = async (data: any) => {
-    // Usar directamente el array de imágenes proporcionado
-    const images = data.images || [];
-    
-    // Crear el objeto de datos del producto
-    const productData = {
-        name: data.name,
-        sku: data.sku,
-        description: data.description,
-        price: Number.parseFloat(data.price),
-        cost: data.cost ? Number.parseFloat(data.cost) : undefined,
-        minStock: data.minStock ? Number.parseInt(data.minStock) : undefined,
-        images: data.images || [],
-        productImage: data.productImage || (images.length > 0 ? images[0] : null),
-        agencyId: data.agencyId,
-        subAccountId: data.subaccountId,
-        categoryId: data.categoryId !== "no-category" ? data.categoryId : null,
-        brand: data.brand,
-        model: data.model,
-        tags: data.tags || [],
-        unit: data.unit,
-        barcode: data.barcode,
-        quantity: data.quantity ? Number.parseInt(data.quantity) : 0,
-        locationId: data.locationId,
-        warehouseId: data.warehouseId,
-        batchNumber: data.batchNumber,
-        expirationDate: data.expirationDate ? new Date(data.expirationDate) : null,
-        serialNumber: data.serialNumber,
-        warrantyMonths: data.warrantyMonths ? Number.parseInt(data.warrantyMonths) : null,
-        isReturnable: data.isReturnable,
-        isActive: data.isActive !== false,
-        discount: data.discount ? Number.parseFloat(data.discount) : 0,
-        discountStartDate: data.discountStartDate ? new Date(data.discountStartDate) : null,
-        discountEndDate: data.discountEndDate ? new Date(data.discountEndDate) : null,
-        discountMinimumPrice: data.discountMinimumPrice ? Number.parseFloat(data.discountMinimumPrice) : null,
-        taxRate: data.taxRate ? Number.parseFloat(data.taxRate) : 0,
-        supplierId: data.supplierId !== "no-supplier" ? data.supplierId : null,
-        variants: data.variants || [],
-        documents: data.documents || [],
-        customFields: data.customFields || {},
-        externalIntegrations: data.externalIntegrations || {},
-    };
-
     const product = await db.product.create({
-        data: productData,
+        data: {
+            name: data.name,
+            sku: data.sku,
+            description: data.description,
+            price: Number.parseFloat(data.price),
+            cost: data.cost ? Number.parseFloat(data.cost) : undefined,
+            minStock: data.minStock ? Number.parseInt(data.minStock) : undefined,
+            images: data.images || [],
+            agencyId: data.agencyId,
+            subAccountId: data.subaccountId,
+            categoryId: data.categoryId !== "no-category" ? data.categoryId : null,
+            brand: data.brand,
+            model: data.model,
+            tags: data.tags || [],
+            unit: data.unit,
+            barcode: data.barcode,
+            quantity: data.quantity ? Number.parseInt(data.quantity) : 0,
+            locationId: data.locationId,
+            warehouseId: data.warehouseId,
+            batchNumber: data.batchNumber,
+            expirationDate: data.expirationDate ? new Date(data.expirationDate) : null,
+            serialNumber: data.serialNumber,
+            warrantyMonths: data.warrantyMonths ? Number.parseInt(data.warrantyMonths) : null,
+            isReturnable: data.isReturnable,
+            active: data.isActive !== false,
+            discount: data.discount ? Number.parseFloat(data.discount) : 0,
+            discountStartDate: data.discountStartDate ? new Date(data.discountStartDate) : null,
+            discountEndDate: data.discountEndDate ? new Date(data.discountEndDate) : null,
+            discountMinimumPrice: data.discountMinimumPrice ? Number.parseFloat(data.discountMinimumPrice) : null,
+            taxRate: data.taxRate ? Number.parseFloat(data.taxRate) : 0,
+            supplierId: data.supplierId !== "no-supplier" ? data.supplierId : null,
+            variants: data.variants || [],
+            documents: data.documents || [],
+            customFields: data.customFields || {},
+            externalIntegrations: data.externalIntegrations || {},
+        },
     });
 
     // Registrar actividad
@@ -297,49 +411,42 @@ export const createProduct = async (data: any) => {
 };
 
 export const updateProduct = async (productId: string, data: any) => {
-    // Usar directamente el array de imágenes proporcionado
-    const images = data.images || [];
-    
-    // Crear el objeto de datos del producto
-    const productData = {
-        name: data.name,
-        sku: data.sku,
-        description: data.description,
-        price: Number.parseFloat(data.price),
-        cost: data.cost ? Number.parseFloat(data.cost) : undefined,
-        minStock: data.minStock ? Number.parseInt(data.minStock) : undefined,
-        images: data.images || [],
-        productImage: data.productImage || (images.length > 0 ? images[0] : null),
-        subAccountId: data.subaccountId,
-        categoryId: data.categoryId !== "no-category" ? data.categoryId : null,
-        brand: data.brand,
-        model: data.model,
-        tags: data.tags || [],
-        unit: data.unit,
-        barcode: data.barcode,
-        locationId: data.locationId,
-        warehouseId: data.warehouseId,
-        batchNumber: data.batchNumber,
-        expirationDate: data.expirationDate ? new Date(data.expirationDate) : null,
-        serialNumber: data.serialNumber,
-        warrantyMonths: data.warrantyMonths ? Number.parseInt(data.warrantyMonths) : null,
-        isReturnable: data.isReturnable,
-        isActive: data.isActive !== false,
-        discount: data.discount ? Number.parseFloat(data.discount) : 0,
-        discountStartDate: data.discountStartDate ? new Date(data.discountStartDate) : null,
-        discountEndDate: data.discountEndDate ? new Date(data.discountEndDate) : null,
-        discountMinimumPrice: data.discountMinimumPrice ? Number.parseFloat(data.discountMinimumPrice) : null,
-        taxRate: data.taxRate ? Number.parseFloat(data.taxRate) : 0,
-        supplierId: data.supplierId !== "no-supplier" ? data.supplierId : null,
-        variants: data.variants || [],
-        documents: data.documents || [],
-        customFields: data.customFields || {},
-        externalIntegrations: data.externalIntegrations || {},
-    };
-
     const product = await db.product.update({
         where: { id: productId },
-        data: productData,
+        data: {
+            name: data.name,
+            sku: data.sku,
+            description: data.description,
+            price: Number.parseFloat(data.price),
+            cost: data.cost ? Number.parseFloat(data.cost) : undefined,
+            minStock: data.minStock ? Number.parseInt(data.minStock) : undefined,
+            images: data.images || [],
+            subAccountId: data.subaccountId,
+            categoryId: data.categoryId !== "no-category" ? data.categoryId : null,
+            brand: data.brand,
+            model: data.model,
+            tags: data.tags || [],
+            unit: data.unit,
+            barcode: data.barcode,
+            locationId: data.locationId,
+            warehouseId: data.warehouseId,
+            batchNumber: data.batchNumber,
+            expirationDate: data.expirationDate ? new Date(data.expirationDate) : null,
+            serialNumber: data.serialNumber,
+            warrantyMonths: data.warrantyMonths ? Number.parseInt(data.warrantyMonths) : null,
+            isReturnable: data.isReturnable,
+            active: data.isActive !== false,
+            discount: data.discount ? Number.parseFloat(data.discount) : 0,
+            discountStartDate: data.discountStartDate ? new Date(data.discountStartDate) : null,
+            discountEndDate: data.discountEndDate ? new Date(data.discountEndDate) : null,
+            discountMinimumPrice: data.discountMinimumPrice ? Number.parseFloat(data.discountMinimumPrice) : null,
+            taxRate: data.taxRate ? Number.parseFloat(data.taxRate) : 0,
+            supplierId: data.supplierId !== "no-supplier" ? data.supplierId : null,
+            variants: data.variants || [],
+            documents: data.documents || [],
+            customFields: data.customFields || {},
+            externalIntegrations: data.externalIntegrations || {},
+        },
     });
 
     // Registrar actividad
@@ -358,41 +465,36 @@ export const deleteProduct = async (agencyId: string, productId: string, subacco
         throw new Error("ID de producto no proporcionado");
     }
 
-    try {
-        // Obtener el producto antes de eliminarlo para tener su nombre
-        const productToDelete = await db.product.findUnique({
-            where: { id: productId },
-        });
+    // Obtener el producto antes de eliminarlo para tener su nombre
+    const productToDelete = await db.product.findUnique({
+        where: { id: productId },
+    });
 
-        if (!productToDelete) {
-            throw new Error("Producto no encontrado");
-        }
-
-        // Eliminar el producto
-        const product = await db.product.delete({
-            where: { id: productId },
-        });
-
-        // Registrar actividad
-        await saveActivityLogsNotification({
-            agencyId,
-            description: `Producto eliminado: ${productToDelete.name}`,
-            subaccountId,
-        });
-
-        // Convertir los campos Decimal a número para evitar problemas al pasar a componentes cliente
-        return {
-            ...JSON.parse(JSON.stringify(product)),
-            price: Number(product.price),
-            cost: product.cost ? Number(product.cost) : null,
-            discount: product.discount ? Number(product.discount) : null,
-            discountMinimumPrice: product.discountMinimumPrice ? Number(product.discountMinimumPrice) : null,
-            taxRate: product.taxRate ? Number(product.taxRate) : null
-        };
-    } catch (error) {
-        console.error("Error al eliminar producto:", error);
-        throw error;
+    if (!productToDelete) {
+        throw new Error("Producto no encontrado");
     }
+
+    // Eliminar el producto
+    const product = await db.product.delete({
+        where: { id: productId },
+    });
+
+    // Registrar actividad
+    await saveActivityLogsNotification({
+        agencyId,
+        description: `Producto eliminado: ${productToDelete.name}`,
+        subaccountId,
+    });
+
+    // Convertir los campos Decimal a número para evitar problemas al pasar a componentes cliente
+    return {
+        ...product,
+        price: Number(product.price),
+        cost: product.cost ? Number(product.cost) : null,
+        discount: product.discount ? Number(product.discount) : null,
+        discountMinimumPrice: product.discountMinimumPrice ? Number(product.discountMinimumPrice) : null,
+        taxRate: product.taxRate ? Number(product.taxRate) : null
+    };
 };
 
 export const duplicateProduct = async (agencyId: string, productId: string, subaccountId?: string) => {
@@ -401,71 +503,66 @@ export const duplicateProduct = async (agencyId: string, productId: string, suba
         throw new Error("ID de producto no proporcionado");
     }
 
-    try {
-        // Obtener el producto original
-        const originalProduct = await db.product.findFirst({
-            where: {
-                id: productId,
-                agencyId,
-            },
-        });
-
-        if (!originalProduct) {
-            throw new Error("Producto no encontrado");
-        }
-
-        // Crear una copia del producto con un nuevo SKU
-        const newProduct = await db.product.create({
-            data: {
-                name: `${originalProduct.name} (Copia)`,
-                sku: `${originalProduct.sku}-COPY`,
-                description: originalProduct.description,
-                price: originalProduct.price,
-                cost: originalProduct.cost,
-                minStock: originalProduct.minStock,
-                images: originalProduct.images,
-                categoryId: originalProduct.categoryId,
-                active: originalProduct.active,
-                agencyId: originalProduct.agencyId,
-                subAccountId: originalProduct.subAccountId,
-                brand: originalProduct.brand,
-                model: originalProduct.model,
-                tags: originalProduct.tags,
-                unit: originalProduct.unit,
-                barcode: originalProduct.barcode,
-                isActive: originalProduct.isActive,
-                quantity: 0, // Iniciar con 0 unidades
-                locationId: originalProduct.locationId,
-                warehouseId: originalProduct.warehouseId,
-                isReturnable: originalProduct.isReturnable,
-                taxRate: originalProduct.taxRate,
-                supplierId: originalProduct.supplierId,
-                variants: originalProduct.variants,
-                customFields: originalProduct.customFields,
-                externalIntegrations: originalProduct.externalIntegrations,
-            },
-        });
-
-        // Registrar actividad
-        await saveActivityLogsNotification({
+    // Obtener el producto original
+    const originalProduct = await db.product.findFirst({
+        where: {
+            id: productId,
             agencyId,
-            description: `Producto duplicado: ${originalProduct.name} → ${newProduct.name}`,
-            subaccountId,
-        });
+        },
+    });
 
-        // Convertir los campos Decimal a número para evitar problemas al pasar a componentes cliente
-        return {
-            ...JSON.parse(JSON.stringify(newProduct)),
-            price: Number(newProduct.price),
-            cost: newProduct.cost ? Number(newProduct.cost) : null,
-            discount: newProduct.discount ? Number(newProduct.discount) : null,
-            discountMinimumPrice: newProduct.discountMinimumPrice ? Number(newProduct.discountMinimumPrice) : null,
-            taxRate: newProduct.taxRate ? Number(newProduct.taxRate) : null
-        };
-    } catch (error) {
-        console.error("Error al duplicar producto:", error);
-        throw error;
+    if (!originalProduct) {
+        throw new Error("Producto no encontrado");
     }
+
+    // Crear una copia del producto con un nuevo SKU
+    const newProduct = await db.product.create({
+        data: {
+            name: `${originalProduct.name} (Copia)`,
+            sku: `${originalProduct.sku}-COPY`,
+            description: originalProduct.description,
+            price: originalProduct.price,
+            cost: originalProduct.cost,
+            minStock: originalProduct.minStock,
+            images: originalProduct.images,
+            categoryId: originalProduct.categoryId,
+            active: originalProduct.active,
+            agencyId: originalProduct.agencyId,
+            subAccountId: originalProduct.subAccountId,
+            brand: originalProduct.brand,
+            model: originalProduct.model,
+            tags: originalProduct.tags,
+            unit: originalProduct.unit,
+            barcode: originalProduct.barcode,
+            isActive: originalProduct.isActive,
+            quantity: 0, // Iniciar con 0 unidades
+            locationId: originalProduct.locationId,
+            warehouseId: originalProduct.warehouseId,
+            isReturnable: originalProduct.isReturnable,
+            taxRate: originalProduct.taxRate,
+            supplierId: originalProduct.supplierId,
+            variants: originalProduct.variants,
+            customFields: originalProduct.customFields,
+            externalIntegrations: originalProduct.externalIntegrations,
+        },
+    });
+
+    // Registrar actividad
+    await saveActivityLogsNotification({
+        agencyId,
+        description: `Producto duplicado: ${originalProduct.name} → ${newProduct.name}`,
+        subaccountId,
+    });
+
+    // Convertir los campos Decimal a número para evitar problemas al pasar a componentes cliente
+    return {
+        ...newProduct,
+        price: Number(newProduct.price),
+        cost: newProduct.cost ? Number(newProduct.cost) : null,
+        discount: newProduct.discount ? Number(newProduct.discount) : null,
+        discountMinimumPrice: newProduct.discountMinimumPrice ? Number(newProduct.discountMinimumPrice) : null,
+        taxRate: newProduct.taxRate ? Number(newProduct.taxRate) : null
+    };
 };
 
 export const getActiveDiscounts = async (agencyId: string) => {
@@ -557,17 +654,11 @@ export const deleteCategory = async (agencyId: string, categoryId: string, subac
     return category;
 };
 
-
+// Funciones para gestión de proveedores
 
 export const getProviders = async (agencyId: string) => {
     return await db.provider.findMany({
-        where: {
-            agencyId,
-            active: true
-        },
-        orderBy: {
-            name: 'asc'
-        }
+        where: { agencyId },
     });
 };
 
@@ -641,28 +732,6 @@ export const deleteProvider = async (agencyId: string, providerId: string, subac
     });
 
     return provider;
-};
-
-// Funciones para gestión de áreas (almacenes)
-
-export const getAreas = async (agencyId: string) => {
-    return await db.area.findMany({
-        where: {
-            agencyId
-        },
-        orderBy: {
-            name: 'asc'
-        }
-    });
-};
-
-export const getAreaById = async (agencyId: string, areaId: string) => {
-    return await db.area.findFirst({
-        where: {
-            id: areaId,
-            agencyId,
-        },
-    });
 };
 
 // Funciones para gestión de clientes
@@ -842,9 +911,25 @@ export const searchClients = async (agencyId: string, searchTerm: string, subAcc
     });
 };
 
+// Funciones para gestión de áreas
 
+export const getAreas = async (agencyId: string, subAccountId?: string) => {
+    return await db.area.findMany({
+        where: { 
+            agencyId,
+            ...(subAccountId ? { subAccountId } : {})
+        },
+        orderBy: {
+            name: 'asc'
+        }
+    });
+};
 
-
+export const getAreaById = async (areaId: string) => {
+    return await db.area.findUnique({
+        where: { id: areaId }
+    });
+};
 
 export const createArea = async (data: any) => {
     const area = await db.area.create({
@@ -992,9 +1077,17 @@ export const getSubAccounts = async (agencyId: string) => {
     });
 };
 
-
+// Función para obtener proveedores de una agencia
+export const getProviders = async (agencyId: string) => {
+    return await db.provider.findMany({
+        where: { agencyId },
+        orderBy: { name: 'asc' }
+    });
+};
 
 // Funciones para gestión de movimientos de inventario
+
+// Obtener todos los movimientos de una agencia
 export const getMovements = async (agencyId: string, subAccountId?: string) => {
     const whereClause: any = { agencyId };
     
@@ -1015,7 +1108,74 @@ export const getMovements = async (agencyId: string, subAccountId?: string) => {
     });
 };
 
-
+// Crear un nuevo movimiento de inventario
+export const createMovement = async (data: any) => {
+    // Validar datos requeridos
+    if (!data.type || !data.productId || !data.areaId || !data.quantity || !data.agencyId) {
+        throw new Error('Faltan campos requeridos para crear el movimiento');
+    }
+    
+    // Validar que la cantidad sea positiva
+    if (data.quantity <= 0) {
+        throw new Error('La cantidad debe ser mayor a cero');
+    }
+    
+    // Para movimientos de salida, verificar que haya suficiente stock
+    if (data.type === 'salida') {
+        const stocks = await getStocks(data.agencyId);
+        const areaStock = stocks.find(s => s.productId === data.productId && s.areaId === data.areaId);
+        const stockQuantity = areaStock ? areaStock.quantity : 0;
+        
+        if (data.quantity > stockQuantity) {
+            throw new Error(`Stock insuficiente. Solo hay ${stockQuantity} unidades disponibles en esta área.`);
+        }
+    }
+    
+    // Para transferencias, verificar que el área de origen y destino sean diferentes
+    if (data.type === 'transferencia') {
+        if (!data.destinationAreaId) {
+            throw new Error('Se requiere un área de destino para las transferencias');
+        }
+        
+        if (data.areaId === data.destinationAreaId) {
+            throw new Error('El área de origen y destino no pueden ser la misma');
+        }
+        
+        // Verificar stock suficiente
+        const stocks = await getStocks(data.agencyId);
+        const areaStock = stocks.find(s => s.productId === data.productId && s.areaId === data.areaId);
+        const stockQuantity = areaStock ? areaStock.quantity : 0;
+        
+        if (data.quantity > stockQuantity) {
+            throw new Error(`Stock insuficiente para transferir. Solo hay ${stockQuantity} unidades disponibles en el área de origen.`);
+        }
+    }
+    
+    // Crear el movimiento
+    const movement = await db.movement.create({
+        data: {
+            type: data.type,
+            quantity: data.quantity,
+            notes: data.notes || '',
+            date: data.date || new Date(),
+            Product: { connect: { id: data.productId } },
+            Area: { connect: { id: data.areaId } },
+            Agency: { connect: { id: data.agencyId } },
+            ...(data.subaccountId && { SubAccount: { connect: { id: data.subaccountId } } }),
+            ...(data.providerId && { Provider: { connect: { id: data.providerId } } }),
+            ...(data.destinationAreaId && { DestinationArea: { connect: { id: data.destinationAreaId } } }),
+        },
+    });
+    
+    // Registrar actividad
+    await saveActivityLogsNotification({
+        agencyId: data.agencyId,
+        description: `Movimiento de inventario: ${data.type} de ${data.quantity} unidades`,
+        subaccountId: data.subaccountId,
+    });
+    
+    return movement;
+};
 
 // Función para obtener movimientos con opciones adicionales
 export const getMovementsByOptions = async (agencyId: string, options?: {
@@ -1159,59 +1319,6 @@ export const createMovement = async (data: any) => {
 
 // Funciones para gestión de descuentos
 
-/**
- * Actualiza el stock de un producto según el tipo de movimiento
- * @param productId ID del producto
- * @param areaId ID del área donde se realiza el movimiento
- * @param type Tipo de movimiento: "entrada", "salida" o "transferencia"
- * @param quantity Cantidad de unidades
- * @param destinationAreaId ID del área de destino (solo para transferencias)
- */
-export const updateProductStock = async (
-    productId: string,
-    areaId: string,
-    type: string,
-    quantity: number,
-    destinationAreaId?: string
-) => {
-    // Obtener el producto
-    const product = await db.product.findUnique({
-        where: { id: productId },
-    });
-
-    if (!product) {
-        throw new Error("Producto no encontrado");
-    }
-
-    // Actualizar el stock según el tipo de movimiento
-    if (type === "entrada") {
-        // Para entradas, aumentamos la cantidad
-        await db.product.update({
-            where: { id: productId },
-            data: {
-                quantity: {
-                    increment: quantity
-                }
-            }
-        });
-    } else if (type === "salida") {
-        // Para salidas, disminuimos la cantidad
-        await db.product.update({
-            where: { id: productId },
-            data: {
-                quantity: {
-                    decrement: quantity
-                }
-            }
-        });
-    } else if (type === "transferencia" && destinationAreaId) {
-        // Para transferencias, no cambiamos la cantidad total del producto
-        // ya que solo se mueve de un área a otra
-        // La lógica de control de stock por área se maneja a través de los registros
-        // de movimientos, como se hace en la función createMovement
-    }
-};
-
 export const createDiscount = async (data: any) => {
     // Validar datos requeridos
     if (!data.discount || !data.startDate || !data.endDate || !data.agencyId) {
@@ -1321,7 +1428,12 @@ export const removeDiscount = async (agencyId: string, productId: string, subacc
  * Obtiene productos para el sistema POS con validación de inventario
  * Solo devuelve productos con quantity > 0 para venta
  */
-
+export const getProductsForPOS = async (agencyId: string, options?: {
+    subAccountId?: string;
+    categoryId?: string;
+    search?: string;
+}) => {
+    
 // Funciones para exportación de datos de inventario
 
 export const exportInventoryData = async (agencyId: string, options?: {

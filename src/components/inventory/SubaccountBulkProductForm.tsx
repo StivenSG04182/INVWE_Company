@@ -34,7 +34,7 @@ export default function SubaccountBulkProductForm({ subaccountId }: SubaccountBu
             cost: "",
             minStock: "",
             categoryId: "",
-            images: [],
+            productImage: "",
         },
     ])
     const [categories, setCategories] = useState<any[]>([])
@@ -352,9 +352,9 @@ export default function SubaccountBulkProductForm({ subaccountId }: SubaccountBu
                                                         </TableCell>
                                                         <TableCell>
                                                             <div className="w-20 h-20 border rounded-md flex items-center justify-center bg-muted/20">
-                                                                {product.images && product.images.length > 0 ? (
+                                                                {product.productImage ? (
                                                                     <Image
-                                                                        src={product.images[0]}
+                                                                        src={product.productImage}
                                                                         alt={`Producto ${index + 1}`}
                                                                         width={80}
                                                                         height={80}

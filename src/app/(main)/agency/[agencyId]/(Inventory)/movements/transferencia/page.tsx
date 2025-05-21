@@ -4,13 +4,12 @@ import { Suspense } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ProductService, AreaService } from "@/lib/services/inventory-service"
 import MovementRegistration from "@/components/inventory/movement-registration"
 import { ArrowLeftRight, Package, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
 // Servicio para obtener datos necesarios
-import { getProducts, getAreas } from "@/lib/queries2"
-
 export async function getTransferPageData(agencyId: string, productId?: string) {
     const user = await getAuthUserDetails()
     if (!user) return { redirect: "/sign-in" }
@@ -19,43 +18,16 @@ export async function getTransferPageData(agencyId: string, productId?: string) 
         return { redirect: "/agency" }
     }
 
-    try {
-        // Obtener productos y áreas usando las funciones de queries2.ts
-        const rawProducts = await getProducts(agencyId)
-        const rawAreas = await getAreas(agencyId)
-        
-        // Convertir valores Decimal a números normales para evitar errores de serialización
-        const products = rawProducts.map(product => ({
-            ...product,
-            price: product.price ? Number(product.price) : 0,
-            cost: product.cost ? Number(product.cost) : 0,
-            discount: product.discount ? Number(product.discount) : 0,
-            taxRate: product.taxRate ? Number(product.taxRate) : 0,
-            discountMinimumPrice: product.discountMinimumPrice ? Number(product.discountMinimumPrice) : null,
-            minStock: product.minStock ? Number(product.minStock) : undefined,
-            // Asegurar que los stocks también sean números
-            stocks: product.Stocks ? product.Stocks.map((stock: any) => ({
-                ...stock,
-                quantity: stock.quantity ? Number(stock.quantity) : 0
-            })) : []
-        }))
-        
-        const areas = rawAreas
-        
-        return {
-            user,
-            products,
-            areas,
-            productId,
-        }
-    } catch (error) {
-        console.error("Error al cargar datos para la página de transferencia:", error)
-        return {
-            user,
-            products: [],
-            areas: [],
-            productId
-        }
+    // Obtener productos y áreas de MongoDB
+    let products = []
+    let areas = []
+
+
+    return {
+        user,
+        products,
+        areas,
+        productId,
     }
 }
 

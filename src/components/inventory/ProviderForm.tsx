@@ -45,16 +45,14 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
   useEffect(() => {
     const fetchSubaccounts = async () => {
       try {
-        // Importar la función getSubAccounts de queries2.ts
-        const { getSubAccounts } = await import('@/lib/queries2');
-        
-        // Obtener las subcuentas usando la función del servidor
-        const subaccountsData = await getSubAccounts(agencyId);
-        
-        if (subaccountsData) {
-          setSubaccounts(subaccountsData);
+        const response = await fetch(`/api/agency/${agencyId}/subaccounts`, {
+          credentials: 'include',
+        });
+        const data = await response.json();
+        if (data.success) {
+          setSubaccounts(data.data || []);
         } else {
-          console.error('No se pudieron obtener las subcuentas');
+          console.error('Error al cargar subcuentas:', data.error);
         }
       } catch (error) {
         console.error('Error al cargar subcuentas:', error);
@@ -251,4 +249,5 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
       </form>
     </Card>
   );
+}
 }
