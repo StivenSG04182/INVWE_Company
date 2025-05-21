@@ -1,0 +1,42 @@
+# Dependencias
+node_modules
+.pnp
+.pnp.js
+
+# Archivos de construcción
+.next/
+out/
+build/
+
+# Archivos de desarrollo
+.DS_Store
+*.pem
+
+# Archivos de depuración
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos locales
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Archivos de control de versiones
+.git
+.gitignore
+
+# Archivos de configuración
+.eslintrc.json
+.prettierrc
+
+# Archivos de Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Otros
+README.md
+LICENSE
+*.md

@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100vh;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* 
+R (0)
+G (110)
+B (255 */
+
+@layer base {
+  :root {
+    /* Modo claro (tema por defecto) */
+    --background: 0, 0%, 93%;
+
+    /* Texto siempre negro */
+    --foreground: 0 0% 0%;
+
+    --primary: 214, 70%, 58%;
+    --primary-foreground: 0 0% 100%; /* mantiene blanco sobre primary */
+
+    --secondary: 270 20% 55%;
+    --secondary-foreground: 0 0% 0%; /* negro sobre secondary */
+
+    --card: 0, 0%, 88%;
+    --card-foreground: 0 0% 0%; /* negro en tarjetas */
+
+    --popover: 30 20% 97%;
+    --popover-foreground: 0 0% 0%; /* negro en popovers */
+
+    --border: 0, 0%, 76%;
+
+    --input: 0 0% 76%;
+    --input-foreground: 0 0% 0%; /* negro en inputs */
+
+    --accent: 214, 70%, 70%;
+    --accent-foreground: 0 0% 0%; /* negro en acentos si se usa */
+
+    --destructive: 354 65% 55%;
+    --destructive-foreground: 0 0% 0%; /* negro en mensajes de error */
+
+    --ring: 214, 70%, 58%;
+    --ring-foreground: 0 0% 0%; /* negro en focus ring si aplica */
+
+    --selector-bg: 30 70% 50%;
+    --selector-fg: 0 0% 0%; /* negro en selectores */
+  }
+
+  .dark {
+    /* Modo oscuro */
+    --background: 0 0% 12%; /* gris cálido muy oscuro */
+    --foreground: 30 10% 92%; /* texto claro suave */
+
+    --primary: 214, 70%, 58%; /* verde azulado más vibrante */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 270 20% 70%; /* púrpura grisáceo más luminoso */
+    --secondary-foreground: 0 0% 0%;
+
+    --card: 0 0% 7%; /* fondo de tarjeta oscuro */
+    --card-foreground: 30 10% 92%;
+
+    --popover: 0 0% 17%; /* ligeramente más claro que card */
+    --popover-foreground: 30 10% 92%;
+
+    --border: 0 0% 17%; /* líneas suaves sobre fondo oscuro */
+    --input: 0 0% 17%;
+    --input-foreground: 30 10% 92%;
+
+    --accent: 214, 70%, 70%; /* naranja tostado más suave */
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 354 65% 65%;
+    --destructive-foreground: 0 0% 0%;
+
+    --ring: 214, 70%, 58%;
+    --ring-foreground: 0 0% 0%;
+
+    --selector-bg: 30 70% 60%;
+    --selector-fg: 0 0% 0%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+.dotPattern {
+  background-image: radial-gradient(rgb(35, 40, 68) 1px, transparent 1px);
+  background-size: 25px 25px;
+}
+
+.use-automation-zoom-in {
+  animation: automation-zoom-in 0.5s;
+}
+
+@keyframes automation-zoom-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
