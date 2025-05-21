@@ -421,15 +421,32 @@ const WorkspaceEditorClient = ({ area, agencyId }) => {
         setSaveSuccess(false)
 
         try {
-            // Aquí iría la lógica para guardar en la base de datos
-            // Por ahora solo actualizamos el estado local
-            setCurrentArea(updatedArea)
-            setSaveSuccess(true)
-
-            // Simular un retraso para mostrar el mensaje de éxito
-            setTimeout(() => {
-                setSaveSuccess(false)
-            }, 3000)
+            // Importar el servicio de áreas
+            const { AreaService } = await import('@/lib/services/inventory-service')
+            
+            // Preparar los datos para actualizar
+            const areaData = {
+                name: updatedArea.name,
+                description: updatedArea.description,
+                layout: updatedArea.workspace || {}, // Guardar el workspace como layout en la BD
+                agencyId: agencyId,
+                subaccountId: updatedArea.subAccountId || updatedArea.subaccountId
+            }
+            
+            // Actualizar el área en la base de datos
+            const result = await AreaService.updateArea(area.id || area._id, areaData)
+            
+            if (result) {
+                setCurrentArea(updatedArea)
+                setSaveSuccess(true)
+                
+                // Ocultar el mensaje de éxito después de 3 segundos
+                setTimeout(() => {
+                    setSaveSuccess(false)
+                }, 3000)
+            } else {
+                throw new Error('No se pudo guardar el área')
+            }
         } catch (error) {
             console.error("Error al guardar el área de trabajo:", error)
             setSaveError("Ocurrió un error al guardar los cambios.")
@@ -474,45 +491,59 @@ const AreaWorkspacePage = async ({ params, searchParams }) => {
     }
 
     // Obtener área si existe un ID
-    let area = null
-    const areaId = searchParams?.areaId
+  let area = null
+  const areaId = searchParams?.areaId
 
-    try {
-        if (areaId) {
-            area = await AreaService.getAreaById(areaId)
-            if (!area) {
-                return (
-                    <div className="container mx-auto p-6">
-                        <Alert variant="destructive">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertTitle>Error</AlertTitle>
-                            <AlertDescription>El área no existe o ha sido eliminada.</AlertDescription>
-                        </Alert>
-                        <div className="mt-4">
-                            <Button variant="outline" asChild>
-                                <Link href={`/agency/${agencyId}/areas`}>
-                                    <ArrowLeft className="h-4 w-4 mr-2" />
-                                    Volver a áreas
-                                </Link>
-                            </Button>
-                        </div>
-                    </div>
-                )
-            }
-        } else {
-            // Si no hay ID, crear un área nueva
-            area = {
-                name: "Nueva Área de Trabajo",
-                description: "Descripción del área de trabajo",
-                agencyId,
-                workspace: {
-                    width: 800,
-                    height: 600,
-                    elements: [],
-                    gridSize: 20,
-                },
-            }
+  try {
+    if (areaId) {
+      area = await AreaService.getAreaById(agencyId, areaId)
+      if (!area) {
+        return (
+          <div className="container mx-auto p-6">
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>El área no existe o ha sido eliminada.</AlertDescription>
+            </Alert>
+            <div className="mt-4">
+              <Button variant="outline" asChild>
+                <Link href={`/agency/${agencyId}/areas`}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Volver a áreas
+                </Link>
+              </Button>
+            </div>
+          </div>
+        )
+      }
+      
+      // Asegurarse de que el área tenga un workspace definido
+      if (!area.workspace && area.layout) {
+        // Si no tiene workspace pero tiene layout, usar el layout como workspace
+        area.workspace = area.layout
+      } else if (!area.workspace) {
+        // Si no tiene ni workspace ni layout, crear uno por defecto
+        area.workspace = {
+          width: 800,
+          height: 600,
+          elements: [],
+          gridSize: 20,
         }
+      }
+    } else {
+      // Si no hay ID, crear un área nueva
+      area = {
+        name: "Nueva Área de Trabajo",
+        description: "Descripción del área de trabajo",
+        agencyId,
+        workspace: {
+          width: 800,
+          height: 600,
+          elements: [],
+          gridSize: 20,
+        },
+      }
+    }
     } catch (error) {
         console.error("Error al cargar área:", error)
         return (

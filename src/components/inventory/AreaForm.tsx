@@ -36,14 +36,16 @@ export default function AreaForm({ agencyId, area, isEditing = false }: AreaForm
   useEffect(() => {
     const fetchSubaccounts = async () => {
       try {
-        const response = await fetch(`/api/agency/${agencyId}/subaccounts`, {
-          credentials: 'include',
-        });
-        const data = await response.json();
-        if (data.success) {
-          setSubaccounts(data.data || []);
+        // Importar la función getSubAccounts de queries2.ts
+        const { getSubAccounts } = await import('@/lib/queries2');
+        
+        // Obtener las subcuentas usando la función del servidor
+        const subaccountsData = await getSubAccounts(agencyId);
+        
+        if (subaccountsData) {
+          setSubaccounts(subaccountsData);
         } else {
-          console.error('Error al cargar subcuentas:', data.error);
+          console.error('No se pudieron obtener las subcuentas');
         }
       } catch (error) {
         console.error('Error al cargar subcuentas:', error);
@@ -89,24 +91,26 @@ export default function AreaForm({ agencyId, area, isEditing = false }: AreaForm
     }
 
     try {
-      const endpoint = `/api/inventory/${agencyId}`;
-      const method = isEditing ? 'PUT' : 'POST';
-      const body = isEditing
-        ? { type: 'area', id: area?._id, data: { ...formData, agencyId } }
-        : { type: 'area', data: { ...formData, agencyId } };
+      // Importar el servicio de áreas
+      const { AreaService } = await import('@/lib/services/inventory-service');
+      
+      let result;
+      
+      if (isEditing && area?._id) {
+        // Actualizar área existente
+        result = await AreaService.updateArea(area._id, {
+          ...formData,
+          agencyId
+        });
+      } else {
+        // Crear nueva área
+        result = await AreaService.createArea({
+          ...formData,
+          agencyId
+        });
+      }
 
-      const response = await fetch(endpoint, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-        credentials: 'include', // Incluir cookies y credenciales de autenticación
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
+      if (result) {
         toast({
           title: isEditing ? 'Área actualizada' : 'Área creada',
           description: `El área ${formData.name} ha sido ${isEditing ? 'actualizada' : 'creada'} exitosamente.`,
@@ -114,7 +118,7 @@ export default function AreaForm({ agencyId, area, isEditing = false }: AreaForm
         router.refresh();
         router.push(`/agency/${agencyId}/areas`);
       } else {
-        throw new Error(result.error || 'Error al procesar la solicitud');
+        throw new Error('Error al procesar la solicitud');
       }
     } catch (error) {
       console.error('Error al guardar el área:', error);

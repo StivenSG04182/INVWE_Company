@@ -136,7 +136,7 @@ export async function GET(req: NextRequest) {
                 categoryId: product.categoryId,
                 categoryName: product.Category?.name,
                 images: product.images,
-                productImage: product.productImage,
+                productImage: product.images && product.images.length > 0 ? product.images[0] : "",
             }
         })
 

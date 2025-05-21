@@ -4,12 +4,13 @@ import { Suspense } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ProductService, AreaService } from "@/lib/services/inventory-service"
 import MovementRegistration from "@/components/inventory/movement-registration"
 import { ArrowDownToLine, Package, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
 // Servicio para obtener datos necesarios
+import { getProducts, getAreas } from "@/lib/queries2"
+
 export async function getEntryPageData(agencyId: string, productId?: string) {
   const user = await getAuthUserDetails()
   if (!user) return { redirect: "/sign-in" }
@@ -19,9 +20,9 @@ export async function getEntryPageData(agencyId: string, productId?: string) {
   }
 
   try {
-    // Obtener productos y áreas usando los servicios de Prisma
-    const rawProducts = await ProductService.getProducts(agencyId)
-    const rawAreas = await AreaService.getAreas(agencyId)
+    // Obtener productos y áreas usando las funciones de queries2.ts
+    const rawProducts = await getProducts(agencyId)
+    const rawAreas = await getAreas(agencyId)
     
     // Convertir valores Decimal a números normales para evitar errores de serialización
     const products = rawProducts.map(product => ({

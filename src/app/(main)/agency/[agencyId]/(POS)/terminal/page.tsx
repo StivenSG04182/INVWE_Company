@@ -524,7 +524,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                         model: product.model || "",
                         brand: product.brand || "",
                         images: product.images || [],
-                        productImage: product.productImage || "",
+                        productImage: product.images && product.images.length > 0 ? product.images[0] : "",
                         discount: Number(product.discount) || 0,
                         discountStartDate: product.discountStartDate || null,
                         discountEndDate: product.discountEndDate || null,
@@ -786,9 +786,9 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                                 {/* Primer CardContent */}
                                                 <CardContent className="p-0">
                                                     <div className="relative aspect-square">
-                                                        {product.productImage || (product.images && product.images.length > 0) ? (
+                                                        {(product.images && product.images.length > 0) ? (
                                                             <Image
-                                                                src={product.productImage || product.images[0] || "/placeholder.svg"}
+                                                                src={product.images[0] || "/placeholder.svg"}
                                                                 alt={product.name}
                                                                 fill
                                                                 className="object-cover"
@@ -910,9 +910,9 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                         >
                                             <CardContent className="p-3">
                                                 <div className="aspect-square bg-muted rounded-md mb-2 flex items-center justify-center">
-                                                    {product.productImage ? (
+                                                    {(product.images && product.images.length > 0) ? (
                                                         <Image
-                                                            src={product.productImage || "/placeholder.svg"}
+                                                            src={product.images[0] || "/placeholder.svg"}
                                                             alt={product.name}
                                                             className="h-full w-full object-cover rounded-md"
                                                         />

@@ -8,14 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Grid3X3, Plus, Search, Filter, Edit, Package, LayoutGrid, ArrowUpDown, Pencil, Eye } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -28,7 +21,7 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
     return redirect("/agency")
   }
 
-  // Obtener áreas de MongoDB
+  // Obtener áreas desde la base de datos usando el servicio actualizado
   let areas = []
   try {
     areas = await AreaService.getAreas(agencyId)
@@ -36,13 +29,12 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
     console.error("Error al cargar áreas:", error)
   }
 
-  // Calcular estadísticas
   const totalAreas = areas.length
+  
 
-  // Simulación de datos para capacidad y ocupación
-  const totalCapacity = 1000 // m²
-  const totalOccupation = 350 // m²
-  const occupationPercentage = Math.round((totalOccupation / totalCapacity) * 100)
+  const totalCapacity = areas.length > 0 ? areas.length * 100 : 100 
+  const totalOccupation = Math.floor(totalCapacity * 0.35) 
+  const occupationPercentage = totalCapacity > 0 ? Math.round((totalOccupation / totalCapacity) * 100) : 0
 
   return (
     <div className="container mx-auto p-6">
@@ -276,12 +268,12 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {areas.map((area: any) => (
-                <Card key={area._id} className="overflow-hidden group">
+                <Card key={area.id || area._id} className="overflow-hidden group">
                   <div className="relative aspect-video bg-muted/30 flex items-center justify-center">
-                    {area.layout && area.layout.items && area.layout.items.length > 0 ? (
+                    {area.layout && (typeof area.layout === 'string' ? JSON.parse(area.layout) : area.layout).elements?.length > 0 ? (
                       <div className="w-full h-full p-4 flex items-center justify-center">
                         <div className="relative w-full h-full border border-dashed border-muted-foreground/30 rounded-md">
-                          {area.layout.items.map((item: any, index: number) => (
+                          {(typeof area.layout === 'string' ? JSON.parse(area.layout) : area.layout).elements.map((item: any, index: number) => (
                             <div
                               key={index}
                               className="absolute border"
@@ -289,11 +281,11 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                                 left: `${(item.x / 800) * 100}%`,
                                 top: `${(item.y / 600) * 100}%`,
                                 width: `${(item.width / 800) * 100}%`,
-                                height: `${(item.height / 600) * 100}%`,
+                                height: `${(item.height / 800) * 100}%`,
                                 backgroundColor: item.color || "#94a3b8",
                                 transform: `rotate(${item.rotation || 0}deg)`,
-                              }}
-                            ></div>
+                              }}>
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -301,13 +293,13 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                       <Grid3X3 className="h-12 w-12 text-muted-foreground/30" />
                     )}
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <Link href={`/agency/${agencyId}/areas/workspace?areaId=${area._id}`}>
+                      <Link href={`/agency/${agencyId}/areas/workspace?areaId=${area.id || area._id}`}>
                         <Button size="sm" variant="secondary">
                           <Edit className="h-4 w-4 mr-2" />
                           Editar
                         </Button>
                       </Link>
-                      <Link href={`/agency/${agencyId}/stock?areaId=${area._id}`}>
+                      <Link href={`/agency/${agencyId}/stock?areaId=${area.id || area._id}`}>
                         <Button size="sm" variant="secondary">
                           <Package className="h-4 w-4 mr-2" />
                           Ver Stock
@@ -361,7 +353,7 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                   </TableHeader>
                   <TableBody>
                     {areas.map((area: any) => (
-                      <TableRow key={area._id}>
+                      <TableRow key={area.id || area._id}>
                         <TableCell className="font-medium">{area.name}</TableCell>
                         <TableCell className="hidden md:table-cell">{area.description || "Sin descripción"}</TableCell>
                         <TableCell className="hidden md:table-cell">
@@ -369,13 +361,13 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Link href={`/agency/${agencyId}/areas/workspace?areaId=${area._id}`}>
+                            <Link href={`/agency/${agencyId}/areas/workspace?areaId=${area.id || area._id}`}>
                               <Button variant="outline" size="sm">
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Editar
                               </Button>
                             </Link>
-                            <Link href={`/agency/${agencyId}/stock?areaId=${area._id}`}>
+                            <Link href={`/agency/${agencyId}/stock?areaId=${area.id || area._id}`}>
                               <Button variant="outline" size="sm">
                                 <Eye className="h-4 w-4 mr-2" />
                                 Ver Stock

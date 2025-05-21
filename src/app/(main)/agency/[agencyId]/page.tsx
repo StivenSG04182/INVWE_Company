@@ -47,228 +47,8 @@ const LineChartComponent = dynamic(
   { ssr: false },
 )
 
-// Servicio para obtener datos del dashboard
-const getDashboardData = async (agencyId: string) => {
-  try {
-    const { db } = await connectToDatabase()
-
-    // Obtener productos
-    const products = await db.collection("products").find({ agencyId }).toArray()
-
-    // Obtener stock
-    const stocks = await db.collection("stocks").find({ agencyId }).toArray()
-
-    // Obtener áreas
-    const areas = await db.collection("areas").find({ agencyId }).toArray()
-
-    // Obtener movimientos recientes (últimos 30)
-    const movements = await db.collection("movements").find({ agencyId }).sort({ createdAt: -1 }).limit(30).toArray()
-
-    // Calcular productos con bajo stock
-    const lowStockProducts = products
-      .filter((product: any) => {
-        const productStocks = stocks.filter((stock: any) => stock.productId === product._id?.toString())
-
-        const totalStock = productStocks.reduce((sum: number, stock: any) => sum + stock.quantity, 0)
-
-        return product.minStock && totalStock <= product.minStock
-      })
-      .map((product: any) => {
-        const productStocks = stocks.filter((stock: any) => stock.productId === product._id?.toString())
-
-        const currentStock = productStocks.reduce((sum: number, stock: any) => sum + stock.quantity, 0)
-
-        return {
-          ...product,
-          currentStock,
-        }
-      })
-
-    // Calcular valor total del inventario
-    const totalInventoryValue = stocks.reduce((total: number, stock: any) => {
-      const product = products.find((p: any) => p._id?.toString() === stock.productId)
-      return total + (product ? product.price * stock.quantity : 0)
-    }, 0)
-
-    // Calcular movimientos por tipo
-    const entriesCount = movements.filter((m: any) => m.type === "entrada").length
-    const exitsCount = movements.filter((m: any) => m.type === "salida").length
-
-    // Procesar movimientos recientes para mostrar
-    const recentMovements = await Promise.all(
-      movements.slice(0, 10).map(async (movement: any) => {
-        const product = products.find((p) => p._id?.toString() === movement.productId)
-        const area = areas.find((a) => a._id?.toString() === movement.areaId)
-
-        return {
-          _id: movement._id,
-          type: movement.type,
-          productId: movement.productId,
-          productName: product ? product.name : "Producto desconocido",
-          productSku: product ? product.sku : "N/A",
-          areaName: area ? area.name : "Área desconocida",
-          quantity: movement.quantity,
-          notes: movement.notes,
-          date: movement.createdAt,
-        }
-      }),
-    )
-
-    // Agrupar movimientos por día para mostrar en timeline
-    const groupedByDate = recentMovements.reduce((groups: any, movement: any) => {
-      const date = new Date(movement.date).toLocaleDateString("es-CO")
-      if (!groups[date]) {
-        groups[date] = []
-      }
-      groups[date].push(movement)
-      return groups
-    }, {})
-
-    // Calcular productos por área
-    const productsByArea = await Promise.all(
-      areas.map(async (area: any) => {
-        const areaStocks = stocks.filter((stock: any) => stock.areaId === area._id?.toString())
-        const totalProducts = areaStocks.length
-        const totalValue = areaStocks.reduce((total: number, stock: any) => {
-          const product = products.find((p: any) => p._id?.toString() === stock.productId)
-          return total + (product ? product.price * stock.quantity : 0)
-        }, 0)
-
-        return {
-          _id: area._id,
-          name: area.name,
-          totalProducts,
-          totalValue,
-        }
-      }),
-    )
-
-    // Calcular productos más vendidos (basado en movimientos de salida)
-    const productSales = movements
-      .filter((m: any) => m.type === "salida")
-      .reduce((acc: { [key: string]: number }, movement: any) => {
-        const productId = movement.productId
-        if (!acc[productId]) acc[productId] = 0
-        acc[productId] += movement.quantity
-        return acc
-      }, {})
-
-    const topProducts = Object.entries(productSales)
-      .map(([productId, sales]) => {
-        const product = products.find((p) => p._id?.toString() === productId)
-        return {
-          _id: productId,
-          name: product ? product.name : "Producto desconocido",
-          sku: product ? product.sku : "N/A",
-          sales,
-          price: product ? product.price : 0,
-        }
-      })
-      .sort((a, b) => b.sales - a.sales)
-      .slice(0, 5)
-
-    // Calcular datos de ventas (simulado por ahora)
-    const totalSales = topProducts.reduce((sum, product) => sum + product.sales * product.price, 0)
-    const lastMonthSales = totalSales * 0.9 // Simulado
-    const growth = totalSales > 0 ? ((totalSales - lastMonthSales) / lastMonthSales) * 100 : 0
-
-    const salesData = {
-      total: totalSales,
-      growth: Number.parseFloat(growth.toFixed(1)),
-      lastMonth: lastMonthSales,
-    }
-
-    // Datos de órdenes (simulado por ahora)
-    const ordersCount = Math.floor(totalSales / 100000) || 1
-    const ordersData = {
-      total: ordersCount,
-      pending: Math.floor(ordersCount * 0.15),
-      completed: Math.floor(ordersCount * 0.85),
-    }
-
-    // Datos para gráficos (simulados para demostración)
-
-    // 1. Datos para gráfico de valor de inventario por mes (últimos 6 meses)
-    const inventoryValueTrend = [
-      { month: "Enero", value: totalInventoryValue * 0.85 },
-      { month: "Febrero", value: totalInventoryValue * 0.9 },
-      { month: "Marzo", value: totalInventoryValue * 0.88 },
-      { month: "Abril", value: totalInventoryValue * 0.92 },
-      { month: "Mayo", value: totalInventoryValue * 0.95 },
-      { month: "Junio", value: totalInventoryValue },
-    ]
-
-    // 2. Datos para gráfico de distribución de inventario por categoría
-    const inventoryByCategory = [
-      { category: "Electrónicos", value: totalInventoryValue * 0.35 },
-      { category: "Muebles", value: totalInventoryValue * 0.25 },
-      { category: "Ropa", value: totalInventoryValue * 0.2 },
-      { category: "Alimentos", value: totalInventoryValue * 0.15 },
-      { category: "Otros", value: totalInventoryValue * 0.05 },
-    ]
-
-    // 3. Datos para gráfico de movimientos por mes
-    const movementsByMonth = [
-      { month: "Enero", entradas: 45, salidas: 38 },
-      { month: "Febrero", entradas: 52, salidas: 43 },
-      { month: "Marzo", entradas: 48, salidas: 50 },
-      { month: "Abril", entradas: 60, salidas: 55 },
-      { month: "Mayo", entradas: 58, salidas: 52 },
-      { month: "Junio", entradas: entriesCount, salidas: exitsCount },
-    ]
-
-    // 4. Datos para gráfico de rotación de inventario
-    const inventoryTurnover = [
-      { category: "Electrónicos", turnover: 3.2 },
-      { category: "Muebles", turnover: 1.8 },
-      { category: "Ropa", turnover: 4.5 },
-      { category: "Alimentos", turnover: 6.2 },
-      { category: "Otros", turnover: 2.1 },
-    ]
-
-    return {
-      productsCount: products.length,
-      areasCount: areas.length,
-      lowStockCount: lowStockProducts.length,
-      lowStockProducts,
-      totalInventoryValue,
-      recentMovements,
-      groupedByDate,
-      entriesCount,
-      exitsCount,
-      productsByArea,
-      topProducts,
-      salesData,
-      ordersData,
-      inventoryValueTrend,
-      inventoryByCategory,
-      movementsByMonth,
-      inventoryTurnover,
-    }
-  } catch (error) {
-    console.error("Error al obtener datos del dashboard:", error)
-    return {
-      productsCount: 0,
-      areasCount: 0,
-      lowStockCount: 0,
-      lowStockProducts: [],
-      totalInventoryValue: 0,
-      recentMovements: [],
-      groupedByDate: {},
-      entriesCount: 0,
-      exitsCount: 0,
-      productsByArea: [],
-      topProducts: [],
-      salesData: { total: 0, growth: 0, lastMonth: 0 },
-      ordersData: { total: 0, pending: 0, completed: 0 },
-      inventoryValueTrend: [],
-      inventoryByCategory: [],
-      movementsByMonth: [],
-      inventoryTurnover: [],
-    }
-  }
-}
-
+// Importar la función getDashboardData desde dashboard-queries.ts
+import { getDashboardData } from "@/lib/dashboard-queries"
 export default async function DashboardPage({
   params,
 }: {
@@ -284,7 +64,7 @@ export default async function DashboardPage({
   const agencyDetails = await getAgencyDetails(agencyId)
   if (!agencyDetails) return <div>Agencia no encontrada</div>
 
-  // Obtener datos del dashboard
+  // Obtener datos del dashboard usando la función de dashboard-queries.ts
   const dashboardData = await getDashboardData(agencyId)
 
   return (
@@ -923,10 +703,26 @@ export default async function DashboardPage({
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div className="text-2xl font-bold">${dashboardData.totalInventoryValue.toLocaleString("es-CO")}</div>
-                  <div className="flex items-center text-green-500 dark:text-green-400 text-sm">
-                    <TrendingUp className="h-4 w-4 mr-1" />
-                    <span>+5.2%</span>
-                  </div>
+                  {dashboardData.inventoryValueTrend && dashboardData.inventoryValueTrend.length >= 2 && (
+                    <div className="flex items-center text-sm">
+                      {dashboardData.inventoryValueTrend[dashboardData.inventoryValueTrend.length - 1].value > 
+                       dashboardData.inventoryValueTrend[dashboardData.inventoryValueTrend.length - 2].value ? (
+                        <div className="flex items-center text-green-500 dark:text-green-400">
+                          <TrendingUp className="h-4 w-4 mr-1" />
+                          <span>+{(((dashboardData.inventoryValueTrend[dashboardData.inventoryValueTrend.length - 1].value - 
+                                   dashboardData.inventoryValueTrend[dashboardData.inventoryValueTrend.length - 2].value) / 
+                                   dashboardData.inventoryValueTrend[dashboardData.inventoryValueTrend.length - 2].value) * 100).toFixed(1)}%</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center text-red-500 dark:text-red-400">
+                          <TrendingDown className="h-4 w-4 mr-1" />
+                          <span>{(((dashboardData.inventoryValueTrend[dashboardData.inventoryValueTrend.length - 1].value - 
+                                   dashboardData.inventoryValueTrend[dashboardData.inventoryValueTrend.length - 2].value) / 
+                                   dashboardData.inventoryValueTrend[dashboardData.inventoryValueTrend.length - 2].value) * 100).toFixed(1)}%</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">vs. mes anterior</p>
               </CardContent>
@@ -938,13 +734,27 @@ export default async function DashboardPage({
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <div className="text-2xl font-bold">3.5x</div>
-                  <div className="flex items-center text-green-500 dark:text-green-400 text-sm">
-                    <TrendingUp className="h-4 w-4 mr-1" />
-                    <span>+0.8</span>
-                  </div>
+                  {dashboardData.inventoryTurnover && dashboardData.inventoryTurnover.length > 0 ? (
+                    <>
+                      <div className="text-2xl font-bold">
+                        {(dashboardData.inventoryTurnover.reduce((sum, item) => sum + item.turnover, 0) / 
+                          dashboardData.inventoryTurnover.length).toFixed(1)}x
+                      </div>
+                      <div className="flex items-center text-green-500 dark:text-green-400 text-sm">
+                        <TrendingUp className="h-4 w-4 mr-1" />
+                        <span>Promedio</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-2xl font-bold">0.0x</div>
+                      <div className="flex items-center text-muted-foreground text-sm">
+                        <span>Sin datos</span>
+                      </div>
+                    </>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">Promedio anual</p>
+                <p className="text-xs text-muted-foreground mt-2">Promedio de todas las categorías</p>
               </CardContent>
             </Card>
 
@@ -955,10 +765,35 @@ export default async function DashboardPage({
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div className="text-2xl font-bold">{dashboardData.entriesCount + dashboardData.exitsCount}</div>
-                  <div className="flex items-center text-red-500 dark:text-red-400 text-sm">
-                    <TrendingDown className="h-4 w-4 mr-1" />
-                    <span>-2.1%</span>
-                  </div>
+                  {dashboardData.movementsByMonth && dashboardData.movementsByMonth.length >= 2 && (
+                    <div className="flex items-center text-sm">
+                      {(() => {
+                        const currentMonth = dashboardData.movementsByMonth[dashboardData.movementsByMonth.length - 1];
+                        const previousMonth = dashboardData.movementsByMonth[dashboardData.movementsByMonth.length - 2];
+                        const currentTotal = currentMonth.entradas + currentMonth.salidas;
+                        const previousTotal = previousMonth.entradas + previousMonth.salidas;
+                        const percentChange = previousTotal > 0 
+                          ? ((currentTotal - previousTotal) / previousTotal) * 100 
+                          : 0;
+                        
+                        if (currentTotal > previousTotal) {
+                          return (
+                            <div className="flex items-center text-green-500 dark:text-green-400">
+                              <TrendingUp className="h-4 w-4 mr-1" />
+                              <span>+{percentChange.toFixed(1)}%</span>
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <div className="flex items-center text-red-500 dark:text-red-400">
+                              <TrendingDown className="h-4 w-4 mr-1" />
+                              <span>{percentChange.toFixed(1)}%</span>
+                            </div>
+                          );
+                        }
+                      })()}
+                    </div>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">vs. mes anterior</p>
               </CardContent>
@@ -1218,15 +1053,17 @@ export default async function DashboardPage({
               <CardContent>
                 <div className="h-[200px] mb-4">
                   <LineChartComponent
-                    data={[
-                      { name: "Lun", requests: 120, tiempo: 230 },
-                      { name: "Mar", requests: 180, tiempo: 250 },
-                      { name: "Mié", requests: 150, tiempo: 210 },
-                      { name: "Jue", requests: 230, tiempo: 280 },
-                      { name: "Vie", requests: 290, tiempo: 310 },
-                      { name: "Sáb", requests: 110, tiempo: 190 },
-                      { name: "Dom", requests: 90, tiempo: 180 },
-                    ]}
+                    data={dashboardData.movementsByMonth && dashboardData.movementsByMonth.length > 0 ? 
+                      dashboardData.movementsByMonth.map(item => ({
+                        name: item.month.substring(0, 3),
+                        requests: item.entradas + item.salidas,
+                        tiempo: Math.floor(Math.random() * 100) + 150 // Simulado solo para tiempo de respuesta
+                      })) : [
+                        { name: "Ene", requests: 0, tiempo: 200 },
+                        { name: "Feb", requests: 0, tiempo: 200 },
+                        { name: "Mar", requests: 0, tiempo: 200 },
+                      ]
+                    }
                     xAxisKey="name"
                     lines={[
                       { dataKey: "requests", stroke: "#3b82f6", name: "Solicitudes" },

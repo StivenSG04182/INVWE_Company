@@ -182,7 +182,7 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                         <SelectContent>
                             <SelectItem value="all">Todas las categorías</SelectItem>
                             {categories.map((category) => (
-                                <SelectItem key={category._id} value={category._id}>
+                                <SelectItem key={category.id} value={category.id}>
                                     {category.name}
                                 </SelectItem>
                             ))}
@@ -196,7 +196,7 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                         <SelectContent>
                             <SelectItem value="all">Todas las subcuentas</SelectItem>
                             {subAccounts.map((subaccount) => (
-                                <SelectItem key={subaccount._id} value={subaccount._id}>
+                                <SelectItem key={subaccount.id} value={subaccount.id}>
                                     {subaccount.name}
                                 </SelectItem>
                             ))}
@@ -392,24 +392,24 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                                         <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem asChild>
-                                                            <Link href={`/agency/${agencyId}/products/${product._id}`}>
+                                                            <Link href={`/agency/${agencyId}/products/${product.id}`}>
                                                                 <Eye className="h-4 w-4 mr-2" />
                                                                 Ver detalles
                                                             </Link>
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem asChild>
-                                                            <Link href={`/agency/${agencyId}/products/${product._id}/edit`}>
+                                                            <Link href={`/agency/${agencyId}/products/${product.id}/edit`}>
                                                                 <Edit className="h-4 w-4 mr-2" />
                                                                 Editar
                                                             </Link>
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => handleDuplicateProduct(product._id)}>
+                                                        <DropdownMenuItem onClick={() => handleDuplicateProduct(product.id)}>
                                                             <Copy className="h-4 w-4 mr-2" />
                                                             Duplicar
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem
-                                                            onClick={() => handleDeleteProduct(product._id)}
+                                                            onClick={() => handleDeleteProduct(product.id)}
                                                             className="text-destructive focus:text-destructive"
                                                         >
                                                             <Trash2 className="h-4 w-4 mr-2" />
@@ -435,7 +435,7 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {sortedProducts.length > 0 ? (
                         sortedProducts.map((product) => (
-                            <Card key={product._id} className="overflow-hidden">
+                            <Card key={product.id} className="overflow-hidden">
                                 <div className="relative aspect-square">
                                     {product.images && product.images.length > 0 ? (
                                         <Image
@@ -555,13 +555,13 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
 
                                     <div className="flex justify-between gap-2">
                                         <Button variant="outline" size="sm" className="flex-1" asChild>
-                                            <Link href={`/agency/${agencyId}/products/${product._id}`}>
+                                            <Link href={`/agency/${agencyId}/products/${product.id}`}>
                                                 <Eye className="h-3.5 w-3.5 mr-1" />
                                                 Ver
                                             </Link>
                                         </Button>
                                         <Button variant="outline" size="sm" className="flex-1" asChild>
-                                            <Link href={`/agency/${agencyId}/products/${product._id}/edit`}>
+                                            <Link href={`/agency/${agencyId}/products/${product.id}/edit`}>
                                                 <Edit className="h-3.5 w-3.5 mr-1" />
                                                 Editar
                                             </Link>
@@ -573,12 +573,12 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => handleDuplicateProduct(product._id)}>
+                                                <DropdownMenuItem onClick={() => handleDuplicateProduct(product.id)}>
                                                     <Copy className="h-4 w-4 mr-2" />
                                                     Duplicar
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
-                                                    onClick={() => handleDeleteProduct(product._id)}
+                                                    onClick={() => handleDeleteProduct(product.id)}
                                                     className="text-destructive focus:text-destructive"
                                                 >
                                                     <Trash2 className="h-4 w-4 mr-2" />

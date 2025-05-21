@@ -4,12 +4,13 @@ import { Suspense } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ProductService, AreaService, StockService } from "@/lib/services/inventory-service"
 import MovementRegistration from "@/components/inventory/movement-registration"
 import { ArrowUpFromLine, Package, ArrowLeft, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 
 // Servicio para obtener datos necesarios
+import { getProducts, getAreas, getStocks } from "@/lib/queries2"
+
 export async function getExitPageData(agencyId: string, productId?: string) {
     const user = await getAuthUserDetails()
     if (!user) return { redirect: "/sign-in" }
@@ -18,10 +19,37 @@ export async function getExitPageData(agencyId: string, productId?: string) {
         return { redirect: "/agency" }
     }
 
-    let products = []
-    let areas = []
-    let stocks = []
-    let lowStockItems = 0
+    try {
+        // Obtener productos y áreas usando las funciones de queries2.ts
+        const rawProducts = await getProducts(agencyId)
+        const rawAreas = await getAreas(agencyId)
+        const rawStocks = await getStocks(agencyId)
+        
+        // Convertir valores Decimal a números normales para evitar errores de serialización
+        const products = rawProducts.map(product => ({
+            ...product,
+            price: product.price ? Number(product.price) : 0,
+            cost: product.cost ? Number(product.cost) : 0,
+            discount: product.discount ? Number(product.discount) : 0,
+            taxRate: product.taxRate ? Number(product.taxRate) : 0,
+            discountMinimumPrice: product.discountMinimumPrice ? Number(product.discountMinimumPrice) : null,
+            minStock: product.minStock ? Number(product.minStock) : undefined,
+            // Asegurar que los stocks también sean números
+            stocks: product.Stocks ? product.Stocks.map((stock: any) => ({
+                ...stock,
+                quantity: stock.quantity ? Number(stock.quantity) : 0
+            })) : []
+        }))
+        
+        const areas = rawAreas
+        
+        // Calcular productos con bajo stock
+        const lowStockItems = products.filter(product => {
+            if (!product.minStock) return false
+            const productStocks = product.stocks || []
+            const totalStock = productStocks.reduce((sum, stock) => sum + stock.quantity, 0)
+            return totalStock <= product.minStock
+        }).length
 
     return {
         user,
@@ -29,6 +57,16 @@ export async function getExitPageData(agencyId: string, productId?: string) {
         areas,
         lowStockItems,
         productId,
+    }
+    } catch (error) {
+        console.error("Error al cargar datos para la página de salida:", error)
+        return {
+            user,
+            products: [],
+            areas: [],
+            lowStockItems: 0,
+            productId
+        }
     }
 }
 

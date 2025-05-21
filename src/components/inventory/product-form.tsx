@@ -108,8 +108,8 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
         price: product?.price || "",
         cost: product?.cost || "",
         minStock: product?.minStock || "",
-        images: product?.images || [],
-        subaccountId: product?.subaccountId || "",
+        images: product?.images || (product?.productImage ? [product.productImage] : []),
+        subaccountId: product?.subAccountId || "",
         categoryId: product?.categoryId || "",
 
         // Información adicional
@@ -158,12 +158,16 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
         }
     }, [product])
 
-    // Cargar subcuentas y categorías al montar el componente
+    // Estados para proveedores y áreas
+    const [providers, setProviders] = useState<any[]>([])
+    const [areas, setAreas] = useState<any[]>([])
+
+    // Cargar subcuentas, categorías, proveedores y áreas al montar el componente
     useEffect(() => {
         const fetchData = async () => {
             try {
                 // Importar las funciones del servidor dinámicamente
-                const { getAgencyDetails, getCategories } = await import("@/lib/queries2")
+                const { getAgencyDetails, getCategories, getProviders, getAreas } = await import("@/lib/queries2")
                 
                 // Cargar detalles de la agencia para obtener subcuentas
                 const agencyDetails = await getAgencyDetails(agencyId)
@@ -179,6 +183,22 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
                     setCategories(categoriesData || [])
                 } else {
                     console.error("Error al cargar categorías: No se encontraron categorías")
+                }
+
+                // Cargar proveedores
+                const providersData = await getProviders(agencyId)
+                if (providersData) {
+                    setProviders(providersData || [])
+                } else {
+                    console.error("Error al cargar proveedores: No se encontraron proveedores")
+                }
+
+                // Cargar áreas (almacenes)
+                const areasData = await getAreas(agencyId)
+                if (areasData) {
+                    setAreas(areasData || [])
+                } else {
+                    console.error("Error al cargar áreas: No se encontraron áreas")
                 }
             } catch (error) {
                 console.error("Error al cargar datos:", error)
@@ -322,14 +342,24 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
             // Importar las funciones del servidor dinámicamente
             const { createProduct, updateProduct } = await import("@/lib/queries2")
             
+            // Asegurar que las imágenes se procesen correctamente
+            const dataToSend = {
+                ...formData,
+                agencyId,
+                // Asegurar que images sea un array
+                images: Array.isArray(formData.images) ? formData.images : [],
+                // Incluir productImage como la primera imagen si existe
+                productImage: Array.isArray(formData.images) && formData.images.length > 0 ? formData.images[0] : undefined
+            }
+            
             let result;
             
             if (isEditing && product?._id) {
                 // Actualizar producto existente
-                result = await updateProduct(product._id, { ...formData, agencyId })
+                result = await updateProduct(product._id, dataToSend)
             } else {
                 // Crear nuevo producto
-                result = await createProduct({ ...formData, agencyId })
+                result = await createProduct(dataToSend)
             }
 
             if (result) {
@@ -705,33 +735,29 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
                                                         onClick={async () => {
                                                             if (!newCategory.trim()) return
                                                             try {
-                                                                const response = await fetch(`/api/inventory/${agencyId}/categories`, {
-                                                                    method: "POST",
-                                                                    headers: {
-                                                                        "Content-Type": "application/json",
-                                                                    },
-                                                                    body: JSON.stringify({
-                                                                        name: newCategory,
-                                                                        subAccountId: formData.subaccountId,
-                                                                    }),
-                                                                    credentials: "include",
+                                                                // Importar la función del servidor dinámicamente
+                                                                const { createCategory } = await import("@/lib/queries2")
+                                                                
+                                                                // Usar la función del servidor para crear categoría
+                                                                const result = await createCategory({
+                                                                    name: newCategory,
+                                                                    agencyId: agencyId,
+                                                                    subaccountId: formData.subaccountId,
                                                                 })
 
-                                                                const result = await response.json()
-
-                                                                if (result.success) {
+                                                                if (result) {
                                                                     toast({
                                                                         title: "Categoría creada",
                                                                         description: `La categoría ${newCategory} ha sido creada exitosamente.`,
                                                                     })
-                                                                    setCategories([...categories, result.data])
+                                                                    setCategories([...categories, result])
                                                                     setFormData((prev) => ({
                                                                         ...prev,
-                                                                        categoryId: result.data.id,
+                                                                        categoryId: result.id,
                                                                     }))
                                                                     setNewCategory("")
                                                                 } else {
-                                                                    throw new Error(result.error || "Error al crear la categoría")
+                                                                    throw new Error("Error al crear la categoría")
                                                                 }
                                                             } catch (error) {
                                                                 console.error("Error al crear categoría:", error)
@@ -1051,7 +1077,11 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="no-supplier">Sin proveedor</SelectItem>
-                                                    {/* Aquí irían los proveedores si estuvieran disponibles */}
+                                                    {providers.map((provider) => (
+                                                        <SelectItem key={provider.id} value={provider.id}>
+                                                            {provider.name}
+                                                        </SelectItem>
+                                                    ))}
                                                     <SelectItem value="add-supplier">+ Añadir proveedor</SelectItem>
                                                 </SelectContent>
                                             </Select>
@@ -1110,7 +1140,11 @@ export default function ProductForm({ agencyId, product, isEditing = false }: Pr
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="default">Almacén Principal</SelectItem>
-                                                        {/* Aquí irían los almacenes si estuvieran disponibles */}
+                                                        {areas.map((area) => (
+                                                            <SelectItem key={area.id} value={area.id}>
+                                                                {area.name}
+                                                            </SelectItem>
+                                                        ))}
                                                         <SelectItem value="add-warehouse">+ Añadir almacén</SelectItem>
                                                     </SelectContent>
                                                 </Select>
