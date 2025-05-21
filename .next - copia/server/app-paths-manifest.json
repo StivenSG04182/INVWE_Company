@@ -1,9 +1,0 @@
-{
-  "/_not-found/page": "app/_not-found/page.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/site/page": "app/site/page.js",
-  "/(main)/agency/page": "app/(main)/agency/page.js",
-  "/(main)/agency/(auth)/sign-in/[[...sign-in]]/page": "app/(main)/agency/(auth)/sign-in/[[...sign-in]]/page.js",
-  "/(main)/agency/[agencyId]/page": "app/(main)/agency/[agencyId]/page.js",
-  "/(main)/agency/[agencyId]/(Inventory)/products/page": "app/(main)/agency/[agencyId]/(Inventory)/products/page.js"
-}

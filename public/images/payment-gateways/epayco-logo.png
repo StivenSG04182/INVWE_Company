@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#ffffff"/>
+  <path d="M40,80 L160,80 L160,90 L40,90 L40,80 Z" fill="#00A1E4"/>
+  <path d="M40,100 L100,100 L100,110 L40,110 L40,100 Z" fill="#00A1E4"/>
+  <path d="M40,120 L160,120 L160,130 L40,130 L40,120 Z" fill="#00A1E4"/>
+  <text x="120" y="110" font-family="Arial" font-size="16" font-weight="bold" fill="#00A1E4">ePayco</text>
+</svg>
