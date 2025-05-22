@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { getProductsForPOS, processSale as processSaleQuery, saveSaleState, getSavedSales as getSavedSalesQuery, deleteSavedSale as deleteSavedSaleQuery, getCategoriesForPOS, getClientsForPOS, getSubAccountsForAgency, generateInvoice, sendInvoiceByEmail } from "@/lib/queries2"
+import { getProductsForPOS, processSale as processSaleQuery, saveSaleState, getSavedSales as getSavedSalesQuery, deleteSavedSale as deleteSavedSaleQuery, getCategoriesForPOS, getClientsForPOS, getSubAccountsForAgency, generateInvoice, sendInvoiceByEmail, linkSaleToInvoice } from "@/lib/queries2"
 import {
     ShoppingCart,
     DollarSign,
@@ -270,9 +270,15 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                 // Actualizar la lista de productos para reflejar la nueva cantidad
                 loadProducts()
 
-                // Generar factura si es necesario
-                if (selectedClient.id) {
-                    try {
+                // Generar factura automáticamente
+                try {
+                    // Determinar si debemos generar factura
+                    const shouldGenerateInvoice = selectedClient.id !== null;
+                    
+                    if (shouldGenerateInvoice) {
+                        // Obtener cliente completo con datos fiscales
+                        const clientData = clients.find(c => c.id === selectedClient.id);
+                        
                         // Crear factura usando la función del servidor
                         const invoiceResult = await generateInvoice({
                             agencyId,
@@ -294,18 +300,40 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                         if (invoiceResult.success) {
                             toast.success("Factura generada correctamente")
 
+                            // Vincular la factura con la venta
+                            if (result.id && invoiceResult.data?.id) {
+                                try {
+                                    // Implementar la vinculación entre venta y factura
+                                    const linkResult = await linkSaleToInvoice(result.id, invoiceResult.data.id);
+                                    if (linkResult.success) {
+                                        console.log(`Venta ${result.id} vinculada a factura ${invoiceResult.data.id}`);
+                                    } else {
+                                        console.error("Error al vincular venta con factura:", linkResult.error);
+                                    }
+                                } catch (linkError) {
+                                    console.error("Error al vincular venta con factura:", linkError);
+                                }
+                            }
+
                             // Enviar factura por correo si hay email
-                            if (selectedClient.email) {
-                                const emailResult = await sendInvoiceByEmail(invoiceResult.data.id)
-                                if (emailResult.success) {
-                                    toast.success(`Factura enviada a ${selectedClient.email}`)
+                            if (clientData?.email) {
+                                try {
+                                    const emailResult = await sendInvoiceByEmail(invoiceResult.data.id)
+                                    if (emailResult.success) {
+                                        toast.success(`Factura enviada a ${clientData.email}`)
+                                    }
+                                } catch (emailError) {
+                                    console.error("Error al enviar factura por correo:", emailError);
+                                    toast.error(`No se pudo enviar la factura por correo a ${clientData.email}`)
                                 }
                             }
                         }
-                    } catch (error) {
-                        console.error("Error generando factura:", error)
-                        toast.error("Error al generar la factura")
+                    } else {
+                        console.log("No se generó factura: cliente general sin ID");
                     }
+                } catch (error) {
+                    console.error("Error en el proceso de facturación:", error)
+                    toast.error("Se completó la venta pero hubo un error al generar la factura")
                 }
             }
         } catch (error) {
@@ -373,10 +401,10 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
             if (modalRef.current && !modalRef.current.contains(event.target)) {
                 if (cartOpen) {
                     saveCartState()
-                    setCartOpen(false)
+                    setCartOpen(true)
                 }
                 if (newClientOpen) {
-                    setNewClientOpen(false)
+                    setNewClientOpen(true)
                 }
             }
         }

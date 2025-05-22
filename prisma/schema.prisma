@@ -83,6 +83,17 @@ model Agency {
   state             String
   country           String
   goal              Int                          @default(5)
+  
+  // Datos fiscales para facturación electrónica
+  taxId             String?                      // NIT o identificación fiscal
+  taxName           String?                      // Razón social para facturación
+  fiscalRegime      String?                      // Régimen tributario
+  fiscalResponsibility String?                   // Responsabilidad fiscal
+  economicActivity  String?                      // Código de actividad económica
+  invoiceResolution String?                      // Resolución de facturación DIAN
+  invoicePrefix     String?                      // Prefijo para numeración de facturas
+  invoiceNextNumber Int?                         // Próximo número de factura
+  
   createdAt         DateTime                     @default(now())
   updatedAt         DateTime                     @updatedAt
   users             User[]
@@ -102,7 +113,7 @@ model Agency {
   Areas             Area[]
   Movements         Movement[]
   Invoices          Invoice[]
-  Payments          Payment[]
+  Payments          Payment[] @relation("AgencyToPayments")
   Taxes             Tax[]
   ProductCategories  ProductCategory[]
   Clients           Client[]
@@ -149,7 +160,7 @@ model SubAccount {
   Areas             Area[]
   Movements         Movement[]
   Invoices          Invoice[]
-  Payments          Payment[]
+  Payments          Payment[] @relation("SubAccountToPayments")
   Taxes             Tax[]
   ProductCategories ProductCategory[]
   Clients           Client[]
@@ -287,6 +298,9 @@ model Contact {
   zipCode      String?
   country      String?
   notes        String?
+  // Campos fiscales para facturación electrónica
+  taxId        String?    // NIT o identificación fiscal
+  taxType      String?    // Tipo de documento (NIT, CC, CE, etc.)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   subAccountId String
@@ -708,27 +722,36 @@ model ProductCategory {
 }
 
 model Client {
-  id            String        @id @default(uuid())
-  name          String
-  email         String?
-  phone         String?
-  address       String?
-  city          String?
-  state         String?
-  zipCode       String?
-  country       String?
-  notes         String?
-  type          ClientType    @default(INDIVIDUAL)
-  status        ClientStatus  @default(ACTIVE)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  agencyId      String
-  subAccountId  String?
-  Agency        Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount    SubAccount?   @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-  Opportunities Opportunity[]
-  Cases         Case[]
-  PQRs          PQR[]
+  id                String        @id @default(uuid())
+  name              String
+  email             String?
+  phone             String?
+  address           String?
+  city              String?
+  state             String?
+  zipCode           String?
+  country           String?
+  notes             String?
+  type              ClientType    @default(INDIVIDUAL)
+  status            ClientStatus  @default(ACTIVE)
+  
+  // Datos fiscales para facturación electrónica
+  taxId             String?       // NIT o Cédula
+  taxIdType         String?       // Tipo de documento (NIT, CC, CE, etc.)
+  fiscalRegime      String?       // Régimen tributario (Ordinario, Simple, etc.)
+  fiscalResponsibility String?    // Responsabilidad fiscal (Gran contribuyente, Autorretenedor, etc.)
+  economicActivity  String?       // Código de actividad económica
+  legalRepresentative String?     // Nombre del representante legal (para empresas)
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  agencyId          String
+  subAccountId      String?
+  Agency            Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount        SubAccount?   @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Opportunities     Opportunity[]
+  Cases             Case[]
+  PQRs              PQR[]
 
   @@index([agencyId])
   @@index([subAccountId])
@@ -884,7 +907,7 @@ model Area {
   id            String         @id @default(uuid())
   name          String
   description   String?
-  layout        Json?          @default("{\"items\":[]}")
+  layout        Json?          @default("{\"items\":[]}") 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   agencyId      String
@@ -892,6 +915,7 @@ model Area {
   Agency        Agency         @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   SubAccount    SubAccount?    @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
   Movements     Movement[]
+  DestinationMovements Movement[] @relation("DestinationArea")
   Sales         Sale[]
   CashRegisters CashRegister[]
 
@@ -936,32 +960,81 @@ enum MovementType {
 }
 
 model Invoice {
-  id            String        @id @default(uuid())
-  invoiceNumber String        @unique
-  status        InvoiceStatus @default(DRAFT)
-  subtotal      Decimal       @default(0)
-  tax           Decimal       @default(0)
-  discount      Decimal       @default(0)
-  total         Decimal       @default(0)
-  notes         String?
-  dueDate       DateTime?
-  issuedDate    DateTime      @default(now())
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  customerId    String?
-  agencyId      String
-  subAccountId  String?
-  Agency        Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount    SubAccount?   @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-  Customer      Contact?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  Items         InvoiceItem[]
-  Payments      Payment[]
-  Taxes         InvoiceTax[]
-  Sale          Sale[]
+  id                String          @id @default(uuid())
+  invoiceNumber     String          @unique
+  status            InvoiceStatus   @default(DRAFT)
+  invoiceType       InvoiceType     @default(PHYSICAL)
+  documentType      DocumentType    @default(INVOICE) // Tipo de documento: factura, nota crédito, nota débito
+  subtotal          Decimal         @default(0)
+  tax               Decimal         @default(0)
+  discount          Decimal         @default(0)
+  total             Decimal         @default(0)
+  notes             String?
+  dueDate           DateTime?
+  issuedDate        DateTime        @default(now())
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  customerId        String?
+  agencyId          String
+  subAccountId      String?
+  
+  // Datos fiscales del cliente
+  customerTaxId     String?         // NIT o Cédula
+  customerTaxType   String?         // Tipo de documento (NIT, CC, CE, etc.)
+  customerEmail     String?         // Email para envío de factura electrónica
+  customerPhone     String?         // Teléfono del cliente
+  customerAddress   String?         // Dirección del cliente
+  
+  // Condiciones de pago
+  paymentMethod     PaymentMethod?  // Método de pago
+  paymentTerms      String?         // Condiciones de pago (contado, crédito, etc.)
+  paymentDays       Int?            // Días para pago
+  
+  // Campos para facturación electrónica
+  currency          String          @default("COP")
+  exchangeRate      Decimal?        // Tasa de cambio si no es COP
+  isElectronic      Boolean         @default(false)
+  electronicStatus  String?         // Estado en DIAN: pendiente, enviado, aceptado, rechazado
+  cufe              String?         // Código Único de Facturación Electrónica para facturas
+  cude              String?         // Código Único de Documento Electrónico para notas crédito/débito
+  qrCode            String?         // Código QR para factura electrónica
+  technicalKey      String?         // Clave técnica asignada por DIAN
+  validationDate    DateTime?       // Fecha de validación por DIAN
+  xmlPath           String?         // Ruta al archivo XML generado
+  pdfPath           String?         // Ruta al archivo PDF generado
+  signatureValue    String?         // Valor de la firma digital
+  
+  // Eventos de facturación electrónica
+  acknowledgmentDate DateTime?      // Fecha de acuse de recibo
+  receiptDate       DateTime?       // Fecha de recibo de bienes/servicios
+  acceptanceDate    DateTime?       // Fecha de aceptación
+  rejectionDate     DateTime?       // Fecha de rechazo
+  rejectionReason   String?         // Razón de rechazo
+  
+  // Referencias a documentos relacionados (para notas crédito/débito)
+  parentInvoiceId   String?         // ID de la factura original (para notas crédito/débito)
+  
+  // Retenciones
+  retentionVAT      Decimal         @default(0) // Retención de IVA
+  retentionIncome   Decimal         @default(0) // Retención en la fuente
+  retentionICA      Decimal         @default(0) // Retención de ICA
+  
+  // Relaciones
+  Agency            Agency          @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount        SubAccount?     @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Customer          Contact?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  Items             InvoiceItem[]
+  Payments          Payment[]
+  Taxes             InvoiceTax[]
+  Sale              Sale[]
+  RelatedDocuments  RelatedDocument[]
+  ChildInvoices     Invoice[]       @relation("InvoiceRelation")
+  ParentInvoice     Invoice?        @relation("InvoiceRelation", fields: [parentInvoiceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
-  @@index([agencyId])
-  @@index([subAccountId])
-  @@index([customerId])
+  @@index([agencyId], map: "Invoice_agencyId_idx")
+  @@index([subAccountId], map: "Invoice_subAccountId_idx")
+  @@index([customerId], map: "Invoice_customerId_idx")
+  @@index([parentInvoiceId], map: "Invoice_parentInvoiceId_idx")
 }
 
 model InvoiceItem {
@@ -976,7 +1049,7 @@ model InvoiceItem {
   updatedAt   DateTime @updatedAt
   invoiceId   String
   productId   String
-  Invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  Invoice       Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   Product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId])
@@ -995,9 +1068,9 @@ model Payment {
   invoiceId    String
   agencyId     String
   subAccountId String?
-  Invoice      Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  Agency       Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount   SubAccount?   @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  Agency       Agency        @relation("AgencyToPayments", fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount   SubAccount?   @relation("SubAccountToPayments", fields: [subAccountId], references: [id], onDelete: SetNull)
 
   @@index([invoiceId])
   @@index([agencyId])
@@ -1029,7 +1102,7 @@ model InvoiceTax {
   updatedAt DateTime @updatedAt
   invoiceId String
   taxId     String
-  Invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  Invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   Tax       Tax      @relation(fields: [taxId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId])
@@ -1037,21 +1110,61 @@ model InvoiceTax {
 }
 
 model DianConfig {
-  id               String          @id @default(uuid())
-  resolutionNumber String
-  resolutionDate   DateTime
-  prefix           String?
-  startNumber      Int
-  endNumber        Int
-  currentNumber    Int
-  expirationDate   DateTime
-  environment      DianEnvironment @default(TESTING)
-  technicalKey     String?
-  softwareId       String?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  agencyId         String          @unique
-  Agency           Agency          @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  id                   String          @id @default(uuid())
+  // Resolución de facturación
+  resolutionNumber     String
+  resolutionDate       DateTime
+  prefix               String?
+  startNumber          Int
+  endNumber            Int
+  currentNumber        Int
+  expirationDate       DateTime
+  
+  // Resolución para notas crédito
+  creditNotePrefix     String?
+  creditNoteNumber     Int             @default(1)
+  
+  // Resolución para notas débito
+  debitNotePrefix      String?
+  debitNoteNumber      Int             @default(1)
+  
+  // Configuración técnica DIAN
+  environment          DianEnvironment @default(TESTING)
+  technicalKey         String?
+  softwareId           String?
+  softwarePin          String?
+  certificatePath      String?         // Ruta al certificado digital
+  certificatePassword  String?         // Contraseña del certificado (debe estar encriptada)
+  
+  // Datos del emisor para XML
+  issuerName           String?         // Nombre del emisor
+  issuerNIT            String?         // NIT del emisor sin DV
+  issuerDV             String?         // Dígito de verificación
+  issuerAddress        String?         // Dirección del emisor
+  issuerCity           String?         // Ciudad del emisor
+  issuerState          String?         // Departamento del emisor
+  issuerCountry        String?         // País del emisor (CO)
+  issuerPostalCode     String?         // Código postal del emisor
+  issuerEmail          String?         // Email del emisor
+  issuerPhone          String?         // Teléfono del emisor
+  
+  // URLs de servicios DIAN
+  webServiceUrl        String?         // URL del servicio web DIAN
+  catalogUrl           String?         // URL del catálogo DIAN
+  
+  // Configuración de correo para envío de facturas
+  emailHost            String?         // Host SMTP
+  emailPort            Int?            // Puerto SMTP
+  emailUser            String?         // Usuario SMTP
+  emailPassword        String?         // Contraseña SMTP (debe estar encriptada)
+  emailFrom            String?         // Email remitente
+  emailSubject         String?         // Asunto predeterminado
+  emailBody            String?         // Cuerpo predeterminado
+  
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  agencyId             String          @unique
+  Agency               Agency          @relation(fields: [agencyId], references: [id], onDelete: Cascade)
 
   @@index([agencyId])
 }
@@ -1082,12 +1195,12 @@ model Sale {
   agencyId      String
   subAccountId  String?
   invoiceId     String?
-  Agency        Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount    SubAccount?   @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Agency        Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade, map: "SaleToAgency")
+  SubAccount    SubAccount?   @relation(fields: [subAccountId], references: [id], onDelete: SetNull, map: "SaleToSubAccount")
   Customer      Contact?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
   Cashier       User?         @relation(fields: [cashierId], references: [id], onDelete: SetNull)
   Area          Area          @relation(fields: [areaId], references: [id], onDelete: Restrict)
-  Invoice       Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  Invoice       Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   Items         SaleItem[]
 
   @@index([agencyId])
@@ -1110,7 +1223,7 @@ model SaleItem {
   updatedAt   DateTime @updatedAt
   saleId      String
   productId   String
-  Sale        Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  Sale        Sale     @relation(fields: [saleId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   Product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([saleId])
@@ -1141,8 +1254,8 @@ model CashRegister {
   areaId       String
   agencyId     String
   subAccountId String?
-  Agency       Agency         @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount   SubAccount?    @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Agency       Agency         @relation(fields: [agencyId], references: [id], onDelete: Cascade, map: "CashRegisterToAgency")
+  SubAccount   SubAccount?    @relation(fields: [subAccountId], references: [id], onDelete: SetNull, map: "CashRegisterToSubAccount")
   Cashier      User           @relation(fields: [cashierId], references: [id], onDelete: Restrict)
   Area         Area           @relation(fields: [areaId], references: [id], onDelete: Restrict)
 
@@ -1158,6 +1271,26 @@ enum InvoiceStatus {
   PAID
   CANCELLED
   OVERDUE
+}
+
+enum InvoiceType {
+  PHYSICAL
+  ELECTRONIC
+  BOTH
+}
+
+model RelatedDocument {
+  id          String   @id @default(uuid())
+  documentType String  // Orden de compra, remisión, etc.
+  documentNumber String
+  documentDate DateTime?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  invoiceId   String
+  Invoice       Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([invoiceId])
 }
 
 enum PaymentMethod {
@@ -1180,4 +1313,12 @@ enum PaymentStatus {
 enum DianEnvironment {
   TESTING
   PRODUCTION
+}
+
+enum DocumentType {
+  INVOICE           // Factura electrónica
+  CREDIT_NOTE       // Nota crédito
+  DEBIT_NOTE        // Nota débito
+  CONTINGENCY       // Factura de contingencia
+  EXPORT_INVOICE    // Factura de exportación
 }

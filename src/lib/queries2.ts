@@ -4,12 +4,10 @@ import { currentUser } from "@clerk/nextjs/server";
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import { db } from "./db";
 import { redirect } from "next/navigation";
-import { Agency, Lane, Plan, Prisma, Role, SubAccount, Tag, Ticket, User } from "@prisma/client";
-import { v4 } from "uuid";
-import { CreateFunnelFormSchema, UpsertFunnelPage, createMediaType } from "./types";
-import { z } from "zod";
-import { revalidatePath } from 'next/cache'
+import { Agency, User } from "@prisma/client";
 
+
+// TODO: Obtiene usuario autenticado
 export const getAuthUserDetails = async () => {
     const user = await currentUser();
     if (!user) {
@@ -37,6 +35,7 @@ export const getAuthUserDetails = async () => {
     return userData;
 };
 
+// TODO: Obtiene agencia por ID
 export const getAgencyDetails = async (agencyId: string): Promise<Agency | null> => {
     return await db.agency.findUnique({
         where: {
@@ -49,6 +48,7 @@ export const getAgencyDetails = async (agencyId: string): Promise<Agency | null>
     })
 }
 
+// TODO: Registra actividad y notificaciones
 export const saveActivityLogsNotification = async ({
     agencyId,
     description,
@@ -168,12 +168,14 @@ export const saveActivityLogsNotification = async ({
     }
 };
 
+// TODO: Crea usuario de equipo
 export const createTeamUser = async (agencyId: string, user: User) => {
     if (user.role === "AGENCY_OWNER") return null;
     const response = await db.user.create({ data: { ...user } });
     return response;
 };
 
+// TODO: Verifica invitaciones
 export const verifyAndAcceptInvitation = async () => {
     const user = await currentUser();
     if (!user) return redirect("/sign-in");
@@ -324,6 +326,7 @@ export const verifyAndAcceptInvitation = async () => {
     }
 };
 
+// TODO: Actualiza agencia
 export const updateAgencyDetails = async (
     agencyId: string,
     agencyDetails: Partial<Agency>
@@ -335,8 +338,7 @@ export const updateAgencyDetails = async (
     return response;
 };
 
-// Funciones para gestión de productos
-
+// TODO: Lista productos
 export const getProducts = async (agencyId: string) => {
     return await db.product.findMany({
         where: { agencyId },
@@ -344,9 +346,23 @@ export const getProducts = async (agencyId: string) => {
             Category: true,
             Movements: true,
         },
+        select: {
+            id: true,
+            name: true,
+            price: true,
+            description: true,
+            discount: true,
+            discountStartDate: true,
+            discountEndDate: true,
+            discountMinimumPrice: true,
+            active: true,
+            Category: true,
+            Movements: true,
+        },
     });
 };
 
+// TODO: Obtiene producto por ID
 export const getProductById = async (agencyId: string, productId: string) => {
     return await db.product.findFirst({
         where: {
@@ -360,6 +376,7 @@ export const getProductById = async (agencyId: string, productId: string) => {
     });
 };
 
+// TODO: Crea producto
 export const createProduct = async (data: any) => {
     const product = await db.product.create({
         data: {
@@ -410,6 +427,7 @@ export const createProduct = async (data: any) => {
     return product;
 };
 
+// TODO: Actualiza producto
 export const updateProduct = async (productId: string, data: any) => {
     const product = await db.product.update({
         where: { id: productId },
@@ -459,6 +477,7 @@ export const updateProduct = async (productId: string, data: any) => {
     return product;
 };
 
+// TODO: Elimina producto
 export const deleteProduct = async (agencyId: string, productId: string, subaccountId?: string) => {
     // Verificar que el ID del producto sea válido
     if (!productId) {
@@ -497,6 +516,7 @@ export const deleteProduct = async (agencyId: string, productId: string, subacco
     };
 };
 
+// TODO: Duplica producto
 export const duplicateProduct = async (agencyId: string, productId: string, subaccountId?: string) => {
     // Verificar que el ID del producto sea válido
     if (!productId) {
@@ -565,6 +585,7 @@ export const duplicateProduct = async (agencyId: string, productId: string, suba
     };
 };
 
+// TODO: Obtiene descuentos activos
 export const getActiveDiscounts = async (agencyId: string) => {
     const now = new Date();
 
@@ -595,12 +616,14 @@ export const getActiveDiscounts = async (agencyId: string) => {
     return discounts;
 };
 
+// TODO: Lista categorías
 export const getCategories = async (agencyId: string) => {
     return await db.productCategory.findMany({
         where: { agencyId },
     });
 };
 
+// TODO: Crea categoría
 export const createCategory = async (data: any) => {
     const category = await db.productCategory.create({
         data: {
@@ -620,6 +643,7 @@ export const createCategory = async (data: any) => {
     return category;
 };
 
+// TODO: Actualiza categoría
 export const updateCategory = async (categoryId: string, data: any) => {
     const category = await db.productCategory.update({
         where: { id: categoryId },
@@ -639,6 +663,7 @@ export const updateCategory = async (categoryId: string, data: any) => {
     return category;
 };
 
+// TODO: Elimina categoría
 export const deleteCategory = async (agencyId: string, categoryId: string, subaccountId?: string) => {
     const category = await db.productCategory.delete({
         where: { id: categoryId },
@@ -654,14 +679,14 @@ export const deleteCategory = async (agencyId: string, categoryId: string, subac
     return category;
 };
 
-// Funciones para gestión de proveedores
-
+// TODO: Lista proveedores
 export const getProviders = async (agencyId: string) => {
     return await db.provider.findMany({
         where: { agencyId },
     });
 };
 
+// TODO: Obtiene proveedor por ID
 export const getProviderById = async (agencyId: string, providerId: string) => {
     return await db.provider.findFirst({
         where: {
@@ -671,6 +696,7 @@ export const getProviderById = async (agencyId: string, providerId: string) => {
     });
 };
 
+// TODO: Crea proveedor
 export const createProvider = async (data: any) => {
     const provider = await db.provider.create({
         data: {
@@ -695,6 +721,7 @@ export const createProvider = async (data: any) => {
     return provider;
 };
 
+// TODO: Actualiza proveedor
 export const updateProvider = async (providerId: string, data: any) => {
     const provider = await db.provider.update({
         where: { id: providerId },
@@ -719,6 +746,7 @@ export const updateProvider = async (providerId: string, data: any) => {
     return provider;
 };
 
+// TODO: Elimina proveedor
 export const deleteProvider = async (agencyId: string, providerId: string, subaccountId?: string) => {
     const provider = await db.provider.delete({
         where: { id: providerId },
@@ -734,8 +762,7 @@ export const deleteProvider = async (agencyId: string, providerId: string, subac
     return provider;
 };
 
-// Funciones para gestión de clientes
-
+// TODO: Lista clientes
 export const getClients = async (agencyId: string, subAccountId?: string) => {
     return await db.client.findMany({
         where: { 
@@ -748,6 +775,7 @@ export const getClients = async (agencyId: string, subAccountId?: string) => {
     });
 };
 
+// TODO: Obtiene cliente por ID
 export const getClientById = async (clientId: string) => {
     return await db.client.findUnique({
         where: {
@@ -761,6 +789,7 @@ export const getClientById = async (clientId: string) => {
     });
 };
 
+// TODO: Obtiene clientes de agencia
 export const getClientsByAgency = async (agencyId: string) => {
     return await db.client.findMany({
         where: {
@@ -772,6 +801,7 @@ export const getClientsByAgency = async (agencyId: string) => {
     });
 };
 
+// TODO: Crea cliente
 export const createClient = async (agencyId: string, data: any, subAccountId?: string) => {
     // Validar datos requeridos
     if (!data.name) {
@@ -806,6 +836,7 @@ export const createClient = async (agencyId: string, data: any, subAccountId?: s
     return client;
 };
 
+// TODO: Actualiza cliente
 export const updateClient = async (clientId: string, data: any) => {
     // Validar que el cliente exista
     const existingClient = await db.client.findUnique({
@@ -843,6 +874,7 @@ export const updateClient = async (clientId: string, data: any) => {
     return client;
 };
 
+// TODO: Elimina cliente
 export const deleteClient = async (clientId: string) => {
     // Validar que el cliente exista
     const clientToDelete = await db.client.findUnique({
@@ -868,6 +900,7 @@ export const deleteClient = async (clientId: string) => {
     return client;
 };
 
+// TODO: Filtra clientes por estado
 export const getClientsByStatus = async (agencyId: string, status: string, subAccountId?: string) => {
     return await db.client.findMany({
         where: {
@@ -881,6 +914,7 @@ export const getClientsByStatus = async (agencyId: string, status: string, subAc
     });
 };
 
+// TODO: Filtra clientes por tipo
 export const getClientsByType = async (agencyId: string, type: string, subAccountId?: string) => {
     return await db.client.findMany({
         where: {
@@ -894,6 +928,7 @@ export const getClientsByType = async (agencyId: string, type: string, subAccoun
     });
 };
 
+// TODO: Busca clientes
 export const searchClients = async (agencyId: string, searchTerm: string, subAccountId?: string) => {
     return await db.client.findMany({
         where: {
@@ -911,8 +946,7 @@ export const searchClients = async (agencyId: string, searchTerm: string, subAcc
     });
 };
 
-// Funciones para gestión de áreas
-
+// TODO: Lista áreas
 export const getAreas = async (agencyId: string, subAccountId?: string) => {
     return await db.area.findMany({
         where: { 
@@ -925,12 +959,14 @@ export const getAreas = async (agencyId: string, subAccountId?: string) => {
     });
 };
 
+// TODO: Obtiene área por ID
 export const getAreaById = async (areaId: string) => {
     return await db.area.findUnique({
         where: { id: areaId }
     });
 };
 
+// TODO: Crea área
 export const createArea = async (data: any) => {
     const area = await db.area.create({
         data: {
@@ -951,6 +987,7 @@ export const createArea = async (data: any) => {
     return area;
 };
 
+// TODO: Actualiza área
 export const updateArea = async (areaId: string, data: any) => {
     const area = await db.area.update({
         where: { id: areaId },
@@ -971,6 +1008,7 @@ export const updateArea = async (areaId: string, data: any) => {
     return area;
 };
 
+// TODO: Elimina área
 export const deleteArea = async (agencyId: string, areaId: string, subaccountId?: string) => {
     // Verificar si hay productos en esta área
     const productsInArea = await db.movement.findMany({
@@ -995,7 +1033,7 @@ export const deleteArea = async (agencyId: string, areaId: string, subaccountId?
     return area;
 };
 
-// Función para obtener el stock actual de productos
+// TODO: Obtiene stock actual
 export const getStocks = async (agencyId: string, subAccountId?: string) => {
     // Obtener todos los productos de la agencia
     const products = await getProducts(agencyId);
@@ -1069,7 +1107,7 @@ export const getStocks = async (agencyId: string, subAccountId?: string) => {
     return stocks;
 };
 
-// Función para obtener subcuentas de una agencia
+// TODO: Lista subcuentas
 export const getSubAccounts = async (agencyId: string) => {
     return await db.subAccount.findMany({
         where: { agencyId },
@@ -1077,17 +1115,7 @@ export const getSubAccounts = async (agencyId: string) => {
     });
 };
 
-// Función para obtener proveedores de una agencia
-export const getProviders = async (agencyId: string) => {
-    return await db.provider.findMany({
-        where: { agencyId },
-        orderBy: { name: 'asc' }
-    });
-};
-
-// Funciones para gestión de movimientos de inventario
-
-// Obtener todos los movimientos de una agencia
+// TODO: Lista movimientos
 export const getMovements = async (agencyId: string, subAccountId?: string) => {
     const whereClause: any = { agencyId };
     
@@ -1108,7 +1136,7 @@ export const getMovements = async (agencyId: string, subAccountId?: string) => {
     });
 };
 
-// Crear un nuevo movimiento de inventario
+// TODO: Crea movimiento
 export const createMovement = async (data: any) => {
     // Validar datos requeridos
     if (!data.type || !data.productId || !data.areaId || !data.quantity || !data.agencyId) {
@@ -1177,7 +1205,7 @@ export const createMovement = async (data: any) => {
     return movement;
 };
 
-// Función para obtener movimientos con opciones adicionales
+// TODO: Filtra movimientos
 export const getMovementsByOptions = async (agencyId: string, options?: {
     subAccountId?: string;
     productId?: string;
@@ -1217,6 +1245,7 @@ export const getMovementsByOptions = async (agencyId: string, options?: {
     });
 };
 
+// TODO: Obtiene movimiento por ID
 export const getMovementById = async (movementId: string) => {
     return await db.movement.findUnique({
         where: { id: movementId },
@@ -1228,97 +1257,8 @@ export const getMovementById = async (movementId: string) => {
     });
 };
 
-export const createMovement = async (data: any) => {
-    // Validar datos requeridos
-    if (!data.type || !data.productId || !data.areaId || !data.quantity || !data.agencyId) {
-        throw new Error("Faltan datos requeridos para el movimiento");
-    }
 
-    // Validar que la cantidad sea positiva
-    if (data.quantity <= 0) {
-        throw new Error("La cantidad debe ser mayor a cero");
-    }
-
-    // Validar que si es una transferencia, tenga área de destino
-    if (data.type === "transferencia" && !data.destinationAreaId) {
-        throw new Error("Para una transferencia se requiere un área de destino");
-    }
-
-    // Verificar stock suficiente para salidas y transferencias
-    if (data.type === "salida" || data.type === "transferencia") {
-        const product = await db.product.findUnique({
-            where: { id: data.productId },
-            include: { Movements: true }
-        });
-
-        if (!product) {
-            throw new Error("Producto no encontrado");
-        }
-
-        // Calcular stock actual en el área específica
-        let stockInArea = 0;
-        
-        // Sumar entradas
-        const entradas = product.Movements.filter(
-            (m: any) => m.type === "entrada" && m.areaId === data.areaId
-        );
-        for (const entrada of entradas) {
-            stockInArea += entrada.quantity;
-        }
-        
-        // Restar salidas
-        const salidas = product.Movements.filter(
-            (m: any) => (m.type === "salida" || m.type === "transferencia") && m.areaId === data.areaId
-        );
-        for (const salida of salidas) {
-            stockInArea -= salida.quantity;
-        }
-        
-        // Sumar transferencias recibidas
-        const transferenciasRecibidas = product.Movements.filter(
-            (m: any) => m.type === "transferencia" && m.destinationAreaId === data.areaId
-        );
-        for (const transf of transferenciasRecibidas) {
-            stockInArea += transf.quantity;
-        }
-
-        if (stockInArea < data.quantity) {
-            throw new Error(`Stock insuficiente. Solo hay ${stockInArea} unidades disponibles en esta área.`);
-        }
-    }
-
-    // Crear el movimiento
-    const movement = await db.movement.create({
-        data: {
-            type: data.type,
-            quantity: data.quantity,
-            notes: data.notes,
-            date: data.date ? new Date(data.date) : new Date(),
-            agencyId: data.agencyId,
-            subAccountId: data.subaccountId,
-            productId: data.productId,
-            areaId: data.areaId,
-            destinationAreaId: data.type === "transferencia" ? data.destinationAreaId : null,
-            providerId: data.providerId || null,
-        },
-    });
-
-    // Actualizar stock del producto
-    await updateProductStock(data.productId, data.areaId, data.type, data.quantity, data.destinationAreaId);
-
-    // Registrar actividad
-    await saveActivityLogsNotification({
-        agencyId: data.agencyId,
-        description: `Movimiento registrado: ${data.type} de ${data.quantity} unidades`,
-        subaccountId: data.subaccountId,
-    });
-
-    return movement;
-};
-
-
-// Funciones para gestión de descuentos
-
+// TODO: Crea descuento
 export const createDiscount = async (data: any) => {
     // Validar datos requeridos
     if (!data.discount || !data.startDate || !data.endDate || !data.agencyId) {
@@ -1401,6 +1341,7 @@ export const createDiscount = async (data: any) => {
     return { success: false, message: "Tipo de descuento no válido" };
 };
 
+// TODO: Elimina descuento
 export const removeDiscount = async (agencyId: string, productId: string, subaccountId?: string) => {
     const product = await db.product.update({
         where: { id: productId },
@@ -1422,20 +1363,7 @@ export const removeDiscount = async (agencyId: string, productId: string, subacc
     return { success: true };
 };
 
-// Funciones para el sistema POS (Point of Sale)
-
-/**
- * Obtiene productos para el sistema POS con validación de inventario
- * Solo devuelve productos con quantity > 0 para venta
- */
-export const getProductsForPOS = async (agencyId: string, options?: {
-    subAccountId?: string;
-    categoryId?: string;
-    search?: string;
-}) => {
-    
-// Funciones para exportación de datos de inventario
-
+// TODO: Exporta inventario
 export const exportInventoryData = async (agencyId: string, options?: {
     format?: 'excel' | 'pdf' | 'json';
     fields?: string[];
@@ -1546,6 +1474,7 @@ export const exportInventoryData = async (agencyId: string, options?: {
     };
 };
 
+// TODO: Exporta movimientos
 export const exportMovementsData = async (agencyId: string, options?: {
     format?: 'excel' | 'pdf' | 'json';
     fields?: string[];
@@ -1640,8 +1569,7 @@ export const exportMovementsData = async (agencyId: string, options?: {
     };
 };
 
-// Funciones para gestión de stock
-
+// TODO: Obtiene stock de producto
 export const getProductStock = async (productId: string, options?: {
     areaId?: string;
 }) => {
@@ -1722,6 +1650,7 @@ export const getProductStock = async (productId: string, options?: {
     };
 };
 
+// TODO: Actualiza configuración de stock
 export const updateStockSettings = async (productId: string, data: {
     minStock?: number;
     maxStock?: number;
@@ -1752,6 +1681,7 @@ export const updateStockSettings = async (productId: string, data: {
     return product;
 };
 
+// TODO: Obtiene productos para POS
 export const getProductsForPOS = async (agencyId: string, options?: {
     subAccountId?: string;
     categoryId?: string;
@@ -1808,14 +1738,11 @@ export const getProductsForPOS = async (agencyId: string, options?: {
     }));
 };
 
-/**
- * Procesa una venta en el sistema POS
- * Actualiza el inventario y registra la transacción
- */
+// TODO: Procesa venta
 export const processSale = async (data: {
     agencyId: string;
     subAccountId?: string;
-    areaId: string;
+    areaId?: string; // Hacemos areaId opcional
     products: Array<{
         id: string;
         name: string;
@@ -1859,18 +1786,64 @@ export const processSale = async (data: {
         const randomPart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
         const saleNumber = `V-${formattedDate}-${randomPart}`;
         
+        // Obtener un área predeterminada si no se proporciona
+        let defaultAreaId = data.areaId;
+        if (!defaultAreaId) {
+            // Buscar un área predeterminada para la agencia
+            const defaultArea = await tx.area.findFirst({
+                where: { agencyId: data.agencyId },
+                select: { id: true }
+            });
+            
+            if (!defaultArea) {
+                // Si no hay áreas, crear una predeterminada
+                const newArea = await tx.area.create({
+                    data: {
+                        name: "Área Predeterminada",
+                        description: "Área creada automáticamente para ventas POS",
+                        agencyId: data.agencyId,
+                        Agency: {
+                            connect: { id: data.agencyId }
+                        }
+                    }
+                });
+                defaultAreaId = newArea.id;
+            } else {
+                defaultAreaId = defaultArea.id;
+            }
+        }
+        
         // 2. Crear la venta
         const sale = await tx.sale.create({
             data: {
-                agencyId: data.agencyId,
-                subAccountId: data.subAccountId,
-                areaId: data.areaId,
-                clientId: data.client.id,
-                clientName: data.client.name,
-                paymentMethod: data.paymentMethod,
+                saleNumber: saleNumber,
                 total: data.total,
+                paymentMethod: data.paymentMethod,
                 status: "COMPLETED",
-                saleNumber: saleNumber, // Añadir el número de venta generado
+                // Usar la relación Customer si hay un cliente seleccionado
+                ...(data.client.id && {
+                    Customer: {
+                        connect: { id: data.client.id }
+                    }
+                }),
+                // Establecer todas las relaciones requeridas mediante connect
+                Agency: {
+                    connect: { id: data.agencyId }
+                },
+                Area: {
+                    connect: { id: defaultAreaId }
+                },
+                // Campos directos
+                agencyId: data.agencyId,
+                areaId: defaultAreaId,
+                // Campos opcionales
+                ...(data.subAccountId && {
+                    SubAccount: {
+                        connect: { id: data.subAccountId }
+                    },
+                    subAccountId: data.subAccountId
+                }),
+                // Crear items relacionados
                 items: {
                     create: data.products.map(item => ({
                         productId: item.id,
@@ -1879,9 +1852,12 @@ export const processSale = async (data: {
                         quantity: item.quantity,
                         subtotal: item.price * item.quantity
                     }))
-                }
+                },
+                // Guardar el nombre del cliente como nota si no hay ID de cliente
+                notes: !data.client.id && data.client.name ? `Cliente: ${data.client.name}` : undefined
             }
         });
+
 
         // 3. Actualizar inventario (reducir cantidades)
         for (const item of data.products) {
@@ -1902,7 +1878,7 @@ export const processSale = async (data: {
                     type: "SALE",
                     quantity: -item.quantity, // Negativo porque es salida
                     reference: `Venta ${saleNumber}`,
-                    notes: `Venta realizada en área: ${data.areaId}`,
+                    notes: `Venta realizada en POS`,
                     agencyId: data.agencyId,
                     subAccountId: data.subAccountId
                 }
@@ -1920,9 +1896,7 @@ export const processSale = async (data: {
     });
 };
 
-/**
- * Guarda el estado actual del carrito para recuperarlo después
- */
+// TODO: Guarda el estado del carrito
 export const saveSaleState = async (data: {
     agencyId: string;
     subAccountId?: string;
@@ -1948,10 +1922,12 @@ export const saveSaleState = async (data: {
         data: {
             agencyId: data.agencyId,
             subAccountId: data.subAccountId,
-            clientId: data.client.id,
-            clientName: data.client.name,
-            products: data.products,
-            status: "PENDING"
+            // Convertir el objeto client a una cadena JSON
+            client: JSON.stringify(data.client),
+            // Convertir el array de productos a una cadena JSON
+            products: JSON.stringify(data.products),
+            total: data.products.reduce((sum, product) => sum + product.subtotal, 0),
+            areaId: "default" // Valor por defecto para el campo obligatorio areaId
         }
     });
 
@@ -1965,9 +1941,7 @@ export const saveSaleState = async (data: {
     return savedSale;
 };
 
-/**
- * Obtiene las ventas guardadas para recuperarlas
- */
+// TODO: Obtiene ventas guardadas
 export const getSavedSales = async (agencyId: string, options?: {
     subAccountId?: string;
 }) => {
@@ -1985,16 +1959,21 @@ export const getSavedSales = async (agencyId: string, options?: {
     }
 
     // Obtener ventas guardadas
-    return await db.savedSale.findMany({
+    const savedSales = await db.savedSale.findMany({
         where: whereClause,
         orderBy: {
             createdAt: 'desc'
         }
-    });}
+    });
+    
+    // Convertir las cadenas JSON a objetos JavaScript
+    return savedSales.map(sale => ({
+        ...sale,
+        products: JSON.parse(sale.products as string),
+        client: sale.client ? JSON.parse(sale.client as string) : { name: "Cliente General", id: null }
+    }));}
 
-/**
- * Elimina una venta guardada
- */
+// TODO: Elimina una venta guardada
 export const deleteSavedSale = async (id: string) => {
     // Verificar que la venta guardada exista
     const savedSale = await db.savedSale.findUnique({
@@ -2020,9 +1999,7 @@ export const deleteSavedSale = async (id: string) => {
     return { success: true };
 };
 
-/**
- * Genera una factura para una venta
- */
+// TODO: Genera una factura
 export const generateInvoice = async (data: {
     agencyId: string;
     subAccountId?: string | null;
@@ -2039,12 +2016,10 @@ export const generateInvoice = async (data: {
     total: number;
     notes?: string;
 }) => {
-    // Verificar que haya items en la factura
     if (!data.items || data.items.length === 0) {
         throw new Error("No hay productos en la factura");
     }
 
-    // Verificar que el cliente exista
     const client = await db.client.findUnique({
         where: { id: data.customerId }
     });
@@ -2053,27 +2028,56 @@ export const generateInvoice = async (data: {
         throw new Error("Cliente no encontrado");
     }
 
-    // Crear la factura
+    // Generar número de factura único con formato
+    const date = new Date();
+    const formattedDate = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
+    const randomPart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    const invoiceNumber = `INV-${formattedDate}-${randomPart}`;
+    
+    // Crear la factura con los items correctamente formateados
     const invoice = await db.invoice.create({
         data: {
-            agencyId: data.agencyId,
-            subAccountId: data.subAccountId,
-            clientId: data.customerId,
-            items: data.items,
+            invoiceNumber: invoiceNumber,
+            status: "PENDING",
+            invoiceType: "PHYSICAL", // Por defecto física
+            documentType: "INVOICE", // Tipo de documento: factura
             subtotal: data.subtotal,
             tax: data.tax,
+            discount: 0, // Por defecto sin descuento
             total: data.total,
-            status: "PENDING",
-            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 días después
             notes: data.notes || "",
-            invoiceNumber: `INV-${Date.now()}`
+            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 días después
+            customerId: data.customerId,
+            agencyId: data.agencyId,
+            subAccountId: data.subAccountId,
+            // Datos fiscales del cliente
+            customerTaxId: client.taxId || null,
+            customerTaxType: client.taxIdType || null,
+            customerEmail: client.email || null,
+            customerPhone: client.phone || null,
+            customerAddress: client.address || null,
+            // Crear los items de la factura
+            Items: {
+                create: data.items.map(item => ({
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    discount: 0, // Por defecto sin descuento
+                    tax: data.tax / data.subtotal * item.subtotal, // Distribuir el impuesto proporcionalmente
+                    total: item.subtotal * (1 + (data.tax / data.subtotal)), // Subtotal + impuesto proporcional
+                    description: item.description,
+                    productId: item.productId
+                }))
+            }
+        },
+        include: {
+            Items: true,
+            Customer: true
         }
     });
-
-    // Registrar actividad
+    
     await saveActivityLogsNotification({
         agencyId: data.agencyId,
-        description: `Factura generada para ${client.name}`,
+        description: `Factura ${invoiceNumber} generada para ${client.name}`,
         subaccountId: data.subAccountId || undefined,
     });
 
@@ -2083,54 +2087,68 @@ export const generateInvoice = async (data: {
     };
 };
 
-/**
- * Envía una factura por correo electrónico
- */
+// TODO: Envia una factura por correo electrónico
 export const sendInvoiceByEmail = async (invoiceId: string) => {
-    // Verificar que la factura exista
-    const invoice = await db.invoice.findUnique({
-        where: { id: invoiceId },
-        include: {
-            Client: true
+    try {
+        // Verificar que la factura exista
+        const invoice = await db.invoice.findUnique({
+            where: { id: invoiceId },
+            include: {
+                Customer: true,
+                Items: true
+            }
+        });
+
+        if (!invoice) {
+            throw new Error("Factura no encontrada");
         }
-    });
 
-    if (!invoice) {
-        throw new Error("Factura no encontrada");
-    }
-
-    if (!invoice.Client.email) {
-        throw new Error("El cliente no tiene correo electrónico");
-    }
-
-    // Aquí iría la lógica para enviar el correo electrónico
-    // Por ahora, solo simulamos que se envió correctamente
-
-    // Actualizar la factura para indicar que se envió
-    await db.invoice.update({
-        where: { id: invoiceId },
-        data: {
-            emailSent: true,
-            emailSentAt: new Date()
+        if (!invoice.Customer || !invoice.Customer.email) {
+            throw new Error("El cliente no tiene correo electrónico");
         }
-    });
 
-    // Registrar actividad
-    await saveActivityLogsNotification({
-        agencyId: invoice.agencyId,
-        description: `Factura enviada por correo a ${invoice.Client.email}`,
-        subaccountId: invoice.subAccountId || undefined,
-    });
+        // Aquí iría la lógica para enviar el correo electrónico
+        // Por ahora, solo simulamos que se envió correctamente
+        console.log(`Simulando envío de factura ${invoice.invoiceNumber} a ${invoice.Customer.email}`);
 
-    return {
-        success: true,
-        message: `Factura enviada a ${invoice.Client.email}`
-    };
+        // Preparar datos para el correo
+        const emailData = {
+            to: invoice.Customer.email,
+            subject: `Factura ${invoice.invoiceNumber}`,
+            body: `Estimado/a ${invoice.Customer.name},\n\nAdjunto encontrará su factura ${invoice.invoiceNumber} por un total de ${invoice.total}.\n\nGracias por su compra.`,
+            attachments: []
+            // En una implementación real, aquí se generaría un PDF y se adjuntaría
+        };
+
+        // Actualizar la factura para indicar que se envió
+        await db.invoice.update({
+            where: { id: invoiceId },
+            data: {
+                emailSent: true,
+                emailSentAt: new Date()
+            }
+        });
+
+        await saveActivityLogsNotification({
+            agencyId: invoice.agencyId,
+            description: `Factura ${invoice.invoiceNumber} enviada por correo a ${invoice.Customer.email}`,
+            subaccountId: invoice.subAccountId || undefined,
+        });
+
+        return {
+            success: true,
+            message: `Factura enviada a ${invoice.Customer.email}`
+        };
+    } catch (error) {
+        console.error("Error al enviar factura por correo:", error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "Error desconocido al enviar la factura"
+        };
+    }
 };
 
-/**
- * Obtiene las áreas disponibles para ventas
- */
+// TODO: Obtiene las áreas para POS
 export const getAreasForPOS = async (agencyId: string, subAccountId?: string) => {
     const whereClause: any = {
         agencyId,
@@ -2149,9 +2167,55 @@ export const getAreasForPOS = async (agencyId: string, subAccountId?: string) =>
     });
 };
 
-/**
- * Obtiene las categorías de productos para filtrado en POS
- */
+// TODO: Vincula una venta con una factura
+export const linkSaleToInvoice = async (saleId: string, invoiceId: string) => {
+    try {
+        // Verificar que la venta exista
+        const sale = await db.sale.findUnique({
+            where: { id: saleId }
+        });
+
+        if (!sale) {
+            throw new Error("Venta no encontrada");
+        }
+
+        // Verificar que la factura exista
+        const invoice = await db.invoice.findUnique({
+            where: { id: invoiceId }
+        });
+
+        if (!invoice) {
+            throw new Error("Factura no encontrada");
+        }
+
+        // Actualizar la venta con la referencia a la factura
+        const updatedSale = await db.sale.update({
+            where: { id: saleId },
+            data: {
+                invoiceId: invoiceId
+            }
+        });
+
+        await saveActivityLogsNotification({
+            agencyId: sale.agencyId,
+            description: `Venta ${saleId} vinculada a factura ${invoiceId}`,
+            subaccountId: sale.subAccountId || undefined,
+        });
+
+        return {
+            success: true,
+            data: updatedSale
+        };
+    } catch (error) {
+        console.error("Error al vincular venta con factura:", error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "Error desconocido al vincular venta con factura"
+        };
+    }
+};
+
+// TODO: Obtiene las categorías para POS
 export const getCategoriesForPOS = async (agencyId: string, subAccountId?: string) => {
     const whereClause: any = {
         agencyId
@@ -2169,9 +2233,7 @@ export const getCategoriesForPOS = async (agencyId: string, subAccountId?: strin
     });
 };
 
-/**
- * Obtiene los clientes para el sistema POS
- */
+// TODO: Obtiene los clientes para POS
 export const getClientsForPOS = async (agencyId: string, subAccountId?: string) => {
     const whereClause: any = {
         agencyId,
@@ -2202,9 +2264,7 @@ export const getClientsForPOS = async (agencyId: string, subAccountId?: string) 
     });
 };
 
-/**
- * Obtiene las subcuentas asociadas a una agencia
- */
+// TODO: Obtiene las subcuentas para una agencia
 export const getSubAccountsForAgency = async (agencyId: string) => {
     if (!agencyId) {
         throw new Error("ID de agencia no proporcionado");
@@ -2213,7 +2273,6 @@ export const getSubAccountsForAgency = async (agencyId: string) => {
     return await db.subAccount.findMany({
         where: {
             agencyId
-            // Se eliminó el filtro 'active: true' porque este campo no existe en el modelo SubAccount del esquema Prisma
         },
         orderBy: {
             name: 'asc'

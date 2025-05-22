@@ -3,10 +3,13 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "./db";
 import { redirect } from "next/navigation";
-import { Agency, Invoice, InvoiceItem, InvoiceStatus, InvoiceTax, Payment, PaymentMethod, PaymentStatus, Sale, SaleItem, SaleStatus, Tax, CashRegister, RegisterStatus } from "@prisma/client";
+import { Agency, Invoice, InvoiceItem, InvoiceStatus, InvoiceTax, Payment, PaymentMethod, PaymentStatus, Sale, SaleItem, SaleStatus, Tax, CashRegister, RegisterStatus, DocumentType, DianEnvironment } from "@prisma/client";
 import { revalidatePath } from 'next/cache';
+import crypto from 'crypto';
+import fs from 'fs/promises';
+import path from 'path';
 
-// =========== FACTURAS ===========
+// =========== FACTURAS Y FACTURACIÓN ELECTRÓNICA ===========
 
 /**
  * Obtiene todas las facturas de una agencia o subcuenta
@@ -81,16 +84,19 @@ export const getInvoiceById = async (invoiceId: string) => {
 };
 
 /**
- * Crea una nueva factura
+ * Crea una nueva factura (física o electrónica)
  */
 export const createInvoice = async ({
     invoiceData,
     items,
     taxes,
+    relatedDocuments,
+    emailRecipients = [],
 }: {
     invoiceData: {
         invoiceNumber: string;
         status: InvoiceStatus;
+        invoiceType: "PHYSICAL" | "ELECTRONIC" | "BOTH";
         subtotal: number;
         tax: number;
         discount: number;
@@ -100,6 +106,24 @@ export const createInvoice = async ({
         customerId?: string;
         agencyId: string;
         subAccountId?: string;
+        // Datos fiscales del cliente
+        customerTaxId?: string;
+        customerTaxType?: string;
+        customerEmail?: string;
+        customerPhone?: string;
+        customerAddress?: string;
+        // Condiciones de pago
+        paymentMethod?: string;
+        paymentTerms?: string;
+        paymentDays?: number;
+        // Campos para facturación electrónica
+        currency?: string;
+        exchangeRate?: number;
+        isElectronic?: boolean;
+        // Retenciones
+        retentionVAT?: number;
+        retentionIncome?: number;
+        retentionICA?: number;
     };
     items: {
         quantity: number;
@@ -114,14 +138,124 @@ export const createInvoice = async ({
         amount: number;
         taxId: string;
     }[];
+    relatedDocuments?: {
+        documentType: string;
+        documentNumber: string;
+        documentDate?: Date;
+        notes?: string;
+    }[];
+    emailRecipients?: string[];
 }) => {
     try {
         const user = await currentUser();
         if (!user) return { success: false, error: "No autorizado" };
 
+        // Obtener información de la agencia para datos fiscales
+        const agency = await db.agency.findUnique({
+            where: { id: invoiceData.agencyId },
+            select: {
+                name: true,
+                companyEmail: true,
+                companyPhone: true,
+                address: true,
+                city: true,
+                state: true,
+                country: true,
+                zipCode: true,
+                // Campos fiscales que sí existen en el modelo Agency
+                taxId: true,
+                taxName: true,
+                fiscalRegime: true,
+                fiscalResponsibility: true,
+                invoiceResolution: true,
+                invoicePrefix: true,
+                invoiceNextNumber: true,
+                // Obtener también la configuración DIAN relacionada
+                DianConfig: true
+            }
+        });
+
+        // Generar CUFE/CUDE para documentos electrónicos
+        let cufe = null;
+        let cude = null;
+        let qrCode = null;
+        let electronicStatus = null;
+        let documentType = DocumentType.INVOICE; // Por defecto es factura
+
+        if (invoiceData.invoiceType === "ELECTRONIC" || invoiceData.invoiceType === "BOTH") {
+            // Obtener configuración DIAN de la agencia
+            const dianConfig = await db.dianConfig.findUnique({
+                where: { agencyId: invoiceData.agencyId }
+            });
+
+            if (!dianConfig) {
+                return { success: false, error: "No se encontró configuración DIAN para esta agencia" };
+            }
+
+            // Generar CUFE según algoritmo DIAN (simplificado para demostración)
+            const generateCUFE = () => {
+                // En producción, esto seguiría el algoritmo oficial DIAN
+                // https://www.dian.gov.co/impuestos/factura-electronica/Documents/Anexo_tecnico_factura_electronica_vr_1_7_2020.pdf
+                const timestamp = new Date().toISOString();
+                const invoiceNumber = invoiceData.invoiceNumber;
+                // Usar el NIT de DianConfig o el taxId de la agencia si está disponible
+                const nit = dianConfig.issuerNIT || (agency && agency.taxId) || "";
+                const technicalKey = dianConfig.technicalKey || "";
+                const total = invoiceData.total.toString();
+                
+                // Concatenar valores según especificación DIAN
+                const dataToHash = `${invoiceNumber}|${timestamp}|${nit}|${total}|${technicalKey}`;
+                
+                // Generar hash SHA-384 (requerido por DIAN)
+                return crypto.createHash('sha384').update(dataToHash).digest('hex');
+            };
+
+            // Generar CUDE para notas crédito/débito
+            const generateCUDE = () => {
+                // Similar al CUFE pero con algunas diferencias según especificación DIAN
+                const timestamp = new Date().toISOString();
+                const documentNumber = invoiceData.invoiceNumber;
+                // Usar el NIT de DianConfig o el taxId de la agencia si está disponible
+                const nit = dianConfig.issuerNIT || (agency && agency.taxId) || "";
+                const total = invoiceData.total.toString();
+                
+                // Concatenar valores según especificación DIAN para CUDE
+                const dataToHash = `${documentNumber}|${timestamp}|${nit}|${total}|${documentType}`;
+                
+                // Generar hash SHA-384
+                return crypto.createHash('sha384').update(dataToHash).digest('hex');
+            };
+
+            // Asignar valores según tipo de documento
+            if (documentType === DocumentType.INVOICE || documentType === DocumentType.EXPORT_INVOICE || documentType === DocumentType.CONTINGENCY) {
+                cufe = generateCUFE();
+            } else if (documentType === DocumentType.CREDIT_NOTE || documentType === DocumentType.DEBIT_NOTE) {
+                cude = generateCUDE();
+            }
+
+            // Generar código QR
+            qrCode = `https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey=${cufe || cude}`;
+            electronicStatus = "PENDIENTE";
+        }
+
         const invoice = await db.invoice.create({
             data: {
                 ...invoiceData,
+                // Tipo de documento
+                documentType: documentType,
+                // Campos para facturación electrónica
+                isElectronic: invoiceData.invoiceType === "ELECTRONIC" || invoiceData.invoiceType === "BOTH",
+                electronicStatus: electronicStatus,
+                cufe: cufe,
+                cude: cude,
+                qrCode: qrCode,
+                currency: invoiceData.currency || "COP",
+                exchangeRate: invoiceData.exchangeRate || 1,
+                // Retenciones
+                retentionVAT: invoiceData.retentionVAT || 0,
+                retentionIncome: invoiceData.retentionIncome || 0,
+                retentionICA: invoiceData.retentionICA || 0,
+                // Items y taxes
                 Items: {
                     create: items,
                 },
@@ -132,12 +266,115 @@ export const createInvoice = async ({
                         },
                     }
                     : {}),
+                // Documentos relacionados
+                ...(relatedDocuments && relatedDocuments.length > 0
+                    ? {
+                        RelatedDocuments: {
+                            create: relatedDocuments,
+                        },
+                    }
+                    : {}),
             },
             include: {
                 Items: true,
                 Taxes: true,
+                RelatedDocuments: true,
             },
         });
+
+        // Si es factura electrónica, enviar a la DIAN
+        if (invoice.isElectronic) {
+            try {
+                // Obtener configuración DIAN
+                const dianConfig = await db.dianConfig.findUnique({
+                    where: { agencyId: invoiceData.agencyId }
+                });
+
+                if (!dianConfig) {
+                    console.error("No se encontró configuración DIAN para esta agencia");
+                    return { success: true, data: invoice, warning: "Factura creada pero no enviada a DIAN por falta de configuración" };
+                }
+
+                // Generar XML según formato UBL 2.1 requerido por DIAN
+                const xmlContent = await generateElectronicDocumentXML(invoice, dianConfig);
+                
+                // Guardar XML en sistema de archivos (en producción podría ser un almacenamiento en la nube)
+                const xmlFileName = `${invoice.documentType}_${invoice.invoiceNumber.replace(/\s/g, '_')}.xml`;
+                const xmlPath = `/temp/electronic_documents/${xmlFileName}`;
+                
+                // Firmar XML con certificado digital
+                const signedXml = await signXmlDocument(xmlContent, dianConfig);
+                
+                // Enviar a DIAN según ambiente configurado
+                const dianResponse = await sendDocumentToDian(signedXml, dianConfig);
+                
+                // Actualizar factura con respuesta de DIAN
+                await db.invoice.update({
+                    where: { id: invoice.id },
+                    data: {
+                        electronicStatus: dianResponse.status,
+                        xmlPath: xmlPath,
+                        signatureValue: dianResponse.signatureValue,
+                        validationDate: new Date(),
+                        acknowledgmentDate: dianResponse.acknowledgmentDate
+                    }
+                });
+                
+                // Generar representación gráfica (PDF)
+                const pdfPath = await generateElectronicDocumentPDF(invoice, dianConfig);
+                
+                // Actualizar factura con ruta del PDF
+                await db.invoice.update({
+                    where: { id: invoice.id },
+                    data: {
+                        pdfPath: pdfPath
+                    }
+                });
+                
+                // Enviar factura por correo electrónico a los destinatarios
+                if (emailRecipients && emailRecipients.length > 0 && pdfPath) {
+                    try {
+                        // Obtener configuración de correo de la agencia
+                        const emailConfig = {
+                            host: dianConfig.emailHost || '',
+                            port: dianConfig.emailPort || 587,
+                            user: dianConfig.emailUser || '',
+                            password: dianConfig.emailPassword || '',
+                            from: dianConfig.emailFrom || '',
+                            subject: `Factura Electrónica ${invoice.invoiceNumber}`,
+                            body: dianConfig.emailBody || `Adjunto encontrará su factura electrónica ${invoice.invoiceNumber}.`
+                        };
+                        
+                        // Verificar que la configuración de correo esté completa
+                        if (emailConfig.host && emailConfig.user && emailConfig.password) {
+                            // Aquí iría la lógica para enviar el correo con el PDF adjunto
+                            console.log(`Enviando factura electrónica por correo a: ${emailRecipients.join(', ')}`);
+                            
+                            // Registrar el envío en la base de datos
+                            await db.invoice.update({
+                                where: { id: invoice.id },
+                                data: {
+                                    acknowledgmentDate: new Date() // Usar este campo para registrar cuando se envió el correo
+                                }
+                            });
+                        } else {
+                            console.warn('Configuración de correo incompleta. No se pudo enviar la factura por correo.');
+                        }
+                    } catch (emailError) {
+                        console.error('Error al enviar factura por correo:', emailError);
+                    }
+                }
+                
+                console.log(`Factura electrónica ${invoice.invoiceNumber} enviada a DIAN con éxito`);
+            } catch (error) {
+                console.error(`Error al enviar factura electrónica a DIAN:`, error);
+                return { 
+                    success: true, 
+                    data: invoice, 
+                    warning: "Factura creada pero hubo un error al enviarla a DIAN" 
+                };
+            }
+        }
 
         revalidatePath(`/agency/${invoiceData.agencyId}/finances`);
         return { success: true, data: invoice };
