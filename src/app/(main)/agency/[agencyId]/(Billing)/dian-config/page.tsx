@@ -15,7 +15,7 @@ const DIANConfigPage = async ({ params }: { params: { agencyId: string } }) => {
     <div className="flex flex-col gap-4 p-4">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Configuración DIAN</h1>
-        <button className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/80">
+        <button className="bg-primary text-white px-4 py-2 rounded-md">
           Guardar Configuración
         </button>
       </div>

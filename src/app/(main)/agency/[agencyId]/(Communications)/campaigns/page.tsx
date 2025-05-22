@@ -18,10 +18,10 @@ const CampaignsPage = async ({ params }: { params: { agencyId: string } }) => {
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Campañas</h1>
           <div className="flex gap-2">
-            <button className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/80">
+            <button className="bg-primary text-white px-4 py-2 rounded-md">
               Nueva Campaña
             </button>
-            <button className="bg-secondary text-white px-4 py-2 rounded-md hover:bg-secondary/80">
+            <button className="bg-secondary text-white px-4 py-2 rounded-md">
               Importar Datos
             </button>
           </div>

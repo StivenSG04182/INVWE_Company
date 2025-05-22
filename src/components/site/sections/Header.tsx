@@ -28,7 +28,7 @@ export const Header = () => {
                 <div className="flex items-center gap-3">
                     <Link
                         href={'/agency'}
-                        className="bg-primary text-white p-2 px-4 rounded-md hover:bg-primary/80"
+                        className="bg-primary text-white p-2 px-4 rounded-md"
                     >
                         Login
                     </Link>

@@ -16,10 +16,10 @@ const ShippingPage = async ({ params }: { params: { agencyId: string } }) => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Gestión de Envíos</h1>
         <div className="flex gap-2">
-          <button className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/80">
+          <button className="bg-primary text-white px-4 py-2 rounded-md">
             Nuevo Envío
           </button>
-          <button className="bg-secondary text-white px-4 py-2 rounded-md hover:bg-secondary/80">
+          <button className="bg-secondary text-white px-4 py-2 rounded-md">
             Configurar Transportistas
           </button>
         </div>
