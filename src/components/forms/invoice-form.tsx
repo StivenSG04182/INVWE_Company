@@ -410,7 +410,7 @@ export const InvoiceForm = ({
         });
 
         return (
-            <div className="p-6 bg-white border rounded-lg">
+            <div className="p-6 bg-background border rounded-lg">
                 <div className="flex justify-between items-start mb-8">
                     <div>
                         <h2 className="text-2xl font-bold">FACTURA</h2>
@@ -446,7 +446,7 @@ export const InvoiceForm = ({
                 </div>
 
                 <table className="w-full mb-8">
-                    <thead className="bg-gray-100">
+                    <thead className="bg-card">
                         <tr>
                             <th className="p-2 text-left">Producto</th>
                             <th className="p-2 text-right">Cantidad</th>
