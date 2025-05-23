@@ -40,6 +40,35 @@ export default function CrmDashboard({
     // Usar oportunidades reales del cliente seleccionado
     // Si no hay oportunidades reales, usamos un array vacío
     const opportunities = selectedClient?.Opportunities || []
+    
+    // Función para crear una nueva oportunidad
+    const handleCreateOpportunity = async (opportunityData: any) => {
+        if (!selectedClient) return null
+        
+        try {
+            // Importar la función createOpportunity de client-queries.ts
+            const { createOpportunity } = await import('@/lib/client-queries')
+            
+            // Añadir el ID del cliente a los datos
+            const data = {
+                ...opportunityData,
+                clientId: selectedClient.id
+            }
+            
+            // Crear la oportunidad usando la función real
+            const newOpportunity = await createOpportunity(data)
+            
+            // Actualizar el cliente seleccionado con la nueva oportunidad
+            if (selectedClient && selectedClient.Opportunities) {
+                selectedClient.Opportunities = [...selectedClient.Opportunities, newOpportunity]
+            }
+            
+            return newOpportunity
+        } catch (error) {
+            console.error("Error al crear oportunidad:", error)
+            return null
+        }
+    }
 
     // Filter opportunities by status if needed
     const filteredOpportunities = opportunities.filter((opp) => {
@@ -331,16 +360,32 @@ export default function CrmDashboard({
 
                         <TabsContent value="opportunities" className="space-y-4">
                             <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <div>
-                                        <CardTitle>Oportunidades</CardTitle>
-                                        <CardDescription>Gestione las oportunidades de venta con este cliente</CardDescription>
-                                    </div>
-                                    <Button>
-                                        <PlusSquare className="h-4 w-4 mr-2" />
-                                        Nueva Oportunidad
-                                    </Button>
-                                </CardHeader>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <div>
+                                            <CardTitle>Oportunidades</CardTitle>
+                                            <CardDescription>Gestione las oportunidades de venta con este cliente</CardDescription>
+                                        </div>
+                                        <Button 
+                                            size="sm" 
+                                            className="gap-1"
+                                            onClick={() => {
+                                                if (!selectedClient) return;
+                                                // Aquí se podría abrir un modal para crear una nueva oportunidad
+                                                const opportunityData = {
+                                                    title: `Nueva oportunidad para ${selectedClient.name}`,
+                                                    description: "Descripción de la oportunidad",
+                                                    value: 0,
+                                                    status: "NEW",
+                                                    priority: "MEDIUM",
+                                                    clientId: selectedClient.id
+                                                };
+                                                handleCreateOpportunity(opportunityData);
+                                            }}
+                                        >
+                                            <PlusSquare className="h-4 w-4" />
+                                            Nueva Oportunidad
+                                        </Button>
+                                    </CardHeader>
                                 <CardContent className="pt-4">
                                     {clientOpportunities.length > 0 ? (
                                         <div className="space-y-4">

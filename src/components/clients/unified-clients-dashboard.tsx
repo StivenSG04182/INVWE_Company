@@ -59,8 +59,8 @@ export default function UnifiedClientsDashboard({ agencyId, user }: { agencyId: 
         const loadClients = async () => {
             try {
                 setIsLoading(true)
-                // Importar la función getClients de queries2.ts
-                const { getClients } = await import('@/lib/queries2')
+                // Importar la función getClients de client-queries.ts
+                const { getClients } = await import('@/lib/client-queries')
                 
                 // Obtener los clientes reales de la base de datos
                 const clientsData = await getClients(agencyId)
@@ -88,8 +88,8 @@ export default function UnifiedClientsDashboard({ agencyId, user }: { agencyId: 
     // Function to add a new client using real database function
     const handleAddClient = async (clientData: any) => {
         try {
-            // Importar la función createClient de queries2.ts
-            const { createClient } = await import('@/lib/queries2')
+            // Importar la función createClient de client-queries.ts
+            const { createClient } = await import('@/lib/client-queries')
             
             // Crear el cliente usando la función real
             const newClient = await createClient(agencyId, clientData)

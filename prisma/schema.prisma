@@ -126,6 +126,9 @@ model Agency {
   CashRegister      CashRegister[]
   Schedule          Schedule[]
   Holiday           Holiday[]
+  WhatsAppCred      WhatsAppCredentials[]
+  WhatsAppTemp      WhatsAppTemplate[]
+  WhatsAppLogs      WhatsAppMessageLog[]
 }
 
 model SubAccount {
@@ -820,6 +823,7 @@ model PQR {
   updatedAt      DateTime    @updatedAt
   agencyId       String
   subAccountId   String?
+  WhatsAppLogs   WhatsAppMessageLog[]
   Client         Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
   AssignedUser   User?       @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
   Agency         Agency      @relation(fields: [agencyId], references: [id], onDelete: Cascade)
@@ -829,6 +833,70 @@ model PQR {
   @@index([assignedUserId])
   @@index([agencyId])
   @@index([subAccountId])
+}
+
+// Almacena las credenciales de WhatsApp Business para cada agencia
+model WhatsAppCredentials {
+  id                String   @id @default(uuid())
+  agencyId          String   @unique
+  accessToken       String
+  phoneNumberId     String
+  businessAccountId String
+  webhookVerifyToken String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  Agency            Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  
+  @@index([agencyId])
+}
+
+// Registra los mensajes enviados y recibidos por WhatsApp
+model WhatsAppMessageLog {
+  id          String            @id @default(uuid())
+  agencyId    String
+  pqrId       String?
+  phoneNumber String
+  message     String
+  direction   MessageDirection
+  status      MessageStatus
+  metadata    String?
+  createdAt   DateTime         @default(now())
+  Agency      Agency           @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  PQR         PQR?             @relation(fields: [pqrId], references: [id], onDelete: SetNull)
+  
+  @@index([agencyId])
+  @@index([pqrId])
+}
+
+// TODO: Plantillas de mensajes aprobadas para WhatsApp Business
+model WhatsAppTemplate {
+  id          String   @id @default(uuid())
+  agencyId    String
+  name        String
+  language    String   @default("es")
+  status      String   @default("APPROVED")
+  category    String   @default("UTILITY")
+  content     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  Agency      Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  
+  @@index([agencyId])
+}
+
+// Enums para los modelos de WhatsApp
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  RECEIVED
+  UNMATCHED
 }
 
 model Product {

@@ -346,19 +346,6 @@ export const getProducts = async (agencyId: string) => {
             Category: true,
             Movements: true,
         },
-        select: {
-            id: true,
-            name: true,
-            price: true,
-            description: true,
-            discount: true,
-            discountStartDate: true,
-            discountEndDate: true,
-            discountMinimumPrice: true,
-            active: true,
-            Category: true,
-            Movements: true,
-        },
     });
 };
 

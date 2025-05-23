@@ -82,13 +82,13 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
         status: ClientStatus.ACTIVE,
     })
 
-    // Cargar clientes desde la base de datos usando queries2.ts
+    // Cargar clientes desde la base de datos usando client-queries.ts
     useEffect(() => {
         const loadClients = async () => {
             setIsLoading(true)
             try {
-                // Importar la función getClients de queries2.ts
-                const { getClients } = await import('@/lib/queries2')
+                // Importar la función getClients de client-queries.ts
+                const { getClients } = await import('@/lib/client-queries')
                 
                 // Obtener los clientes reales de la base de datos
                 const clientsData = await getClients(agencyId, subAccountId)
@@ -166,10 +166,10 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
             }
             
             try {
-                // Importar la función createClient de queries2.ts
-                const { createClient } = await import('@/lib/queries2')
+                // Importar la función createClient de client-queries.ts
+                const { createClient } = await import('@/lib/client-queries')
                 
-                // Crear el cliente usando la función de queries2.ts
+                // Crear el cliente usando la función de client-queries.ts
                 const newClient = await createClient(agencyId, clientData, subAccountId)
                 
                 // Actualizar la lista de clientes
@@ -202,8 +202,8 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
         if (!selectedClient) return
         
         try {
-            // Importar la función updateClient de queries2.ts
-            const { updateClient } = await import('@/lib/queries2')
+            // Importar la función updateClient de client-queries.ts
+            const { updateClient } = await import('@/lib/client-queries')
             
             // Actualizar el cliente usando la función de queries2.ts
             const updatedClient = await updateClient(selectedClient.id, formData)
@@ -233,8 +233,8 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
         if (!selectedClient) return
         
         try {
-            // Importar la función deleteClient de queries2.ts
-            const { deleteClient } = await import('@/lib/queries2')
+            // Importar la función deleteClient de client-queries.ts
+            const { deleteClient } = await import('@/lib/client-queries')
             
             // Eliminar el cliente usando la función de queries2.ts
             await deleteClient(selectedClient.id)

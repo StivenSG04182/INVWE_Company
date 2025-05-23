@@ -13,6 +13,7 @@ import PosSettingsContent from "@/components/settings/pos-settings"
 import UsersPermissionsContent from "@/components/settings/users-permissions"
 import AgencyDetails from "@/components/forms/agency-details"
 import UserDetails from "@/components/forms/user-details"
+import WhatsAppSettings from "@/components/settings/whatsApp-settings"
 
 type Props = {
   params: { agencyId: string }
@@ -66,6 +67,7 @@ const SettingsPage = async ({ params, searchParams }: Props) => {
           <TabsTrigger value="contact">Contacto</TabsTrigger>
           <TabsTrigger value="pos">Punto de Venta</TabsTrigger>
           <TabsTrigger value="users">Usuarios & Permisos</TabsTrigger>
+          <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
@@ -98,6 +100,12 @@ const SettingsPage = async ({ params, searchParams }: Props) => {
         <TabsContent value="users" className="space-y-4">
           <Suspense fallback={<SettingsSkeleton />}>
             <UsersPermissionsContent agencyId={params.agencyId} />
+          </Suspense>
+        </TabsContent>
+
+        <TabsContent value="whatsapp" className="space-y-4">
+          <Suspense fallback={<SettingsSkeleton />}>
+            <WhatsAppSettings params={{ agencyId: params.agencyId }} />
           </Suspense>
         </TabsContent>
       </Tabs>
