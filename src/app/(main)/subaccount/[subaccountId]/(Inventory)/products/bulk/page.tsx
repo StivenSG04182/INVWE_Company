@@ -1,21 +1,17 @@
-import SubaccountBulkProductForm from '@/components/inventory/SubaccountBulkProductForm'
-import BlurPage from '@/components/global/blur-page'
-import React from 'react'
+import { getAuthUserDetails } from "@/lib/queries"
+import { redirect } from "next/navigation"
+import BulkProductForm from "@/components/inventory/bulk-product-form"
 
-type Props = {
-    params: { subaccountId: string }
+const BulkProductPage = async ({ params }: { params: { agencyId: string } }) => {
+    const user = await getAuthUserDetails()
+    if (!user) return redirect("/sign-in")
+
+    const agencyId = params.agencyId
+    if (!user.Agency) {
+        return redirect("/agency")
+    }
+
+    return <BulkProductForm agencyId={agencyId} />
 }
 
-const BulkProductsPage = async ({ params }: Props) => {
-    const subaccountId = params.subaccountId
-
-    return (
-        <BlurPage>
-            <SubaccountBulkProductForm
-                subaccountId={subaccountId}
-            />
-        </BlurPage>
-    )
-}
-
-export default BulkProductsPage
+export default BulkProductPage

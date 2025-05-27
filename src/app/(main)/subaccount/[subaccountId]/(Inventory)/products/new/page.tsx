@@ -1,26 +1,17 @@
-import SubaccountProductForm from '@/components/inventory/SubaccountProductForm'
-import BlurPage from '@/components/global/blur-page'
-import React from 'react'
+import { getAuthUserDetails } from "@/lib/queries"
+import { redirect } from "next/navigation"
+import ProductForm from "@/components/inventory/product-form"
 
-type Props = {
-    params: { subaccountId: string }
-}
+const NewProductPage = async ({ params }: { params: { agencyId: string } }) => {
+  const user = await getAuthUserDetails()
+  if (!user) return redirect("/sign-in")
 
-const NewProductPage = async ({ params }: Props) => {
-    const subaccountId = params.subaccountId
+  const agencyId = params.agencyId
+  if (!user.Agency) {
+    return redirect("/agency")
+  }
 
-    return (
-        <BlurPage>
-            <SubaccountProductForm
-                subaccountId={subaccountId}
-                product={{
-                    name: '',
-                    sku: '',
-                    price: 0
-                }}
-            />
-        </BlurPage>
-    )
+  return <ProductForm agencyId={agencyId} />
 }
 
 export default NewProductPage
