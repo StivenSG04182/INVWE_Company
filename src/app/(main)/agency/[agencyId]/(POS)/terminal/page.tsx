@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { getProductsForPOS, processSale as processSaleQuery, saveSaleState, getSavedSales as getSavedSalesQuery, deleteSavedSale as deleteSavedSaleQuery, getCategoriesForPOS, getClientsForPOS, getSubAccountsForAgency, generateInvoice, sendInvoiceByEmail, linkSaleToInvoice } from "@/lib/queries2"
+import ClientsDirectory from "@/components/clients/clients-directory"
 import {
     ShoppingCart,
     DollarSign,
@@ -72,6 +73,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         name: "Cliente General",
         id: null,
     })
+    const clientsDirectoryRef = useRef(null)
     const [paymentMethod, setPaymentMethod] = useState("")
     const [amountReceived, setAmountReceived] = useState("")
     const [filtersOpen, setFiltersOpen] = useState(false)
@@ -113,6 +115,44 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
 
         loadUser()
     }, [userId])
+
+    // Cargar carrito desde localStorage al iniciar
+    useEffect(() => {
+        const savedCart = localStorage.getItem(`pos-cart-${agencyId}-${selectedSubaccount || 'agency'}`)
+        if (savedCart) {
+            try {
+                const cartData = JSON.parse(savedCart)
+                setSelectedProducts(cartData.products || [])
+                setSelectedProducts2(cartData.products?.map(p => p.id) || [])
+                setSelectedClient(cartData.client || { name: "Cliente General", id: null })
+            } catch (error) {
+                console.error("Error loading cart from localStorage:", error)
+            }
+        }
+    }, [agencyId, selectedSubaccount])
+
+    // Función para recargar clientes (necesaria para actualizar después de crear uno nuevo)
+    const loadClients = async () => {
+        if (!agencyId) return
+
+        try {
+            const clientsData = await getClientsForPOS(agencyId, selectedSubaccount || undefined)
+            setClients(clientsData)
+        } catch (error) {
+            console.error("Error al cargar clientes:", error)
+            toast.error("Error al cargar lista de clientes")
+        }
+    }
+
+    // Guardar carrito en localStorage automáticamente (excepto cuando se presiona guardar)
+    useEffect(() => {
+        const cartData = {
+            products: selectedProducts,
+            client: selectedClient,
+            timestamp: new Date().toISOString()
+        }
+        localStorage.setItem(`pos-cart-${agencyId}-${selectedSubaccount || 'agency'}`, JSON.stringify(cartData))
+    }, [selectedProducts, selectedClient, agencyId, selectedSubaccount])
 
     // Cargar subaccounts de la agencia
     useEffect(() => {
@@ -168,21 +208,9 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         loadCategories()
     }, [agencyId, selectedSubaccount])
 
+
     // Cargar clientes para selección
     useEffect(() => {
-        const loadClients = async () => {
-            if (!agencyId) return
-
-            try {
-                // Usar la función de queries2.ts para obtener clientes
-                const clientsData = await getClientsForPOS(agencyId, selectedSubaccount || undefined)
-                setClients(clientsData)
-            } catch (error) {
-                console.error("Error al cargar clientes:", error)
-                toast.error("Error al cargar lista de clientes")
-            }
-        }
-
         loadClients()
     }, [agencyId, selectedSubaccount])
 
@@ -463,6 +491,8 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
     const clearCart = () => {
         setSelectedProducts([])
         setSelectedProducts2([])
+        // Limpiar también el localStorage
+        localStorage.removeItem(`pos-cart-${agencyId}-${selectedSubaccount || 'agency'}`)
     }
 
     // Función para obtener el nombre de la categoría por su ID
@@ -480,9 +510,13 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
             return
         }
 
-        // Se eliminó la validación de área seleccionada
+        // Validar que el producto tenga quantity > 1
+        if (product.quantity <= 1) {
+            toast.error(`No se puede seleccionar ${product.name}. Debe tener más de 1 unidad disponible. Disponible: ${product.quantity}`)
+            return
+        }
 
-        // Agregar nuevo producto - Se eliminó la restricción de quantity=0
+        // Agregar nuevo producto
         setSelectedProducts((prev) => [
             ...prev,
             {
@@ -805,9 +839,12 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                         {products.map((product) => (
                                             <Card
                                                 key={product.id}
-                                                className={`transition-colors cursor-pointer ${selectedProducts2.includes(product.id)
-                                                    ? "bg-primary/10 border-primary relative after:content-['✓'] after:absolute after:top-2 after:right-2 after:bg-primary after:text-primary-foreground after:size-6 after:flex after:items-center after:justify-center after:rounded-full after:text-xs"
-                                                    : "hover:bg-muted/50"
+                                                className={`transition-colors cursor-pointer ${
+                                                    product.quantity <= 1 
+                                                        ? "opacity-50 cursor-not-allowed bg-muted/30" 
+                                                        : selectedProducts2.includes(product.id)
+                                                            ? "bg-primary/10 border-primary relative after:content-['✓'] after:absolute after:top-2 after:right-2 after:bg-primary after:text-primary-foreground after:size-6 after:flex after:items-center after:justify-center after:rounded-full after:text-xs"
+                                                            : "hover:bg-muted/50"
                                                 }`}
                                                 onClick={() => toggleProductSelection(product)}
                                             >
@@ -829,10 +866,21 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
 
                                                         <div className="absolute top-2 left-2">
                                                             <Badge
-                                                                variant={product.quantity > 0 ? "default" : "destructive"}
-                                                                className={`px-2 py-1 ${product.quantity > 0 ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
+                                                                variant={product.quantity > 1 ? "default" : "destructive"}
+                                                                className={`px-2 py-1 ${
+                                                                    product.quantity > 1 
+                                                                        ? "bg-green-600 hover:bg-green-700" 
+                                                                        : product.quantity === 1
+                                                                            ? "bg-yellow-600 hover:bg-yellow-700"
+                                                                            : "bg-red-600 hover:bg-red-700"
+                                                                }`}
                                                             >
-                                                                {product.quantity > 0 ? `Disponible: ${product.quantity}` : "Sin Stock"}
+                                                                {product.quantity > 1 
+                                                                    ? `Disponible: ${product.quantity}` 
+                                                                    : product.quantity === 1
+                                                                        ? "Solo 1 disponible"
+                                                                        : "Sin Stock"
+                                                                }
                                                             </Badge>
                                                         </div>
 
@@ -930,9 +978,11 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                         <Card
                                             key={product.id}
                                             className={`transition-colors cursor-pointer ${
-                                                selectedProducts2.includes(product.id)
-                                                    ? "bg-primary/10 border-primary relative after:content-['✓'] after:absolute after:top-2 after:right-2 after:bg-primary after:text-primary-foreground after:size-6 after:flex after:items-center after:justify-center after:rounded-full after:text-xs"
-                                                    : "hover:bg-muted/50"
+                                                product.quantity <= 1 
+                                                    ? "opacity-50 cursor-not-allowed bg-muted/30" 
+                                                    : selectedProducts2.includes(product.id)
+                                                        ? "bg-primary/10 border-primary relative after:content-['✓'] after:absolute after:top-2 after:right-2 after:bg-primary after:text-primary-foreground after:size-6 after:flex after:items-center after:justify-center after:rounded-full after:text-xs"
+                                                        : "hover:bg-muted/50"
                                             }`}
                                             onClick={() => toggleProductSelection(product)}
                                         >
@@ -955,10 +1005,15 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                                 <div className="flex justify-between items-center mt-1">
                                                     <p className="text-sm font-bold">${Number(product.price).toLocaleString()}</p>
                                                     <Badge
-                                                        variant={product.quantity <= 0 ? "destructive" : "default"}
+                                                        variant={product.quantity <= 1 ? "destructive" : "default"}
                                                         className="text-xs"
                                                     >
-                                                        {product.quantity <= 0 ? "Sin cantidad" : `Cantidad: ${product.quantity}`}
+                                                        {product.quantity <= 0 
+                                                            ? "Sin cantidad" 
+                                                            : product.quantity === 1
+                                                                ? "Solo 1 disponible"
+                                                                : `Cantidad: ${product.quantity}`
+                                                        }
                                                     </Badge>
                                                 </div>
                                             </CardContent>
@@ -1130,7 +1185,10 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                     <Select
                                         onValueChange={(value) => {
                                             if (value === "new-client") {
-                                                setNewClientOpen(true)
+                                                // Usar el componente ClientsDirectory para crear cliente
+                                                if (clientsDirectoryRef.current) {
+                                                    clientsDirectoryRef.current.openAddClientDialog()
+                                                }
                                                 return
                                             }
                                             
@@ -1176,7 +1234,11 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                             )}
                                         </SelectContent>
                                     </Select>
-                                    <Button variant="outline" size="icon" onClick={() => setNewClientOpen(true)}>
+                                    <Button variant="outline" size="icon" onClick={() => {
+                                        if (clientsDirectoryRef.current) {
+                                            clientsDirectoryRef.current.openAddClientDialog()
+                                        }
+                                    }}>
                                         <UserPlus className="h-4 w-4" />
                                     </Button>
                                 </div>
@@ -1290,52 +1352,29 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                 </DialogContent>
             </Dialog>
 
-            {/* Modal para Nuevo Cliente */}
-            <Dialog open={newClientOpen} onOpenChange={setNewClientOpen}>
-                <DialogContent className="sm:max-w-[500px]">
-                    <DialogHeader>
-                        <DialogTitle>Nuevo Cliente</DialogTitle>
-                        <DialogDescription>Ingresa los datos del nuevo cliente</DialogDescription>
-                    </DialogHeader>
-
-                    <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="name">Nombre completo</Label>
-                            <Input id="name" placeholder="Nombre del cliente" />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="document">Documento de identidad</Label>
-                            <Input id="document" placeholder="Número de documento" />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="phone">Teléfono</Label>
-                            <Input id="phone" placeholder="Número de teléfono" />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="email">Correo electrónico</Label>
-                            <Input id="email" placeholder="Correo electrónico" type="email" />
-                        </div>
-                    </div>
-
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setNewClientOpen(false)}>
-                            Cancelar
-                        </Button>
-                        <Button
-                            onClick={() => {
-                                // Aquí iría la lógica para crear un nuevo cliente
-                                setSelectedClient({
-                                    name: "Nuevo Cliente",
-                                    id: Date.now(), // ID temporal
-                                })
-                                setNewClientOpen(false)
-                            }}
-                        >
-                            Guardar Cliente
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            {/* Componente ClientsDirectory oculto para manejo de clientes */}
+            <div className="hidden">
+                <ClientsDirectory 
+                    ref={clientsDirectoryRef}
+                    agencyId={agencyId}
+                    subAccountId={selectedSubaccount || undefined}
+                    onClientSelect={(clientId) => {
+                        // Buscar el cliente creado y seleccionarlo
+                        const client = clients.find(c => c.id === clientId)
+                        if (client) {
+                            setSelectedClient({
+                                name: client.name,
+                                id: client.id,
+                                email: client.email,
+                                phone: client.phone,
+                                address: client.address
+                            })
+                            // Recargar la lista de clientes para incluir el nuevo
+                            loadClients()
+                        }
+                    }}
+                />
+            </div>
 
             {/* Modal de Ventas Guardadas */}
             <Dialog open={savedSalesOpen} onOpenChange={setSavedSalesOpen}>

@@ -1,315 +1,500 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DatePicker } from "@/components/ui/date-picker"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Download, RefreshCw, Search, AlertTriangle } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Package, AlertTriangle, TrendingUp, Search, Filter, Download, Loader2, Eye, BarChart3 } from "lucide-react"
+import { RosenChart } from "@/components/ui/rosen-chart"
+import { toast } from "@/components/ui/use-toast"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { AlertSystem } from "@/components/alerts/alert-system"
+import { getInventoryReportsData, exportReportData } from "@/lib/reports-queries"
 
-interface InventoryReportProps {
+interface InventoryReportsProps {
     agencyId: string
+    user: any
+    dateRange: string
 }
 
-export default function InventoryReport({ agencyId }: InventoryReportProps) {
-    const [dateRange, setDateRange] = useState("month")
-    const [startDate, setStartDate] = useState<Date | undefined>(undefined)
-    const [endDate, setEndDate] = useState<Date | undefined>(undefined)
-    const [reportData, setReportData] = useState([])
-    const [filteredData, setFilteredData] = useState([])
-    const [isLoading, setIsLoading] = useState(false)
-    const [view, setView] = useState("all")
-    const [searchQuery, setSearchQuery] = useState("")
-    const [categories, setCategories] = useState([])
-    const [selectedCategory, setSelectedCategory] = useState("all")
+export default function InventoryReports({ agencyId, user, dateRange }: InventoryReportsProps) {
+    const [inventoryData, setInventoryData] = useState<any>(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [searchTerm, setSearchTerm] = useState("")
+    const [categoryFilter, setCategoryFilter] = useState("all")
+    const [currentPage, setCurrentPage] = useState(1)
+    const [pageSize] = useState(10)
+    const [sortBy, setSortBy] = useState("name")
+    const [sortOrder, setSortOrder] = useState("asc")
 
-    // Cargar datos del reporte
     useEffect(() => {
-        loadReportData()
-        loadCategories()
-    }, [agencyId, dateRange, startDate, endDate])
+        loadInventoryData()
+    }, [agencyId, dateRange, currentPage, categoryFilter, sortBy, sortOrder])
 
-    // Filtrar datos según la vista y búsqueda
-    useEffect(() => {
-        let filtered = [...reportData]
-
-        // Filtrar por vista
-        if (view === "low-stock") {
-            filtered = filtered.filter((item) => item.isLowStock)
-        }
-
-        // Filtrar por categoría
-        if (selectedCategory !== "all") {
-            filtered = filtered.filter((item) => item.categoryName === selectedCategory)
-        }
-
-        // Filtrar por búsqueda
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase()
-            filtered = filtered.filter(
-                (item) => item.productName.toLowerCase().includes(query) || item.sku.toLowerCase().includes(query),
-            )
-        }
-
-        setFilteredData(filtered)
-    }, [reportData, view, searchQuery, selectedCategory])
-
-    const loadReportData = async () => {
+    const loadInventoryData = async () => {
         try {
             setIsLoading(true)
-
-            let url = `/api/reports/${agencyId}?type=inventory&dateRange=${dateRange}`
-
-            if (dateRange === "custom" && startDate && endDate) {
-                url += `&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
-            }
-
-            const response = await fetch(url)
-
-            if (!response.ok) {
-                throw new Error(`Error: ${response.status}`)
-            }
-
-            const result = await response.json()
-
-            if (result.success) {
-                setReportData(result.data)
-                setFilteredData(result.data)
-            } else {
-                console.error("Error al cargar reporte:", result.error)
-            }
+            const data = await getInventoryReportsData(
+                agencyId,
+                dateRange,
+                currentPage,
+                pageSize,
+                categoryFilter,
+                sortBy,
+                sortOrder,
+                searchTerm,
+            )
+            setInventoryData(data)
         } catch (error) {
-            console.error("Error al cargar reporte:", error)
+            console.error("Error loading inventory data:", error)
+            toast({
+                title: "Error",
+                description: "No se pudieron cargar los datos de inventario",
+                variant: "destructive",
+            })
         } finally {
             setIsLoading(false)
         }
     }
 
-    const loadCategories = async () => {
+    const handleSearch = () => {
+        setCurrentPage(1)
+        loadInventoryData()
+    }
+
+    const exportInventory = async (format: string) => {
         try {
-            const response = await fetch(`/api/inventory/${agencyId}?type=categories`)
+            await exportReportData(agencyId, "inventory", format, dateRange, {
+                category: categoryFilter,
+                search: searchTerm,
+            })
 
-            if (!response.ok) {
-                throw new Error(`Error: ${response.status}`)
-            }
-
-            const result = await response.json()
-
-            if (result.success) {
-                setCategories(result.data)
-            } else {
-                console.error("Error al cargar categorías:", result.error)
-            }
+            toast({
+                title: "Exportación exitosa",
+                description: `Inventario exportado en formato ${format}`,
+            })
         } catch (error) {
-            console.error("Error al cargar categorías:", error)
+            toast({
+                title: "Error",
+                description: "No se pudo exportar el inventario",
+                variant: "destructive",
+            })
         }
     }
 
-    // Exportar reporte a CSV
-    const exportToCSV = async () => {
-        try {
-            let url = `/api/reports/${agencyId}?type=inventory&dateRange=${dateRange}&format=csv`
-
-            if (dateRange === "custom" && startDate && endDate) {
-                url += `&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
-            }
-
-            if (selectedCategory !== "all") {
-                url += `&categoryId=${selectedCategory}`
-            }
-
-            window.open(url, "_blank")
-        } catch (error) {
-            console.error("Error al exportar reporte:", error)
-        }
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        )
     }
 
-    // Calcular totales
-    const totals = filteredData.reduce(
-        (acc, item) => {
-            acc.totalProducts += 1
-            acc.totalStock += item.currentStock
-            acc.totalValue += item.totalValue
-            if (item.isLowStock) acc.lowStockProducts += 1
-            return acc
+    if (!inventoryData) {
+        return (
+            <div className="text-center py-8">
+                <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">No hay datos de inventario disponibles</p>
+            </div>
+        )
+    }
+
+    // Configuración de gráficos
+    const stockLevelsConfig = {
+        type: "bar",
+        data: {
+            labels: inventoryData.stockLevels?.map((item: any) => item.category) || [],
+            datasets: [
+                {
+                    label: "Stock Actual",
+                    data: inventoryData.stockLevels?.map((item: any) => item.currentStock) || [],
+                    backgroundColor: "rgba(34, 197, 94, 0.8)",
+                    borderColor: "rgb(34, 197, 94)",
+                    borderWidth: 1,
+                },
+                {
+                    label: "Stock Mínimo",
+                    data: inventoryData.stockLevels?.map((item: any) => item.minStock) || [],
+                    backgroundColor: "rgba(239, 68, 68, 0.8)",
+                    borderColor: "rgb(239, 68, 68)",
+                    borderWidth: 1,
+                },
+            ],
         },
-        { totalProducts: 0, totalStock: 0, totalValue: 0, lowStockProducts: 0 },
-    )
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: "top" as const },
+                title: { display: true, text: "Niveles de Stock por Categoría" },
+            },
+            scales: {
+                y: { beginAtZero: true },
+            },
+        },
+    }
+
+    const movementsConfig = {
+        type: "line",
+        data: {
+            labels: inventoryData.movements?.map((item: any) => item.date) || [],
+            datasets: [
+                {
+                    label: "Entradas",
+                    data: inventoryData.movements?.map((item: any) => item.entries) || [],
+                    borderColor: "rgb(34, 197, 94)",
+                    backgroundColor: "rgba(34, 197, 94, 0.1)",
+                    tension: 0.4,
+                },
+                {
+                    label: "Salidas",
+                    data: inventoryData.movements?.map((item: any) => item.exits) || [],
+                    borderColor: "rgb(239, 68, 68)",
+                    backgroundColor: "rgba(239, 68, 68, 0.1)",
+                    tension: 0.4,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: "top" as const },
+                title: { display: true, text: "Movimientos de Inventario" },
+            },
+            scales: {
+                y: { beginAtZero: true },
+            },
+        },
+    }
+
+    const valueDistributionConfig = {
+        type: "doughnut",
+        data: {
+            labels: inventoryData.valueDistribution?.map((item: any) => item.category) || [],
+            datasets: [
+                {
+                    data: inventoryData.valueDistribution?.map((item: any) => item.value) || [],
+                    backgroundColor: [
+                        "rgba(59, 130, 246, 0.8)",
+                        "rgba(16, 185, 129, 0.8)",
+                        "rgba(245, 158, 11, 0.8)",
+                        "rgba(139, 92, 246, 0.8)",
+                        "rgba(236, 72, 153, 0.8)",
+                    ],
+                    borderWidth: 2,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: "right" as const },
+                title: { display: true, text: "Distribución de Valor por Categoría" },
+            },
+        },
+    }
 
     return (
-        <Card className="w-full">
-            <CardHeader>
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <CardTitle>Reporte de Inventario</CardTitle>
-                        <CardDescription>Análisis de stock y movimientos</CardDescription>
-                    </div>
+        <div className="space-y-6">
+            {/* Sistema de Alertas */}
+            <AlertSystem agencyId={agencyId} type="inventory" />
 
-                    <div className="flex flex-wrap gap-2">
-                        <Select value={dateRange} onValueChange={setDateRange}>
+            {/* Métricas principales */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-blue-700 flex items-center gap-2">
+                            <Package className="h-4 w-4" />
+                            Total Productos
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-blue-800">{inventoryData.totalProducts?.toLocaleString() || 0}</div>
+                        <div className="mt-2 flex items-center text-sm">
+                            <TrendingUp className="h-3 w-3 mr-1 text-green-600" />
+                            <span className="text-green-600">+{inventoryData.productsGrowth || 0}% vs. período anterior</span>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-green-700 flex items-center gap-2">
+                            <BarChart3 className="h-4 w-4" />
+                            Valor Total
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-green-800">${inventoryData.totalValue?.toLocaleString() || 0}</div>
+                        <div className="mt-2 flex items-center text-sm">
+                            <TrendingUp className="h-3 w-3 mr-1 text-green-600" />
+                            <span className="text-green-600">+{inventoryData.valueGrowth || 0}% vs. período anterior</span>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-amber-700 flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4" />
+                            Stock Bajo
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-amber-800">{inventoryData.lowStockCount || 0}</div>
+                        <div className="mt-2 flex items-center text-sm">
+                            <AlertTriangle className="h-3 w-3 mr-1 text-amber-600" />
+                            <span className="text-amber-600">Productos con stock crítico</span>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-purple-700 flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4" />
+                            Rotación
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-purple-800">{inventoryData.turnoverRate || 0}x</div>
+                        <div className="mt-2 flex items-center text-sm">
+                            <TrendingUp className="h-3 w-3 mr-1 text-purple-600" />
+                            <span className="text-purple-600">Rotación promedio</span>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Filtros y búsqueda */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Filter className="h-5 w-5" />
+                        Filtros y Búsqueda
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-wrap gap-4">
+                        <div className="flex-1 min-w-[200px]">
+                            <div className="flex gap-2">
+                                <Input
+                                    placeholder="Buscar productos..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="flex-1"
+                                />
+                                <Button onClick={handleSearch} size="sm">
+                                    <Search className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+
+                        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                             <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Seleccionar período" />
+                                <SelectValue placeholder="Categoría" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="today">Hoy</SelectItem>
-                                <SelectItem value="week">Última semana</SelectItem>
-                                <SelectItem value="month">Este mes</SelectItem>
-                                <SelectItem value="year">Este año</SelectItem>
-                                <SelectItem value="custom">Personalizado</SelectItem>
+                                <SelectItem value="all">Todas las categorías</SelectItem>
+                                {inventoryData.categories?.map((cat: any) => (
+                                    <SelectItem key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
 
-                        {dateRange === "custom" && (
-                            <div className="flex gap-2">
-                                <DatePicker date={startDate} setDate={setStartDate} placeholder="Fecha inicial" />
-                                <DatePicker date={endDate} setDate={setEndDate} placeholder="Fecha final" />
-                            </div>
-                        )}
+                        <Select value={sortBy} onValueChange={setSortBy}>
+                            <SelectTrigger className="w-[150px]">
+                                <SelectValue placeholder="Ordenar por" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="name">Nombre</SelectItem>
+                                <SelectItem value="stock">Stock</SelectItem>
+                                <SelectItem value="value">Valor</SelectItem>
+                                <SelectItem value="category">Categoría</SelectItem>
+                            </SelectContent>
+                        </Select>
 
-                        <Button variant="outline" size="icon" onClick={loadReportData} disabled={isLoading}>
-                            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-                        </Button>
-
-                        <Button variant="outline" onClick={exportToCSV}>
-                            <Download className="h-4 w-4 mr-2" />
-                            Exportar CSV
-                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline">
+                                    <Download className="h-4 w-4 mr-2" />
+                                    Exportar
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuItem onClick={() => exportInventory("PDF")}>📄 Exportar PDF</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => exportInventory("EXCEL")}>📊 Exportar Excel</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => exportInventory("CSV")}>📝 Exportar CSV</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
-                </div>
-            </CardHeader>
+                </CardContent>
+            </Card>
 
-            <CardContent>
-                {/* Resumen de totales */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">{totals.totalProducts}</div>
-                            <p className="text-muted-foreground">Total de productos</p>
-                        </CardContent>
-                    </Card>
+            {/* Gráficos */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Niveles de Stock</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-80">
+                            <RosenChart config={stockLevelsConfig} />
+                        </div>
+                    </CardContent>
+                </Card>
 
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">{totals.totalStock}</div>
-                            <p className="text-muted-foreground">Unidades en stock</p>
-                        </CardContent>
-                    </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Movimientos de Inventario</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-80">
+                            <RosenChart config={movementsConfig} />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
 
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">${totals.totalValue.toFixed(2)}</div>
-                            <p className="text-muted-foreground">Valor del inventario</p>
-                        </CardContent>
-                    </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Distribución de Valor</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-80">
+                            <RosenChart config={valueDistributionConfig} />
+                        </div>
+                    </CardContent>
+                </Card>
 
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="text-2xl font-bold text-red-500">{totals.lowStockProducts}</div>
-                            <p className="text-muted-foreground">Productos con stock bajo</p>
-                        </CardContent>
-                    </Card>
-                </div>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Productos con Stock Bajo</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-3 max-h-80 overflow-y-auto">
+                            {inventoryData.lowStockProducts?.length > 0 ? (
+                                inventoryData.lowStockProducts.map((product: any) => (
+                                    <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                        <div className="flex-1">
+                                            <h4 className="font-medium">{product.name}</h4>
+                                            <p className="text-sm text-muted-foreground">{product.category}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <Badge variant="destructive" className="mb-1">
+                                                Stock: {product.currentStock}
+                                            </Badge>
+                                            <p className="text-xs text-muted-foreground">Mín: {product.minStock}</p>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-center text-muted-foreground py-8">No hay productos con stock bajo</p>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
 
-                {/* Filtros */}
-                <div className="flex flex-col md:flex-row gap-4 mb-6">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Buscar productos..."
-                            className="pl-8"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-
-                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                        <SelectTrigger className="w-full md:w-[200px]">
-                            <SelectValue placeholder="Todas las categorías" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todas las categorías</SelectItem>
-                            {categories.map((category) => (
-                                <SelectItem key={category.id} value={category.name}>
-                                    {category.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
-                    <Tabs value={view} onValueChange={setView} className="w-full md:w-auto">
-                        <TabsList>
-                            <TabsTrigger value="all">Todos</TabsTrigger>
-                            <TabsTrigger value="low-stock">Stock Bajo</TabsTrigger>
-                        </TabsList>
-                    </Tabs>
-                </div>
-
-                {/* Tabla de inventario */}
-                <div className="rounded-md border">
+            {/* Tabla de productos */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Lista de Productos</CardTitle>
+                </CardHeader>
+                <CardContent>
                     <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
+                        <table className="w-full">
                             <thead>
-                                <tr className="border-b bg-muted/50">
-                                    <th className="py-3 px-4 text-left font-medium">Producto</th>
-                                    <th className="py-3 px-4 text-left font-medium">SKU</th>
-                                    <th className="py-3 px-4 text-left font-medium">Categoría</th>
-                                    <th className="py-3 px-4 text-left font-medium">Stock Inicial</th>
-                                    <th className="py-3 px-4 text-left font-medium">Entradas</th>
-                                    <th className="py-3 px-4 text-left font-medium">Salidas</th>
-                                    <th className="py-3 px-4 text-left font-medium">Stock Actual</th>
-                                    <th className="py-3 px-4 text-left font-medium">Precio</th>
-                                    <th className="py-3 px-4 text-left font-medium">Valor Total</th>
-                                    <th className="py-3 px-4 text-left font-medium">Estado</th>
+                                <tr className="border-b">
+                                    <th className="text-left py-3 px-4 font-medium">Producto</th>
+                                    <th className="text-left py-3 px-4 font-medium">Categoría</th>
+                                    <th className="text-left py-3 px-4 font-medium">Stock Actual</th>
+                                    <th className="text-left py-3 px-4 font-medium">Stock Mínimo</th>
+                                    <th className="text-left py-3 px-4 font-medium">Valor Unitario</th>
+                                    <th className="text-left py-3 px-4 font-medium">Estado</th>
+                                    <th className="text-right py-3 px-4 font-medium">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {isLoading ? (
-                                    <tr>
-                                        <td colSpan={10} className="py-10 text-center">
-                                            <RefreshCw className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-                                        </td>
-                                    </tr>
-                                ) : filteredData.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={10} className="py-10 text-center text-muted-foreground">
-                                            No hay datos disponibles para los filtros seleccionados
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    filteredData.map((item) => (
-                                        <tr key={item.productId} className="border-b hover:bg-muted/50">
-                                            <td className="py-3 px-4 font-medium">{item.productName}</td>
-                                            <td className="py-3 px-4">{item.sku}</td>
-                                            <td className="py-3 px-4">{item.categoryName}</td>
-                                            <td className="py-3 px-4">{item.initialStock}</td>
-                                            <td className="py-3 px-4 text-green-600">+{item.entries}</td>
-                                            <td className="py-3 px-4 text-red-600">-{item.exits}</td>
-                                            <td className="py-3 px-4 font-medium">{item.currentStock}</td>
-                                            <td className="py-3 px-4">${item.price.toFixed(2)}</td>
-                                            <td className="py-3 px-4">${item.totalValue.toFixed(2)}</td>
+                                {inventoryData.products?.length > 0 ? (
+                                    inventoryData.products.map((product: any) => (
+                                        <tr key={product.id} className="border-b hover:bg-muted/30">
+                                            <td className="py-3 px-4 font-medium">{product.name}</td>
+                                            <td className="py-3 px-4">{product.category}</td>
+                                            <td className="py-3 px-4">{product.currentStock}</td>
+                                            <td className="py-3 px-4">{product.minStock}</td>
+                                            <td className="py-3 px-4">${product.price?.toLocaleString()}</td>
                                             <td className="py-3 px-4">
-                                                {item.isLowStock ? (
-                                                    <Badge variant="destructive" className="flex items-center gap-1">
-                                                        <AlertTriangle className="h-3 w-3" />
-                                                        Stock Bajo
-                                                    </Badge>
-                                                ) : (
-                                                    <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-                                                        Normal
-                                                    </Badge>
-                                                )}
+                                                <Badge
+                                                    variant={
+                                                        product.currentStock <= product.minStock
+                                                            ? "destructive"
+                                                            : product.currentStock <= product.minStock * 1.5
+                                                                ? "secondary"
+                                                                : "default"
+                                                    }
+                                                >
+                                                    {product.currentStock <= product.minStock
+                                                        ? "Crítico"
+                                                        : product.currentStock <= product.minStock * 1.5
+                                                            ? "Bajo"
+                                                            : "Normal"}
+                                                </Badge>
+                                            </td>
+                                            <td className="py-3 px-4 text-right">
+                                                <Button variant="ghost" size="sm">
+                                                    <Eye className="h-4 w-4" />
+                                                </Button>
                                             </td>
                                         </tr>
                                     ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                                            No hay productos disponibles
+                                        </td>
+                                    </tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </CardContent>
-        </Card>
+
+                    {/* Paginación */}
+                    {inventoryData.totalPages > 1 && (
+                        <div className="flex justify-between items-center mt-4">
+                            <p className="text-sm text-muted-foreground">
+                                Mostrando {(currentPage - 1) * pageSize + 1} a{" "}
+                                {Math.min(currentPage * pageSize, inventoryData.totalItems)} de {inventoryData.totalItems} productos
+                            </p>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                                    disabled={currentPage === 1}
+                                >
+                                    Anterior
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage((prev) => Math.min(inventoryData.totalPages, prev + 1))}
+                                    disabled={currentPage === inventoryData.totalPages}
+                                >
+                                    Siguiente
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
     )
 }

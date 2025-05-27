@@ -1,289 +1,426 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { TrendingUp, DollarSign, Users, ShoppingCart, Target, Award, Calendar, Loader2, Download } from "lucide-react"
+import { RosenChart } from "@/components/ui/rosen-chart"
+import { toast } from "@/components/ui/use-toast"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DatePicker } from "@/components/ui/date-picker"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BarChart, LineChart, PieChart } from "@/components/ui/charts"
-import { Download, FileText, RefreshCw } from "lucide-react"
+import { getSalesReportsData, exportReportData } from "@/lib/reports-queries"
 
-interface SalesReportProps {
+interface SalesReportsProps {
     agencyId: string
+    user: any
+    dateRange: string
 }
 
-export default function SalesReport({ agencyId }: SalesReportProps) {
-    const [dateRange, setDateRange] = useState("month")
-    const [startDate, setStartDate] = useState<Date | undefined>(undefined)
-    const [endDate, setEndDate] = useState<Date | undefined>(undefined)
-    const [reportData, setReportData] = useState([])
-    const [isLoading, setIsLoading] = useState(false)
-    const [view, setView] = useState("chart")
-    const [chartType, setChartType] = useState("bar")
+export default function SalesReports({ agencyId, user, dateRange }: SalesReportsProps) {
+    const [salesData, setSalesData] = useState<any>(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [selectedPeriod, setSelectedPeriod] = useState(dateRange)
+    const [selectedSalesperson, setSelectedSalesperson] = useState("all")
 
-    // Cargar datos del reporte
     useEffect(() => {
-        loadReportData()
-    }, [agencyId, dateRange, startDate, endDate])
+        loadSalesData()
+    }, [agencyId, selectedPeriod, selectedSalesperson])
 
-    const loadReportData = async () => {
+    const loadSalesData = async () => {
         try {
             setIsLoading(true)
-
-            let url = `/api/reports/${agencyId}?type=sales&dateRange=${dateRange}`
-
-            if (dateRange === "custom" && startDate && endDate) {
-                url += `&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
-            }
-
-            const response = await fetch(url)
-
-            if (!response.ok) {
-                throw new Error(`Error: ${response.status}`)
-            }
-
-            const result = await response.json()
-
-            if (result.success) {
-                setReportData(result.data)
-            } else {
-                console.error("Error al cargar reporte:", result.error)
-            }
+            const data = await getSalesReportsData(agencyId, selectedPeriod, selectedSalesperson)
+            setSalesData(data)
         } catch (error) {
-            console.error("Error al cargar reporte:", error)
+            console.error("Error loading sales data:", error)
+            toast({
+                title: "Error",
+                description: "No se pudieron cargar los datos de ventas",
+                variant: "destructive",
+            })
         } finally {
             setIsLoading(false)
         }
     }
 
-    // Exportar reporte a CSV
-    const exportToCSV = async () => {
+    const exportSales = async (format: string) => {
         try {
-            let url = `/api/reports/${agencyId}?type=sales&dateRange=${dateRange}&format=csv`
+            await exportReportData(agencyId, "sales", format, selectedPeriod, {
+                salesperson: selectedSalesperson,
+            })
 
-            if (dateRange === "custom" && startDate && endDate) {
-                url += `&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
-            }
-
-            window.open(url, "_blank")
+            toast({
+                title: "Exportación exitosa",
+                description: `Reporte de ventas exportado en formato ${format}`,
+            })
         } catch (error) {
-            console.error("Error al exportar reporte:", error)
+            toast({
+                title: "Error",
+                description: "No se pudo exportar el reporte",
+                variant: "destructive",
+            })
         }
     }
 
-    // Preparar datos para gráficos
-    const chartData = {
-        labels: reportData.map((item) => item.date),
-        datasets: [
-            {
-                label: "Ventas",
-                data: reportData.map((item) => item.totalSales),
-                backgroundColor: "rgba(59, 130, 246, 0.5)",
-                borderColor: "rgb(59, 130, 246)",
-            },
-            {
-                label: "Ingresos",
-                data: reportData.map((item) => item.totalRevenue),
-                backgroundColor: "rgba(16, 185, 129, 0.5)",
-                borderColor: "rgb(16, 185, 129)",
-            },
-        ],
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        )
     }
 
-    // Calcular totales
-    const totals = reportData.reduce(
-        (acc, item) => {
-            acc.totalSales += item.totalSales
-            acc.totalRevenue += item.totalRevenue
-            acc.itemsSold += item.itemsSold
-            return acc
-        },
-        { totalSales: 0, totalRevenue: 0, itemsSold: 0 },
-    )
+    if (!salesData) {
+        return (
+            <div className="text-center py-8">
+                <ShoppingCart className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">No hay datos de ventas disponibles</p>
+            </div>
+        )
+    }
 
-    const averageTicket = totals.totalSales > 0 ? totals.totalRevenue / totals.totalSales : 0
+    // Configuración de gráficos
+    const salesTrendConfig = {
+        type: "line",
+        data: {
+            labels: salesData.salesTrend?.map((item: any) => item.period) || [],
+            datasets: [
+                {
+                    label: "Ventas",
+                    data: salesData.salesTrend?.map((item: any) => item.sales) || [],
+                    borderColor: "rgb(59, 130, 246)",
+                    backgroundColor: "rgba(59, 130, 246, 0.1)",
+                    tension: 0.4,
+                    fill: true,
+                },
+                {
+                    label: "Objetivo",
+                    data: salesData.salesTrend?.map((item: any) => item.target) || [],
+                    borderColor: "rgb(239, 68, 68)",
+                    backgroundColor: "rgba(239, 68, 68, 0.1)",
+                    borderDash: [5, 5],
+                    tension: 0.4,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: "top" as const },
+                title: { display: true, text: "Tendencia de Ventas vs Objetivos" },
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: (value: any) => "$" + value.toLocaleString(),
+                    },
+                },
+            },
+        },
+    }
+
+    const topProductsConfig = {
+        type: "bar",
+        data: {
+            labels: salesData.topProducts?.map((item: any) => item.name) || [],
+            datasets: [
+                {
+                    label: "Cantidad Vendida",
+                    data: salesData.topProducts?.map((item: any) => item.quantity) || [],
+                    backgroundColor: "rgba(34, 197, 94, 0.8)",
+                    borderColor: "rgb(34, 197, 94)",
+                    borderWidth: 1,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: "y" as const,
+            plugins: {
+                legend: { display: false },
+                title: { display: true, text: "Top 10 Productos Más Vendidos" },
+            },
+            scales: {
+                x: { beginAtZero: true },
+            },
+        },
+    }
+
+    const salesByChannelConfig = {
+        type: "doughnut",
+        data: {
+            labels: salesData.salesByChannel?.map((item: any) => item.channel) || [],
+            datasets: [
+                {
+                    data: salesData.salesByChannel?.map((item: any) => item.amount) || [],
+                    backgroundColor: [
+                        "rgba(59, 130, 246, 0.8)",
+                        "rgba(34, 197, 94, 0.8)",
+                        "rgba(245, 158, 11, 0.8)",
+                        "rgba(139, 92, 246, 0.8)",
+                    ],
+                    borderWidth: 2,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: "right" as const },
+                title: { display: true, text: "Ventas por Canal" },
+            },
+        },
+    }
 
     return (
-        <Card className="w-full">
-            <CardHeader>
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <CardTitle>Reporte de Ventas</CardTitle>
-                        <CardDescription>Análisis de ventas por período</CardDescription>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                        <Select value={dateRange} onValueChange={setDateRange}>
+        <div className="space-y-6">
+            {/* Filtros */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Calendar className="h-5 w-5" />
+                        Filtros de Ventas
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-wrap gap-4">
+                        <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
                             <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Seleccionar período" />
+                                <SelectValue placeholder="Período" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="today">Hoy</SelectItem>
-                                <SelectItem value="week">Última semana</SelectItem>
+                                <SelectItem value="week">Esta semana</SelectItem>
                                 <SelectItem value="month">Este mes</SelectItem>
+                                <SelectItem value="quarter">Este trimestre</SelectItem>
                                 <SelectItem value="year">Este año</SelectItem>
-                                <SelectItem value="custom">Personalizado</SelectItem>
                             </SelectContent>
                         </Select>
 
-                        {dateRange === "custom" && (
-                            <div className="flex gap-2">
-                                <DatePicker date={startDate} setDate={setStartDate} placeholder="Fecha inicial" />
-                                <DatePicker date={endDate} setDate={setEndDate} placeholder="Fecha final" />
-                            </div>
-                        )}
+                        <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
+                            <SelectTrigger className="w-[200px]">
+                                <SelectValue placeholder="Vendedor" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos los vendedores</SelectItem>
+                                {salesData.salespeople?.map((person: any) => (
+                                    <SelectItem key={person.id} value={person.id}>
+                                        {person.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
 
-                        <Button variant="outline" size="icon" onClick={loadReportData} disabled={isLoading}>
-                            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-                        </Button>
-
-                        <Button variant="outline" onClick={exportToCSV}>
-                            <Download className="h-4 w-4 mr-2" />
-                            Exportar CSV
-                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline">
+                                    <Download className="h-4 w-4 mr-2" />
+                                    Exportar
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuItem onClick={() => exportSales("PDF")}>📄 Exportar PDF</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => exportSales("EXCEL")}>📊 Exportar Excel</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => exportSales("CSV")}>📝 Exportar CSV</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
-                </div>
-            </CardHeader>
+                </CardContent>
+            </Card>
 
-            <CardContent>
-                {/* Resumen de totales */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">{totals.totalSales}</div>
-                            <p className="text-muted-foreground">Total de ventas</p>
-                        </CardContent>
-                    </Card>
+            {/* Métricas principales */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-blue-700 flex items-center gap-2">
+                            <DollarSign className="h-4 w-4" />
+                            Ventas Totales
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-blue-800">${salesData.totalSales?.toLocaleString() || 0}</div>
+                        <div className="mt-2 flex items-center text-sm">
+                            <TrendingUp className="h-3 w-3 mr-1 text-green-600" />
+                            <span className="text-green-600">+{salesData.salesGrowth || 0}% vs. período anterior</span>
+                        </div>
+                    </CardContent>
+                </Card>
 
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">${totals.totalRevenue.toFixed(2)}</div>
-                            <p className="text-muted-foreground">Ingresos totales</p>
-                        </CardContent>
-                    </Card>
+                <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-green-700 flex items-center gap-2">
+                            <ShoppingCart className="h-4 w-4" />
+                            Número de Ventas
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-green-800">
+                            {salesData.totalTransactions?.toLocaleString() || 0}
+                        </div>
+                        <div className="mt-2 flex items-center text-sm">
+                            <TrendingUp className="h-3 w-3 mr-1 text-green-600" />
+                            <span className="text-green-600">+{salesData.transactionsGrowth || 0}% vs. período anterior</span>
+                        </div>
+                    </CardContent>
+                </Card>
 
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">${averageTicket.toFixed(2)}</div>
-                            <p className="text-muted-foreground">Ticket promedio</p>
-                        </CardContent>
-                    </Card>
+                <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-purple-700 flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            Ticket Promedio
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-purple-800">${salesData.averageTicket?.toLocaleString() || 0}</div>
+                        <div className="mt-2 flex items-center text-sm">
+                            <TrendingUp className="h-3 w-3 mr-1 text-purple-600" />
+                            <span className="text-purple-600">+{salesData.ticketGrowth || 0}% vs. período anterior</span>
+                        </div>
+                    </CardContent>
+                </Card>
 
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="text-2xl font-bold">{totals.itemsSold}</div>
-                            <p className="text-muted-foreground">Productos vendidos</p>
-                        </CardContent>
-                    </Card>
-                </div>
+                <Card className="bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-amber-700 flex items-center gap-2">
+                            <Target className="h-4 w-4" />
+                            Cumplimiento
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-amber-800">{salesData.targetAchievement || 0}%</div>
+                        <div className="mt-2 flex items-center text-sm">
+                            <Target className="h-3 w-3 mr-1 text-amber-600" />
+                            <span className="text-amber-600">del objetivo mensual</span>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
 
-                {/* Tabs para cambiar entre vista de gráfico y tabla */}
-                <Tabs value={view} onValueChange={setView}>
-                    <div className="flex justify-between items-center mb-4">
-                        <TabsList>
-                            <TabsTrigger value="chart">Gráfico</TabsTrigger>
-                            <TabsTrigger value="table">Tabla</TabsTrigger>
-                        </TabsList>
+            {/* Gráficos principales */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Tendencia de Ventas</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-80">
+                            <RosenChart config={salesTrendConfig} />
+                        </div>
+                    </CardContent>
+                </Card>
 
-                        {view === "chart" && (
-                            <Select value={chartType} onValueChange={setChartType}>
-                                <SelectTrigger className="w-[120px]">
-                                    <SelectValue placeholder="Tipo de gráfico" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="bar">Barras</SelectItem>
-                                    <SelectItem value="line">Líneas</SelectItem>
-                                    <SelectItem value="pie">Circular</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        )}
-                    </div>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Ventas por Canal</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-80">
+                            <RosenChart config={salesByChannelConfig} />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
 
-                    <TabsContent value="chart" className="mt-0">
-                        <div className="h-[400px]">
-                            {isLoading ? (
-                                <div className="h-full flex items-center justify-center">
-                                    <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
-                                </div>
-                            ) : reportData.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-                                    <FileText className="h-12 w-12 mb-2 opacity-20" />
-                                    <p>No hay datos disponibles para el período seleccionado</p>
-                                </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Top Productos</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-80">
+                            <RosenChart config={topProductsConfig} />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Rendimiento por Vendedor</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-3 max-h-80 overflow-y-auto">
+                            {salesData.salespeople?.length > 0 ? (
+                                salesData.salespeople.map((person: any) => (
+                                    <div key={person.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                                                {person.name.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <h4 className="font-medium">{person.name}</h4>
+                                                <p className="text-sm text-muted-foreground">{person.role}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="font-bold text-lg">${person.totalSales?.toLocaleString()}</div>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant={person.achievement >= 100 ? "default" : "secondary"}>
+                                                    {person.achievement}% objetivo
+                                                </Badge>
+                                                {person.achievement >= 100 && <Award className="h-4 w-4 text-yellow-500" />}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
                             ) : (
-                                <>
-                                    {chartType === "bar" && <BarChart data={chartData} />}
-                                    {chartType === "line" && <LineChart data={chartData} />}
-                                    {chartType === "pie" && (
-                                        <PieChart
-                                            data={{
-                                                labels: reportData.map((item) => item.date),
-                                                datasets: [
-                                                    {
-                                                        label: "Ventas",
-                                                        data: reportData.map((item) => item.totalSales),
-                                                        backgroundColor: [
-                                                            "rgba(59, 130, 246, 0.5)",
-                                                            "rgba(16, 185, 129, 0.5)",
-                                                            "rgba(249, 115, 22, 0.5)",
-                                                            "rgba(236, 72, 153, 0.5)",
-                                                            "rgba(139, 92, 246, 0.5)",
-                                                        ],
-                                                    },
-                                                ],
-                                            }}
-                                        />
-                                    )}
-                                </>
+                                <p className="text-center text-muted-foreground py-8">No hay datos de vendedores disponibles</p>
                             )}
                         </div>
-                    </TabsContent>
+                    </CardContent>
+                </Card>
+            </div>
 
-                    <TabsContent value="table" className="mt-0">
-                        <div className="rounded-md border">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr className="border-b bg-muted/50">
-                                            <th className="py-3 px-4 text-left font-medium">Fecha</th>
-                                            <th className="py-3 px-4 text-left font-medium">Ventas</th>
-                                            <th className="py-3 px-4 text-left font-medium">Ingresos</th>
-                                            <th className="py-3 px-4 text-left font-medium">Ticket Promedio</th>
-                                            <th className="py-3 px-4 text-left font-medium">Productos Vendidos</th>
+            {/* Tabla de ventas recientes */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Ventas Recientes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b">
+                                    <th className="text-left py-3 px-4 font-medium">Número</th>
+                                    <th className="text-left py-3 px-4 font-medium">Cliente</th>
+                                    <th className="text-left py-3 px-4 font-medium">Vendedor</th>
+                                    <th className="text-left py-3 px-4 font-medium">Total</th>
+                                    <th className="text-left py-3 px-4 font-medium">Fecha</th>
+                                    <th className="text-left py-3 px-4 font-medium">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {salesData.recentSales?.length > 0 ? (
+                                    salesData.recentSales.map((sale: any) => (
+                                        <tr key={sale.id} className="border-b hover:bg-muted/30">
+                                            <td className="py-3 px-4 font-medium">{sale.saleNumber}</td>
+                                            <td className="py-3 px-4">{sale.customerName || "Cliente anónimo"}</td>
+                                            <td className="py-3 px-4">{sale.salesperson}</td>
+                                            <td className="py-3 px-4 font-bold text-green-600">${sale.total?.toLocaleString()}</td>
+                                            <td className="py-3 px-4">{sale.date}</td>
+                                            <td className="py-3 px-4">
+                                                <Badge variant={sale.status === "completed" ? "default" : "secondary"}>
+                                                    {sale.status === "completed" ? "Completada" : "Pendiente"}
+                                                </Badge>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        {isLoading ? (
-                                            <tr>
-                                                <td colSpan={5} className="py-10 text-center">
-                                                    <RefreshCw className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-                                                </td>
-                                            </tr>
-                                        ) : reportData.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={5} className="py-10 text-center text-muted-foreground">
-                                                    No hay datos disponibles para el período seleccionado
-                                                </td>
-                                            </tr>
-                                        ) : (
-                                            reportData.map((item, index) => (
-                                                <tr key={index} className="border-b hover:bg-muted/50">
-                                                    <td className="py-3 px-4">{item.date}</td>
-                                                    <td className="py-3 px-4">{item.totalSales}</td>
-                                                    <td className="py-3 px-4">${item.totalRevenue.toFixed(2)}</td>
-                                                    <td className="py-3 px-4">${item.averageTicket.toFixed(2)}</td>
-                                                    <td className="py-3 px-4">{item.itemsSold}</td>
-                                                </tr>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </TabsContent>
-                </Tabs>
-            </CardContent>
-        </Card>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                                            No hay ventas recientes disponibles
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
     )
 }
