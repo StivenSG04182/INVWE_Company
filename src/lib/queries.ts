@@ -430,16 +430,16 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "Áreas de Inventario", icon: "home", link: `/agency/${agency.id}/(Inventory)/areas` },
 
             // 3. Tienda & E-Commerce
-            { name: "Tienda & E-Commerce", icon: "category", link: "#" },
+            /* { name: "Tienda & E-Commerce", icon: "category", link: "#" },
             { name: "Tiendas", icon: "category", link: `/agency/${agency.id}/(Ecommerce)/stores` },
             { name: "E-Commerce", icon: "pipelines", link: `/agency/${agency.id}/(Ecommerce)/funnels` },
-            { name: "Envíos", icon: "send", link: `/agency/${agency.id}/(Ecommerce)/shipping` },
+            { name: "Envíos", icon: "send", link: `/agency/${agency.id}/(Ecommerce)/shipping` }, */
 
             // 4. POS (Punto de Venta)
             { name: "POS (Punto de Venta)", icon: "shoppingCart", link: "#" },
             { name: "Terminal", icon: "payment", link: `/agency/${agency.id}/(POS)/terminal` },
             { name: "Ventas POS", icon: "receipt", link: `/agency/${agency.id}/(POS)/sales-pos` },
-            { name: "Cierre de Caja", icon: "chart", link: `/agency/${agency.id}/(POS)/cash-closing` },  
+           /*  { name: "Cierre de Caja", icon: "chart", link: `/agency/${agency.id}/(POS)/cash-closing` },   */
 
             // 5. Ventas & Facturación
             { name: "Ventas & Facturación", icon: "payment", link: `/agency/${agency.id}/(Billing)/finance` },
@@ -455,11 +455,11 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "Objetivos", icon: "flag", link: `/agency/${agency.id}/(Staff)/pipelines` },
 
             // 8. Comunicaciones
-            { name: "Comunicaciones", icon: "messages", link: "#" },
+            /* { name: "Comunicaciones", icon: "messages", link: "#" },
             { name: "Campañas", icon: "send", link: `/agency/${agency.id}/(Communications)/campaigns` },
             { name: "Bandeja de entrada", icon: "messages", link: `/agency/${agency.id}/(Communications)/inbox` },
             { name: "Medios", icon: "database", link: `/agency/${agency.id}/(Communications)/media` },
-            { name: "Chat", icon: "messages", link: `/agency/${agency.id}/(Communications)/chat` },
+            { name: "Chat", icon: "messages", link: `/agency/${agency.id}/(Communications)/chat` }, */
 
             // 9. Reportes & Analíticas
             { name: "Reportes & Analíticas", icon: "chartLine", link: `/agency/${agency.id}/(Reports)/reports-all` },
@@ -550,73 +550,55 @@ export const upsertSubAccount = async (subAccount: SubAccount) => {
         Pipeline: { create: { name: 'Lead Cycle' } },
         SidebarOption: {
           create: [
-            // 1. Dashboard & Visión general
-            { name: "Dashboard & Visión general", icon: "chart", link: "#" },
             { name: "Dashboard", icon: "category", link: `/subaccount/${subAccount.id}` },
-            { name: "Análisis", icon: "chart", link: `/subaccount/${subAccount.id}/(Dashboard)/analytics` },
-            { name: "Actividad", icon: "calendar", link: `/subaccount/${subAccount.id}/(Dashboard)/activity` },
 
             // 2. Gestión de Inventario
             { name: "Gestión de Inventario", icon: "database", link: "#" },
             { name: "Productos", icon: "category", link: `/subaccount/${subAccount.id}/(Inventory)/products` },
-            { name: "Stock", icon: "database", link: `/subaccount/${subAccount.id}/(Inventory)/stock` },
             { name: "Movimientos", icon: "compass", link: `/subaccount/${subAccount.id}/(Inventory)/movements` },
             { name: "Proveedores", icon: "person", link: `/subaccount/${subAccount.id}/(Inventory)/providers` },
             { name: "Áreas de Inventario", icon: "home", link: `/subaccount/${subAccount.id}/(Inventory)/areas` },
 
             // 3. Tienda & E-Commerce
-            { name: "Tienda & E-Commerce", icon: "category", link: "#" },
-            { name: "Tiendas", icon: "store", link: `/subaccount/${subAccount.id}/(Ecommerce)/stores` },
-            { name: "Envíos", icon: "send", link: `/subaccount/${subAccount.id}/(Ecommerce)/shipping` },
+            /* { name: "Tienda & E-Commerce", icon: "category", link: "#" },
+            { name: "Tiendas", icon: "category", link: `/subaccount/${subAccount.id}/(Ecommerce)/stores` },
+            { name: "E-Commerce", icon: "pipelines", link: `/subaccount/${subAccount.id}/(Ecommerce)/funnels` },
+            { name: "Envíos", icon: "send", link: `/subaccount/${subAccount.id}/(Ecommerce)/shipping` }, */
 
             // 4. POS (Punto de Venta)
-            { name: "POS (Punto de Venta)", icon: "store", link: "#" },
-            { name: "Terminal POS", icon: "payment", link: `/subaccount/${subAccount.id}/(POS)/terminal` },
-            { name: "Ventas POS", icon: "receipt", link: `/subaccount/${subAccount.id}/(POS)/sales` },
-            { name: "Configuración POS", icon: "settings", link: `/subaccount/${subAccount.id}/(POS)/settings` },
-            { name: "Reportes POS", icon: "chart", link: `/subaccount/${subAccount.id}/(POS)/reports` },
+            { name: "POS (Punto de Venta)", icon: "shoppingCart", link: "#" },
+            { name: "Terminal", icon: "payment", link: `/subaccount/${subAccount.id}/(POS)/terminal` },
+            { name: "Ventas POS", icon: "receipt", link: `/subaccount/${subAccount.id}/(POS)/sales-pos` },
+           /*  { name: "Cierre de Caja", icon: "chart", link: `/subaccount/${subAccount.id}/(POS)/cash-closing` },   */
 
             // 5. Ventas & Facturación
-            { name: "Ventas & Facturación", icon: "payment", link: "#" },
-            { name: "Transacciones", icon: "receipt", link: `/subaccount/${subAccount.id}/(Billing)/transactions` },
-            { name: "Facturas", icon: "receipt", link: `/subaccount/${subAccount.id}/(Billing)/invoices` },
-            { name: "Notas Crédito/Débito", icon: "receipt", link: `/subaccount/${subAccount.id}/(Billing)/notes` },
-            { name: "Configuración DIAN", icon: "settings", link: `/(Billing)/dian-config` },
-            { name: "Reportes", icon: "chart", link: `/subaccount/${subAccount.id}/(Billing)/reports` },
-            { name: "Pagos", icon: "payment", link: `/subaccount/${subAccount.id}/(Billing)/payments` },
-            { name: "Billing", icon: "payment", link: `/subaccount/${subAccount.id}/(Billing)/billing-store` },
+            { name: "Ventas & Facturación", icon: "payment", link: `/subaccount/${subAccount.id}/(Billing)/finance` },
 
             // 6. Clientes & CRM
-            { name: "Clientes & CRM", icon: "person", link: "#" },
-            { name: "Clientes", icon: "person", link: `/subaccount/${subAccount.id}/(Customers)/clients` },
-            { name: "CRM", icon: "contact", link: `/subaccount/${subAccount.id}/(Customers)/crm` },
-            { name: "PQR", icon: "contact", link: `/subaccount/${subAccount.id}/(Customers)/pqr` },
+            { name:  "Clientes", icon: "person", link: `/subaccount/${subAccount.id}/(Customers)/clients` },
 
             // 7. Personal & RRHH
-            { name: "Personal & RRHH", icon: "person", link: "#" },
+            { name: "Personal & RRHH", icon: "contact", link: "#" },
             { name: "Empleados", icon: "person", link: `/subaccount/${subAccount.id}/(Staff)/team` },
             { name: "Horarios & Nómina", icon: "calendar", link: `/subaccount/${subAccount.id}/(Staff)/schedule` },
             { name: "Contactos", icon: "contact", link: `/subaccount/${subAccount.id}/(Staff)/contacts` },
             { name: "Objetivos", icon: "flag", link: `/subaccount/${subAccount.id}/(Staff)/pipelines` },
 
             // 8. Comunicaciones
-            { name: "Comunicaciones", icon: "messages", link: "#" },
+            /* { name: "Comunicaciones", icon: "messages", link: "#" },
             { name: "Campañas", icon: "send", link: `/subaccount/${subAccount.id}/(Communications)/campaigns` },
             { name: "Bandeja de entrada", icon: "messages", link: `/subaccount/${subAccount.id}/(Communications)/inbox` },
             { name: "Medios", icon: "database", link: `/subaccount/${subAccount.id}/(Communications)/media` },
-            { name: "Chat", icon: "messages", link: `/subaccount/${subAccount.id}/(Communications)/chat` },
+            { name: "Chat", icon: "messages", link: `/subaccount/${subAccount.id}/(Communications)/chat` }, */
 
             // 9. Reportes & Analíticas
-            { name: "Reportes & Analíticas", icon: "chart", link: "#" },
-            { name: "Ventas", icon: "chart", link: `/subaccount/${subAccount.id}/(Reports)/sales-reports` },
-            { name: "Inventario", icon: "database", link: `/subaccount/${subAccount.id}/(Reports)/inventory-reports` },
-            { name: "Desempeño", icon: "chart", link: `/subaccount/${subAccount.id}/(Reports)/performance` },
+            { name: "Reportes & Analíticas", icon: "chartLine", link: `/subaccount/${subAccount.id}/(Reports)/reports-all` },
 
             // 10. Configuración & Administración
             { name: "Configuración & Administración", icon: "settings", link: "#" },
-            { name: "Ajustes de Empresa", icon: "settings", link: `/subaccount/${subAccount.id}/(Settings)/company-settings` },
-            { name: "Usuarios & Permisos", icon: "settings", link: `/subaccount/${subAccount.id}/(Settings)/users` },
-            { name: "General Settings", icon: "tune", link: `/subaccount/${subAccount.id}/(Settings)/settings` },
+            { name: "Facturación Cuenta", icon: "payment", link: `/subaccount/${subAccount.id}/(Settings)/billing` },
+            { name: "Configuración Pasarela de pagos", icon: "settings", link: `/subaccount/${subAccount.id}/(Settings)/launchpad` }, 
+            { name: "Configuración General", icon: "tune", link: `/subaccount/${subAccount.id}/(Settings)/settings` },
           ],
         },
       },

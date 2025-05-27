@@ -72,6 +72,7 @@ export const InventoryEvents = {
     STOCK_BELOW_MINIMUM: "stock:below-minimum",
     PRODUCT_EXPIRING: "product:expiring",
     MOVEMENT_CREATED: "movement:created",
+    AREA_UPDATED: "area:updated",
 }
 
 export const POSEvents = {

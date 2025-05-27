@@ -301,7 +301,7 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                       <Grid3X3 className="h-12 w-12 text-muted-foreground/30" />
                     )}
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <Link href={`/agency/${agencyId}/areas/workspace?areaId=${area._id}`}>
+                      <Link href={`/agency/${agencyId}/areas/${area._id}`}>
                         <Button size="sm" variant="secondary">
                           <Edit className="h-4 w-4 mr-2" />
                           Editar
