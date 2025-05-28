@@ -36,7 +36,6 @@ type UserWithDetails = User & {
 }
 
 const ContactPage = async ({ params }: Props) => {
-  // Obtener los miembros del equipo asociados a la agencia
   const teamMembers = await db.user.findMany({
     where: {
       Agency: {

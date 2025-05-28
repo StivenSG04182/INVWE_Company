@@ -5,7 +5,7 @@ import { clerkClient } from "@clerk/clerk-sdk-node";
 import { db } from "./db";
 import { redirect } from "next/navigation";
 import { Agency, User } from "@prisma/client";
-
+import { StockService } from './services/inventory-service';
 
 // TODO: Obtiene usuario autenticado
 export const getAuthUserDetails = async () => {
@@ -1093,7 +1093,7 @@ export const createMovement = async (data: any) => {
 
     // Para movimientos de salida, verificar que haya suficiente stock
     if (data.type === 'salida') {
-        const stocks = await getStocks(data.agencyId);
+        const stocks = await StockService.getStocks(data.agencyId);
         const areaStock = stocks.find(s => s.productId === data.productId && s.areaId === data.areaId);
         const stockQuantity = areaStock ? areaStock.quantity : 0;
 
@@ -1113,7 +1113,7 @@ export const createMovement = async (data: any) => {
         }
 
         // Verificar stock suficiente
-        const stocks = await getStocks(data.agencyId);
+        const stocks = await StockService.getStocks(data.agencyId);
         const areaStock = stocks.find(s => s.productId === data.productId && s.areaId === data.areaId);
         const stockQuantity = areaStock ? areaStock.quantity : 0;
 

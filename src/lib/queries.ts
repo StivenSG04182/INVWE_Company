@@ -1202,6 +1202,18 @@ export const searchContacts = async (searchTerms: string) => {
   return response
 }
 
+// TODO: Edición de información usuario
+export const editUser = async (
+  userId: string,
+  userData: Prisma.UserUncheckedUpdateInput
+) => {
+  const response = await db.user.update({
+    where: { id: userId },
+    data: userData,
+  })
+  return response
+}   
+
 // TODO: Creación y actualización de tickets
 export const upsertTicket = async (
   ticket: Prisma.TicketUncheckedCreateInput,
