@@ -42,30 +42,19 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
   });
 
   // Cargar subcuentas al montar el componente
-  useEffect(() => {
-    const fetchSubaccounts = async () => {
-      try {
-        const response = await fetch(`/api/agency/${agencyId}/subaccounts`, {
-          credentials: 'include',
-        });
-        const data = await response.json();
-        if (data.success) {
-          setSubaccounts(data.data || []);
-        } else {
-          console.error('Error al cargar subcuentas:', data.error);
+   useEffect(() => {
+      async function fetchSubaccounts() {
+        try {
+          const { getSubAccountsForAgency } = await import("@/lib/queries2");
+          const result = await getSubAccountsForAgency(agencyId);
+          setSubaccounts(result || []);
+        } catch (error) {
+          setSubaccounts([]);
         }
-      } catch (error) {
-        console.error('Error al cargar subcuentas:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'No se pudieron cargar las subcuentas. Inténtalo de nuevo.',
-        });
       }
-    };
-
-    fetchSubaccounts();
-  }, [agencyId, toast]);
+      if (agencyId) fetchSubaccounts();
+    }, [agencyId]);
+  
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -249,5 +238,4 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
       </form>
     </Card>
   );
-}
 }
