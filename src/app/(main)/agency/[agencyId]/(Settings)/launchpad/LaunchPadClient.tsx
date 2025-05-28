@@ -16,6 +16,7 @@ import PaymentGatewayModal from '@/components/forms/payment-gateway-modal'
 import { PaymentGatewayValidationResponse } from '@/app/api/payment-gateways/payment-gateway-types'
 import { paymentGateways } from '@/app/api/payment-gateways/payment-gateways'
 import { useToast } from '@/components/ui/use-toast'
+import { verifyPaymentGatewayStatus, upsertPaymentGateway } from '@/lib/payment-queries'
 
 interface ClientProps {
     agencyDetails: {
@@ -74,32 +75,22 @@ export default function LaunchPadClient({
     const validateGateways = async () => {
         setIsLoading(true)
         try {
-            const res = await fetch(`/api/agency/${agencyId}/payment-gateways`)
-            const data = await res.json()
-            if (!data.success) throw new Error(data.error)
-
-            const connected = data.connections.filter(
-                (c: any) => c.status === 'connected'
-            )
-            setHasConnectedGateway(connected.length > 0)
-
             const statusMap: Record<string, PaymentGatewayValidationResponse> = {}
-            paymentGateways.forEach((g) => {
-                statusMap[g.id] = {
+            let hasConnected = false;
+
+            // Verificamos cada pasarela disponible
+            for (const gateway of paymentGateways) {
+                const status = await verifyPaymentGatewayStatus(agencyId, gateway.id)
+                statusMap[gateway.id] = {
                     success: true,
-                    isValid: false,
-                    isConnected: false,
-                    status: 'not_connected',
+                    isValid: status.status === 'ACTIVE',
+                    isConnected: status.isConnected,
+                    status: status.status
                 }
-            })
-            connected.forEach((c: any) => {
-                statusMap[c.gatewayId] = {
-                    success: true,
-                    isValid: true,
-                    isConnected: true,
-                    status: 'connected',
-                }
-            })
+                if (status.isConnected) hasConnected = true;
+            }
+
+            setHasConnectedGateway(hasConnected)
             setGatewayStatus(statusMap)
         } catch (err: any) {
             console.error(err)
@@ -170,6 +161,7 @@ export default function LaunchPadClient({
         return () => window.removeEventListener('message', onMsg)
     }, [])
 
+    // Reemplazamos handleGatewaySelect con la nueva implementación
     const handleGatewaySelect = async (
         gatewayId: string,
         codeParam?: string
@@ -177,22 +169,19 @@ export default function LaunchPadClient({
         setIsLoading(true)
         if (codeParam) {
             try {
-                const res = await fetch(
-                    `/api/payment-gateways/${gatewayId}/auth`,
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ code: codeParam, agencyId }),
-                    }
-                )
-                const data = await res.json()
-                if (!data.success) throw new Error(data.error)
+                await upsertPaymentGateway(agencyId, {
+                    gatewayId,
+                    status: 'ACTIVE',
+                    accountId: codeParam,
+                    accessToken: codeParam, // Temporal, esto debería manejarse por la pasarela específica
+                })
+
                 toast({
                     title: 'Pasarela conectada',
-                    description: `La pasarela ${paymentGateways.find((g) => g.id === gatewayId)?.name ||
-                        gatewayId
-                        } se conectó correctamente.`,
+                    description: `La pasarela ${paymentGateways.find((g) => g.id === gatewayId)?.name || gatewayId} se conectó correctamente.`,
                 })
+                
+                validateGateways()
             } catch (err: any) {
                 console.error(err)
                 toast({
@@ -200,33 +189,46 @@ export default function LaunchPadClient({
                     description: err.message || 'Error desconocido',
                     variant: 'destructive',
                 })
-            } finally {
-                validateGateways()
             }
         } else {
             const gw = paymentGateways.find((g) => g.id === gatewayId)
             if (!gw) return
-            localStorage.setItem('lastGatewayId', gatewayId)
-            localStorage.setItem('authStartTime', Date.now().toString())
-            const win = window.open(gw.authUrl(agencyId), '_blank')
-            if (win) {
-                const iv = setInterval(() => {
-                    if (win.closed) {
-                        clearInterval(iv)
-                        const start = parseInt(
-                            localStorage.getItem('authStartTime') || '0'
-                        )
-                        if (Date.now() - start < 10000) {
-                            toast({
-                                title: 'Cancelado',
-                                description: 'No se completó la configuración',
-                                variant: 'destructive',
-                            })
+
+            try {
+                // Creamos una conexión pendiente
+                await upsertPaymentGateway(agencyId, {
+                    gatewayId,
+                    status: 'PENDING'
+                })
+
+                localStorage.setItem('lastGatewayId', gatewayId)
+                localStorage.setItem('authStartTime', Date.now().toString())
+                
+                const win = window.open(gw.authUrl(agencyId), '_blank')
+                if (win) {
+                    const iv = setInterval(() => {
+                        if (win.closed) {
+                            clearInterval(iv)
+                            const start = parseInt(localStorage.getItem('authStartTime') || '0')
+                            if (Date.now() - start < 10000) {
+                                toast({
+                                    title: 'Cancelado',
+                                    description: 'No se completó la configuración',
+                                    variant: 'destructive',
+                                })
+                            }
+                            localStorage.removeItem('authStartTime')
+                            validateGateways()
                         }
-                        localStorage.removeItem('authStartTime')
-                        validateGateways()
-                    }
-                }, 1000)
+                    }, 1000)
+                }
+            } catch (err: any) {
+                console.error(err)
+                toast({
+                    title: 'Error',
+                    description: 'No se pudo iniciar la configuración',
+                    variant: 'destructive',
+                })
             }
         }
         setIsLoading(false)

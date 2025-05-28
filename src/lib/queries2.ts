@@ -339,26 +339,55 @@ export const updateAgencyDetails = async (
 };
 
 // TODO: Lista productos
-export const getProducts = async (agencyId: string) => {
-    return await db.product.findMany({
-        where: { agencyId },
-        include: {
-            Category: true,
-            Movements: true,
-        },
-    });
+export const getProducts = async (agencyId: string, subAccountId?: string) => {
+    try {
+        console.log('Fetching products for agency:', agencyId, 'subAccount:', subAccountId);
+        const products = await db.product.findMany({
+            where: { 
+                agencyId,
+                active: true,
+                ...(subAccountId && { subAccountId }) // Filtrar por subAccount si se proporciona
+            },
+            include: {
+                Category: true,
+                Movements: true,
+                SubAccount: true, // Incluir información de la subAccount
+            },
+            orderBy: {
+                name: 'asc'
+            }
+        });
+        
+        // Convertir los campos Decimal a número para evitar problemas con el cliente
+        const formattedProducts = products.map(product => ({
+            ...product,
+            price: Number(product.price),
+            cost: product.cost ? Number(product.cost) : null,
+            discount: product.discount ? Number(product.discount) : 0,
+            discountMinimumPrice: product.discountMinimumPrice ? Number(product.discountMinimumPrice) : null,
+            taxRate: product.taxRate ? Number(product.taxRate) : 0
+        }));
+
+        console.log('Products found:', formattedProducts.length);
+        return formattedProducts;
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        return [];
+    }
 };
 
 // TODO: Obtiene producto por ID
-export const getProductById = async (agencyId: string, productId: string) => {
+export const getProductById = async (agencyId: string, productId: string, subAccountId?: string) => {
     return await db.product.findFirst({
         where: {
             id: productId,
             agencyId,
+            ...(subAccountId && { subAccountId })
         },
         include: {
             Category: true,
             Movements: true,
+            SubAccount: true,
         },
     });
 };

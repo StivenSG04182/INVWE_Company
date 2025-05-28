@@ -369,9 +369,9 @@ model FunnelPage {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   visits       Int      @default(0)
-  content      String?
+  content      String?  @db.Text 
   order        Int
-  previewImage String?
+  previewImage String?  @db.Text
   funnelId     String
   Funnel       Funnel   @relation(fields: [funnelId], references: [id], onDelete: Cascade)
 
