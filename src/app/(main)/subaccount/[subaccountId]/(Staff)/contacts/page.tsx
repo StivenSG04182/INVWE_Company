@@ -1,6 +1,6 @@
 import BlurPage from '@/components/global/blur-page'
 import { db } from '@/lib/db'
-import { Contact, SubAccount, Ticket } from '@prisma/client'
+import { SubAccount, User } from '@prisma/client'
 import React from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -13,95 +13,154 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import format from 'date-fns/format'
-import CreateContactButton from './_components/create-contact-btn'
+import { Button } from '@/components/ui/button'
+import { Edit, PlusCircle, Users } from 'lucide-react'
+import Link from 'next/link'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import CustomModal from '@/components/global/custom-modal'
+import SendInvitation from '@/components/forms/send-invitation'
+import EditUserForm from '@/components/forms/edit-user-form'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 type Props = {
-    params:{subaccountId:string}
+  params: { agencyId: string }
 }
 
-const ContactPage = async ({params}: Props) => {
-  type SubAccountWithContacts = SubAccount & {
-    Contact: (Contact & { Ticket: Ticket[] })[]
-  }
+type UserWithDetails = User & {
+  Agency: {
+    SubAccount: SubAccount[]
+  } | null
+  Permissions: {
+    SubAccount: SubAccount
+  }[]
+}
 
-  const contacts = (await db.subAccount.findUnique({
+const ContactPage = async ({ params }: Props) => {
+  // Obtener los miembros del equipo asociados a la agencia
+  const teamMembers = await db.user.findMany({
     where: {
-      id: params.subaccountId,
-    },
-
-    include: {
-      Contact: {
-        include: {
-          Ticket: {
-            select: {
-              value: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'asc',
-        },
+      Agency: {
+        id: params.agencyId,
       },
     },
-  })) as SubAccountWithContacts
-
-  const allContacts = contacts.Contact
-  const formatTotal = (tickets: Ticket[]) => {
-    if (!tickets || !tickets.length) return '$0.00'
-    const amt = new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency: 'USD',
-    })
-
-    const laneAmt = tickets.reduce(
-      (sum, ticket) => sum + (Number(ticket?.value) || 0),
-      0
-    )
-
-    return amt.format(laneAmt)
-  }
+    include: {
+      Agency: { include: { SubAccount: true } },
+      Permissions: { include: { SubAccount: true } },
+    },
+  })
   return (
-    <BlurPage>
-        <h1 className='text-4xl p-4'>Contacts</h1>
-        <CreateContactButton subaccountId={params.subaccountId}/>
-        <Table>
+    <div className="p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className='text-4xl'>Directorio de Equipo</h1>
+        <div className="flex items-center gap-4">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Invitar Usuario
+              </Button>
+            </DialogTrigger>
+            <CustomModal
+              title="Invitar Usuario"
+              subheading="Envía una invitación para añadir un nuevo usuario al sistema"
+            >
+              <SendInvitation agencyId={params.agencyId} />
+            </CustomModal>
+          </Dialog>
+        </div>
+      </div>
+
+      <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[200px]">Name</TableHead>
-            <TableHead className="w-[300px]">Email</TableHead>
-            <TableHead className="w-[200px]">Active</TableHead>
-            <TableHead>Created Date</TableHead>
-            <TableHead className="text-right">Total Value</TableHead>
+            <TableHead colSpan={4} className="text-center bg-muted/50">Información Personal</TableHead>
+            <TableHead colSpan={3} className="text-center bg-muted/30">Información de Contacto</TableHead>
+            <TableHead colSpan={4} className="text-center bg-muted/50">Información Laboral</TableHead>
+            <TableHead colSpan={3} className="text-center bg-muted/30">Información Adicional</TableHead>
+          </TableRow>
+          <TableRow>
+            {/* Información Personal */}
+            <TableHead className="w-[200px]">Nombre</TableHead>
+            <TableHead className="w-[120px]">Fecha de Nacimiento</TableHead>
+            <TableHead className="w-[100px]">Género</TableHead>
+            <TableHead className="w-[120px]">Estado Civil</TableHead>
+            
+            {/* Información de Contacto */}
+            <TableHead className="w-[200px]">Dirección</TableHead>
+            <TableHead className="w-[150px]">Teléfono</TableHead>
+            <TableHead className="w-[200px]">Correo Electrónico</TableHead>
+            
+            {/* Información Laboral */}
+            <TableHead className="w-[150px]">Cargo</TableHead>
+            <TableHead className="w-[120px]">Fecha de Ingreso</TableHead>
+            <TableHead className="w-[100px]">Salario</TableHead>
+            <TableHead className="w-[150px]">Jornada Laboral</TableHead>
+            
+            {/* Información Adicional */}
+            <TableHead className="w-[150px]">Seguro Social</TableHead>
+            <TableHead className="w-[150px]">Rol</TableHead>
+            <TableHead className="w-[100px]">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody className="font-medium truncate">
-          {allContacts.map((contact) => (
-            <TableRow key={contact.id}>
+          {teamMembers.map((member) => (
+            <TableRow key={member.id}>
+              {/* Información Personal */}
               <TableCell>
-                <Avatar>
-                  <AvatarImage alt="@shadcn" />
-                  <AvatarFallback className="bg-primary text-white">
-                    {contact.name.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="flex items-center gap-2">
+                  <Avatar>
+                    <AvatarImage src={member.avatarUrl} alt={member.name} />
+                    <AvatarFallback className="bg-primary text-white">
+                      {member.name.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span>{member.name}</span>
+                </div>
               </TableCell>
-              <TableCell>{contact.email}</TableCell>
+              <TableCell>{member.birthDate ? format(member.birthDate, 'dd/MM/yyyy') : '-'}</TableCell>
+              <TableCell>{member.gender || '-'}</TableCell>
+              <TableCell>{member.maritalStatus || '-'}</TableCell>
+              
+              {/* Información de Contacto */}
+              <TableCell>{member.address || '-'}</TableCell>
+              <TableCell>{member.phone || '-'}</TableCell>
+              <TableCell>{member.email}</TableCell>
+              
+              {/* Información Laboral */}
+              <TableCell>{member.position || '-'}</TableCell>
+              <TableCell>{member.hireDate ? format(member.hireDate, 'dd/MM/yyyy') : '-'}</TableCell>
+              <TableCell>{member.salary ? `COL$ ${member.salary}` : '-'}</TableCell>
+              <TableCell>{member.workSchedule || '-'}</TableCell>
+              
+              {/* Información Adicional */}
+              <TableCell>{member.socialSecurityNumber || '-'}</TableCell>
               <TableCell>
-                {formatTotal(contact.Ticket) === '$0.00' ? (
-                  <Badge variant={'destructive'}>Inactive</Badge>
-                ) : (
-                  <Badge className="bg-emerald-700">Active</Badge>
-                )}
+                <Badge variant="outline">
+                  {member.role === 'AGENCY_OWNER' ? 'Propietario' :
+                    member.role === 'AGENCY_ADMIN' ? 'Administrador' :
+                      member.role === 'SUBACCOUNT_USER' ? 'Usuario' : 'Invitado'}
+                </Badge>
               </TableCell>
-              <TableCell>{format(contact.createdAt, 'MM/dd/yyyy')}</TableCell>
-              <TableCell className="text-right">
-                {formatTotal(contact.Ticket)}
+              <TableCell>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl">
+                    <DialogHeader>
+                      <DialogTitle>Editar información de {member.name}</DialogTitle>
+                    </DialogHeader>
+                    <EditUserForm user={member} />
+                  </DialogContent>
+                </Dialog>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
-    </BlurPage>
+    </div>
   )
 }
 
