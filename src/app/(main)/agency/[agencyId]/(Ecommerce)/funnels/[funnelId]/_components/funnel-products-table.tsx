@@ -1,5 +1,7 @@
 'use client'
-import React, { useState } from 'react'
+
+import { useState, useMemo, useEffect } from 'react'
+import { Funnel, Product, ProductCategory } from '@prisma/client'
 import {
   Table,
   TableBody,
@@ -8,129 +10,200 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Funnel } from '@prisma/client'
-import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  getAuthUserDetails,
+  getProducts,
+  getCategories,
+} from '@/lib/queries2'
 
 interface FunnelProductsTableProps {
   defaultData: Funnel
-  products: any[]
 }
 
-const FunnelProductsTable: React.FC<FunnelProductsTableProps> = ({
-  products,
+export default function FunnelProductsTable({
   defaultData,
-}) => {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [liveProducts, setLiveProducts] = useState<
-    { productId: string; recurring: boolean }[] | []
-  >(JSON.parse(defaultData.liveProducts || '[]'))
+}: FunnelProductsTableProps) {
+  const [search, setSearch] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [priceRange, setPriceRange] = useState({ min: '', max: '' })
+  const [selectedProducts, setSelectedProducts] = useState<string[]>(
+    JSON.parse(defaultData.liveProducts || '[]')
+  )
 
-  const handleSaveProducts = async () => {
-    setIsLoading(true)
-    const response = await updateFunnelProducts(
-      JSON.stringify(liveProducts),
-      defaultData.id
-    )
-    await saveActivityLogsNotification({
-      agencyId: undefined,
-      description: `Actualizar productos de comercio electrónico | ${response.name}`,
-      agencyId: defaultData.subAccountId,
+  const [products, setProducts] = useState<
+    Array<Product & { Category: ProductCategory | null }>
+  >([])
+  const [categories, setCategories] = useState<ProductCategory[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Obtener productos y categorías al montar
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const auth = await getAuthUserDetails()
+        const fetchedProducts = await getProducts(defaultData.id, auth.agencyId)
+        const fetchedCategories = await getCategories(auth.agencyId)
+
+        setProducts(fetchedProducts)
+        setCategories(fetchedCategories)
+      } catch (err) {
+        console.error('Error al cargar productos o categorías', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [defaultData.id])
+
+  // Filtrar productos
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      const searchMatch =
+        product.name.toLowerCase().includes(search.toLowerCase()) ||
+        product.description?.toLowerCase().includes(search.toLowerCase()) ||
+        product.sku.toLowerCase().includes(search.toLowerCase())
+
+      const categoryMatch =
+        categoryFilter === 'all' || product.categoryId === categoryFilter
+
+      const priceMatch =
+        (!priceRange.min || Number(product.price) >= Number(priceRange.min)) &&
+        (!priceRange.max || Number(product.price) <= Number(priceRange.max))
+
+      return searchMatch && categoryMatch && priceMatch
     })
-    setIsLoading(false)
-    router.refresh()
+  }, [products, search, categoryFilter, priceRange])
+
+  // Manejar selección de productos
+  const handleProductSelect = (productId: string) => {
+    setSelectedProducts((prev) => {
+      const newSelection = prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId]
+
+      // TODO: Actualizar en la base de datos
+      return newSelection
+    })
   }
 
-  const handleAddProduct = async (product: any) => {
-    const productIdExists = liveProducts.find(
-      //@ts-ignore
-      (prod) => prod.productId === product.default_price.id
+  if (loading) {
+    return (
+      <div className="text-center p-4">
+        <p>Cargando productos...</p>
+      </div>
     )
-    productIdExists
-      ? setLiveProducts(
-          liveProducts.filter(
-            (prod) =>
-              prod.productId !==
-              //@ts-ignore
-              product.default_price?.id
-          )
-        )
-      : //@ts-ignore
-        setLiveProducts([
-          ...liveProducts,
-          {
-            //@ts-ignore
-            productId: product.default_price.id as string,
-            //@ts-ignore
-            recurring: !!product.default_price.recurring,
-          },
-        ])
   }
+
+  if (!products || products.length === 0) {
+    return (
+      <div className="text-center p-4">
+        <p>No hay productos disponibles</p>
+      </div>
+    )
+  }
+
   return (
-    <>
-      <Table className="bg-card border-[1px] border-border rounded-md">
-        <TableHeader className="rounded-md">
+    <div className="space-y-4">
+      <div className="text-sm text-muted-foreground mb-4">
+        Total productos: {products.length} | Filtrados: {filteredProducts.length}
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-4">
+        <Input
+          placeholder="Buscar productos..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="md:w-1/3"
+        />
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="md:w-1/4">
+            <SelectValue placeholder="Filtrar por categoría" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas las categorías</SelectItem>
+            {categories.map((category) => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="flex gap-2 items-center md:w-1/3">
+          <Input
+            placeholder="Precio min"
+            type="number"
+            value={priceRange.min}
+            onChange={(e) =>
+              setPriceRange((prev) => ({ ...prev, min: e.target.value }))
+            }
+          />
+          <span>-</span>
+          <Input
+            placeholder="Precio max"
+            type="number"
+            value={priceRange.max}
+            onChange={(e) =>
+              setPriceRange((prev) => ({ ...prev, max: e.target.value }))
+            }
+          />
+        </div>
+      </div>
+
+      <Table>
+        <TableHeader>
           <TableRow>
-            <TableHead>Activo</TableHead>
-            <TableHead>Imagen</TableHead>
-            <TableHead>Nombre</TableHead>
-            <TableHead>Intervalo</TableHead>
-            <TableHead className="text-right">Precio</TableHead>
+            <TableHead className="w-12">
+              <Checkbox checked={false} />
+            </TableHead>
+            <TableHead>Producto</TableHead>
+            <TableHead>Categoría</TableHead>
+            <TableHead>SKU</TableHead>
+            <TableHead>Precio</TableHead>
+            <TableHead>Stock</TableHead>
+            <TableHead>Estado</TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody className="font-medium truncate">
-          {products.map((product) => (
+        <TableBody>
+          {filteredProducts.map((product) => (
             <TableRow key={product.id}>
               <TableCell>
-                <Input
-                  defaultChecked={
-                    !!liveProducts.find(
-                      //@ts-ignore
-                      (prod) => prod.productId === product.default_price.id
-                    )
-                  }
-                  onChange={() => handleAddProduct(product)}
-                  type="checkbox"
-                  className="w-4 h-4"
+                <Checkbox
+                  checked={selectedProducts.includes(product.id)}
+                  onCheckedChange={() => handleProductSelect(product.id)}
                 />
               </TableCell>
               <TableCell>
-                <Image
-                  alt="Imagen del producto"
-                  height={60}
-                  width={60}
-                  src={product.images[0]}
-                />
+                <div className="flex flex-col">
+                  <span className="font-medium">{product.name}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {product.description}
+                  </span>
+                </div>
               </TableCell>
-              <TableCell>{product.name}</TableCell>
+              <TableCell>{product.Category?.name || 'Sin categoría'}</TableCell>
+              <TableCell>{product.sku}</TableCell>
+              <TableCell>${Number(product.price).toFixed(2)}</TableCell>
+              <TableCell>{product.quantity || 0}</TableCell>
               <TableCell>
-                {
-                  //@ts-ignore
-                  product.default_price?.recurring ? 'Recurrente' : 'Una vez'
-                }
-              </TableCell>
-              <TableCell className="text-right">
-                $
-                {
-                  //@ts-ignore
-                  product.default_price?.unit_amount / 100
-                }
+                <Badge variant={product.active ? 'default' : 'secondary'}>
+                  {product.active ? 'Activo' : 'Inactivo'}
+                </Badge>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
-      <Button
-        disabled={isLoading}
-        onClick={handleSaveProducts}
-        className="mt-4"
-      >
-        Guardar Productos
-      </Button>
-    </>
+    </div>
   )
 }
-
-export default FunnelProductsTable

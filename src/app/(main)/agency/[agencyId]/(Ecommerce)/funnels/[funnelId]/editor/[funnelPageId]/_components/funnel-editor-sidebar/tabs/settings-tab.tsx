@@ -93,15 +93,15 @@ const SettingsTab = (props: Props) => {
         value="Custom"
         className="px-6 py-0  "
       >
-        <AccordionTrigger className="!no-underline">Personalizado</AccordionTrigger>
+        <AccordionTrigger className="!no-underline">Custom</AccordionTrigger>
         <AccordionContent>
           {state.editor.selectedElement.type === 'link' &&
             !Array.isArray(state.editor.selectedElement.content) && (
               <div className="flex flex-col gap-2">
-                <p className="text-muted-foreground">Ruta del Enlace</p>
+                <p className="text-muted-foreground">Link Path</p>
                 <Input
                   id="href"
-                  placeholder="https:dominio.ejemplo.com/ruta"
+                  placeholder="https:domain.example.com/pathname"
                   onChange={handleChangeCustomValues}
                   value={state.editor.selectedElement.content.href}
                 />
@@ -114,11 +114,11 @@ const SettingsTab = (props: Props) => {
         className="px-6 py-0  border-y-[1px]"
       >
         <AccordionTrigger className="!no-underline">
-          Tipografía
+          Typography
         </AccordionTrigger>
         <AccordionContent className="flex flex-col gap-2 ">
           <div className="flex flex-col gap-2 ">
-            <p className="text-muted-foreground">Alineación de Texto</p>
+            <p className="text-muted-foreground">Text Align</p>
             <Tabs
               onValueChange={(e) =>
                 handleOnChanges({
@@ -159,7 +159,7 @@ const SettingsTab = (props: Props) => {
             </Tabs>
           </div>
           <div className="flex flex-col gap-2">
-            <p className="text-muted-foreground">Familia de Fuente</p>
+            <p className="text-muted-foreground">Font Family</p>
             <Input
               id="DM Sans"
               onChange={handleOnChanges}
@@ -176,7 +176,7 @@ const SettingsTab = (props: Props) => {
           </div>
           <div className="flex gap-4">
             <div>
-              <Label className="text-muted-foreground">Grosor</Label>
+              <Label className="text-muted-foreground">Weight</Label>
               <Select
                 onValueChange={(e) =>
                   handleOnChanges({
@@ -188,20 +188,20 @@ const SettingsTab = (props: Props) => {
                 }
               >
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Selecciona un grosor" />
+                  <SelectValue placeholder="Select a weight" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectLabel>Grosores de Fuente</SelectLabel>
-                    <SelectItem value="bold">Negrita</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="lighter">Ligera</SelectItem>
+                    <SelectLabel>Font Weights</SelectLabel>
+                    <SelectItem value="bold">Bold</SelectItem>
+                    <SelectItem value="normal">Regular</SelectItem>
+                    <SelectItem value="lighter">Light</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-muted-foreground">Tamaño</Label>
+              <Label className="text-muted-foreground">Size</Label>
               <Input
                 placeholder="px"
                 id="fontSize"
@@ -217,7 +217,7 @@ const SettingsTab = (props: Props) => {
         className=" px-6 py-0 "
       >
         <AccordionTrigger className="!no-underline">
-          Dimensiones
+          Dimensions
         </AccordionTrigger>
         <AccordionContent>
           <div className="flex flex-col gap-4">
@@ -225,7 +225,7 @@ const SettingsTab = (props: Props) => {
               <div className="flex gap-4 flex-col">
                 <div className="flex gap-4">
                   <div>
-                    <Label className="text-muted-foreground">Altura</Label>
+                    <Label className="text-muted-foreground">Height</Label>
                     <Input
                       id="height"
                       placeholder="px"
@@ -234,7 +234,7 @@ const SettingsTab = (props: Props) => {
                     />
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Ancho</Label>
+                    <Label className="text-muted-foreground">Width</Label>
                     <Input
                       placeholder="px"
                       id="width"
@@ -244,11 +244,11 @@ const SettingsTab = (props: Props) => {
                   </div>
                 </div>
               </div>
-              <p>Margen px</p>
+              <p>Margin px</p>
               <div className="flex gap-4 flex-col">
                 <div className="flex gap-4">
                   <div>
-                    <Label className="text-muted-foreground">Superior</Label>
+                    <Label className="text-muted-foreground">Top</Label>
                     <Input
                       id="marginTop"
                       placeholder="px"
@@ -257,7 +257,7 @@ const SettingsTab = (props: Props) => {
                     />
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Inferior</Label>
+                    <Label className="text-muted-foreground">Bottom</Label>
                     <Input
                       placeholder="px"
                       id="marginBottom"
@@ -268,7 +268,7 @@ const SettingsTab = (props: Props) => {
                 </div>
                 <div className="flex gap-4">
                   <div>
-                    <Label className="text-muted-foreground">Izquierda</Label>
+                    <Label className="text-muted-foreground">Left</Label>
                     <Input
                       placeholder="px"
                       id="marginLeft"
@@ -277,7 +277,7 @@ const SettingsTab = (props: Props) => {
                     />
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Derecha</Label>
+                    <Label className="text-muted-foreground">Right</Label>
                     <Input
                       placeholder="px"
                       id="marginRight"
@@ -289,11 +289,11 @@ const SettingsTab = (props: Props) => {
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <p>Relleno px</p>
+              <p>Padding px</p>
               <div className="flex gap-4 flex-col">
                 <div className="flex gap-4">
                   <div>
-                    <Label className="text-muted-foreground">Superior</Label>
+                    <Label className="text-muted-foreground">Top</Label>
                     <Input
                       placeholder="px"
                       id="paddingTop"
@@ -302,7 +302,7 @@ const SettingsTab = (props: Props) => {
                     />
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Inferior</Label>
+                    <Label className="text-muted-foreground">Bottom</Label>
                     <Input
                       placeholder="px"
                       id="paddingBottom"
@@ -313,7 +313,7 @@ const SettingsTab = (props: Props) => {
                 </div>
                 <div className="flex gap-4">
                   <div>
-                    <Label className="text-muted-foreground">Izquierda</Label>
+                    <Label className="text-muted-foreground">Left</Label>
                     <Input
                       placeholder="px"
                       id="paddingLeft"
@@ -322,7 +322,7 @@ const SettingsTab = (props: Props) => {
                     />
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Derecha</Label>
+                    <Label className="text-muted-foreground">Right</Label>
                     <Input
                       placeholder="px"
                       id="paddingRight"
@@ -341,11 +341,11 @@ const SettingsTab = (props: Props) => {
         className="px-6 py-0 "
       >
         <AccordionTrigger className="!no-underline">
-          Decoraciones
+          Decorations
         </AccordionTrigger>
         <AccordionContent className="flex flex-col gap-4">
           <div>
-            <Label className="text-muted-foreground">Opacidad</Label>
+            <Label className="text-muted-foreground">Opacity</Label>
             <div className="flex items-center justify-end">
               <small className="p-2">
                 {typeof state.editor.selectedElement.styles?.opacity ===
@@ -382,7 +382,7 @@ const SettingsTab = (props: Props) => {
             />
           </div>
           <div>
-            <Label className="text-muted-foreground">Radio de Borde</Label>
+            <Label className="text-muted-foreground">Border Radius</Label>
             <div className="flex items-center justify-end">
               <small className="">
                 {typeof state.editor.selectedElement.styles?.borderRadius ===
@@ -420,7 +420,7 @@ const SettingsTab = (props: Props) => {
             />
           </div>
           <div className="flex flex-col gap-2">
-            <Label className="text-muted-foreground">Color de Fondo</Label>
+            <Label className="text-muted-foreground">Background Color</Label>
             <div className="flex  border-[1px] rounded-md overflow-clip">
               <div
                 className="w-12 "
@@ -439,7 +439,7 @@ const SettingsTab = (props: Props) => {
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <Label className="text-muted-foreground">Imagen de Fondo</Label>
+            <Label className="text-muted-foreground">Background Image</Label>
             <div className="flex  border-[1px] rounded-md overflow-clip">
               <div
                 className="w-12 "
@@ -458,7 +458,7 @@ const SettingsTab = (props: Props) => {
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <Label className="text-muted-foreground">Posición de Imagen</Label>
+            <Label className="text-muted-foreground">Image Position</Label>
             <Tabs
               onValueChange={(e) =>
                 handleOnChanges({
@@ -500,7 +500,7 @@ const SettingsTab = (props: Props) => {
       >
         <AccordionTrigger className="!no-underline">Flexbox</AccordionTrigger>
         <AccordionContent>
-          <Label className="text-muted-foreground">Justificar Contenido</Label>
+          <Label className="text-muted-foreground">Justify Content</Label>
           <Tabs
             onValueChange={(e) =>
               handleOnChanges({
@@ -545,7 +545,7 @@ const SettingsTab = (props: Props) => {
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          <Label className="text-muted-foreground">Alinear Elementos</Label>
+          <Label className="text-muted-foreground">Align Items</Label>
           <Tabs
             onValueChange={(e) =>
               handleOnChanges({

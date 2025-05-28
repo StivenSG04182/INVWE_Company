@@ -1,10 +1,9 @@
-import { db } from '@/lib/db'
-import EditorProvider from '@/providers/editor/editor-provider'
-import { redirect } from 'next/navigation'
-import React from 'react'
-import FunnelEditorNavigation from './_components/funnel-editor-navigation'
-import FunnelEditorSidebar from './_components/funnel-editor-sidebar'
-import FunnelEditor from './_components/funnel-editor'
+import { db } from "@/lib/db"
+import EditorProvider from "@/providers/editor/editor-provider"
+import { redirect } from "next/navigation"
+import FunnelEditorNavigation from "./_components/funnel-editor-navigation"
+import FunnelEditorSidebar from "./_components/funnel-editor-sidebar"
+import FunnelEditor from "./_components/funnel-editor"
 
 type Props = {
   params: {
@@ -20,16 +19,15 @@ const Page = async ({ params }: Props) => {
       id: params.funnelPageId,
     },
   })
+
   if (!funnelPageDetails) {
-    return redirect(
-      `/agency/${params.agencyId}/funnels/${params.funnelId}`
-    )
+    return redirect(`/agency/${params.agencyId}/funnels/${params.funnelId}`)
   }
 
   return (
-    <div className="fixed top-0 bottom-0 left-0 right-0 z-[20] bg-background overflow-hidden">
+    <div className="fixed left-0 right-0 top-16 bottom-8 z-[20] bg-background overflow-hidden">
       <EditorProvider
-        agencyId={params.agencyId}
+        subaccountId={params.agencyId}
         funnelId={params.funnelId}
         pageDetails={funnelPageDetails}
       >
