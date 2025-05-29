@@ -438,8 +438,8 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
 
             // 10. Configuración & Administración
             { name: "Configuración & Administración", icon: "settings", link: "#" },
-            { name: "Facturación Cuenta", icon: "payment", link: `/agency/${agency.id}/(Settings)/billing` },
-            { name: "Configuración Pasarela de pagos", icon: "settings", link: `/agency/${agency.id}/(Settings)/launchpad` }, 
+            /* { name: "Facturación Cuenta", icon: "payment", link: `/agency/${agency.id}/(Settings)/billing` }, */
+            /* { name: "Configuración Pasarela de pagos", icon: "settings", link: `/agency/${agency.id}/(Settings)/launchpad` }, */ 
             { name: "Configuración General", icon: "tune", link: `/agency/${agency.id}/(Settings)/settings` },
           ],
         },
@@ -515,6 +515,7 @@ export const upsertSubAccount = async (subAccount: SubAccount) => {
         Pipeline: { create: { name: 'Lead Cycle' } },
         SidebarOption: {
           create: [
+            // 1. Dashboard
             { name: "Dashboard", icon: "category", link: `/subaccount/${subAccount.id}` },
 
             // 2. Gestión de Inventario
@@ -534,7 +535,7 @@ export const upsertSubAccount = async (subAccount: SubAccount) => {
             { name: "POS (Punto de Venta)", icon: "shoppingCart", link: "#" },
             { name: "Terminal", icon: "payment", link: `/subaccount/${subAccount.id}/(POS)/terminal` },
             { name: "Ventas POS", icon: "receipt", link: `/subaccount/${subAccount.id}/(POS)/sales-pos` },
-           /*  { name: "Cierre de Caja", icon: "chart", link: `/subaccount/${subAccount.id}/(POS)/cash-closing` },   */
+           /*  { name: "Cierre de Caja", icon: "chart", link: `/agency/${agency.id}/(POS)/cash-closing` },   */
 
             // 5. Ventas & Facturación
             { name: "Ventas & Facturación", icon: "payment", link: `/subaccount/${subAccount.id}/(Billing)/finance` },
@@ -544,9 +545,6 @@ export const upsertSubAccount = async (subAccount: SubAccount) => {
 
             // 7. Personal & RRHH
             { name: "Personal & RRHH", icon: "contact", link: "#" },
-            { name: "Empleados", icon: "person", link: `/subaccount/${subAccount.id}/(Staff)/team` },
-            { name: "Horarios & Nómina", icon: "calendar", link: `/subaccount/${subAccount.id}/(Staff)/schedule` },
-            { name: "Contactos", icon: "contact", link: `/subaccount/${subAccount.id}/(Staff)/contacts` },
             { name: "Objetivos", icon: "flag", link: `/subaccount/${subAccount.id}/(Staff)/pipelines` },
 
             // 8. Comunicaciones
@@ -561,8 +559,6 @@ export const upsertSubAccount = async (subAccount: SubAccount) => {
 
             // 10. Configuración & Administración
             { name: "Configuración & Administración", icon: "settings", link: "#" },
-            { name: "Facturación Cuenta", icon: "payment", link: `/subaccount/${subAccount.id}/(Settings)/billing` },
-            { name: "Configuración Pasarela de pagos", icon: "settings", link: `/subaccount/${subAccount.id}/(Settings)/launchpad` }, 
             { name: "Configuración General", icon: "tune", link: `/subaccount/${subAccount.id}/(Settings)/settings` },
           ],
         },
