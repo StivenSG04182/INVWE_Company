@@ -149,12 +149,12 @@ export default function UnifiedClientsDashboard({ agencyId, user }: { agencyId: 
                         </Button>
                     )}
 
-                    {activeTab === "crm" && (
+                    {/* {activeTab === "crm" && (
                         <Button className="flex items-center gap-2" onClick={() => setActiveTab("crm")}>
                             <PlusSquare className="h-4 w-4" />
                             <span>Nueva Oportunidad</span>
                         </Button>
-                    )}
+                    )} */}
 
                     {activeTab === "pqr" && (
                         <Button className="flex items-center gap-2" onClick={() => setActiveTab("pqr")}>
@@ -201,13 +201,13 @@ export default function UnifiedClientsDashboard({ agencyId, user }: { agencyId: 
                                         <BarChart3 className="h-4 w-4" />
                                         <span className="hidden sm:inline">CRM</span>
                                     </TabsTrigger>
-                                    <TabsTrigger
+                                    {/* <TabsTrigger
                                         value="pqr"
                                         className="flex items-center gap-2 px-4 py-3 data-[state=active]:border-b-2 data-[state=active]:border-green-500 rounded-none data-[state=active]:shadow-none"
                                     >
                                         <MessageSquare className="h-4 w-4" />
                                         <span className="hidden sm:inline">Comunicaciones</span>
-                                    </TabsTrigger>
+                                    </TabsTrigger> */}
                                 </TabsList>
                             </div>
                         </div>

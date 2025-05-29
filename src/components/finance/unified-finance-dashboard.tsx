@@ -30,8 +30,8 @@ export const UnifiedFinanceDashboard = ({ agencyId }: { agencyId: string }) => {
                 <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full">
                     <TabsTrigger value="transactions">Transacciones</TabsTrigger>
                     <TabsTrigger value="invoices">Facturas</TabsTrigger>
-                    <TabsTrigger value="payments">Pagos</TabsTrigger>
-                    <TabsTrigger value="notes">Notas Crédito/Débito</TabsTrigger>
+{/*                     <TabsTrigger value="payments">Pagos</TabsTrigger>
+                    <TabsTrigger value="notes">Notas Crédito/Débito</TabsTrigger> */}
                 </TabsList>
 
                 <TabsContent value="transactions" className="space-y-4">

@@ -102,7 +102,7 @@ export default async function DashboardPage({
           <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground mt-1">Bienvenido al panel de control de {agencyDetails.name}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        {/* <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm">
             <Clock className="h-4 w-4 mr-2" />
             Últimos 30 días
@@ -115,7 +115,7 @@ export default async function DashboardPage({
             <Package className="h-4 w-4 mr-2" />
             Nuevo Producto
           </Button>
-        </div>
+        </div> */}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -202,10 +202,10 @@ export default async function DashboardPage({
             <BarChart3 className="h-4 w-4 mr-2" />
             Análisis
           </TabsTrigger>
-          <TabsTrigger value="integrations" className="rounded-md data-[state=active]:bg-background">
+          {/* <TabsTrigger value="integrations" className="rounded-md data-[state=active]:bg-background">
             <Globe className="h-4 w-4 mr-2" />
             Integraciones
-          </TabsTrigger>
+          </TabsTrigger> */}
         </TabsList>
 
         {/* Pestaña de Visión General */}
