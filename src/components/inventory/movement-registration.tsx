@@ -5,8 +5,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  Card,
+import { Card,
   CardContent,
   CardHeader,
   CardTitle,
@@ -168,6 +167,9 @@ export default function MovementRegistration({
     e.preventDefault();
     console.log("Iniciando proceso de registro de movimiento");
 
+    // Obtener el producto seleccionado al inicio
+    const selectedProduct = products.find((p) => p.id === formData.productId);
+
     if (!formData.productId) {
       console.log("Error: No se seleccionó un producto");
       toast({
@@ -224,133 +226,115 @@ export default function MovementRegistration({
     console.log("Validaciones completadas, iniciando proceso de guardado");
 
     try {
-      // Importar la función createMovement de queries2.ts
-      console.log("Importando createMovement...");
-      const { createMovement } = await import("@/lib/queries2");
-      console.log("createMovement importado correctamente");
+        // Importar la función createMovement de queries2.ts
+        console.log("Importando createMovement...");
+        const { createMovement } = await import("@/lib/queries2");
+        console.log("createMovement importado correctamente");
 
-      // El subaccountId debe ser el seleccionado por el usuario, nunca agencyId
-      const finalSubaccountId = formData.subaccountId;
-      console.log("subaccountId final que se utilizará:", finalSubaccountId);
+        // El subaccountId debe ser el seleccionado por el usuario, nunca agencyId
+        const finalSubaccountId = formData.subaccountId;
+        console.log("subaccountId final que se utilizará:", finalSubaccountId);
 
-      // Crear el objeto de movimiento
-      const movementData = {
-        type: formData.type,
-        productId: formData.productId,
-        areaId: formData.areaId,
-        destinationAreaId:
-          formData.type === "transferencia"
-            ? formData.destinationAreaId
-            : undefined,
-        quantity: formData.quantity,
-        notes: formData.notes,
-        date: new Date(formData.date),
-        agencyId: agencyId,
-        subaccountId: finalSubaccountId,
-      };
+        // Crear el objeto de movimiento
+        const movementData = {
+          type: formData.type,
+          productId: formData.productId,
+          areaId: formData.areaId,
+          destinationAreaId:
+            formData.type === "transferencia"
+              ? formData.destinationAreaId
+              : undefined,
+          quantity: formData.quantity,
+          notes: formData.notes,
+          date: new Date(formData.date),
+          agencyId: agencyId,
+          subaccountId: finalSubaccountId,
+        };
 
-      console.log(
-        "Datos del movimiento a registrar:",
-        JSON.stringify(movementData, null, 2)
-      );
-
-      // Verificar que todos los campos requeridos estén presentes
-      const camposRequeridos = [
-        "type",
-        "productId",
-        "areaId",
-        "quantity",
-        "agencyId",
-        "subaccountId",
-      ];
-      const camposFaltantes = camposRequeridos.filter(
-        (campo) => !movementData[campo]
-      );
-
-      if (camposFaltantes.length > 0) {
-        console.error("ALERTA: Faltan campos requeridos:", camposFaltantes);
-      }
-
-      // Verificar el formato de la fecha
-      console.log("Formato de fecha:", {
-        original: formData.date,
-        tipo: typeof formData.date,
-        esValido: !isNaN(new Date(formData.date).getTime()),
-      });
-
-      // Guardar el movimiento en la base de datos
-      console.log("Llamando a createMovement...");
-      let result;
-      try {
-        result = await createMovement(movementData);
-        console.log("Movimiento registrado exitosamente:", result);
-
-        // Actualizar el estado del stock después de registrar el movimiento
-        if (result && selectedProduct) {
-          // Recalcular el estado del stock con la nueva cantidad
-          const updatedProduct = { ...selectedProduct };
-
-          // Actualizar la cantidad en el stock según el tipo de movimiento
-          if (!updatedProduct.stocks) {
-            updatedProduct.stocks = [];
-          }
-
-          // Buscar el stock del área seleccionada
-          const areaStockIndex = updatedProduct.stocks.findIndex(
-            (s: any) => s.areaId.toString() === formData.areaId
-          );
-
-          if (areaStockIndex >= 0) {
-            // Actualizar stock existente
-            if (formData.type === "entrada") {
-              updatedProduct.stocks[areaStockIndex].quantity +=
-                formData.quantity;
-            } else if (formData.type === "salida") {
-              updatedProduct.stocks[areaStockIndex].quantity -=
-                formData.quantity;
-            }
-          } else if (formData.type === "entrada") {
-            // Crear nuevo stock para esta área
-            updatedProduct.stocks.push({
-              areaId: formData.areaId,
-              quantity: formData.quantity,
-            });
-          }
-
-          // Recalcular el estado del stock
-          calculateStockStatus(updatedProduct);
-        }
-      } catch (movementError) {
-        console.error(
-          "Error específico al crear el movimiento:",
-          movementError
+        console.log(
+          "Datos del movimiento a registrar:",
+          JSON.stringify(movementData, null, 2)
         );
-        console.log("Mensaje de error:", movementError.message);
-        console.log("Stack trace:", movementError.stack);
-        throw movementError; // Re-lanzar el error para que sea capturado por el catch exterior
-      }
 
-      toast({
-        title: "Movimiento registrado",
-        description: `Se ha registrado correctamente la ${formData.type} de ${formData.quantity} unidades.`,
-      });
+        // Verificar que todos los campos requeridos estén presentes
+        const camposRequeridos = [
+          "type",
+          "productId",
+          "areaId",
+          "quantity",
+          "agencyId",
+          "subaccountId",
+        ];
+        const camposFaltantes = camposRequeridos.filter(
+          (campo) => !movementData[campo]
+        );
 
-      // Redirigir a la página de inventario
-      console.log("Redirigiendo a la página de productos");
-      router.push(`/agency/${agencyId}/products`);
+        if (camposFaltantes.length > 0) {
+          console.error("ALERTA: Faltan campos requeridos:", camposFaltantes);
+        }
+
+        // Verificar el formato de la fecha
+        console.log("Formato de fecha:", {
+          original: formData.date,
+          tipo: typeof formData.date,
+          esValido: !isNaN(new Date(formData.date).getTime()),
+        });
+
+        // Guardar el movimiento en la base de datos
+        console.log("Llamando a createMovement...");
+        let result;
+        try {
+            result = await createMovement(movementData);
+            console.log("Movimiento registrado exitosamente:", result);
+
+            toast({
+                title: "Movimiento registrado",
+                description: `Se ha registrado correctamente la ${formData.type} de ${formData.quantity} unidades.`,
+            });
+
+            // Redirigir a la página de inventario
+            console.log("Redirigiendo a la página de productos");
+            router.push(`/agency/${agencyId}/products`);
+
+        } catch (movementError) {
+            console.error("Error específico al crear el movimiento:", movementError);
+            console.log("Mensaje de error:", movementError.message);
+            console.log("Stack trace:", movementError.stack);
+            throw movementError;
+        }
+
     } catch (error) {
-      console.error("Error al registrar movimiento:", error);
-      console.log(
-        "Detalles del error:",
-        JSON.stringify(error, Object.getOwnPropertyNames(error))
-      );
-      toast({
-        title: "Error",
-        description: "No se pudo registrar el movimiento. Inténtelo de nuevo.",
-        variant: "destructive",
-      });
+        console.error("Error al registrar movimiento:", error);
+        
+        // Mostrar mensaje específico según el tipo de error
+        let errorMessage = "No se pudo registrar el movimiento.";
+        
+        if (error instanceof Error) {
+            switch (error.message) {
+                case 'Stock insuficiente':
+                    errorMessage = "No hay suficiente stock disponible para realizar esta operación.";
+                    break;
+                case 'Stock insuficiente en el área de origen':
+                    errorMessage = "No hay suficiente stock en el área de origen para realizar la transferencia.";
+                    break;
+                case 'El área de origen y destino no pueden ser la misma':
+                    errorMessage = "El área de origen y destino deben ser diferentes para una transferencia.";
+                    break;
+                case 'Se requiere un área de destino para las transferencias':
+                    errorMessage = "Debe seleccionar un área de destino para la transferencia.";
+                    break;
+                default:
+                    errorMessage = error.message || "Ocurrió un error inesperado. Por favor, inténtelo de nuevo.";
+            }
+        }
+
+        toast({
+            title: "Error",
+            description: errorMessage,
+            variant: "destructive",
+        });
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 

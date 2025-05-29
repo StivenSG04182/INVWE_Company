@@ -1079,9 +1079,8 @@ export const getMovements = async (agencyId: string, subAccountId?: string) => {
     });
 };
 
-// TODO: Crea movimiento
 export const createMovement = async (data: any) => {
-    // Validar datos requeridos
+    // Validaciones existentes...
     if (!data.type || !data.productId || !data.areaId || !data.quantity || !data.agencyId) {
         throw new Error('Faltan campos requeridos para crear el movimiento');
     }
@@ -1091,51 +1090,86 @@ export const createMovement = async (data: any) => {
         throw new Error('La cantidad debe ser mayor a cero');
     }
 
-    // Para movimientos de salida, verificar que haya suficiente stock
-    if (data.type === 'salida') {
-        const stocks = await StockService.getStocks(data.agencyId);
-        const areaStock = stocks.find(s => s.productId === data.productId && s.areaId === data.areaId);
-        const stockQuantity = areaStock ? areaStock.quantity : 0;
+    // Crear el movimiento en una transacción junto con la actualización del producto
+    const movement = await db.$transaction(async (tx) => {
+        // Obtener el producto actual
+        const currentProduct = await tx.product.findUnique({
+            where: { id: data.productId }
+        });
 
-        if (data.quantity > stockQuantity) {
-            throw new Error(`Stock insuficiente. Solo hay ${stockQuantity} unidades disponibles en esta área.`);
-        }
-    }
-
-    // Para transferencias, verificar que el área de origen y destino sean diferentes
-    if (data.type === 'transferencia') {
-        if (!data.destinationAreaId) {
-            throw new Error('Se requiere un área de destino para las transferencias');
+        if (!currentProduct) {
+            throw new Error('Producto no encontrado');
         }
 
-        if (data.areaId === data.destinationAreaId) {
-            throw new Error('El área de origen y destino no pueden ser la misma');
+        let updateData = {};
+
+        // Manejar los diferentes tipos de movimientos
+        switch (data.type) {
+            case 'entrada':
+                // Sumar la cantidad al stock actual
+                updateData = {
+                    quantity: (currentProduct.quantity || 0) + data.quantity
+                };
+                break;
+
+            case 'salida':
+                // Verificar si hay suficiente stock
+                if ((currentProduct.quantity || 0) < data.quantity) {
+                    throw new Error(`Stock insuficiente. Solo hay ${currentProduct.quantity} unidades disponibles.`);
+                }
+                // Restar la cantidad al stock actual
+                updateData = {
+                    quantity: currentProduct.quantity - data.quantity
+                };
+                break;
+
+            case 'transferencia':
+                if (!data.destinationAreaId) {
+                    throw new Error('Se requiere un área de destino para las transferencias');
+                }
+
+                if (data.areaId === data.destinationAreaId) {
+                    throw new Error('El área de origen y destino no pueden ser la misma');
+                }
+
+                // Verificar stock suficiente
+                if ((currentProduct.quantity || 0) < data.quantity) {
+                    throw new Error(`Stock insuficiente para transferir. Solo hay ${currentProduct.quantity} unidades disponibles.`);
+                }
+
+                // En una transferencia solo cambiamos el área, la cantidad total permanece igual
+                updateData = {
+                    quantity: currentProduct.quantity // No cambia la cantidad total
+                };
+                break;
+
+            default:
+                throw new Error('Tipo de movimiento no válido');
         }
 
-        // Verificar stock suficiente
-        const stocks = await StockService.getStocks(data.agencyId);
-        const areaStock = stocks.find(s => s.productId === data.productId && s.areaId === data.areaId);
-        const stockQuantity = areaStock ? areaStock.quantity : 0;
+        // Actualizar el producto
+        await tx.product.update({
+            where: { id: data.productId },
+            data: updateData
+        });
 
-        if (data.quantity > stockQuantity) {
-            throw new Error(`Stock insuficiente para transferir. Solo hay ${stockQuantity} unidades disponibles en el área de origen.`);
-        }
-    }
+        // Crear el registro del movimiento
+        const newMovement = await tx.movement.create({
+            data: {
+                type: data.type,
+                quantity: data.quantity,
+                notes: data.notes || '',
+                date: data.date || new Date(),
+                Product: { connect: { id: data.productId } },
+                Area: { connect: { id: data.areaId } },
+                Agency: { connect: { id: data.agencyId } },
+                ...(data.subaccountId && { SubAccount: { connect: { id: data.subaccountId } } }),
+                ...(data.providerId && { Provider: { connect: { id: data.providerId } } }),
+                ...(data.destinationAreaId && { DestinationArea: { connect: { id: data.destinationAreaId } } }),
+            },
+        });
 
-    // Crear el movimiento
-    const movement = await db.movement.create({
-        data: {
-            type: data.type,
-            quantity: data.quantity,
-            notes: data.notes || '',
-            date: data.date || new Date(),
-            Product: { connect: { id: data.productId } },
-            Area: { connect: { id: data.areaId } },
-            Agency: { connect: { id: data.agencyId } },
-            ...(data.subaccountId && { SubAccount: { connect: { id: data.subaccountId } } }),
-            ...(data.providerId && { Provider: { connect: { id: data.providerId } } }),
-            ...(data.destinationAreaId && { DestinationArea: { connect: { id: data.destinationAreaId } } }),
-        },
+        return newMovement;
     });
 
     // Registrar actividad

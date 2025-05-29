@@ -1417,3 +1417,83 @@ export const getFunnelPageDetails = async (funnelPageId: string) => {
     throw error;
   }
 }
+
+// TODO: Gestión de horarios
+export const createSchedule = async (schedule: {
+  userId: string
+  agencyId: string
+  startTime: string
+  endTime: string
+  days: string // JSON string array
+}) => {
+  const response = await db.schedule.create({
+    data: {
+      ...schedule,
+    },
+  })
+  return response
+}
+
+//TODO: Obtener horario 
+export const getSchedules = async (agencyId: string, userId?: string) => {
+  const whereClause: any = {
+    agencyId,
+  }
+  
+  if (userId) {
+    whereClause.userId = userId
+  }
+  
+  const response = await db.schedule.findMany({
+    where: whereClause,
+    include: {
+      user: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  })
+  return response
+}
+
+//TODO: Obtener horario por el ID
+export const getScheduleById = async (scheduleId: string) => {
+  const response = await db.schedule.findUnique({
+    where: {
+      id: scheduleId,
+    },
+    include: {
+      user: true,
+    },
+  })
+  return response
+}
+
+
+//TODO: Actualizar horario
+export const updateSchedule = async (
+  scheduleId: string,
+  scheduleData: Partial<{
+    startTime: string
+    endTime: string
+    days: string
+  }>
+) => {
+  const response = await db.schedule.update({
+    where: {
+      id: scheduleId,
+    },
+    data: scheduleData,
+  })
+  return response
+}
+
+//TODO: Eliminar horario
+export const deleteSchedule = async (scheduleId: string) => {
+  const response = await db.schedule.delete({
+    where: {
+      id: scheduleId,
+    },
+  })
+  return response
+}

@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import {
@@ -18,7 +17,10 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { toast } from "@/components/ui/use-toast"
+import { AlertTriangle, Clock } from "lucide-react"
+import { calculateHoursBetween, LEGAL_CONSTANTS } from "../utils/payroll-calculator"
 
 interface AssignScheduleDialogProps {
     isOpen: boolean
@@ -27,6 +29,7 @@ interface AssignScheduleDialogProps {
     selectedEmployee: string | null
     teamMembers: any[]
     agencyId: string
+    onCreateSchedule: (scheduleData: any) => Promise<void>
 }
 
 export function AssignScheduleDialog({
@@ -36,33 +39,100 @@ export function AssignScheduleDialog({
     selectedEmployee,
     teamMembers,
     agencyId,
+    onCreateSchedule,
 }: AssignScheduleDialogProps) {
     const [employeeId, setEmployeeId] = useState(selectedEmployee || "")
     const [startTime, setStartTime] = useState("08:00")
     const [endTime, setEndTime] = useState("17:00")
     const [breakTime, setBreakTime] = useState("01:00")
     const [isOvertime, setIsOvertime] = useState(false)
-    const [hourlyRate, setHourlyRate] = useState("4500") // Valor por hora en pesos colombianos
+    const [hourlyRate, setHourlyRate] = useState(
+        String(Math.round(LEGAL_CONSTANTS.MINIMUM_WAGE / LEGAL_CONSTANTS.MONTHLY_HOURS)),
+    )
     const [isLoading, setIsLoading] = useState(false)
+    const [selectedDays, setSelectedDays] = useState<string[]>([])
+    const [validationErrors, setValidationErrors] = useState<string[]>([])
 
-    // Resetear el formulario cuando cambia el diálogo
+    // Días de la semana
+    const weekDays = [
+        { value: "lunes", label: "Lunes" },
+        { value: "martes", label: "Martes" },
+        { value: "miércoles", label: "Miércoles" },
+        { value: "jueves", label: "Jueves" },
+        { value: "viernes", label: "Viernes" },
+        { value: "sábado", label: "Sábado" },
+        { value: "domingo", label: "Domingo" },
+    ]
+
+    // Calcular horas y costo estimado
+    const totalHours = calculateHoursBetween(startTime, endTime, breakTime)
+    const estimatedCost = totalHours * Number.parseFloat(hourlyRate || "0")
+    const isExcessiveHours = totalHours > LEGAL_CONSTANTS.MAX_DAILY_HOURS
+
+    // Inicializar días seleccionados basado en el día seleccionado
+    useEffect(() => {
+        if (selectedDay && isOpen) {
+            const dayName = format(selectedDay, "EEEE", { locale: es }).toLowerCase()
+            setSelectedDays([dayName])
+        }
+    }, [selectedDay, isOpen])
+
+    // Validar formulario
+    useEffect(() => {
+        const errors: string[] = []
+
+        if (!employeeId) {
+            errors.push("Debe seleccionar un empleado")
+        }
+
+        if (selectedDays.length === 0) {
+            errors.push("Debe seleccionar al menos un día")
+        }
+
+        if (startTime >= endTime) {
+            errors.push("La hora de entrada debe ser anterior a la hora de salida")
+        }
+
+        if (totalHours <= 0) {
+            errors.push("El turno debe tener una duración válida")
+        }
+
+        if (isExcessiveHours && !isOvertime) {
+            errors.push("El turno excede 8 horas diarias. Active 'Autorizar horas extras' para continuar")
+        }
+
+        if (totalHours > 12) {
+            errors.push("El turno no puede exceder 12 horas por razones de seguridad")
+        }
+
+        setValidationErrors(errors)
+    }, [employeeId, selectedDays, startTime, endTime, totalHours, isExcessiveHours, isOvertime])
+
+    // Resetear el formulario
     const resetForm = () => {
         setEmployeeId(selectedEmployee || "")
         setStartTime("08:00")
         setEndTime("17:00")
         setBreakTime("01:00")
         setIsOvertime(false)
-        setHourlyRate("4500")
+        setHourlyRate(String(Math.round(LEGAL_CONSTANTS.MINIMUM_WAGE / LEGAL_CONSTANTS.MONTHLY_HOURS)))
+        setSelectedDays([])
+        setValidationErrors([])
+    }
+
+    // Manejar cambio de días seleccionados
+    const handleDayToggle = (day: string) => {
+        setSelectedDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]))
     }
 
     // Manejar el envío del formulario
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        if (!selectedDay || !employeeId) {
+        if (validationErrors.length > 0) {
             toast({
-                title: "Error",
-                description: "Por favor seleccione un empleado y una fecha válida.",
+                title: "Errores de validación",
+                description: "Por favor corrija los errores antes de continuar.",
                 variant: "destructive",
             })
             return
@@ -71,53 +141,31 @@ export function AssignScheduleDialog({
         setIsLoading(true)
 
         try {
-            // Crear el objeto de horario para guardar
             const scheduleData = {
-                id: `${employeeId}-${format(selectedDay, "yyyy-MM-dd")}-${Date.now()}`,
                 userId: employeeId,
                 agencyId: agencyId,
-                date: format(selectedDay, "yyyy-MM-dd"),
                 startTime: startTime,
                 endTime: endTime,
                 breakTime: breakTime,
                 isOvertime: isOvertime,
-                hourlyRate: parseFloat(hourlyRate),
-                createdAt: new Date().toISOString(),
+                hourlyRate: Number.parseFloat(hourlyRate),
+                days: JSON.stringify(selectedDays),
             }
-            
-            // En un entorno real, aquí se enviaría a la API
-            // Por ahora, simulamos guardarlo en localStorage para persistencia temporal
-            const existingSchedules = JSON.parse(localStorage.getItem("schedules") || "[]") 
-            
-            // Eliminar horario existente para el mismo empleado y día si existe
-            const filteredSchedules = existingSchedules.filter(
-                (schedule: any) => !(schedule.userId === employeeId && schedule.date === format(selectedDay, "yyyy-MM-dd"))
-            )
-            
-            // Agregar el nuevo horario
-            filteredSchedules.push(scheduleData)
-            
-            // Guardar en localStorage
-            localStorage.setItem("schedules", JSON.stringify(filteredSchedules))
-            
-            // Notificar éxito
+
+            await onCreateSchedule(scheduleData)
+
             toast({
                 title: "Horario asignado",
-                description: `Horario asignado correctamente para el ${format(selectedDay, "PPP", { locale: es })}.`,
+                description: `Horario asignado correctamente para ${selectedDays.join(", ")}.`,
             })
 
-            // Cerrar el diálogo y resetear el formulario
             onClose()
             resetForm()
-            
-            // Recargar la página para mostrar los cambios
-            // En una implementación real, usaríamos un estado global o context
-            window.location.reload()
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error al guardar el horario:", error)
             toast({
                 title: "Error",
-                description: "No se pudo asignar el horario. Inténtelo de nuevo.",
+                description: error.message || "No se pudo asignar el horario. Inténtelo de nuevo.",
                 variant: "destructive",
             })
         } finally {
@@ -135,19 +183,30 @@ export function AssignScheduleDialog({
                 }
             }}
         >
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Asignar Horario de Trabajo</DialogTitle>
-                    <DialogDescription>
-                        {selectedDay
-                            ? `Configurar horario para el ${format(selectedDay, "EEEE d 'de' MMMM, yyyy", { locale: es })}`
-                            : "Seleccione un empleado y configure su horario"}
-                    </DialogDescription>
+                    <DialogDescription>Configure el horario de trabajo para el empleado seleccionado</DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-4 py-4">
+                <form onSubmit={handleSubmit} className="space-y-6 py-4">
+                    {/* Alertas de validación */}
+                    {validationErrors.length > 0 && (
+                        <Alert variant="destructive">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertDescription>
+                                <ul className="list-disc list-inside space-y-1">
+                                    {validationErrors.map((error, index) => (
+                                        <li key={index}>{error}</li>
+                                    ))}
+                                </ul>
+                            </AlertDescription>
+                        </Alert>
+                    )}
+
+                    {/* Selección de empleado */}
                     <div className="space-y-2">
-                        <Label htmlFor="employee">Empleado</Label>
+                        <Label htmlFor="employee">Empleado *</Label>
                         <Select value={employeeId} onValueChange={setEmployeeId} required>
                             <SelectTrigger id="employee">
                                 <SelectValue placeholder="Seleccionar empleado" />
@@ -155,16 +214,36 @@ export function AssignScheduleDialog({
                             <SelectContent>
                                 {teamMembers.map((member) => (
                                     <SelectItem key={member.id} value={member.id}>
-                                        {member.name}
+                                        {member.name} - {member.email}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* Selección de días */}
+                    <div className="space-y-2">
+                        <Label>Días de la semana *</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                            {weekDays.map((day) => (
+                                <div key={day.value} className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id={day.value}
+                                        checked={selectedDays.includes(day.value)}
+                                        onCheckedChange={() => handleDayToggle(day.value)}
+                                    />
+                                    <Label htmlFor={day.value} className="text-sm">
+                                        {day.label}
+                                    </Label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Horarios */}
+                    <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="startTime">Hora de entrada</Label>
+                            <Label htmlFor="startTime">Hora de entrada *</Label>
                             <Input
                                 id="startTime"
                                 type="time"
@@ -174,14 +253,11 @@ export function AssignScheduleDialog({
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="endTime">Hora de salida</Label>
+                            <Label htmlFor="endTime">Hora de salida *</Label>
                             <Input id="endTime" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required />
                         </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="breakTime">Tiempo de descanso (horas)</Label>
+                            <Label htmlFor="breakTime">Tiempo de descanso</Label>
                             <Input
                                 id="breakTime"
                                 type="time"
@@ -190,19 +266,54 @@ export function AssignScheduleDialog({
                                 required
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="hourlyRate">Valor por hora (COP)</Label>
-                            <Input
-                                id="hourlyRate"
-                                type="number"
-                                value={hourlyRate}
-                                onChange={(e) => setHourlyRate(e.target.value)}
-                                required
-                            />
+                    </div>
+
+                    {/* Valor por hora */}
+                    <div className="space-y-2">
+                        <Label htmlFor="hourlyRate">Valor por hora (COP) *</Label>
+                        <Input
+                            id="hourlyRate"
+                            type="number"
+                            min="0"
+                            step="100"
+                            value={hourlyRate}
+                            onChange={(e) => setHourlyRate(e.target.value)}
+                            required
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            Salario mínimo por hora: $
+                            {Math.round(LEGAL_CONSTANTS.MINIMUM_WAGE / LEGAL_CONSTANTS.MONTHLY_HOURS).toLocaleString("es-CO")}
+                        </p>
+                    </div>
+
+                    {/* Resumen del turno */}
+                    <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                        <h4 className="font-medium flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            Resumen del turno
+                        </h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span className="text-muted-foreground">Duración total:</span>
+                                <span className="ml-2 font-medium">{totalHours.toFixed(1)} horas</span>
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground">Costo estimado:</span>
+                                <span className="ml-2 font-medium">${estimatedCost.toLocaleString("es-CO")}</span>
+                            </div>
+                            {isExcessiveHours && (
+                                <div className="col-span-2">
+                                    <span className="text-amber-600">
+                                        ⚠️ Excede {LEGAL_CONSTANTS.MAX_DAILY_HOURS} horas diarias (+
+                                        {(totalHours - LEGAL_CONSTANTS.MAX_DAILY_HOURS).toFixed(1)} hrs extras)
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    <div className="flex items-center space-x-2 pt-2">
+                    {/* Opciones adicionales */}
+                    <div className="flex items-center space-x-2">
                         <Checkbox
                             id="overtime"
                             checked={isOvertime}
@@ -217,7 +328,7 @@ export function AssignScheduleDialog({
                         <Button type="button" variant="outline" onClick={onClose}>
                             Cancelar
                         </Button>
-                        <Button type="submit" disabled={isLoading}>
+                        <Button type="submit" disabled={isLoading || validationErrors.length > 0}>
                             {isLoading ? "Guardando..." : "Guardar Horario"}
                         </Button>
                     </DialogFooter>
