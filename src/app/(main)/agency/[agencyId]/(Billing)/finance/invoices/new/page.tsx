@@ -17,7 +17,7 @@ const NewInvoicePage = async ({ params }: { params: { agencyId: string } }) => {
     return redirect("/agency")
   }
 
-  // Obtener detalles de la agencia y subcuentas
+  // Obtener detalles de la agencia y tiendas
   const agency = await getAgencyDetails(agencyId)
   if (!agency) return redirect("/agency")
 
@@ -101,7 +101,7 @@ const NewInvoicePage = async ({ params }: { params: { agencyId: string } }) => {
         <CardHeader>
           <CardTitle>Nueva Factura</CardTitle>
           <CardDescription>
-            Cree una nueva factura para un cliente. Seleccione la subcuenta, productos y servicios a facturar.
+            Cree una nueva factura para un cliente. Seleccione la tienda, productos y servicios a facturar.
             {dianConfig && <span className="block mt-1 text-green-600">Facturación electrónica disponible.</span>}
           </CardDescription>
         </CardHeader>

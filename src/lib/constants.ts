@@ -39,7 +39,7 @@ export const pricingCards = [
     price: "Gratis",
     duration: "",
     highlight: "Características principales",
-    features: ["3 Subcuentas", "2 Miembros del equipo", "Pipelines ilimitados"],
+    features: ["3 Tiendas", "2 Miembros del equipo", "Pipelines ilimitados"],
     priceId: "P-0",
   },
   {
@@ -48,7 +48,7 @@ export const pricingCards = [
     price: "$49",
     duration: "mes",
     highlight: "Todo lo de Starter, más",
-    features: ["10 Subcuentas", "5 Miembros del equipo", "Soporte prioritario", "Análisis avanzados"],
+    features: ["10 Tiendas", "5 Miembros del equipo", "Soporte prioritario", "Análisis avanzados"],
     priceId: "P-1",
   },
   {
@@ -57,7 +57,7 @@ export const pricingCards = [
     price: "$99",
     duration: "mes",
     highlight: "Todo lo de Profesional, más",
-    features: ["Subcuentas ilimitadas", "Miembros del equipo ilimitados", "Soporte 24/7", "API personalizada"],
+    features: ["Tiendas ilimitadas", "Miembros del equipo ilimitados", "Soporte 24/7", "API personalizada"],
     priceId: "P-2",
   },
   {

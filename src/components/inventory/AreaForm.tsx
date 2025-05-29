@@ -33,19 +33,19 @@ export default function AreaForm({ agencyId, area, isEditing = false }: AreaForm
     subaccountId: area?.subaccountId || '',
   });
 
-  // Cargar subcuentas al montar el componente
+  // Cargar tiendas al montar el componente
   useEffect(() => {
     const fetchSubaccounts = async () => {
       try {
-        // Llama directamente a la función del servidor para obtener subcuentas
+        // Llama directamente a la función del servidor para obtener tiendas
         const subaccountsData = await getSubAccountsForAgency(agencyId);
         setSubaccounts(subaccountsData || []);
       } catch (error: any) {
-        console.error('Error al cargar subcuentas:', error);
+        console.error('Error al cargar tiendas:', error);
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: 'No se pudieron cargar las subcuentas. Inténtalo de nuevo.',
+          description: 'No se pudieron cargar las tiendas. Inténtalo de nuevo.',
         });
       }
     };
@@ -72,12 +72,12 @@ export default function AreaForm({ agencyId, area, isEditing = false }: AreaForm
     e.preventDefault();
     setIsLoading(true);
 
-    // Validar que se haya seleccionado una subcuenta
+    // Validar que se haya seleccionado una tienda
     if (!formData.subaccountId) {
       toast({
         variant: 'destructive',
-        title: 'Subcuenta requerida',
-        description: 'Por favor selecciona una subcuenta para continuar.',
+        title: 'Tienda requerida',
+        description: 'Por favor selecciona una tienda para continuar.',
       });
       setIsLoading(false);
       return;
@@ -135,14 +135,14 @@ export default function AreaForm({ agencyId, area, isEditing = false }: AreaForm
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="subaccountId">Subcuenta *</Label>
+            <Label htmlFor="subaccountId">Tienda *</Label>
             <Select
               value={formData.subaccountId}
               onValueChange={(value) => handleSelectChange('subaccountId', value)}
               required
             >
               <SelectTrigger>
-                <SelectValue placeholder="Seleccionar subcuenta" />
+                <SelectValue placeholder="Seleccionar tienda" />
               </SelectTrigger>
               <SelectContent>
                 {subaccounts.length > 0 ? (
@@ -153,14 +153,14 @@ export default function AreaForm({ agencyId, area, isEditing = false }: AreaForm
                   ))
                 ) : (
                   <SelectItem value="no-subaccounts" disabled>
-                    No hay subcuentas disponibles. Por favor, crea una subcuenta primero.
+                    No hay tiendas disponibles. Por favor, crea una tienda primero.
                   </SelectItem>
                 )}
               </SelectContent>
             </Select>
             {subaccounts.length === 0 && (
               <p className="text-sm text-destructive mt-1">
-                No hay subcuentas disponibles. Debes crear una subcuenta antes de continuar.
+                No hay tiendas disponibles. Debes crear una tienda antes de continuar.
               </p>
             )}
           </div>

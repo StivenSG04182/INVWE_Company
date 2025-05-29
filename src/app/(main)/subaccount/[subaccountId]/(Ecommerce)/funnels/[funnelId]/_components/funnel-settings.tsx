@@ -44,7 +44,7 @@ const FunnelSettings: React.FC<FunnelSettingsProps> = async ({
       console.log('Encontrados detalles de agencia');
     } else {
       // Si no encontramos como agencia, buscamos como subaccount
-      console.log('No se encontró como agencia, buscando como subcuenta...');
+      console.log('No se encontró como agencia, buscando como tienda...');
       accountDetails = await db.subAccount.findUnique({
         where: {
           id: effectiveId,

@@ -22,7 +22,7 @@ const MediaPage = async ({ params }: Props) => {
     )
   }
   
-  // Obtener todas las subcuentas de la agencia
+  // Obtener todas las tiendas de la agencia
   const subAccounts = await db.subAccount.findMany({
     where: {
       agencyId: params.agencyId,
@@ -32,9 +32,9 @@ const MediaPage = async ({ params }: Props) => {
     }
   })
   
-  console.log(`MediaPage: Encontradas ${subAccounts.length} subcuentas para la agencia`);
+  console.log(`MediaPage: Encontradas ${subAccounts.length} tiendas para la agencia`);
   const firstSubAccountId = subAccounts.length > 0 ? subAccounts[0].id : ''
-  console.log('MediaPage: Primera subcuenta ID:', firstSubAccountId);
+  console.log('MediaPage: Primera tienda ID:', firstSubAccountId);
   
   // Intentar obtener los datos de media, pero no fallar si no hay datos
   let data = null

@@ -174,7 +174,7 @@ const AgencyDetails = ({ data }: Props) => {
       const response = await deleteAgency(data.id);
       toast({
         title: "Agencia Eliminada",
-        description: "Se eliminó tu agencia y todas las subcuentas",
+        description: "Se eliminó tu agencia y todas las tiendas",
       });
       router.refresh();
     } catch (error) {
@@ -182,7 +182,7 @@ const AgencyDetails = ({ data }: Props) => {
       toast({ 
         variant:'destructive',
         title: "¡Ups!",
-        description: "No se pudo eliminar tu agencia y todas las subcuentas",
+        description: "No se pudo eliminar tu agencia y todas las tiendas",
       });
     }
     setDeletingAgency(false);
@@ -277,8 +277,8 @@ const AgencyDetails = ({ data }: Props) => {
                       <FormLabel>Agencia marca blanca</FormLabel>
                       <FormDescription>
                         Activar el modo white label mostrará el logo de tu agencia
-                        a todas las subcuentas por defecto. Puedes sobrescribir esta
-                        funcionalidad a través de la configuración de la subcuenta.
+                        a todas las tiendas por defecto. Puedes sobrescribir esta
+                        funcionalidad a través de la configuración de la tienda.
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -376,14 +376,14 @@ const AgencyDetails = ({ data }: Props) => {
                       await updateAgencyDetails(data.id, { goal: val });
                       await saveActivityLogsNotification({
                         agencyId: data.id,
-                        description: `Actualizado el objetivo de la agencia a | ${val} Subcuentas`,
+                        description: `Actualizado el objetivo de la agencia a | ${val} Tiendas`,
                         subaccountId: undefined,
                       });
                       router.refresh();
                     }}
                     min={1}
                     className="bg-background !border !border-input"
-                    placeholder="Objetivo de Subcuentas"
+                    placeholder="Objetivo de Tiendas"
                   />
                 </div>
               )}
@@ -399,8 +399,8 @@ const AgencyDetails = ({ data }: Props) => {
               </div>
               <div className="text-muted-foreground">
                 Eliminar tu agencia no se puede deshacer. Esto también eliminará todas
-                las subcuentas y todos los datos relacionados con tus subcuentas. Las
-                subcuentas ya no tendrán acceso a embudos, contactos, etc.
+                las tiendas y todos los datos relacionados con tus tiendas. Las
+                tiendas ya no tendrán acceso a embudos, contactos, etc.
               </div>
               <AlertDialogTrigger
                 disabled={isLoading || deletingAgency}
@@ -417,7 +417,7 @@ const AgencyDetails = ({ data }: Props) => {
               </AlertDialogTitle>
               <AlertDialogDescription className="text-left">
                 Esta acción no se puede deshacer. Esto eliminará permanentemente la
-                cuenta de Agencia y todas las subcuentas relacionadas.
+                cuenta de Agencia y todas las tiendas relacionadas.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="flex items-center">

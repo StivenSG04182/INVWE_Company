@@ -136,7 +136,7 @@ const MediaCard = ({ file }: Props) => {
             ¿Está completamente seguro?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-left">
-            ¿Está seguro de que desea eliminar este archivo? Todas las subcuentas que utilicen este archivo
+            ¿Está seguro de que desea eliminar este archivo? Todas las tiendas que utilicen este archivo
             dejarán de tener acceso a él.
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -160,7 +160,7 @@ export const InvoicesPanel = ({ agencyId }: { agencyId: string }) => {
                                             <tr className="border-b">
                                                 <th className="px-4 py-2 text-left">Nº Factura</th>
                                                 <th className="px-4 py-2 text-left">Cliente</th>
-                                                <th className="px-4 py-2 text-left">Subcuenta</th>
+                                                <th className="px-4 py-2 text-left">Tienda</th>
                                                 <th className="px-4 py-2 text-left">Fecha</th>
                                                 <th className="px-4 py-2 text-left">Total</th>
                                                 <th className="px-4 py-2 text-left">Estado</th>

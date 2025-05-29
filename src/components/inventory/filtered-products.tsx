@@ -89,7 +89,7 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
         // Filtro por categoría
         const matchesCategory = selectedCategory === "all" || product.categoryId === selectedCategory
 
-        // Filtro por subcuenta
+        // Filtro por tienda
         const matchesSubaccount = selectedSubaccount === "all" || product.subaccountId === selectedSubaccount
 
         return matchesSearch && matchesCategory && matchesSubaccount
@@ -191,10 +191,10 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
 
                     <Select value={selectedSubaccount} onValueChange={setSelectedSubaccount}>
                         <SelectTrigger className="w-full sm:w-[180px]">
-                            <SelectValue placeholder="Subcuenta" />
+                            <SelectValue placeholder="Tienda" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">Todas las subcuentas</SelectItem>
+                            <SelectItem value="all">Todas las tiendas</SelectItem>
                             {subAccounts.map((subaccount) => (
                                 <SelectItem key={subaccount._id} value={subaccount._id}>
                                     {subaccount.name}

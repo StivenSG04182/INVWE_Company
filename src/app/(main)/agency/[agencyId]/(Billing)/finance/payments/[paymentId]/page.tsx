@@ -157,7 +157,7 @@ const PaymentDetailsPage = async ({ params }: { params: { agencyId: string; paym
                                     <span>{new Date(payment.createdAt).toLocaleDateString()}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Subcuenta:</span>
+                                    <span className="text-muted-foreground">Tienda:</span>
                                     <span>{payment.SubAccount?.name || "Principal"}</span>
                                 </div>
                             </div>

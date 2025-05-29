@@ -189,7 +189,7 @@ const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="min-w-[180px] justify-between">
-                  <span>Subcuentas</span>
+                  <span>Tiendas</span>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="16"
@@ -207,16 +207,16 @@ const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Seleccionar subcuentas</DropdownMenuLabel>
+                <DropdownMenuLabel>Seleccionar tiendas</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <div className="p-2 space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="subcuenta-todas" />
+                    <Checkbox id="tienda-todas" />
                     <label
-                      htmlFor="subcuenta-todas"
+                      htmlFor="tienda-todas"
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      Todas las subcuentas
+                      Todas las tiendas
                     </label>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -225,7 +225,7 @@ const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
                       htmlFor="subcuenta1"
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      Subcuenta 1
+                      Tienda 1
                     </label>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -234,7 +234,7 @@ const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
                       htmlFor="subcuenta2"
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      Subcuenta 2
+                      Tienda 2
                     </label>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -243,7 +243,7 @@ const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
                       htmlFor="subcuenta3"
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      Subcuenta 3
+                      Tienda 3
                     </label>
                   </div>
                 </div>

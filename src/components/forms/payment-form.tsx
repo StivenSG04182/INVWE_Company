@@ -78,20 +78,20 @@ export const PaymentForm = ({
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-6">
-                        {/* Selección de Subcuenta */}
+                        {/* Selección de Tienda */}
                         <FormField
                             control={form.control}
                             name="subAccountId"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Subcuenta</FormLabel>
+                                    <FormLabel>Tienda</FormLabel>
                                     <Select
                                         onValueChange={field.onChange}
                                         defaultValue={field.value}
                                     >
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Seleccionar subcuenta" />
+                                                <SelectValue placeholder="Seleccionar tienda" />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
@@ -103,7 +103,7 @@ export const PaymentForm = ({
                                         </SelectContent>
                                     </Select>
                                     <FormDescription>
-                                        Seleccione la subcuenta para este pago
+                                        Seleccione la tienda para este pago
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>

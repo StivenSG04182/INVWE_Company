@@ -471,7 +471,7 @@ export const getNotificationAndUser = async (agencyId: string) => {
   }
 }
 
-// TODO: Creación y actualización de subcuentas
+// TODO: Creación y actualización de tiendas
 export const upsertSubAccount = async (subAccount: SubAccount) => {
   console.log('1. Iniciando upsertSubAccount con:', {
     id: subAccount.id,
@@ -493,7 +493,7 @@ export const upsertSubAccount = async (subAccount: SubAccount) => {
 
     if (!agencyOwner) {
       console.error(
-        '4. Error: No se pudo crear subcuenta porque no se encontró propietario'
+        '4. Error: No se pudo crear tienda porque no se encontró propietario'
       )
       return null
     }
@@ -632,7 +632,7 @@ export const changeUserPermissions = async (
   }
 }
 
-// TODO: Obtención de detalles de subcuenta
+// TODO: Obtención de detalles de tienda
 export const getSubaccountDetails = async (subaccountId: string) => {
   const response = await db.subAccount.findUnique({
     where: {
@@ -642,7 +642,7 @@ export const getSubaccountDetails = async (subaccountId: string) => {
   return response
 }
 
-// TODO: Eliminación de subcuenta
+// TODO: Eliminación de tienda
 export const deleteSubAccount = async (subaccountId: string) => {
   const response = await db.subAccount.delete({
     where: {
@@ -771,7 +771,7 @@ export const getMedia = async (subaccountIdOrAgencyId: string, isAgencyId: boole
     agencyId = subaccount.agencyId;
   }
   
-  // Obtenemos todas las subcuentas asociadas a la agencia
+  // Obtenemos todas las tiendas asociadas a la agencia
   const agencySubaccounts = await db.subAccount.findMany({
     where: {
       agencyId: agencyId
@@ -783,7 +783,7 @@ export const getMedia = async (subaccountIdOrAgencyId: string, isAgencyId: boole
   
   const subaccountIds = agencySubaccounts.map(sub => sub.id)
 
-  // Verificamos si hay subcuentas
+  // Verificamos si hay tiendas
   if (subaccountIds.length === 0) {
   }
   
@@ -791,7 +791,7 @@ export const getMedia = async (subaccountIdOrAgencyId: string, isAgencyId: boole
   let whereClause: any = {};
   
   if (subaccountIds.length > 0) {
-    // Si hay subcuentas, buscamos por subcuentas y agencyId
+    // Si hay tiendas, buscamos por tiendas y agencyId
     whereClause = {
       OR: [
         {
@@ -805,7 +805,7 @@ export const getMedia = async (subaccountIdOrAgencyId: string, isAgencyId: boole
       ]
     };
   } else {
-    // Si no hay subcuentas, buscamos solo por agencyId
+    // Si no hay tiendas, buscamos solo por agencyId
     whereClause = {
       agencyId: agencyId
     };
@@ -883,7 +883,7 @@ export const createMedia = async (
       return response
     }
     
-    // Si no se proporcionó agencyId, intentamos obtenerlo de la subcuenta
+    // Si no se proporcionó agencyId, intentamos obtenerlo de la tienda
     const subaccount = await db.subAccount.findUnique({
       where: {
         id: subaccountId,
@@ -906,14 +906,14 @@ export const createMedia = async (
       return response
     }
     
-    // Si encontramos la subcuenta, procedemos normalmente
+    // Si encontramos la tienda, procedemos normalmente
     
     const response = await db.media.create({
       data: {
         link: mediaFile.link,
         name: mediaFile.name,
         subAccountId: subaccountId,
-        agencyId: subaccount.agencyId, // Agregamos el agencyId obtenido de la subcuenta
+        agencyId: subaccount.agencyId, // Agregamos el agencyId obtenido de la tienda
       }
     })
     
@@ -1167,7 +1167,7 @@ export const _getTicketsWithAllRelations = async (laneId: string) => {
   return response
 }
 
-// TODO: Obtención de miembros del equipo de subcuenta
+// TODO: Obtención de miembros del equipo de tienda
 export const getSubAccountTeamMembers = async (subaccountId: string) => {
   const subaccountUsersWithAccess = await db.user.findMany({
     where: {
@@ -1266,7 +1266,7 @@ export const deleteTag = async (tagId: string) => {
   return response
 }
 
-// TODO: Obtención de etiquetas para subcuenta
+// TODO: Obtención de etiquetas para tienda
 export const getTagsForSubaccount = async (subaccountId: string) => {
   const response = await db.subAccount.findUnique({
     where: { id: subaccountId },

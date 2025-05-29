@@ -141,7 +141,7 @@ const InvoiceDetailsPage = async ({ params }: { params: { agencyId: string; invo
                             <h3 className="text-sm font-medium text-muted-foreground">Detalles</h3>
                             <div className="space-y-1">
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Subcuenta:</span>
+                                    <span className="text-muted-foreground">Tienda:</span>
                                     <span>{invoice.SubAccount?.name || "Principal"}</span>
                                 </div>
                                 <div className="flex justify-between">

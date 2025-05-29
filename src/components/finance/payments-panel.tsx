@@ -108,7 +108,7 @@ export const PaymentsPanel = ({ agencyId }: { agencyId: string }) => {
                             </p>
                         </div>
                         <div className="p-4 border rounded-md">
-                            <h3 className="text-sm font-medium text-muted-foreground">Subcuentas</h3>
+                            <h3 className="text-sm font-medium text-muted-foreground">Tiendas</h3>
                             <p className="text-2xl font-bold">{subAccountsCount}</p>
                         </div>
                     </div>

@@ -12,7 +12,7 @@ import path from 'path';
 // =========== FACTURAS Y FACTURACIÓN ELECTRÓNICA ===========
 
 /**
- * Obtiene todas las facturas de una agencia o subcuenta
+ * Obtiene todas las facturas de una agencia o tienda
  */
 export const getInvoices = async ({
     agencyId,
@@ -515,7 +515,7 @@ export const deleteInvoice = async (invoiceId: string) => {
 // =========== PAGOS ===========
 
 /**
- * Obtiene todos los pagos de una agencia o subcuenta
+ * Obtiene todos los pagos de una agencia o tienda
  */
 export const getPayments = async ({
     agencyId,
@@ -772,7 +772,7 @@ export const deletePayment = async (paymentId: string) => {
 // =========== IMPUESTOS ===========
 
 /**
- * Obtiene todos los impuestos de una agencia o subcuenta
+ * Obtiene todos los impuestos de una agencia o tienda
  */
 export const getTaxes = async ({
     agencyId,
@@ -917,7 +917,7 @@ export const deleteTax = async (taxId: string) => {
 // =========== TRANSACCIONES Y CAJAS ===========
 
 /**
- * Obtiene todas las ventas de una agencia o subcuenta
+ * Obtiene todas las ventas de una agencia o tienda
  */
 export const getSales = async ({
     agencyId,
@@ -969,7 +969,7 @@ export const getSales = async ({
 };
 
 /**
- * Obtiene todas las cajas registradoras de una agencia o subcuenta
+ * Obtiene todas las cajas registradoras de una agencia o tienda
  */
 export const getCashRegisters = async ({
     agencyId,

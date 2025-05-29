@@ -22,7 +22,7 @@ const NewPaymentPage = async ({
         return redirect("/agency")
     }
 
-    // Obtener detalles de la agencia y subcuentas
+    // Obtener detalles de la agencia y tiendas
     const agency = await getAgencyDetails(agencyId)
     if (!agency) return redirect("/agency")
 
@@ -66,7 +66,7 @@ const NewPaymentPage = async ({
                 <CardHeader>
                     <CardTitle>Registrar Pago</CardTitle>
                     <CardDescription>
-                        Registre un nuevo pago para una factura pendiente. Seleccione la subcuenta y la factura correspondiente.
+                        Registre un nuevo pago para una factura pendiente. Seleccione la tienda y la factura correspondiente.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

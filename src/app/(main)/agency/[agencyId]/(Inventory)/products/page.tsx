@@ -42,7 +42,7 @@ const ProductsPage = async ({ params }: { params: { agencyId: string } }) => {
     discountMinimumPrice: product.discountMinimumPrice ? Number(product.discountMinimumPrice) : null
   }))
   
-  // Obtener subcuentas de la agencia
+  // Obtener tiendas de la agencia
   const subAccounts = user.Agency.SubAccount || []
 
   // Calcular estadísticas

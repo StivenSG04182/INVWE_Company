@@ -13,7 +13,7 @@ type Props = {
 }
 
 const SubAccountPageId = async ({ params }: Props) => {
-  // Obtener datos de la subcuenta
+  // Obtener datos de la tienda
   const subaccount = await db.subAccount.findUnique({
     where: {
       id: params.subaccountId,
@@ -28,7 +28,7 @@ const SubAccountPageId = async ({ params }: Props) => {
       <BlurPage>
         <div className="flex flex-col gap-4 p-4">
           <h1 className="text-4xl font-bold">Dashboard de Tienda</h1>
-          <p className="text-muted-foreground">No se encontró la subcuenta</p>
+          <p className="text-muted-foreground">No se encontró la tienda</p>
         </div>
       </BlurPage>
     )

@@ -164,12 +164,12 @@ export default function ProductFormFixed({ agencyId, product, isEditing = false 
                 // Importar las funciones del servidor dinámicamente
                 const { getAgencyDetails, getCategories, getProviders } = await import("@/lib/queries2")
 
-                // Cargar detalles de la agencia para obtener subcuentas
+                // Cargar detalles de la agencia para obtener tiendas
                 const agencyDetails = await getAgencyDetails(agencyId)
                 if (agencyDetails && agencyDetails.SubAccount) {
                     setSubaccounts(agencyDetails.SubAccount || [])
                 } else {
-                    console.error("Error al cargar subcuentas: No se encontraron subcuentas")
+                    console.error("Error al cargar tiendas: No se encontraron tiendas")
                 }
 
                 // Cargar categorías
@@ -390,12 +390,12 @@ export default function ProductFormFixed({ agencyId, product, isEditing = false 
         e.preventDefault()
         setIsLoading(true)
 
-        // Validar que se haya seleccionado una subcuenta
+        // Validar que se haya seleccionado una tienda
         if (!formData.subaccountId) {
             toast({
                 variant: "destructive",
-                title: "Subcuenta requerida",
-                description: "Por favor selecciona una subcuenta para continuar.",
+                title: "Tienda requerida",
+                description: "Por favor selecciona una tienda para continuar.",
             })
             setIsLoading(false)
             return
@@ -642,14 +642,14 @@ export default function ProductFormFixed({ agencyId, product, isEditing = false 
                                             </div>
 
                                             <div className="space-y-2">
-                                                <Label htmlFor="subaccountId">Subcuenta *</Label>
+                                                <Label htmlFor="subaccountId">Tienda *</Label>
                                                 <Select
                                                     value={formData.subaccountId}
                                                     onValueChange={(value) => handleSelectChange("subaccountId", value)}
                                                     required
                                                 >
                                                     <SelectTrigger>
-                                                        <SelectValue placeholder="Seleccionar subcuenta" />
+                                                        <SelectValue placeholder="Seleccionar tienda" />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {subaccounts.length > 0 ? (
@@ -660,14 +660,14 @@ export default function ProductFormFixed({ agencyId, product, isEditing = false 
                                                             ))
                                                         ) : (
                                                             <SelectItem value="no-subaccounts" disabled>
-                                                                No hay subcuentas disponibles
+                                                                No hay tiendas disponibles
                                                             </SelectItem>
                                                         )}
                                                     </SelectContent>
                                                 </Select>
                                                 {subaccounts.length === 0 && (
                                                     <p className="text-sm text-destructive mt-1">
-                                                        No hay subcuentas disponibles. Debes crear una subcuenta antes de continuar.
+                                                        No hay tiendas disponibles. Debes crear una tienda antes de continuar.
                                                     </p>
                                                 )}
                                             </div>

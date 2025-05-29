@@ -41,7 +41,7 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
     subaccountId: provider?.subaccountId || provider?.subAccountId || '',
   });
 
-  // Cargar subcuentas al montar el componente
+  // Cargar tiendas al montar el componente
    useEffect(() => {
       async function fetchSubaccounts() {
         try {
@@ -75,12 +75,12 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
     e.preventDefault();
     setIsLoading(true);
 
-    // Validar que se haya seleccionado una subcuenta
+    // Validar que se haya seleccionado una tienda
     if (!formData.subaccountId) {
       toast({
         variant: 'destructive',
-        title: 'Subcuenta requerida',
-        description: 'Por favor selecciona una subcuenta para continuar.',
+        title: 'Tienda requerida',
+        description: 'Por favor selecciona una tienda para continuar.',
       });
       setIsLoading(false);
       return;
@@ -149,14 +149,14 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="subaccountId">Subcuenta *</Label>
+            <Label htmlFor="subaccountId">Tienda *</Label>
             <Select
               value={formData.subaccountId}
               onValueChange={(value) => handleSelectChange('subaccountId', value)}
               required
             >
               <SelectTrigger>
-                <SelectValue placeholder="Seleccionar subcuenta" />
+                <SelectValue placeholder="Seleccionar tienda" />
               </SelectTrigger>
               <SelectContent>
                 {subaccounts.length > 0 ? (
@@ -167,14 +167,14 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
                   ))
                 ) : (
                   <SelectItem value="no-subaccounts" disabled>
-                    No hay subcuentas disponibles. Por favor, crea una subcuenta primero.
+                    No hay tiendas disponibles. Por favor, crea una tienda primero.
                   </SelectItem>
                 )}
               </SelectContent>
             </Select>
             {subaccounts.length === 0 && (
               <p className="text-sm text-destructive mt-1">
-                No hay subcuentas disponibles. Debes crear una subcuenta antes de continuar.
+                No hay tiendas disponibles. Debes crear una tienda antes de continuar.
               </p>
             )}
           </div>

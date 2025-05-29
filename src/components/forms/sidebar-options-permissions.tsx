@@ -250,7 +250,7 @@ const SidebarOptionsPermissions = ({ subAccountId, permissionId }: Props) => {
         <div className="mt-2 space-y-4">
             <h4 className="text-sm font-medium">Opciones del Menú Lateral</h4>
             <p className="text-xs text-muted-foreground mb-2">
-                Seleccione las opciones del menú lateral a las que este usuario tendrá acceso cuando ingrese a esta subcuenta
+                Seleccione las opciones del menú lateral a las que este usuario tendrá acceso cuando ingrese a esta tienda
             </p>
 
             <Accordion type="multiple" className="w-full">

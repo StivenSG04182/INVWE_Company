@@ -110,7 +110,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                 }
             } catch (error) {
                 console.error("Error al cargar subaccounts:", error)
-                toast.error("Error al cargar subcuentas. Usando productos de la agencia.")
+                toast.error("Error al cargar tiendas. Usando productos de la agencia.")
                 // En caso de error, usar productos de la agencia
                 setUseAgencyProducts(true)
                 setSubaccountModalOpen(false)
@@ -451,7 +451,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         setSelectedProducts2((prev) => [...prev, product.id])
     }
 
-    // Función para cargar productos desde la API según la selección de agencia o subcuenta
+    // Función para cargar productos desde la API según la selección de agencia o tienda
     const loadProducts = async () => {
         if (!agencyId) return
 
@@ -462,7 +462,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
             let url = `/api/pos/has-agency-access?`
 
             // Si estamos usando productos de la agencia, consultar por agencyId
-            // Si estamos usando una subcuenta específica, consultar por subAccountId
+            // Si estamos usando una tienda específica, consultar por subAccountId
             if (useAgencyProducts) {
                 url += `agencyId=${agencyId}`
             } else if (selectedSubaccount) {
@@ -551,7 +551,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         } else {
             setUseAgencyProducts(false)
             setSelectedSubaccount(subaccountId)
-            // Al seleccionar una subcuenta, la consulta se hará con subAccountId
+            // Al seleccionar una tienda, la consulta se hará con subAccountId
         }
 
         // Limpiar carrito al cambiar de subaccount
@@ -579,7 +579,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                     {/* Selector de Subaccount */}
                     <Select value={useAgencyProducts ? "agency" : selectedSubaccount} onValueChange={handleSubaccountChange}>
                         <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Seleccionar subcuenta" />
+                            <SelectValue placeholder="Seleccionar tienda" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="agency">
@@ -639,7 +639,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setSubaccountModalOpen(true)}>
                                 <Store className="h-4 w-4 mr-2" />
-                                Cambiar subcuenta
+                                Cambiar tienda
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => loadProducts()}>
                                 <RefreshCw className="h-4 w-4 mr-2" />

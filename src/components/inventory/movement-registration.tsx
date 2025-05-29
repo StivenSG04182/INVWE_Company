@@ -74,7 +74,7 @@ export default function MovementRegistration({
   const [stockPercentage, setStockPercentage] = useState<number | null>(null);
   const [showStockAlert, setShowStockAlert] = useState(false);
 
-  // Cargar subcuentas al montar o cuando cambie agencyId
+  // Cargar tiendas al montar o cuando cambie agencyId
   useEffect(() => {
     async function fetchSubaccounts() {
       try {
@@ -212,11 +212,11 @@ export default function MovementRegistration({
       return;
     }
 
-    // Validar que haya subcuenta seleccionada y que exista en la lista
+    // Validar que haya tienda seleccionada y que exista en la lista
     if (!formData.subaccountId || !subaccounts.some(sa => sa.id === formData.subaccountId)) {
       toast({
         title: "Error",
-        description: "Debe seleccionar una subcuenta válida",
+        description: "Debe seleccionar una tienda válida",
         variant: "destructive",
       });
       return;
@@ -519,7 +519,7 @@ export default function MovementRegistration({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="subaccountId">Subcuenta *</Label>
+                  <Label htmlFor="subaccountId">Tienda *</Label>
                   <Select
                     value={formData.subaccountId}
                     onValueChange={(value) =>
@@ -528,7 +528,7 @@ export default function MovementRegistration({
                     required
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar subcuenta" />
+                      <SelectValue placeholder="Seleccionar tienda" />
                     </SelectTrigger>
                     <SelectContent>
                       {subaccounts.length > 0 ? (
@@ -539,14 +539,14 @@ export default function MovementRegistration({
                         ))
                       ) : (
                         <SelectItem value="no-subaccounts" disabled>
-                          No hay subcuentas disponibles
+                          No hay tiendas disponibles
                         </SelectItem>
                       )}
                     </SelectContent>
                   </Select>
                   {subaccounts.length === 0 && (
                     <p className="text-sm text-destructive mt-1">
-                      No hay subcuentas disponibles. Debes crear una subcuenta
+                      No hay tiendas disponibles. Debes crear una tienda
                       antes de continuar.
                     </p>
                   )}

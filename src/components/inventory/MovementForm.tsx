@@ -40,7 +40,7 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
     subaccountId: '',
   });
 
-  // Cargar productos, áreas, proveedores y subcuentas al montar el componente
+  // Cargar productos, áreas, proveedores y tiendas al montar el componente
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -69,7 +69,7 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
           setProviders(providersData || []);
         }
 
-        // Cargar subcuentas
+        // Cargar tiendas
         const subaccountsData = await getSubAccounts(agencyId);
         setSubaccounts(subaccountsData || []);
         
@@ -112,12 +112,12 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
     e.preventDefault();
     setIsLoading(true);
 
-    // Validar que se hayan seleccionado producto, área y subcuenta
+    // Validar que se hayan seleccionado producto, área y tienda
     if (!formData.productId || !formData.areaId || !formData.subaccountId) {
       toast({
         variant: 'destructive',
         title: 'Campos requeridos',
-        description: 'Por favor selecciona un producto, un área y una subcuenta para continuar.',
+        description: 'Por favor selecciona un producto, un área y una tienda para continuar.',
       });
       setIsLoading(false);
       return;
@@ -216,14 +216,14 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="subaccountId">Subcuenta *</Label>
+            <Label htmlFor="subaccountId">Tienda *</Label>
             <Select
               value={formData.subaccountId}
               onValueChange={(value) => handleSelectChange('subaccountId', value)}
               required
             >
               <SelectTrigger>
-                <SelectValue placeholder="Seleccionar subcuenta" />
+                <SelectValue placeholder="Seleccionar tienda" />
               </SelectTrigger>
               <SelectContent>
                 {subaccounts.length > 0 ? (
@@ -234,14 +234,14 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
                   ))
                 ) : (
                   <SelectItem value="no-subaccounts" disabled>
-                    No hay subcuentas disponibles. Por favor, crea una subcuenta primero.
+                    No hay tiendas disponibles. Por favor, crea una tienda primero.
                   </SelectItem>
                 )}
               </SelectContent>
             </Select>
             {subaccounts.length === 0 && (
               <p className="text-sm text-destructive mt-1">
-                No hay subcuentas disponibles. Debes crear una subcuenta antes de continuar.
+                No hay tiendas disponibles. Debes crear una tienda antes de continuar.
               </p>
             )}
           </div>

@@ -75,7 +75,7 @@ const FunnelForm: React.FC<CreateFunnelProps> = ({
       const effectiveAgencyId = agencyId || subAccountId;
       
       if (!effectiveAgencyId) {
-        console.error('Error: No se proporcionó ID de agencia o subcuenta');
+        console.error('Error: No se proporcionó ID de agencia o tienda');
         toast({
           variant: 'destructive',
           title: 'Error',

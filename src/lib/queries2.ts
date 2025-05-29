@@ -61,7 +61,7 @@ export const saveActivityLogsNotification = async ({
     const authUser = await currentUser();
     let userData;
     if (!authUser) {
-        // Si no hay usuario autenticado, buscar un usuario con acceso a la subcuenta o agencia
+        // Si no hay usuario autenticado, buscar un usuario con acceso a la tienda o agencia
         const response = await db.user.findFirst({
             where: {
                 OR: [
@@ -116,7 +116,7 @@ export const saveActivityLogsNotification = async ({
     let foundAgencyId = agencyId;
     if (!foundAgencyId) {
         if (!subaccountId) {
-            // Si no hay ID de agencia ni de subcuenta, simplemente registramos y retornamos
+            // Si no hay ID de agencia ni de tienda, simplemente registramos y retornamos
             console.log("No agency ID or subaccount ID provided for activity log");
             return;
         }
@@ -1050,7 +1050,7 @@ export const deleteArea = async (agencyId: string, areaId: string, subaccountId?
 };
 
 
-// TODO: Lista subcuentas
+// TODO: Lista tiendas
 export const getSubAccounts = async (agencyId: string) => {
     return await db.subAccount.findMany({
         where: { agencyId },
@@ -1062,7 +1062,7 @@ export const getSubAccounts = async (agencyId: string) => {
 export const getMovements = async (agencyId: string, subAccountId?: string) => {
     const whereClause: any = { agencyId };
 
-    // Si se proporciona un ID de subcuenta, filtrar por esa subcuenta
+    // Si se proporciona un ID de tienda, filtrar por esa tienda
     if (subAccountId) {
         whereClause.subAccountId = subAccountId;
     }
@@ -1672,7 +1672,7 @@ export const getProductsForPOS = async (agencyId: string, options?: {
         active: true,
     };
 
-    // Añadir filtro de subcuenta si se proporciona
+    // Añadir filtro de tienda si se proporciona
     if (subAccountId) {
         whereClause.subAccountId = subAccountId;
     }
@@ -1919,7 +1919,7 @@ export const getSavedSales = async (agencyId: string, options?: {
         // Se eliminó el filtro de status porque no existe en el modelo
     };
 
-    // Añadir filtro de subcuenta si se proporciona
+    // Añadir filtro de tienda si se proporciona
     if (subAccountId) {
         whereClause.subAccountId = subAccountId;
     }
@@ -2231,7 +2231,7 @@ export const getClientsForPOS = async (agencyId: string, subAccountId?: string) 
     });
 };
 
-// TODO: Obtiene las subcuentas para una agencia
+// TODO: Obtiene las tiendas para una agencia
 export const getSubAccountsForAgency = async (agencyId: string) => {
     if (!agencyId) {
         throw new Error("ID de agencia no proporcionado");

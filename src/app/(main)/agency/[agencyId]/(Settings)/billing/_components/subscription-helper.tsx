@@ -20,8 +20,8 @@ const SubscriptionHelper = ({ customerId, planExists, prices }: Props) => {
     if (plan)
       setOpen(
         <CustomModal
-          title="Upgrade Plan!"
-          subheading="Get started today to get access to premium features"
+          title="Actualiza tu plan!"
+          subheading="Suscribete ahora para tener acceso a las opciones premium!"
         >
           <SubscriptionFormWrapper
             planExists={planExists}
@@ -37,7 +37,7 @@ const SubscriptionHelper = ({ customerId, planExists, prices }: Props) => {
       )
   }, [plan])
 
-  return <div>SubscriptionHelper</div>
+  return <div>Ayudante de suscripción</div>
 }
 
 export default SubscriptionHelper

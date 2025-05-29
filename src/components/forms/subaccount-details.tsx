@@ -150,7 +150,7 @@ export default function SubAccountDetails({
         updatedAt: now,
       }
       
-      console.log('DEBUG - Enviando datos de subcuenta:', JSON.stringify(subAccountData))
+      console.log('DEBUG - Enviando datos de tienda:', JSON.stringify(subAccountData))
       
       const response = await upsertSubAccount(subAccountData)
 
@@ -166,16 +166,16 @@ export default function SubAccountDetails({
 
       toast({
         title: '¡Éxito!',
-        description: 'Subcuenta guardada correctamente.',
+        description: 'Tienda guardada correctamente.',
       })
       setClose()
       router.refresh()
     } catch (error) {
-      console.error('ERROR - Al guardar subcuenta:', error)
+      console.error('ERROR - Al guardar tienda:', error)
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error instanceof Error ? error.message : 'No se pudo guardar la subcuenta.',
+        description: error instanceof Error ? error.message : 'No se pudo guardar la tienda.',
       })
     } finally {
       setSubmitting(false)
@@ -186,7 +186,7 @@ export default function SubAccountDetails({
     <Card className="w-full">
       <CardHeader>
         <CardTitle>Información de Sub Cuenta</CardTitle>
-        <CardDescription>Por favor ingresa los datos de la subcuenta</CardDescription>
+        <CardDescription>Por favor ingresa los datos de la tienda</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>

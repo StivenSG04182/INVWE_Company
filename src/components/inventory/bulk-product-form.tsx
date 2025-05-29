@@ -58,11 +58,11 @@ export default function BulkProductForm({ agencyId, subaccountId }: BulkProductF
     const [csvMapping, setCsvMapping] = useState<Record<string, string>>({})
     const [requiredFieldsOnly, setRequiredFieldsOnly] = useState(true)
 
-    // Cargar subcuentas y categorías al montar el componente
+    // Cargar tiendas y categorías al montar el componente
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Cargar subcuentas
+                // Cargar tiendas
                 const subaccountsResponse = await fetch(`/api/agency/${agencyId}/subaccounts`, {
                     credentials: "include",
                 })
@@ -223,12 +223,12 @@ export default function BulkProductForm({ agencyId, subaccountId }: BulkProductF
         e.preventDefault()
         setIsLoading(true)
 
-        // Validar que se haya seleccionado una subcuenta
+        // Validar que se haya seleccionado una tienda
         if (!selectedSubaccount) {
             toast({
                 variant: "destructive",
-                title: "Subcuenta requerida",
-                description: "Por favor selecciona una subcuenta para continuar.",
+                title: "Tienda requerida",
+                description: "Por favor selecciona una tienda para continuar.",
             })
             setIsLoading(false)
             return
@@ -362,7 +362,7 @@ export default function BulkProductForm({ agencyId, subaccountId }: BulkProductF
                 <Card className="mb-6">
                     <CardHeader>
                         <CardTitle className="flex items-center">
-                            Selección de Subcuenta
+                            Selección de Tienda
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -372,17 +372,17 @@ export default function BulkProductForm({ agencyId, subaccountId }: BulkProductF
                                     </TooltipTrigger>
                                     <TooltipContent>
                                         <p className="max-w-xs">
-                                            Todos los productos creados se asignarán a esta subcuenta. Es un campo obligatorio.
+                                            Todos los productos creados se asignarán a esta tienda. Es un campo obligatorio.
                                         </p>
                                     </TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
                         </CardTitle>
-                        <CardDescription>Selecciona la subcuenta donde se crearán los productos</CardDescription>
+                        <CardDescription>Selecciona la tienda donde se crearán los productos</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-2">
-                            <Label htmlFor="subaccountId">Subcuenta *</Label>
+                            <Label htmlFor="subaccountId">Tienda *</Label>
                             <Select
                                 value={selectedSubaccount}
                                 onValueChange={setSelectedSubaccount}
@@ -390,7 +390,7 @@ export default function BulkProductForm({ agencyId, subaccountId }: BulkProductF
                                 disabled={!!subaccountId} // Deshabilitar si ya viene un subaccountId
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Seleccionar subcuenta" />
+                                    <SelectValue placeholder="Seleccionar tienda" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {subaccounts.length > 0 ? (
@@ -401,14 +401,14 @@ export default function BulkProductForm({ agencyId, subaccountId }: BulkProductF
                                         ))
                                     ) : (
                                         <SelectItem value="no-subaccounts" disabled>
-                                            No hay subcuentas disponibles. Por favor, crea una subcuenta primero.
+                                            No hay tiendas disponibles. Por favor, crea una tienda primero.
                                         </SelectItem>
                                     )}
                                 </SelectContent>
                             </Select>
                             {subaccounts.length === 0 && (
                                 <p className="text-sm text-destructive mt-1">
-                                    No hay subcuentas disponibles. Debes crear una subcuenta antes de continuar.
+                                    No hay tiendas disponibles. Debes crear una tienda antes de continuar.
                                 </p>
                             )}
                         </div>
