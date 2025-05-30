@@ -1237,9 +1237,15 @@ export const getMovementById = async (movementId: string) => {
 
 // TODO: Crea descuento
 export const createDiscount = async (data: any) => {
+    console.log('Datos recibidos en createDiscount:', data);
+
     // Validar datos requeridos
     if (!data.discount || !data.startDate || !data.endDate || !data.agencyId) {
         throw new Error("Faltan datos requeridos para el descuento");
+    }
+
+    if (!data.applyToAll && (!data.itemIds || data.itemIds.length === 0)) {
+        throw new Error("No se han proporcionado IDs de productos para actualizar");
     }
 
     // Validar que el descuento sea un valor válido
@@ -1255,67 +1261,141 @@ export const createDiscount = async (data: any) => {
         throw new Error("La fecha de fin debe ser posterior a la fecha de inicio");
     }
 
-    // Aplicar descuento según el tipo
-    if (data.discountType === "product") {
-        // Si es para todos los productos
-        if (data.applyToAll) {
-            const products = await db.product.findMany({
-                where: { agencyId: data.agencyId }
-            });
+    try {
+        // Aplicar descuento según el tipo
+        if (data.discountType === "product") {
+            // Si es para todos los productos
+            if (data.applyToAll) {
+                const products = await db.product.findMany({
+                    where: { agencyId: data.agencyId }
+                });
 
-            for (const product of products) {
-                await db.product.update({
-                    where: { id: product.id },
-                    data: {
-                        discount: data.discount,
-                        discountStartDate: startDate,
-                        discountEndDate: endDate,
-                        discountMinimumPrice: data.minimumPrice || null,
+                let updatedCount = 0;
+                const updatePromises = products.map(async (product) => {
+                    try {
+                        if (!product.id) {
+                            console.error('Producto sin ID:', product);
+                            return;
+                        }
+
+                        await db.product.update({
+                            where: { id: product.id },
+                            data: {
+                                discount: Number(data.discount),
+                                discountStartDate: startDate,
+                                discountEndDate: endDate,
+                                discountMinimumPrice: data.minimumPrice ? Number(data.minimumPrice) : null,
+                            }
+                        });
+                        updatedCount++;
+                    } catch (error) {
+                        console.error(`Error actualizando producto ${product.id}:`, error);
                     }
                 });
+
+                await Promise.all(updatePromises);
+
+                // Registrar actividad
+                await saveActivityLogsNotification({
+                    agencyId: data.agencyId,
+                    description: `Descuento global aplicado: ${data.discount}% a todos los productos`,
+                    subaccountId: data.subaccountId,
+                });
+
+                return { success: true, affectedItems: updatedCount };
             }
-
-            // Registrar actividad
-            await saveActivityLogsNotification({
-                agencyId: data.agencyId,
-                description: `Descuento global aplicado: ${data.discount}% a todos los productos`,
-                subaccountId: data.subaccountId,
-            });
-
-            return { success: true, affectedItems: products.length };
-        }
-        // Si es para productos específicos
-        else if (data.itemIds && data.itemIds.length > 0) {
-            for (const productId of data.itemIds) {
-                await db.product.update({
-                    where: { id: productId },
-                    data: {
-                        discount: data.discount,
-                        discountStartDate: startDate,
-                        discountEndDate: endDate,
-                        discountMinimumPrice: data.minimumPrice || null,
+            // Si es para productos específicos
+            else if (data.itemIds && data.itemIds.length > 0) {
+                console.log('IDs de productos recibidos:', data.itemIds);
+                let updatedCount = 0;
+                const updatePromises = data.itemIds.map(async (productId) => {
+                    try {
+                        if (!productId) {
+                            console.error('ID de producto inválido:', productId);
+                            return;
+                        }
+                        console.log('Actualizando producto con ID:', productId);
+                        await db.product.update({
+                            where: { id: productId },
+                            data: {
+                                discount: Number(data.discount),
+                                discountStartDate: startDate,
+                                discountEndDate: endDate,
+                                discountMinimumPrice: data.minimumPrice ? Number(data.minimumPrice) : null,
+                            }
+                        });
+                        updatedCount++;
+                    } catch (error) {
+                        console.error(`Error actualizando producto ${productId}:`, error);
                     }
                 });
+
+                await Promise.all(updatePromises);
+
+                // Registrar actividad
+                await saveActivityLogsNotification({
+                    agencyId: data.agencyId,
+                    description: `Descuento aplicado: ${data.discount}% a ${updatedCount} productos`,
+                    subaccountId: data.subaccountId,
+                });
+
+                return { success: true, affectedItems: updatedCount };
+            }
+        }
+        // Si es para categorías
+        else if (data.discountType === "category") {
+            // Implementación para descuentos por categoría
+            // Esta funcionalidad requeriría actualizar todos los productos de las categorías seleccionadas
+            if (data.itemIds && data.itemIds.length > 0) {
+                let updatedCount = 0;
+                
+                // Obtener productos por categorías seleccionadas
+                const products = await db.product.findMany({
+                    where: {
+                        categoryId: {
+                            in: data.itemIds
+                        },
+                        agencyId: data.agencyId
+                    }
+                });
+
+                // Actualizar cada producto en las categorías seleccionadas
+                for (const product of products) {
+                    try {
+                        await db.product.update({
+                            where: {
+                                id: product.id
+                            },
+                            data: {
+                                discount: parseFloat(data.discount),
+                                discountStartDate: startDate,
+                                discountEndDate: endDate,
+                                discountMinimumPrice: data.minimumPrice ? parseFloat(data.minimumPrice) : null,
+                            }
+                        });
+                        updatedCount++;
+                    } catch (updateError) {
+                        console.error(`Error al actualizar producto ${product.id}:`, updateError);
+                    }
+                }
+
+                await saveActivityLogsNotification({
+                    agencyId: data.agencyId,
+                    description: `Descuento por categoría aplicado: ${data.discount}% a ${updatedCount} productos`,
+                    subaccountId: data.subaccountId,
+                });
+
+                return { success: true, affectedItems: updatedCount };
             }
 
-            // Registrar actividad
-            await saveActivityLogsNotification({
-                agencyId: data.agencyId,
-                description: `Descuento aplicado: ${data.discount}% a ${data.itemIds.length} productos`,
-                subaccountId: data.subaccountId,
-            });
-
-            return { success: true, affectedItems: data.itemIds.length };
+            return { success: false, message: "No se especificaron categorías para actualizar" };
         }
-    }
-    // Si es para categorías
-    else if (data.discountType === "category") {
-        // Implementación para descuentos por categoría
-        // Esta funcionalidad requeriría actualizar todos los productos de las categorías seleccionadas
-        return { success: true, message: "Funcionalidad de descuento por categoría no implementada completamente" };
-    }
 
-    return { success: false, message: "Tipo de descuento no válido" };
+        return { success: false, message: "Tipo de descuento no válido" };
+    } catch (error) {
+        console.error("Error al aplicar el descuento:", error);
+        throw new Error(`Error al aplicar el descuento: ${error.message || 'Error desconocido'}`);
+    }
 };
 
 // TODO: Elimina descuento

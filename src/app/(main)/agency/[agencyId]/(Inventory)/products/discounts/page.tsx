@@ -24,33 +24,25 @@ const DiscountsPage = async ({ params }: { params: { agencyId: string } }) => {
     let activeDiscounts = []
 
     try {
-        // Importar el serializador para convertir objetos MongoDB a objetos planos
-        const { serializeMongoArray } = await import("@/lib/serializers")
-
-        // Obtener productos, categorías y descuentos usando las nuevas funciones del servidor
-        const rawProducts = await getProducts(agencyId)
-        const rawCategories = await getCategories(agencyId)
-        const rawDiscounts = await getActiveDiscounts(agencyId)
-
-        // Serializar para eliminar métodos y propiedades no serializables
-        products = serializeMongoArray(rawProducts)
-        categories = serializeMongoArray(rawCategories)
-        activeDiscounts = serializeMongoArray(rawDiscounts)
+        // Obtener productos, categorías y descuentos directamente
+        products = await getProducts(agencyId)
+        categories = await getCategories(agencyId)
+        activeDiscounts = await getActiveDiscounts(agencyId)
     } catch (error) {
         console.error("Error al cargar datos:", error)
     }
 
     // Calcular estadísticas
     const productsWithDiscount = products.filter(
-        (product: any) => product.discount > 0 && product.discountEndDate && new Date(product.discountEndDate) > new Date(),
+        product => product.discount > 0 && product.discountEndDate && new Date(product.discountEndDate) > new Date(),
     ).length
 
     const categoriesWithDiscount = categories.filter(
-        (category: any) =>
+        category =>
             category.discount > 0 && category.discountEndDate && new Date(category.discountEndDate) > new Date(),
     ).length
 
-    const expiringSoonCount = activeDiscounts.filter((discount: any) => {
+    const expiringSoonCount = activeDiscounts.filter(discount => {
         if (!discount.discountEndDate) return false
         const endDate = new Date(discount.discountEndDate)
         const today = new Date()

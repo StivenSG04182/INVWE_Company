@@ -685,10 +685,10 @@ model Schedule {
   agencyId  String
   startTime String
   endTime   String
-  breakTime String   // Nuevo campo
-  isOvertime Boolean @default(false) // Nuevo campo
-  hourlyRate Float   // Nuevo campo
-  days      String   // JSON string array
+  breakTime String   
+  isOvertime Boolean @default(false)
+  hourlyRate Float   
+  days      String   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -697,6 +697,8 @@ model Schedule {
   @@index([userId])
   @@index([agencyId])
 }
+
+
 model Holiday {
   id          String    @id @default(uuid())
   date        DateTime

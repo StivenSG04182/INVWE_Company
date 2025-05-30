@@ -47,7 +47,7 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
     const router = useRouter()
     const searchParams = useSearchParams()
     const { toast } = useToast()
-    
+
     // Función para obtener el nombre de la categoría por su ID
     const getCategoryName = (categoryId: string) => {
         // Convertir a string para asegurar una comparación consistente
@@ -120,7 +120,7 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
         try {
             // Usar la función del servidor en lugar del endpoint API
             await duplicateProduct(agencyId, productId)
-            
+
             toast({
                 title: "Producto duplicado",
                 description: "El producto se ha duplicado correctamente.",
@@ -145,7 +145,7 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
         try {
             // Usar la función del servidor en lugar del endpoint API
             await deleteProduct(agencyId, productId)
-            
+
             toast({
                 title: "Producto eliminado",
                 description: "El producto se ha eliminado correctamente.",
@@ -461,7 +461,7 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                             </Badge>
                                         </div>
                                     )}
-                                    
+
                                     {product.expirationDate && new Date(product.expirationDate) < new Date(new Date().setMonth(new Date().getMonth() + 3)) && (
                                         <div className="absolute bottom-2 right-2">
                                             <Badge variant="destructive" className="px-2 py-1">
@@ -533,7 +533,7 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                             </Badge>
                                         )}
                                     </div>
-                                    
+
                                     {product.tags && product.tags.length > 0 && (
                                         <div className="flex flex-wrap gap-1 mb-3">
                                             {product.tags.slice(0, 3).map((tag: string, index: number) => (
@@ -544,7 +544,7 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                             )}
                                         </div>
                                     )}
-                                    
+
                                     {(product.batchNumber || product.locationId) && (
                                         <div className="text-xs text-muted-foreground mb-3">
                                             {product.batchNumber && <span>Lote: {product.batchNumber}</span>}
@@ -555,17 +555,17 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
 
                                     <div className="flex justify-between gap-2">
                                         <Button variant="outline" size="sm" className="flex-1" asChild>
-                                            <Link href={`/agency/${agencyId}/products/${product._id}`}>
+                                            <Link href={`/agency/${agencyId}/products/${product.id}`}>
                                                 <Eye className="h-3.5 w-3.5 mr-1" />
                                                 Ver
                                             </Link>
                                         </Button>
                                         <Button variant="outline" size="sm" className="flex-1" asChild>
-                                            <Link href={`/agency/${agencyId}/products/${product._id}/edit`}>
+                                            <Link href={`/agency/${agencyId}/products/${product.id}/edit`}>
                                                 <Edit className="h-3.5 w-3.5 mr-1" />
                                                 Editar
                                             </Link>
-                                        </Button> 
+                                        </Button>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="outline" size="icon" className="h-8 w-8">
