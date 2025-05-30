@@ -64,10 +64,12 @@ export function AssignScheduleDialog({
         { value: "domingo", label: "Domingo" },
     ]
 
-    // Calcular horas y costo estimado
-    const totalHours = calculateHoursBetween(startTime, endTime, breakTime)
-    const estimatedCost = totalHours * Number.parseFloat(hourlyRate || "0")
-    const isExcessiveHours = totalHours > LEGAL_CONSTANTS.MAX_DAILY_HOURS
+    // Calcular horas diarias y totales
+    const dailyHours = calculateHoursBetween(startTime, endTime, breakTime)
+    const totalWeeklyHours = dailyHours * selectedDays.length
+    const estimatedDailyCost = dailyHours * Number.parseFloat(hourlyRate || "0")
+    const estimatedTotalCost = estimatedDailyCost * selectedDays.length
+    const isExcessiveHours = dailyHours > LEGAL_CONSTANTS.MAX_DAILY_HOURS
 
     // Inicializar días seleccionados basado en el día seleccionado
     useEffect(() => {
@@ -93,20 +95,21 @@ export function AssignScheduleDialog({
             errors.push("La hora de entrada debe ser anterior a la hora de salida")
         }
 
-        if (totalHours <= 0) {
-            errors.push("El turno debe tener una duración válida")
+        // Validación modificada para el tiempo de descanso
+        if (dailyHours === -1) {
+            errors.push("El tiempo de descanso debe estar dentro del horario de trabajo")
         }
 
         if (isExcessiveHours && !isOvertime) {
             errors.push("El turno excede 8 horas diarias. Active 'Autorizar horas extras' para continuar")
         }
 
-        if (totalHours > 12) {
+        if (dailyHours > 12) {
             errors.push("El turno no puede exceder 12 horas por razones de seguridad")
         }
 
         setValidationErrors(errors)
-    }, [employeeId, selectedDays, startTime, endTime, totalHours, isExcessiveHours, isOvertime])
+    }, [employeeId, selectedDays, startTime, endTime, dailyHours, isExcessiveHours, isOvertime])
 
     // Resetear el formulario
     const resetForm = () => {
@@ -273,11 +276,13 @@ export function AssignScheduleDialog({
                         <Label htmlFor="hourlyRate">Valor por hora (COP) *</Label>
                         <Input
                             id="hourlyRate"
-                            type="number"
-                            min="0"
-                            step="100"
-                            value={hourlyRate}
-                            onChange={(e) => setHourlyRate(e.target.value)}
+                            type="text" // Cambiado de "number" a "text"
+                            value={Number(hourlyRate).toLocaleString('es-CO')}
+                            onChange={(e) => {
+                                // Eliminar cualquier carácter que no sea número
+                                const value = e.target.value.replace(/[^\d]/g, '')
+                                setHourlyRate(value)
+                            }}
                             required
                         />
                         <p className="text-xs text-muted-foreground">
@@ -294,18 +299,32 @@ export function AssignScheduleDialog({
                         </h4>
                         <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                                <span className="text-muted-foreground">Duración total:</span>
-                                <span className="ml-2 font-medium">{totalHours.toFixed(1)} horas</span>
+                                <span className="text-muted-foreground">Horas por día:</span>
+                                <span className="ml-2 font-medium">{dailyHours.toFixed(1)} horas</span>
                             </div>
                             <div>
-                                <span className="text-muted-foreground">Costo estimado:</span>
-                                <span className="ml-2 font-medium">${estimatedCost.toLocaleString("es-CO")}</span>
+                                <span className="text-muted-foreground">Costo diario:</span>
+                                <span className="ml-2 font-medium">${estimatedDailyCost.toLocaleString("es-CO")}</span>
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground">Total días seleccionados:</span>
+                                <span className="ml-2 font-medium">{selectedDays.length} días</span>
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground">Total horas semanales:</span>
+                                <span className="ml-2 font-medium">{totalWeeklyHours.toFixed(1)} horas</span>
+                            </div>
+                            <div className="col-span-2">
+                                <span className="text-muted-foreground">Costo total estimado:</span>
+                                <span className="ml-2 font-medium text-lg text-primary">
+                                    ${estimatedTotalCost.toLocaleString("es-CO")}
+                                </span>
                             </div>
                             {isExcessiveHours && (
                                 <div className="col-span-2">
                                     <span className="text-amber-600">
                                         ⚠️ Excede {LEGAL_CONSTANTS.MAX_DAILY_HOURS} horas diarias (+
-                                        {(totalHours - LEGAL_CONSTANTS.MAX_DAILY_HOURS).toFixed(1)} hrs extras)
+                                        {(dailyHours - LEGAL_CONSTANTS.MAX_DAILY_HOURS).toFixed(1)} hrs extras)
                                     </span>
                                 </div>
                             )}

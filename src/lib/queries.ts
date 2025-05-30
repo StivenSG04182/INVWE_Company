@@ -242,10 +242,11 @@ export const verifyAndAcceptInvitation = async () => {
       address: null,
       phone: null,
       position: null,
-      department: null,
       salary: null,
       hireDate: null,
       socialSecurityAffiliation: null,
+      workSchedule: null,
+      socialSecurityNumber: null
     });
     
     await saveActivityLogsNotification({
@@ -1418,6 +1419,9 @@ export const createSchedule = async (schedule: {
   agencyId: string
   startTime: string
   endTime: string
+  breakTime: string
+  isOvertime: boolean
+  hourlyRate: number
   days: string // JSON string array
 }) => {
   const response = await db.schedule.create({
@@ -1470,6 +1474,9 @@ export const updateSchedule = async (
   scheduleData: Partial<{
     startTime: string
     endTime: string
+    breakTime: string
+    isOvertime: boolean
+    hourlyRate: number
     days: string
   }>
 ) => {

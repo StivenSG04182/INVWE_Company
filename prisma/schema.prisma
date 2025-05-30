@@ -680,21 +680,23 @@ model SavedSale {
 
 
 model Schedule {
-  id          String    @id @default(uuid())
-  userId      String
-  agencyId    String
-  startTime   String
-  endTime     String
-  days        String    // Almacenado como JSON string ["Lunes", "Martes", ...]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  agency      Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  userId    String
+  agencyId  String
+  startTime String
+  endTime   String
+  breakTime String   // Nuevo campo
+  isOvertime Boolean @default(false) // Nuevo campo
+  hourlyRate Float   // Nuevo campo
+  days      String   // JSON string array
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([agencyId])
 }
-
 model Holiday {
   id          String    @id @default(uuid())
   date        DateTime

@@ -22,21 +22,29 @@ export const LEGAL_CONSTANTS = {
 }
 
 // Función para calcular horas entre dos tiempos
-export function calculateHoursBetween(startTime: string, endTime: string, breakTime = "01:00"): number {
-    const [startHour, startMinute] = startTime.split(":").map(Number)
-    const [endHour, endMinute] = endTime.split(":").map(Number)
-    const [breakHour, breakMinute] = breakTime.split(":").map(Number)
+export function calculateHoursBetween(startTime: string, endTime: string, breakTime: string): number {
+    const start = new Date(`2000-01-01T${startTime}:00`);
+    const end = new Date(`2000-01-01T${endTime}:00`);
+    const break_ = new Date(`2000-01-01T${breakTime}:00`);
+    
+    // Convertir las horas a minutos para facilitar la comparación
+    const startMinutes = start.getHours() * 60 + start.getMinutes();
+    const endMinutes = end.getHours() * 60 + end.getMinutes();
+    const breakMinutes = break_.getHours() * 60 + break_.getMinutes();
+    
+    // Si el tiempo de descanso está fuera del rango de trabajo, retornar -1
+    if (breakMinutes < startMinutes || breakMinutes > endMinutes) {
+        return -1;
+    }
 
-    const startMinutes = startHour * 60 + startMinute
-    const endMinutes = endHour * 60 + endMinute
-    const breakMinutes = breakHour * 60 + breakMinute
-
-    let totalMinutes = endMinutes - startMinutes
-    if (totalMinutes < 0) totalMinutes += 24 * 60 // Cruce de medianoche
-
-    totalMinutes -= breakMinutes // Restar tiempo de descanso
-
-    return Math.max(0, totalMinutes / 60)
+    // Calcular la diferencia en horas
+    let diffHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    
+    // Restar el tiempo de descanso
+    const breakHours = break_.getHours() + break_.getMinutes() / 60;
+    diffHours -= breakHours;
+    
+    return diffHours;
 }
 
 // Función para verificar si una hora está en horario nocturno
