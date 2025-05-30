@@ -1,86 +1,259 @@
-import React from 'react';
-import { getAuthUserDetails } from '@/lib/queries';
-import { redirect } from 'next/navigation';
+import BlurPage from '@/components/global/blur-page'
+import React from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Filter, Package, PlusCircle, Search, Truck } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 
-const ShippingPage = async ({ params }: { params: { agencyId: string } }) => {
-  const user = await getAuthUserDetails();
-  if (!user) return redirect('/sign-in');
+type Props = {
+  params: { subaccountId: string }
+}
 
-  const agencyId = params.agencyId;
-  if (!user.Agency) {
-    return redirect('/agency');
+const ShippingPage = async ({ params }: Props) => {
+  // En un sistema real, aquí se obtendrían los envíos de la base de datos
+  // Por ahora, usaremos datos de ejemplo
+  const shipments = [
+    {
+      id: '1',
+      trackingNumber: 'ENV-2023-001',
+      customer: 'Juan Pérez',
+      destination: 'Calle 45 #23-67, Bogotá',
+      status: 'Entregado',
+      carrier: 'Servientrega',
+      shippingDate: '2023-10-10',
+      deliveryDate: '2023-10-12',
+      products: 3,
+      total: 250000,
+    },
+    {
+      id: '2',
+      trackingNumber: 'ENV-2023-002',
+      customer: 'María Rodríguez',
+      destination: 'Carrera 15 #78-45, Medellín',
+      status: 'En tránsito',
+      carrier: 'Coordinadora',
+      shippingDate: '2023-10-12',
+      deliveryDate: null,
+      products: 2,
+      total: 180000,
+    },
+    {
+      id: '3',
+      trackingNumber: 'ENV-2023-003',
+      customer: 'Carlos Gómez',
+      destination: 'Av. Industrial #34-12, Cali',
+      status: 'Preparando',
+      carrier: 'Interrapidisimo',
+      shippingDate: null,
+      deliveryDate: null,
+      products: 5,
+      total: 420000,
+    },
+    {
+      id: '4',
+      trackingNumber: 'ENV-2023-004',
+      customer: 'Laura Sánchez',
+      destination: 'Calle 10 #5-23, Barranquilla',
+      status: 'Cancelado',
+      carrier: 'Servientrega',
+      shippingDate: null,
+      deliveryDate: null,
+      products: 1,
+      total: 75000,
+    },
+  ]
+
+  // Calcular estadísticas
+  const totalShipments = shipments.length
+  const delivered = shipments.filter(s => s.status === 'Entregado').length
+  const inTransit = shipments.filter(s => s.status === 'En tránsito').length
+  const preparing = shipments.filter(s => s.status === 'Preparando').length
+  const cancelled = shipments.filter(s => s.status === 'Cancelado').length
+
+  // Función para determinar el color del badge según el estado
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'Entregado':
+        return 'success'
+      case 'En tránsito':
+        return 'warning'
+      case 'Preparando':
+        return 'secondary'
+      case 'Cancelado':
+        return 'destructive'
+      default:
+        return 'default'
+    }
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Gestión de Envíos</h1>
-        <div className="flex gap-2">
-          <button className="bg-primary text-white px-4 py-2 rounded-md">
+    <BlurPage>
+      <div className="flex flex-col gap-4 p-4">
+        <div className="flex justify-between items-center">
+          <h1 className="text-4xl font-bold">Gestión de Envíos</h1>
+          <Button>
+            <PlusCircle className="mr-2 h-4 w-4" />
             Nuevo Envío
-          </button>
-          <button className="bg-secondary text-white px-4 py-2 rounded-md">
-            Configurar Transportistas
-          </button>
+          </Button>
         </div>
-      </div>
+        <p className="text-muted-foreground">
+          Controla y da seguimiento a todos los envíos de productos a tus clientes
+        </p>
 
-      <div className="bg-card rounded-lg p-4 shadow-sm">
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold mb-2">Seguimiento de Envíos</h2>
-          <p className="text-muted-foreground">
-            Gestione y monitoree todos los envíos de productos a sus clientes desde este panel.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          <div className="bg-background p-4 rounded-md border">
-            <h3 className="font-medium">Envíos Pendientes</h3>
-            <p className="text-2xl font-bold">0</p>
+        <div className="flex items-center gap-2 mt-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por número de seguimiento o cliente..."
+              className="pl-8"
+            />
           </div>
-          <div className="bg-background p-4 rounded-md border">
-            <h3 className="font-medium">En Tránsito</h3>
-            <p className="text-2xl font-bold">0</p>
-          </div>
-          <div className="bg-background p-4 rounded-md border">
-            <h3 className="font-medium">Entregados (Este Mes)</h3>
-            <p className="text-2xl font-bold">0</p>
-          </div>
+          <Button variant="outline">
+            <Filter className="mr-2 h-4 w-4" />
+            Filtrar
+          </Button>
         </div>
 
-        <div className="mt-8 border rounded-md">
-          <div className="p-4 border-b bg-muted/40">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  placeholder="Buscar envío..." 
-                  className="px-3 py-2 border rounded-md w-64"
-                />
-                <select className="px-3 py-2 border rounded-md">
-                  <option value="">Todos los estados</option>
-                  <option value="pendiente">Pendiente</option>
-                  <option value="preparando">Preparando</option>
-                  <option value="en_transito">En Tránsito</option>
-                  <option value="entregado">Entregado</option>
-                  <option value="cancelado">Cancelado</option>
-                </select>
-              </div>
-              <div>
-                <input 
-                  type="date" 
-                  className="px-3 py-2 border rounded-md"
-                />
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Total Envíos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalShipments}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Entregados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{delivered}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">En Tránsito</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{inTransit}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Preparando</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{preparing}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Cancelados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{cancelled}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle>Seguimiento de Envíos</CardTitle>
+            <CardDescription>
+              Estado actual de todos los envíos registrados
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4">Tracking</th>
+                    <th className="text-left py-3 px-4">Cliente</th>
+                    <th className="text-left py-3 px-4">Destino</th>
+                    <th className="text-left py-3 px-4">Estado</th>
+                    <th className="text-left py-3 px-4">Transportista</th>
+                    <th className="text-left py-3 px-4">Fecha Envío</th>
+                    <th className="text-left py-3 px-4">Fecha Entrega</th>
+                    <th className="text-left py-3 px-4">Productos</th>
+                    <th className="text-left py-3 px-4">Total</th>
+                    <th className="text-left py-3 px-4">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shipments.map((shipment) => (
+                    <tr key={shipment.id} className="border-b hover:bg-muted/50">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1">
+                          <Package className="h-3 w-3 text-muted-foreground" />
+                          {shipment.trackingNumber}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">{shipment.customer}</td>
+                      <td className="py-3 px-4">
+                        <div className="max-w-[200px] truncate" title={shipment.destination}>
+                          {shipment.destination}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge variant={getStatusBadge(shipment.status) as any}>
+                          {shipment.status}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1">
+                          <Truck className="h-3 w-3 text-muted-foreground" />
+                          {shipment.carrier}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        {shipment.shippingDate || (
+                          <span className="text-muted-foreground">Pendiente</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        {shipment.deliveryDate || (
+                          <span className="text-muted-foreground">Pendiente</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">{shipment.products}</td>
+                      <td className="py-3 px-4">${(shipment.total).toLocaleString()}</td>
+                      <td className="py-3 px-4">
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm">Detalles</Button>
+                          <Button variant="outline" size="sm">Actualizar</Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <p className="text-center text-muted-foreground">
-              No hay envíos registrados. Cree un nuevo envío para comenzar a gestionar sus entregas.
-            </p>
-          </div>
+          </CardContent>
+        </Card>
+
+        <div className="mt-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Mapa de Envíos</CardTitle>
+              <CardDescription>Visualización geográfica de envíos activos</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] flex items-center justify-center border rounded-md">
+                <p className="text-muted-foreground">El mapa de seguimiento estará disponible próximamente</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
-    </div>
-  );
-};
+    </BlurPage>
+  )
+}
 
-export default ShippingPage;
+export default ShippingPage

@@ -527,15 +527,13 @@ export const upsertSubAccount = async (subAccount: SubAccount) => {
 
             // 3. Tienda & E-Commerce
             /* { name: "Tienda & E-Commerce", icon: "category", link: "#" },
-            { name: "Tiendas", icon: "category", link: `/subaccount/${subAccount.id}/(Ecommerce)/stores` },
-            { name: "E-Commerce", icon: "pipelines", link: `/subaccount/${subAccount.id}/(Ecommerce)/funnels` },
             { name: "Envíos", icon: "send", link: `/subaccount/${subAccount.id}/(Ecommerce)/shipping` }, */
 
             // 4. POS (Punto de Venta)
             { name: "POS (Punto de Venta)", icon: "shoppingCart", link: "#" },
             { name: "Terminal", icon: "payment", link: `/subaccount/${subAccount.id}/(POS)/terminal` },
             { name: "Ventas POS", icon: "receipt", link: `/subaccount/${subAccount.id}/(POS)/sales-pos` },
-           /*  { name: "Cierre de Caja", icon: "chart", link: `/agency/${agency.id}/(POS)/cash-closing` },   */
+           /*  { name: "Cierre de Caja", icon: "chart", link: `/subaccount/${subAccount.id}/(POS)/cash-closing` },   */
 
             // 5. Ventas & Facturación
             { name: "Ventas & Facturación", icon: "payment", link: `/subaccount/${subAccount.id}/(Billing)/finance` },

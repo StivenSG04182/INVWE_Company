@@ -5,15 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { connectToDatabase } from '@/lib/mongodb'
-import { ObjectId } from 'mongodb'
 
 type Props = {
   params: { subaccountId: string }
 }
 
 const SubAccountPageId = async ({ params }: Props) => {
-  // Obtener datos de la tienda
+  // Obtener datos de la subcuenta
   const subaccount = await db.subAccount.findUnique({
     where: {
       id: params.subaccountId,
@@ -28,85 +26,18 @@ const SubAccountPageId = async ({ params }: Props) => {
       <BlurPage>
         <div className="flex flex-col gap-4 p-4">
           <h1 className="text-4xl font-bold">Dashboard de Tienda</h1>
-          <p className="text-muted-foreground">No se encontró la tienda</p>
+          <p className="text-muted-foreground">No se encontró la subcuenta</p>
         </div>
       </BlurPage>
     )
   }
 
-  // Conectar a MongoDB
-  const { db: mongodb } = await connectToDatabase()
-
-  // Obtener productos
-  const products = await mongodb
-    .collection('products')
-    .find({ subaccountId: params.subaccountId })
-    .toArray()
-
-  // Obtener stocks
-  const stocks = await mongodb
-    .collection('stocks')
-    .find({ subaccountId: params.subaccountId })
-    .toArray()
-
-  // Obtener áreas
-  const areas = await mongodb
-    .collection('areas')
-    .find({ subaccountId: params.subaccountId })
-    .toArray()
-
-  // Obtener movimientos recientes (últimos 30 días)
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-
-  const recentMovements = await mongodb
-    .collection('movements')
-    .find({
-      subaccountId: params.subaccountId,
-      createdAt: { $gte: thirtyDaysAgo }
-    })
-    .sort({ createdAt: -1 })
-    .limit(5)
-    .toArray()
-
-  // Enriquecer los movimientos con información de productos y áreas
-  const enrichedMovements = await Promise.all(
-    recentMovements.map(async (movement) => {
-      const product = await mongodb
-        .collection('products')
-        .findOne({ _id: new ObjectId(movement.productId) })
-
-      const area = await mongodb
-        .collection('areas')
-        .findOne({ _id: new ObjectId(movement.areaId) })
-
-      return {
-        ...movement,
-        Product: product || { name: 'Producto desconocido' },
-        Area: area || { name: 'Área desconocida' }
-      }
-    })
-  )
-
-  // Calcular estadísticas
-  const totalProducts = products.length
-  const activeProducts = products.filter(product => product.active !== false).length
-  
-  // Calcular productos con stock bajo
-  const lowStockProducts = products.filter(product => {
-    const productStocks = stocks.filter(stock => stock.productId === product._id.toString())
-    const totalStock = productStocks.reduce((sum, stock) => sum + stock.quantity, 0)
-    return product.minStock && totalStock <= product.minStock
-  }).length
-
-  // Calcular valor total del inventario
-  const inventoryValue = stocks.reduce((total, stock) => {
-    const product = products.find(p => p._id.toString() === stock.productId)
-    if (product) {
-      return total + (product.price * stock.quantity)
-    }
-    return total
-  }, 0)
+  // TODO: Implementar lógica para obtener estos datos desde Prisma
+  const totalProducts = 0
+  const activeProducts = 0
+  const lowStockProducts = 0
+  const inventoryValue = 0
+  const enrichedMovements = []
 
   return (
     <BlurPage>
@@ -155,8 +86,6 @@ const SubAccountPageId = async ({ params }: Props) => {
               <Progress
                 className="mt-2"
                 value={totalProducts > 0 ? (lowStockProducts / totalProducts) * 100 : 0}
-                // Rojo si hay muchos productos con stock bajo
-                // eslint-disable-next-line
                 style={{
                   '--progress-background': lowStockProducts > 0 ? 'hsl(var(--destructive))' : '',
                 } as any}
@@ -217,7 +146,7 @@ const SubAccountPageId = async ({ params }: Props) => {
           <CardContent>
             {enrichedMovements.length > 0 ? (
               <div className="space-y-4">
-                {enrichedMovements.map((movement) => (
+                {enrichedMovements.map((movement: any) => (
                   <div key={movement._id.toString()} className="flex justify-between items-center border-b pb-2">
                     <div>
                       <p className="font-medium">{movement.Product.name}</p>
