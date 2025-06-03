@@ -35,20 +35,19 @@ export const upsertPaymentGateway = async (
 }
 
 // Obtener conexión de pasarela
-export const getPaymentGateway = async (agencyId: string, gatewayId: string) => {
+export async function getPaymentGateway(agencyId: string, gatewayId: string) {
     try {
-        const response = await db.paymentGatewayConnection.findUnique({
+        return await db.paymentGatewayConnection.findUnique({
             where: {
                 agencyId_gatewayId: {
-                    agencyId,
-                    gatewayId
+                    gatewayId,
+                    agencyId
                 }
             }
-        });
-        return response;
+        })
     } catch (error) {
-        console.error('Error en getPaymentGateway:', error);
-        return null;
+        console.error('Error en getPaymentGateway:', error)
+        throw error
     }
 }
 
@@ -143,4 +142,48 @@ export const verifyPaymentGatewayStatus = async (agencyId: string, gatewayId: st
             needsReauth: false
         };
     }
+}
+
+// Obtener conexión de pasarela específica (ejemplo con PayPal)
+export const getPaypalConnection = async (agencyId: string) => {
+    try {
+        const response = await db.paymentGatewayConnection.findUnique({
+            where: {
+                agencyId_gatewayId: {
+                    gatewayId: "paypal",
+                    agencyId: agencyId // Este valor falta
+                }
+            }
+        });
+        return response;
+    } catch (error) {
+        console.error('Error en getPaypalConnection:', error);
+        return null;
+    }
+}
+
+// Verificar conexión con pasarela de pagos
+export const checkPaymentGatewayConnection = async (agencyId: string) => {
+    if (!agencyId) {
+        console.error('agencyId es requerido para getPaymentGateway');
+        throw new Error('agencyId es requerido');
+    }
+    
+    const paymentGateway = await getPaymentGateway(agencyId, 'paypal');
+
+    if (!paymentGateway) {
+        return {
+            isConnected: false,
+            status: 'NOT_CONNECTED',
+            needsReauth: false
+        };
+    }
+
+    const needsReauth = paymentGateway.expiresAt ? new Date() > paymentGateway.expiresAt : false;
+
+    return {
+        isConnected: paymentGateway.status === 'ACTIVE' && !needsReauth,
+        status: paymentGateway.status,
+        needsReauth
+    };
 }

@@ -17,7 +17,7 @@ import FormPlaceholder from "./form-placeholder"
 import CardPlaceholder from "./card-placeholder"
 import AccordionPlaceholder from "./accordion-placeholder"
 import TabsPlaceholder from "./tabs-placeholder"
-/* import CarouselPlaceholder from "./carousel-placeholder" */
+
 import NavbarPlaceholder from "./navbar-placeholder"
 import FooterPlaceholder from "./footer-placeholder"
 import HeroPlaceholder from "./hero-placeholder"
@@ -101,12 +101,6 @@ const ComponentsTab = (props: Props) => {
                 id: 'tabs',
                 group: 'elements',
             },
-            /* {
-                Component: <CarouselPlaceholder />,
-                label: 'Carousel',
-                id: 'carousel',
-                group: 'elements',
-            }, */
             {
                 Component: <NavbarPlaceholder />,
                 label: 'Navbar',
@@ -145,6 +139,10 @@ const ComponentsTab = (props: Props) => {
             },
         ]
 
+    const handleDragStart = (e: React.DragEvent, id: EditorBtns) => {
+        e.dataTransfer.setData('componentType', id)
+    }
+
     return (
         <Accordion
             type="multiple"
@@ -162,7 +160,9 @@ const ComponentsTab = (props: Props) => {
                         .map((element) => (
                             <div
                                 key={element.id}
-                                className="flex-col items-center justify-center flex"
+                                className="flex-col items-center justify-center flex cursor-move"
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, element.id)}
                             >
                                 {element.Component}
                                 <span className="text-muted-foreground">{element.label}</span>

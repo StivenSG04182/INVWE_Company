@@ -1324,36 +1324,37 @@ export const updateFunnelProducts = async (
 
 // TODO: Creación y actualización de página de embudo
 export const upsertFunnelPage = async (
-  subaccountId: string,
+  subaccountId: string,  // Este es realmente el agencyId
   funnelPage: UpsertFunnelPage,
   funnelId: string
 ) => {
   if (!subaccountId || !funnelId) return
   const response = await db.funnelPage.upsert({
-  where: { id: funnelPage.id || '' },
-  update: { ...funnelPage },
-  create: {
-    ...funnelPage,
-    name: funnelPage.name || 'Nueva Página',
-    content: funnelPage.content
-      ? funnelPage.content
-      : JSON.stringify([
-          {
-            content: [],
-            id: '__body',
-            name: 'Body',
-            styles: { backgroundColor: 'white' },
-            type: '__body',
-          },
-        ]),
-    funnelId,
-  },
-})
+    where: { id: funnelPage.id || '' },
+    update: { ...funnelPage },
+    create: {
+      ...funnelPage,
+      name: funnelPage.name || 'Nueva Página',
+      content: funnelPage.content
+        ? funnelPage.content
+        : JSON.stringify([
+            {
+              content: [],
+              id: '__body',
+              name: 'Body',
+              styles: { backgroundColor: 'white' },
+              type: '__body',
+            },
+          ]),
+      funnelId,
+    },
+  })
     
-    console.log('Respuesta de upsert:', response);
-    revalidatePath(`/agency/${agencyId}/funnels/${funnelId}`, 'page');
-    console.log('=== FIN upsertFunnelPage ===');
-    return response;
+  console.log('Respuesta de upsert:', response);
+  // Aquí usamos subaccountId en lugar de agencyId
+  revalidatePath(`/agency/${subaccountId}/funnels/${funnelId}`, 'page');
+  console.log('=== FIN upsertFunnelPage ===');
+  return response;
 }
 
 // TODO: Eliminación de página de embudo

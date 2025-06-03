@@ -21,6 +21,24 @@ const FunnelSettings: React.FC<FunnelSettingsProps> = async ({
   agencyId,
   defaultData,
 }) => {
+  console.log('agencyId recibido:', agencyId); // Añade este log
+
+  if (!agencyId) {
+    console.error('agencyId es undefined o null');
+    return (
+      <div className="flex gap-4 flex-col xl:!flex-row">
+        <Card className="flex-1 flex-shrink">
+          <CardHeader>
+            <CardTitle>Error</CardTitle>
+            <CardDescription>
+              No se pudo identificar la agencia. Por favor, intente de nuevo.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
   // Obtener productos y categorías
   const products = await getProducts(agencyId)
   const categories = await getCategories(agencyId)
