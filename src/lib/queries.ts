@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 import { CreateFunnelFormSchema, UpsertFunnelPage, createMediaType } from "./types";
 import { z } from "zod";
 import { revalidatePath } from 'next/cache'
+import { createBuilderPage } from './builderio'
 
 // TODO: Autenticación y gestión de usuarios
 export const getAuthUserDetails = async () => {
@@ -992,45 +993,21 @@ export const getLanesWithTicketAndTags = async (pipelineId: string) => {
 
 // TODO: Creación y actualización de embudos
 export const upsertFunnel = async (
-  agencyId: string,
+  subaccountId: string,
   funnel: z.infer<typeof CreateFunnelFormSchema> & { liveProducts: string },
   funnelId: string
 ) => {
-  console.log('=== INICIO upsertFunnel ===');
-  console.log('Parámetros recibidos:', { agencyId, funnelId });
-  console.log('Datos del funnel:', JSON.stringify(funnel, null, 2));
-  
-  try {
-    // Aseguramos que el embudo esté conectado a la agencia correcta
-    console.log('Intentando operación upsert en la base de datos...');
-    const response = await db.funnel.upsert({
-      where: { id: funnelId },
-      update: {
-        ...funnel,
-        agencyId: agencyId, // Aseguramos que el agencyId se actualice correctamente
-      },
-      create: {
-        ...funnel,
-        id: funnelId || v4(),
-        agencyId: agencyId,
-      },
-    });
+  const response = await db.funnel.upsert({
+    where: { id: funnelId },
+    update: funnel,
+    create: {
+      ...funnel,
+      id: funnelId || v4(),
+      subAccountId: subaccountId,
+    },
+  })
 
-    console.log('Operación upsert completada con éxito');
-    console.log('Respuesta de la base de datos:', JSON.stringify(response, null, 2));
-
-    // Revalidamos la ruta para asegurar que los cambios se reflejen inmediatamente
-    console.log(`Revalidando ruta: /agency/${agencyId}/funnels`);
-    revalidatePath(`/agency/${agencyId}/funnels`, 'page');
-    
-    console.log('=== FIN upsertFunnel (éxito) ===');
-    return response;
-  } catch (error) {
-    console.error('=== ERROR en upsertFunnel ===');
-    console.error('Detalles del error:', error);
-    console.error('Parámetros que causaron el error:', { agencyId, funnelId, funnel });
-    throw error; // Re-lanzamos el error para que pueda ser manejado por el componente
-  }
+  return response
 }
 
 // TODO: Creación y actualización de pipelines
@@ -1283,12 +1260,9 @@ export const upsertContact = async (
 }
 
 // TODO: Obtención de embudos
-export const getFunnels = async (agencyId: string) => {
-  // Buscamos directamente los funnels asociados a esta agencia
+export const getFunnels = async (subacountId: string) => {
   const funnels = await db.funnel.findMany({
-    where: { 
-      agencyId: agencyId 
-    },
+    where: { subAccountId: subacountId },
     include: { FunnelPages: true },
   })
 
@@ -1296,13 +1270,13 @@ export const getFunnels = async (agencyId: string) => {
 }
 
 // TODO: Obtención de embudo específico
-export const getFunnel = async (funnelId: string) => {
+export const getFunnel = async (funnelId:string) => {
   const funnel = await db.funnel.findUnique({
-    where: { id: funnelId },
-    include: {
-      FunnelPages: {
-        orderBy: {
-          order: 'asc'
+    where :{id: funnelId},
+    include:{
+      FunnelPages:{
+        orderBy:{
+          order:'asc'
         }
       }
     }
@@ -1324,7 +1298,7 @@ export const updateFunnelProducts = async (
 
 // TODO: Creación y actualización de página de embudo
 export const upsertFunnelPage = async (
-  subaccountId: string,  // Este es realmente el agencyId
+  subaccountId: string,
   funnelPage: UpsertFunnelPage,
   funnelId: string
 ) => {
@@ -1334,7 +1308,6 @@ export const upsertFunnelPage = async (
     update: { ...funnelPage },
     create: {
       ...funnelPage,
-      name: funnelPage.name || 'Nueva Página',
       content: funnelPage.content
         ? funnelPage.content
         : JSON.stringify([
@@ -1349,69 +1322,28 @@ export const upsertFunnelPage = async (
       funnelId,
     },
   })
-    
-  console.log('Respuesta de upsert:', response);
-  // Aquí usamos subaccountId en lugar de agencyId
-  revalidatePath(`/agency/${subaccountId}/funnels/${funnelId}`, 'page');
-  console.log('=== FIN upsertFunnelPage ===');
-  return response;
+
+  revalidatePath(`/subaccount/${subaccountId}/funnels/${funnelId}`, 'page')
+  return response
 }
+
 
 // TODO: Eliminación de página de embudo
 export const deleteFunnelePage = async (funnelPageId: string) => {
-  console.log('=== INICIO deleteFunnelePage ===');
-  console.log('funnelPageId:', funnelPageId);
-  
-  // Obtenemos la página del embudo para poder obtener el funnelId
-  try {
-    const funnelPage = await db.funnelPage.findUnique({
-      where: { id: funnelPageId },
-      include: { Funnel: true }
-    });
-    
-    console.log('funnelPage encontrado:', funnelPage);
+  const response = await db.funnelPage.delete({ where: { id: funnelPageId } })
 
-    if (!funnelPage) {
-      console.error('No se encontró la página del embudo');
-      return null;
-    }
-
-    const response = await db.funnelPage.delete({ where: { id: funnelPageId } });
-    console.log('Respuesta de delete:', response);
-
-    // Si tenemos el funnel asociado, revalidamos la ruta
-    if (funnelPage.Funnel?.agencyId) {
-      console.log('Revalidando ruta con agencyId:', funnelPage.Funnel.agencyId);
-      revalidatePath(`/agency/${funnelPage.Funnel.agencyId}/funnels/${funnelPage.funnelId}`, 'page');
-    }
-    
-    console.log('=== FIN deleteFunnelePage ===');
-    return response;
-  } catch (error) {
-    console.error('Error en deleteFunnelePage:', error);
-    throw error;
-  }
+  return response
 }
 
 // TODO: Obtención de detalles de página de embudo
 export const getFunnelPageDetails = async (funnelPageId: string) => {
-  console.log('=== INICIO getFunnelPageDetails ===');
-  console.log('funnelPageId:', funnelPageId);
-  
-  try {
-    const response = await db.funnelPage.findUnique({
-      where: {
-        id: funnelPageId,
-      },
-    });
-    
-    console.log('Detalles de la página encontrados:', response);
-    console.log('=== FIN getFunnelPageDetails ===');
-    return response;
-  } catch (error) {
-    console.error('Error en getFunnelPageDetails:', error);
-    throw error;
-  }
+  const response = await db.funnelPage.findUnique({
+    where: {
+      id: funnelPageId,
+    },
+  })
+
+  return response
 }
 
 // TODO: Gestión de horarios

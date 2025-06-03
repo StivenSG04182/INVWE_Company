@@ -3,6 +3,7 @@
 import { db } from "./db";
 import { revalidatePath } from 'next/cache';
 import { PaymentGatewayConnection } from "@prisma/client";
+import { syncWithGateway } from "@/lib/payment/syncService";
 
 // Crear o actualizar conexión de pasarela
 export const upsertPaymentGateway = async (
@@ -187,3 +188,190 @@ export const checkPaymentGatewayConnection = async (agencyId: string) => {
         needsReauth
     };
 }
+
+// Crear producto y sincronizar con pasarela
+export const createProductAndSync = async (
+    agencyId: string,
+    productData: {
+        name: string;
+        sku: string;
+        price: number;
+        gatewayId: 'paypal' | 'mercadopago';
+        description?: string;
+        images?: string[];
+        categoryId?: string;
+        quantity?: number;
+        cost?: number;
+        minStock?: number;
+        active?: boolean;
+        subAccountId?: string;
+        brand?: string;
+        model?: string;
+        tags?: string[];
+        unit?: string;
+        barcode?: string;
+        taxRate?: number;
+    }
+) => {
+    // Validar datos obligatorios
+    if (!agencyId || !productData.name || !productData.sku || !productData.price || !productData.gatewayId) {
+        throw new Error('Faltan campos obligatorios');
+    }
+
+    // Verificar que la agencia existe
+    const agency = await db.agency.findUnique({ where: { id: agencyId } });
+    if (!agency) throw new Error('Agencia no encontrada');
+
+    // Verificar SKU duplicado
+    const existing = await db.product.findFirst({ where: { agencyId, sku: productData.sku } });
+    if (existing) throw new Error('SKU duplicado');
+
+    // Crear producto en BD
+    const product = await db.product.create({
+        data: {
+            ...productData,
+            agencyId,
+            externalIntegrations: { gatewayId: productData.gatewayId }
+        }
+    });
+
+    // Sincronizar con pasarela
+    const syncResult = await syncWithGateway(agencyId, 'CREATE', {
+        id: product.id,
+        name: product.name,
+        description: product.description || undefined,
+        sku: product.sku,
+        price: parseFloat(product.price.toString()),
+        images: product.images,
+        active: product.active,
+        gatewayId: productData.gatewayId
+    });
+
+    // Actualizar IDs externos si corresponde
+    if (syncResult.success && syncResult.gatewayProductId) {
+        const externalIntegrations: any = { gatewayId: productData.gatewayId };
+        if (productData.gatewayId === 'paypal') {
+            externalIntegrations.paypalProdId = syncResult.gatewayProductId;
+            externalIntegrations.paypalPriceId = syncResult.gatewayProductId;
+        } else if (productData.gatewayId === 'mercadopago') {
+            externalIntegrations.mpPrefId = syncResult.gatewayProductId;
+        }
+        await db.product.update({ where: { id: product.id }, data: { externalIntegrations } });
+    }
+
+    return {
+        ...product,
+        syncStatus: syncResult.success ? 'SUCCESS' : 'FAILED',
+        syncError: syncResult.error
+    };
+};
+
+// Actualizar producto y sincronizar con pasarela
+export const updateProductAndSync = async (
+    agencyId: string,
+    id: string,
+    updateData: Partial<{
+        name: string;
+        sku: string;
+        price: number;
+        gatewayId: 'paypal' | 'mercadopago';
+        description?: string;
+        images?: string[];
+        categoryId?: string;
+        quantity?: number;
+        cost?: number;
+        minStock?: number;
+        active?: boolean;
+        subAccountId?: string;
+        brand?: string;
+        model?: string;
+        tags?: string[];
+        unit?: string;
+        barcode?: string;
+        taxRate?: number;
+    }>
+) => {
+    if (!agencyId || !id) throw new Error('Faltan agencyId o id');
+
+    const existing = await db.product.findFirst({ where: { id, agencyId } });
+    if (!existing) throw new Error('Producto no encontrado');
+
+    // Actualizar externalIntegrations si cambia la pasarela
+    if (updateData.gatewayId !== undefined) {
+        updateData.externalIntegrations = { ...(existing.externalIntegrations || {}), gatewayId: updateData.gatewayId };
+    }
+
+    const updatedProduct = await db.product.update({ where: { id }, data: updateData });
+    const syncGatewayId = (updateData.gatewayId || (existing.externalIntegrations as any)?.gatewayId || 'paypal') as 'paypal' | 'mercadopago';
+    const externalIntegrations = updatedProduct.externalIntegrations as any || {};
+
+    const syncResult = await syncWithGateway(agencyId, 'UPDATE', {
+        id: updatedProduct.id,
+        name: updatedProduct.name,
+        description: updatedProduct.description || undefined,
+        sku: updatedProduct.sku,
+        price: parseFloat(updatedProduct.price.toString()),
+        paypalProdId: externalIntegrations.paypalProdId,
+        paypalPriceId: externalIntegrations.paypalPriceId,
+        mpPrefId: externalIntegrations.mpPrefId,
+        images: updatedProduct.images as string[],
+        active: updatedProduct.active,
+        gatewayId: syncGatewayId
+    });
+
+    // Actualizar IDs externos si corresponde
+    if (syncResult.success && syncResult.gatewayProductId) {
+        const updatedExternalIntegrations: any = { ...externalIntegrations, gatewayId: syncGatewayId };
+        if (syncGatewayId === 'paypal') {
+            updatedExternalIntegrations.paypalProdId = syncResult.gatewayProductId;
+            if (!updatedExternalIntegrations.paypalPriceId) {
+                updatedExternalIntegrations.paypalPriceId = syncResult.gatewayProductId;
+            }
+        } else if (syncGatewayId === 'mercadopago') {
+            updatedExternalIntegrations.mpPrefId = syncResult.gatewayProductId;
+        }
+        await db.product.update({ where: { id: updatedProduct.id }, data: { externalIntegrations: updatedExternalIntegrations } });
+    }
+
+    return {
+        ...updatedProduct,
+        syncStatus: syncResult.success ? 'SUCCESS' : 'FAILED',
+        syncError: syncResult.error
+    };
+};
+
+// Eliminar producto y sincronizar con pasarela
+export const deleteProductAndSync = async (
+    agencyId: string,
+    id: string
+) => {
+    if (!agencyId || !id) throw new Error('Faltan agencyId o id');
+
+    const existing = await db.product.findFirst({ where: { id, agencyId } });
+    if (!existing) throw new Error('Producto no encontrado');
+
+    const externalIntegrations = existing.externalIntegrations as any || {};
+    const gatewayId = externalIntegrations.gatewayId as 'paypal' | 'mercadopago';
+    let syncResult = { success: true };
+
+    if (gatewayId) {
+        syncResult = await syncWithGateway(agencyId, 'DELETE', {
+            id: existing.id,
+            name: existing.name,
+            sku: existing.sku,
+            price: parseFloat(existing.price.toString()),
+            paypalProdId: externalIntegrations.paypalProdId,
+            paypalPriceId: externalIntegrations.paypalPriceId,
+            mpPrefId: externalIntegrations.mpPrefId,
+            gatewayId
+        });
+    }
+
+    await db.product.delete({ where: { id } });
+
+    return {
+        success: true,
+        syncStatus: syncResult.success ? 'SUCCESS' : 'FAILED',
+        syncError: syncResult.error
+    };
+};

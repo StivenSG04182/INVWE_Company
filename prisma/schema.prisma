@@ -363,8 +363,9 @@ model ClassName {
 }
 
 model FunnelPage {
-  id           String   @id @default(uuid())
-  name         String
+  id               String   @id @default(uuid())
+  name             String
+  builderContentId String? 
   pathName     String   @default("")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
