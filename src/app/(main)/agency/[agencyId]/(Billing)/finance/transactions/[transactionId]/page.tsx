@@ -1,21 +1,23 @@
 import { getAuthUserDetails } from "@/lib/queries"
 import { db } from "@/lib/db"
 import { notFound, redirect } from "next/navigation"
-import { InvoiceDetailView } from "@/components/finance/invoice-detail-view"
+import { TransactionDetailView } from "@/components/finance/transaction-detail-view"
 
-interface InvoiceDetailPageProps {
+interface TransactionDetailPageProps {
     params: {
         domain: string
         agencyId: string
-        invoiceId: string
+        transactionId: string
     }
 }
 
-export default async function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
+export default async function TransactionDetailPage({ params }: TransactionDetailPageProps) {
     const user = await getAuthUserDetails()
     if (!user) {
         return redirect("/sign-in")
     }
+
+    // Verificar acceso a la agencia
     const hasAccess =
         user.Agency?.id === params.agencyId || user.SubAccount?.some((sa) => sa.agencyId === params.agencyId)
 
@@ -23,36 +25,32 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
         return redirect("/unauthorized")
     }
 
-    // Obtener la factura con todas las relaciones
-    const invoice = await db.invoice.findUnique({
+    // Obtener la transacción con todas las relaciones
+    const transaction = await db.sale.findUnique({
         where: {
-            id: params.invoiceId,
+            id: params.transactionId,
             agencyId: params.agencyId,
         },
         include: {
             Customer: true,
+            Cashier: true,
+            Area: true,
             Items: {
                 include: {
                     Product: true,
-                },
-            },
-            Payments: true,
-            Taxes: {
-                include: {
-                    Tax: true,
                 },
             },
             SubAccount: true,
         },
     })
 
-    if (!invoice) {
+    if (!transaction) {
         notFound()
     }
 
     return (
         <div className="container mx-auto py-6">
-            <InvoiceDetailView invoice={invoice} agencyId={params.agencyId} />
+            <TransactionDetailView transaction={transaction} agencyId={params.agencyId} />
         </div>
     )
 }

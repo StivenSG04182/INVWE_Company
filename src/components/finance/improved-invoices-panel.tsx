@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { PlusCircle, FileDown, Search, FileText } from "lucide-react"
+import { PlusCircle, FileDown, FileText, Search } from "lucide-react"
 import Link from "next/link"
 import { getInvoices } from "@/lib/queries3"
 import type { Invoice, InvoiceStatus } from "@prisma/client"
-import { InvoiceActionsEnhanced } from "./invoice-actions-enhanced"
+import { InvoicePDFViewer } from "./invoice-pdf-viewer"
+import { InvoiceActions } from "./invoice-actions"
 
 type InvoiceWithRelations = Invoice & {
     Customer?: {
@@ -28,7 +30,7 @@ type InvoiceWithRelations = Invoice & {
     } | null
 }
 
-export const InvoicesPanel = ({ agencyId }: { agencyId: string }) => {
+export const ImprovedInvoicesPanel = ({ agencyId }: { agencyId: string }) => {
     const [invoices, setInvoices] = useState<InvoiceWithRelations[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
@@ -36,6 +38,8 @@ export const InvoicesPanel = ({ agencyId }: { agencyId: string }) => {
     const [typeFilter, setTypeFilter] = useState("all")
     const [startDate, setStartDate] = useState("")
     const [endDate, setEndDate] = useState("")
+    const [selectedInvoice, setSelectedInvoice] = useState<InvoiceWithRelations | null>(null)
+    const [showPDFModal, setShowPDFModal] = useState(false)
 
     // Estadísticas calculadas
     const totalInvoices = invoices.length
@@ -86,6 +90,11 @@ export const InvoicesPanel = ({ agencyId }: { agencyId: string }) => {
 
         return searchMatch && statusMatch && typeMatch && dateMatch
     })
+
+    const handleViewPDF = (invoice: InvoiceWithRelations) => {
+        setSelectedInvoice(invoice)
+        setShowPDFModal(true)
+    }
 
     return (
         <>
@@ -322,7 +331,11 @@ export const InvoicesPanel = ({ agencyId }: { agencyId: string }) => {
                                                     </Badge>
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    <InvoiceActionsEnhanced invoice={invoice} agencyId={agencyId} />
+                                                    <InvoiceActions
+                                                        invoice={invoice}
+                                                        agencyId={agencyId}
+                                                        onViewPDF={() => handleViewPDF(invoice)}
+                                                    />
                                                 </td>
                                             </tr>
                                         ))}
@@ -333,11 +346,21 @@ export const InvoicesPanel = ({ agencyId }: { agencyId: string }) => {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Modal de visualización PDF */}
+            <Dialog open={showPDFModal} onOpenChange={setShowPDFModal}>
+                <DialogContent className="max-w-4xl h-[80vh]">
+                    <DialogHeader>
+                        <DialogTitle>Factura {selectedInvoice?.invoiceNumber}</DialogTitle>
+                    </DialogHeader>
+                    {selectedInvoice && <InvoicePDFViewer invoice={selectedInvoice} agencyId={agencyId} />}
+                </DialogContent>
+            </Dialog>
         </>
     )
 }
 
-// Funciones auxiliares para mostrar el estado de la factura
+// Funciones auxiliares
 const getStatusText = (status: InvoiceStatus): string => {
     switch (status) {
         case "PAID":
