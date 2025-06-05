@@ -1,5 +1,4 @@
-import { format, isSameDay, parseISO } from "date-fns"
-import { es } from "date-fns/locale"
+import { isSameDay, parseISO } from "date-fns"
 
 // Festivos fijos colombianos 2025
 export const FIXED_HOLIDAYS_2025 = [

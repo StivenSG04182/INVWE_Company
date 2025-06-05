@@ -268,13 +268,13 @@ export function ScheduleCalendar({
                                     key={index}
                                     className={cn(
                                         "p-2 text-center font-medium border-b",
-                                        isHoliday(day) ? "bg-red-50 text-red-600" : "",
+                                        isHoliday(day).isHoliday ? "bg-red-50 text-red-600)" : "",
                                         isSameDay(day, new Date()) ? "bg-blue-50 text-blue-600" : "",
                                     )}
                                 >
                                     <div>{format(day, "EEEE", { locale: es })}</div>
                                     <div className="text-sm">{format(day, "d MMM", { locale: es })}</div>
-                                    {isHoliday(day) && (
+                                    {isHoliday(day).isHoliday && (
                                         <Badge variant="destructive" className="mt-1 text-xs">
                                             Festivo
                                         </Badge>
@@ -292,7 +292,7 @@ export function ScheduleCalendar({
                                     key={dayIndex}
                                     className={cn(
                                         "min-h-[120px] p-2 border border-dashed hover:border-primary/50 hover:bg-muted/50 transition-colors cursor-pointer relative",
-                                        isHoliday(day) ? "bg-red-100 text-red-700 border-red-200" : "",
+                                        isHoliday(day).isHoliday ? "bg-red-100 text-red-700 border-red-200" : "",
                                         isSameDay(day, new Date()) ? "ring-2 ring-blue-200" : "",
                                         viewMode === "month" && "min-h-[80px]",
                                     )}
@@ -301,7 +301,7 @@ export function ScheduleCalendar({
                                     {/* Indicador de fecha para vista mensual */}
                                     {viewMode === "month" && <div className="text-xs font-medium mb-1">{format(day, "d")}</div>}
 
-                                    {viewMode === "month" && isHoliday(day) && (
+                                    {viewMode === "month" && isHoliday(day).isHoliday && (
                                         <Badge variant="destructive" className="mb-1 text-[10px]">
                                             Festivo
                                         </Badge>
