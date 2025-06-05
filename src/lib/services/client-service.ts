@@ -3,6 +3,7 @@ import { ClientStatus, ClientType } from "@prisma/client";
 
 export interface ClientData {
     name: string;
+    rut: string;
     email?: string;
     phone?: string;
     address?: string;

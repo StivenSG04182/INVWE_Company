@@ -23,13 +23,6 @@ export function ScheduleDashboard({ teamMembers, schedules }: ScheduleDashboardP
                         Gestione los horarios y calcule la nómina de sus empleados según la regulación colombiana.
                     </p>
                 </div>
-                <Tabs defaultValue="week" className="w-full md:w-auto">
-                    <TabsList className="grid w-full grid-cols-3 md:w-[400px]">
-                        <TabsTrigger value="week">Semana</TabsTrigger>
-                        <TabsTrigger value="month">Mes</TabsTrigger>
-                        <TabsTrigger value="year">Año</TabsTrigger>
-                    </TabsList>
-                </Tabs>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">

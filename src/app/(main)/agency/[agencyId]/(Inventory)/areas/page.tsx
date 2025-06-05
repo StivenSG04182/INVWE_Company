@@ -8,14 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Grid3X3, Plus, Search, Filter, Edit, Package, LayoutGrid, ArrowUpDown, Pencil, Eye } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -28,7 +21,6 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
     return redirect("/agency")
   }
 
-  // Obtener áreas de MongoDB
   let areas = []
   try {
     areas = await AreaService.getAreas(agencyId)
@@ -301,16 +293,10 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                       <Grid3X3 className="h-12 w-12 text-muted-foreground/30" />
                     )}
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <Link href={`/agency/${agencyId}/areas/${area._id}`}>
+                      <Link href={`/agency/${agencyId}/areas/${area.id}`}>
                         <Button size="sm" variant="secondary">
                           <Edit className="h-4 w-4 mr-2" />
                           Editar
-                        </Button>
-                      </Link>
-                      <Link href={`/agency/${agencyId}/stock?areaId=${area._id}`}>
-                        <Button size="sm" variant="secondary">
-                          <Package className="h-4 w-4 mr-2" />
-                          Ver Stock
                         </Button>
                       </Link>
                     </div>
@@ -369,16 +355,10 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Link href={`/agency/${agencyId}/areas/workspace?areaId=${area._id}`}>
+                            <Link href={`/agency/${agencyId}/areas${area.id}`}>
                               <Button variant="outline" size="sm">
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Editar
-                              </Button>
-                            </Link>
-                            <Link href={`/agency/${agencyId}/stock?areaId=${area._id}`}>
-                              <Button variant="outline" size="sm">
-                                <Eye className="h-4 w-4 mr-2" />
-                                Ver Stock
                               </Button>
                             </Link>
                           </div>

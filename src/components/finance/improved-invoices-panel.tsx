@@ -57,7 +57,19 @@ export const ImprovedInvoicesPanel = ({ agencyId }: { agencyId: string }) => {
             setIsLoading(true)
             try {
                 const invoicesData = await getInvoices({ agencyId })
-                setInvoices(invoicesData)
+                setInvoices(
+                    invoicesData.map((invoice: any) => ({
+                        ...invoice,
+                        Customer: invoice.Customer
+                            ? {
+                                  ...invoice.Customer,
+                                  taxId: invoice.Customer.taxId === null ? undefined : invoice.Customer.taxId,
+                                  taxIdType: invoice.Customer.taxIdType === null ? undefined : invoice.Customer.taxIdType,
+                                  email: invoice.Customer.email === null ? undefined : invoice.Customer.email,
+                              }
+                            : invoice.Customer,
+                    }))
+                )
             } catch (error) {
                 console.error("Error al cargar facturas:", error)
             } finally {

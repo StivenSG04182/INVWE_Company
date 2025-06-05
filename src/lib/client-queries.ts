@@ -2,7 +2,6 @@
 
 import { db } from "./db";
 import { saveActivityLogsNotification } from "./queries";
-import { Client, PQR, Opportunity, Case, Prisma } from "@prisma/client";
 import { revalidatePath } from 'next/cache';
 
 // Obtiene todos los clientes de una agencia
@@ -66,6 +65,7 @@ export const createClient = async (agencyId: string, data: any, subAccountId?: s
     const client = await db.client.create({
         data: {
             name: data.name,
+            rut: data.rut,
             email: data.email,
             phone: data.phone,
             address: data.address,
@@ -78,7 +78,6 @@ export const createClient = async (agencyId: string, data: any, subAccountId?: s
             status: data.status || "ACTIVE",
             agencyId: agencyId,
             subAccountId: subAccountId || null,
-            // Datos fiscales
             taxId: data.taxId,
             taxIdType: data.taxIdType,
             fiscalRegime: data.fiscalRegime,
@@ -88,7 +87,6 @@ export const createClient = async (agencyId: string, data: any, subAccountId?: s
         },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId,
         description: `Cliente creado: ${data.name}`,
@@ -118,6 +116,7 @@ export const updateClient = async (clientId: string, data: any) => {
         where: { id: clientId },
         data: {
             name: data.name,
+            rut: data.rut,
             email: data.email,
             phone: data.phone,
             address: data.address,
@@ -138,7 +137,6 @@ export const updateClient = async (clientId: string, data: any) => {
         },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId: existingClient.agencyId,
         description: `Cliente actualizado: ${data.name}`,
@@ -155,7 +153,6 @@ export const updateClient = async (clientId: string, data: any) => {
 
 // Elimina un cliente
 export const deleteClient = async (clientId: string) => {
-    // Validar que el cliente exista
     const clientToDelete = await db.client.findUnique({
         where: { id: clientId },
     });
@@ -164,12 +161,10 @@ export const deleteClient = async (clientId: string) => {
         throw new Error("Cliente no encontrado");
     }
 
-    // Eliminar el cliente
     const client = await db.client.delete({
         where: { id: clientId },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId: clientToDelete.agencyId,
         description: `Cliente eliminado: ${clientToDelete.name}`,
@@ -193,7 +188,7 @@ export const getClientsByStatus = async (agencyId: string, status: string, subAc
             ...(subAccountId ? { subAccountId } : {})
         },
         orderBy: {
-            createdAt: 'desc'
+            createdAt: 'asc'
         }
     });
 };
@@ -207,7 +202,7 @@ export const getClientsByType = async (agencyId: string, type: string, subAccoun
             ...(subAccountId ? { subAccountId } : {})
         },
         orderBy: {
-            createdAt: 'desc'
+            createdAt: 'asc'
         }
     });
 };
@@ -219,13 +214,14 @@ export const searchClients = async (agencyId: string, searchTerm: string, subAcc
             agencyId,
             ...(subAccountId ? { subAccountId } : {}),
             OR: [
-                { name: { contains: searchTerm, mode: 'insensitive' } },
+                { name:  { contains: searchTerm, mode: 'insensitive' } },
+                { rut:   { contains: searchTerm, mode: 'insensitive' } },
                 { email: { contains: searchTerm, mode: 'insensitive' } },
                 { phone: { contains: searchTerm, mode: 'insensitive' } },
             ],
         },
         orderBy: {
-            createdAt: 'desc'
+            createdAt: 'asc'
         }
     });
 };

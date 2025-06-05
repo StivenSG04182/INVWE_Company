@@ -12,14 +12,7 @@ import StockStatusBadge from "./stock-status-badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import { Copy, Edit, Eye, Grid, List, MoreHorizontal, Package, Search, Tag, Trash2, Plus } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { duplicateProduct, deleteProduct } from "@/lib/queries2"
@@ -99,9 +92,9 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                 case "price-desc":
                     return (b.price || 0) - (a.price || 0)
                 case "stock-asc":
-                    return (a.stockQuantity || 0) - (b.stockQuantity || 0)
+                    return (a.quantity || 0) - (b.quantity || 0)
                 case "stock-desc":
-                    return (b.stockQuantity || 0) - (a.stockQuantity || 0)
+                    return (b.quantity || 0) - (a.quantity || 0)
                 default:
                     return 0
             }
@@ -330,7 +323,7 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="font-medium">
-                                                    {product.stockQuantity || 0} {product.unit || "unidades"}
+                                                    {product.quantity || 0} {product.unit || "unidades"}
                                                 </div>
                                                 <div className="flex justify-end mt-1">
                                                     <StockStatusBadge product={product} className="text-xs" />
@@ -455,7 +448,7 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                         <div className="text-sm">
                                             <span className="text-muted-foreground">Stock:</span>{" "}
                                             <span className="font-medium">
-                                                {product.stockQuantity || 0} {product.unit || ""}
+                                                {product.quantity || 0} {product.unit || "unidades"}
                                             </span>
                                         </div>
                                     </div>

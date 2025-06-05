@@ -49,17 +49,6 @@ const ProductDetailPage = async ({ params }: PageProps) => {
       return redirect(`/agency/${agencyId}/products`)
     }
 
-    // Obtener producto de MongoDB
-    let categories = []
-    
-    // Obtener nombre de categoría
-    const getCategoryName = (categoryId: string) => {
-      // Convertir a string para asegurar una comparación consistente
-      const category = categories.find((cat: any) => String(cat._id) === String(categoryId))
-      return category ? category.name : "Sin categoría"
-    }
-
-    // Formatear fecha
     const formatDate = (dateString: string) => {
       if (!dateString) return "N/A"
       const date = new Date(dateString)
@@ -70,15 +59,14 @@ const ProductDetailPage = async ({ params }: PageProps) => {
       }).format(date)
     }
 
-    // Verificar si el producto está por vencer (en los próximos 30 días)
     const isExpiringSoon = () => {
       if (!product.expirationDate) return false
       const today = new Date()
       const expirationDate = new Date(product.expirationDate)
-      const thirtyDaysFromNow = new Date()
-      thirtyDaysFromNow.setDate(today.getDate() + 30)
+      const fiveDaysFromNow = new Date()
+      fiveDaysFromNow.setDate(today.getDate() + 5)
 
-      return expirationDate > today && expirationDate <= thirtyDaysFromNow
+      return expirationDate > today && expirationDate <= fiveDaysFromNow
     }
 
     return (

@@ -2,12 +2,10 @@
 
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "./db";
-import { redirect } from "next/navigation";
-import { Agency, Invoice, InvoiceItem, InvoiceStatus, InvoiceTax, Payment, PaymentMethod, PaymentStatus, Sale, SaleItem, SaleStatus, Tax, CashRegister, RegisterStatus, DocumentType, DianEnvironment } from "@prisma/client";
+import {  InvoiceStatus, PaymentMethod, PaymentStatus,  RegisterStatus, DocumentType, } from "@prisma/client";
 import { revalidatePath } from 'next/cache';
 import crypto from 'crypto';
-import fs from 'fs/promises';
-import path from 'path';
+
 
 // =========== FACTURAS Y FACTURACIÓN ELECTRÓNICA ===========
 

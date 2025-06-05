@@ -5,8 +5,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TransactionsPanel } from "@/components/finance/transactions-panel"
 import { ImprovedInvoicesPanel } from "@/components/finance/improved-invoices-panel"
-import { NotesPanel } from "@/components/finance/notes-panel"
-import { PaymentsPanel } from "@/components/finance/payments-panel"
+/* import { NotesPanel } from "@/components/finance/notes-panel"
+import { PaymentsPanel } from "@/components/finance/payments-panel" */
 import { useSearchParams, useRouter } from "next/navigation"
 import { TrendingUp, FileText, CreditCard, Receipt, DollarSign, CheckCircle, Clock } from "lucide-react"
 
@@ -119,14 +119,14 @@ export const UnifiedFinanceDashboard = ({ agencyId }: { agencyId: string }) => {
                             <TrendingUp className="h-4 w-4" />
                             <span className="hidden sm:inline">Transacciones</span>
                         </TabsTrigger>
-                        <TabsTrigger value="payments" className="flex items-center gap-2 py-3">
+                        {/* <TabsTrigger value="payments" className="flex items-center gap-2 py-3">
                             <CreditCard className="h-4 w-4" />
                             <span className="hidden sm:inline">Pagos</span>
                         </TabsTrigger>
                         <TabsTrigger value="notes" className="flex items-center gap-2 py-3">
                             <Receipt className="h-4 w-4" />
                             <span className="hidden sm:inline">Notas</span>
-                        </TabsTrigger>
+                        </TabsTrigger> */}
                     </TabsList>
                 </div>
 
@@ -138,13 +138,13 @@ export const UnifiedFinanceDashboard = ({ agencyId }: { agencyId: string }) => {
                     <TransactionsPanel agencyId={agencyId} />
                 </TabsContent>
 
-                <TabsContent value="payments" className="space-y-6 mt-6">
+                {/* <TabsContent value="payments" className="space-y-6 mt-6">
                     <PaymentsPanel agencyId={agencyId} />
                 </TabsContent>
 
                 <TabsContent value="notes" className="space-y-6 mt-6">
                     <NotesPanel agencyId={agencyId} />
-                </TabsContent>
+                </TabsContent> */}
             </Tabs>
         </div>
     )

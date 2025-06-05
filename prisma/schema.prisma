@@ -668,8 +668,8 @@ model SavedSale {
   agencyId     String
   subAccountId String?
   areaId       String
-  products     String    // JSON string de productos
-  client       String?   // JSON string del cliente
+  products     String    
+  client       String?   
   total        Decimal   @default(0)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -732,6 +732,7 @@ model ProductCategory {
 model Client {
   id                String        @id @default(uuid())
   name              String
+  rut               String?
   email             String?
   phone             String?
   address           String?
@@ -840,7 +841,6 @@ model PQR {
   @@index([subAccountId])
 }
 
-// Almacena las credenciales de WhatsApp Business para cada agencia
 model WhatsAppCredentials {
   id                String   @id @default(uuid())
   agencyId          String   @unique
@@ -855,7 +855,6 @@ model WhatsAppCredentials {
   @@index([agencyId])
 }
 
-// Registra los mensajes enviados y recibidos por WhatsApp
 model WhatsAppMessageLog {
   id          String            @id @default(uuid())
   agencyId    String
@@ -873,7 +872,6 @@ model WhatsAppMessageLog {
   @@index([pqrId])
 }
 
-// TODO: Plantillas de mensajes aprobadas para WhatsApp Business
 model WhatsAppTemplate {
   id          String   @id @default(uuid())
   agencyId    String

@@ -2,47 +2,17 @@
 
 import { useState, useEffect, forwardRef, useImperativeHandle } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,} from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/ui/use-toast"
-import { ClientService, ClientData } from "@/lib/services/client-service"
+import { ClientData } from "@/lib/services/client-service"
 import { ClientStatus, ClientType } from "@prisma/client"
-import {
-    Search,
-    MoreVertical,
-    Edit,
-    Trash2,
-    UserPlus,
-    Mail,
-    Phone,
-    Building2,
-    User,
-    Calendar,
-    DollarSign,
-    Loader2,
-    AlertCircle,
-} from "lucide-react"
-import { Users } from "lucide-react" // Added import for Users
+import { Search, MoreVertical, Edit, Trash2, UserPlus, Mail, Phone, Building2, User, Calendar, DollarSign, AlertCircle, Users,} from "lucide-react"
 
 const ClientsDirectory = forwardRef(function ClientsDirectory({
     agencyId,
@@ -53,7 +23,6 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
     subAccountId?: string
     onClientSelect: (clientId: string) => void
 }, ref) {
-    // Exponer métodos al componente padre
     useImperativeHandle(ref, () => ({
         openAddClientDialog: () => setIsAddClientOpen(true)
     }));
@@ -70,6 +39,7 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
     
     const [formData, setFormData] = useState<ClientData>({
         name: "",
+        rut: "",
         type: ClientType.INDIVIDUAL,
         email: "",
         phone: "",
@@ -82,15 +52,12 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
         status: ClientStatus.ACTIVE,
     })
 
-    // Cargar clientes desde la base de datos usando client-queries.ts
     useEffect(() => {
         const loadClients = async () => {
             setIsLoading(true)
             try {
-                // Importar la función getClients de client-queries.ts
                 const { getClients } = await import('@/lib/client-queries')
                 
-                // Obtener los clientes reales de la base de datos
                 const clientsData = await getClients(agencyId, subAccountId)
                 setClients(clientsData)
             } catch (error) {
@@ -260,6 +227,7 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
     const resetForm = () => {
         setFormData({
             name: "",
+            rut:"",
             type: ClientType.INDIVIDUAL,
             email: "",
             phone: "",
@@ -279,6 +247,7 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
         setSelectedClient(client)
         setFormData({
             name: client.name,
+            rut: client.rut || "",
             type: client.type,
             email: client.email || "",
             phone: client.phone || "",
@@ -408,6 +377,17 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
                                     />
                                 </div>
                                 <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="rut" className="text-right">
+                                        RUT
+                                    </Label>
+                                    <Input
+                                        id="rut"
+                                        value={formData.rut}
+                                        onChange={(e) => setFormData({ ...formData, rut: e.target.value })}
+                                        className="col-span-3"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
                                     <Label htmlFor="type" className="text-right">
                                         Tipo *
                                     </Label>
@@ -527,7 +507,6 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
                                         <SelectContent>
                                             <SelectItem value={ClientStatus.ACTIVE}>Activo</SelectItem>
                                             <SelectItem value={ClientStatus.INACTIVE}>Inactivo</SelectItem>
-                                            <SelectItem value={ClientStatus.LEAD}>Prospecto</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -582,6 +561,17 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
                                 className="col-span-3"
                             />
                         </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="rut" className="text-right">
+                                        RUT
+                                    </Label>
+                                    <Input
+                                        id="rut"
+                                        value={formData.rut}
+                                        onChange={(e) => setFormData({ ...formData, rut: e.target.value })}
+                                        className="col-span-3"
+                                    />
+                                </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="edit-type" className="text-right">
                                 Tipo *
@@ -718,6 +708,7 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
                                 <TableRow>
                                     <TableHead>Cliente</TableHead>
                                     <TableHead>Contacto</TableHead>
+                                    <TableHead>RUT</TableHead>
                                     <TableHead>Dirección</TableHead>
                                     <TableHead className="text-right">Compras</TableHead>
                                     <TableHead>Última Compra</TableHead>
@@ -775,7 +766,7 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant={client.status === "active" ? "success" : "secondary"}>
-                                                {client.status === "active" ? "Activo" : "Inactivo"}
+                                                {client.status === "active" ? "Activo" : "Activo"}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
