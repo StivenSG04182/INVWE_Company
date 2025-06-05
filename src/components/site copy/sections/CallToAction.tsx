@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "@/components/site/ui/Button";
-import starsBg from "@/components/site/assets/stars.png";
-import gridLines from "@/components/site/assets/grid-lines.png";
+import starsBg from "../../../../public/assets/stars.png";
+import gridLines from "../../../../public/assets/grid-lines.png";
 import { animate, motion, useMotionTemplate, useMotionValue, useScroll,useTransform, } from "framer-motion";
 import { RefObject, useEffect, useRef } from "react";
 

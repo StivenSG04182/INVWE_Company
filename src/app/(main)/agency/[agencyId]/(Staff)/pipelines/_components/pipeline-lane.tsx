@@ -32,9 +32,7 @@ import React, { Dispatch, SetStateAction, useMemo } from 'react'
 import PipelineTicket from './pipeline-ticket'
 import CustomModal from '@/components/global/custom-modal'
 import TicketForm from '@/components/forms/ticket-form'
-// import PipelineTicket from './pipeline-ticket'
 
-// WIP : Wire up tickets
 
 interface PipelaneLaneProps {
   setAllTickets: Dispatch<SetStateAction<TicketWithTags>>
@@ -57,14 +55,12 @@ const PipelineLane: React.FC<PipelaneLaneProps> = ({
 }) => {
   const { setOpen } = useModal()
   const router = useRouter()
-  // mata uang
   const amt = new Intl.NumberFormat(undefined, {
     style: 'currency',
     currency: 'USD',
   })
 
   const laneAmt = useMemo(() => {
-    console.log(tickets)
     return tickets.reduce(
       (sum, ticket) => sum + (Number(ticket?.value) || 0),
       0
@@ -115,8 +111,6 @@ const PipelineLane: React.FC<PipelaneLaneProps> = ({
         subaccountId,
       })
       router.refresh()
-    } catch (error) {
-      console.log(error)
     }
   }
 
@@ -128,7 +122,6 @@ const PipelineLane: React.FC<PipelaneLaneProps> = ({
     >
       {(provided, snapshot) => {
         if (snapshot.isDragging) {
-          // adjust posisyion 
           //@ts-ignore
           const offset = { x: 300, y: 0 }
           //@ts-ignore
@@ -198,7 +191,6 @@ const PipelineLane: React.FC<PipelaneLaneProps> = ({
                               key={ticket.id.toString()}
                               index={index}
                             />
-                            // <div key={ticket.id}></div>
                           ))}
                           {provided.placeholder}
                         </div>

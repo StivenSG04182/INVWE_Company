@@ -24,8 +24,6 @@ const Pipelines = async ({ params }: Props) => {
     return redirect(
       `/subaccount/${params.subaccountId}/pipelines/${response.id}`
     )
-  } catch (error) {
-    console.log()
   }
 }
 

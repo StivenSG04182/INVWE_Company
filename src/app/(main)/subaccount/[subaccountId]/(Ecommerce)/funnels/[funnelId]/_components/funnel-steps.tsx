@@ -82,7 +82,6 @@ const FunnelSteps = ({ funnel, funnelId, pages, subaccountId }: Props) => {
           funnelId
         )
       } catch (error) {
-        console.log(error)
         toast({
           variant: 'destructive',
           title: 'Failed',

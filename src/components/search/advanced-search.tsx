@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Search, Filter, X, Tag, BarChart4, ArrowUpDown } from "lucide-react"
+import Image from "next/image"
 import type { SearchFilter } from "@/lib/services/search-service"
 
 interface AdvancedSearchProps {
@@ -438,7 +439,7 @@ export default function AdvancedSearch({ agencyId }: AdvancedSearchProps) {
                                 <Card key={product.id} className="overflow-hidden">
                                     <div className="aspect-video relative bg-muted">
                                         {product.images && product.images.length > 0 ? (
-                                            <img
+                                            <Image
                                                 src={product.images[0] || "/placeholder.svg"}
                                                 alt={product.name}
                                                 className="object-cover w-full h-full"

@@ -281,9 +281,9 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                     {area.layout && area.layout.items && area.layout.items.length > 0 ? (
                       <div className="w-full h-full p-4 flex items-center justify-center">
                         <div className="relative w-full h-full border border-dashed border-muted-foreground/30 rounded-md">
-                          {area.layout.items.map((item: any, index: number) => (
+                          {area.layout.items.map((item: any) => (
                             <div
-                              key={index}
+                              key={item.id}
                               className="absolute border"
                               style={{
                                 left: `${(item.x / 800) * 100}%`,

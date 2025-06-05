@@ -68,10 +68,7 @@ const FunnelForm: React.FC<CreateFunnelProps> = ({
 
   const onSubmit = async (values: z.infer<typeof CreateFunnelFormSchema>) => {
     try {
-      console.log('=== INICIO onSubmit en funnel-form ===');
-      console.log('Valores del formulario:', values);
       
-      // Usar agencyId o subAccountId, dependiendo de cuál esté disponible
       const effectiveAgencyId = agencyId || subAccountId;
       
       if (!effectiveAgencyId) {
@@ -85,11 +82,7 @@ const FunnelForm: React.FC<CreateFunnelProps> = ({
       }
       
       const funnelId = defaultData?.id || v4();
-      console.log('Preparando datos para upsertFunnel:', { 
-        agencyId: effectiveAgencyId, 
-        funnelId,
-        liveProducts: defaultData?.liveProducts || '[]' 
-      });
+      
       
       const response = await upsertFunnel(
         effectiveAgencyId,
@@ -97,10 +90,8 @@ const FunnelForm: React.FC<CreateFunnelProps> = ({
         funnelId
       );
       
-      console.log('Respuesta de upsertFunnel:', response);
       
       if (response) {
-        console.log('Guardando log de actividad...');
         await saveActivityLogsNotification({
           agencyId: effectiveAgencyId,
           description: `Actualizado embudo | ${response.name}`,
@@ -111,7 +102,6 @@ const FunnelForm: React.FC<CreateFunnelProps> = ({
           description: 'Detalles del embudo guardados',
         });
       } else {
-        console.error('No se recibió respuesta de upsertFunnel');
         toast({
           variant: 'destructive',
           title: '¡Ups!',
@@ -119,12 +109,9 @@ const FunnelForm: React.FC<CreateFunnelProps> = ({
         });
       }
       
-      console.log('Cerrando modal y refrescando página...');
       setClose();
       router.refresh();
-      console.log('=== FIN onSubmit en funnel-form ===');
     } catch (error) {
-      console.error('=== ERROR en onSubmit de funnel-form ===', error);
       toast({
         variant: 'destructive',
         title: 'Error al guardar',

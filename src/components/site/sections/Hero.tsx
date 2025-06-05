@@ -1,6 +1,6 @@
 "use client";
 import { Button } from "@/components/site/ui/Button";
-import starsBg from "@/components/site/assets/stars.png";
+import starsBg from "../../../../public/assets/stars.png";
 import { motion, useScroll, useTransform, } from "framer-motion";
 import { useRef } from "react";
 export const Hero = () => {

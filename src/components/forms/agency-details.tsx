@@ -65,7 +65,6 @@ const FormSchema = z.object({
 });
 
 const AgencyDetails = ({ data }: Props) => {
-  console.log("Renderizando AgencyDetails");
   const { toast } = useToast();
   const router = useRouter();
   const [deletingAgency, setDeletingAgency] = useState(false);
@@ -90,7 +89,6 @@ const AgencyDetails = ({ data }: Props) => {
 
   useEffect(() => {
     if (data) {
-      console.log("Datos de agencia recibidos:", data);
       form.reset(data);
     }
   }, [data]);
@@ -98,11 +96,7 @@ const AgencyDetails = ({ data }: Props) => {
   const handleSubmit = async (values: z.infer<typeof FormSchema>) => {
     try {
       setIsLoading(true);
-      console.log("Iniciando handleSubmit con valores:", values);
-
-      // Inicializar usuario
       const userData = await initUser({ role: "AGENCY_OWNER" });
-      console.log("Usuario inicializado:", userData);
 
       if (!userData) {
         toast({
@@ -113,7 +107,6 @@ const AgencyDetails = ({ data }: Props) => {
         return;
       }
 
-      // Crear o actualizar la agencia
       const response = await upsertAgency({
         id: data?.id ? data.id : v4(),
         customerId: "",
@@ -133,7 +126,6 @@ const AgencyDetails = ({ data }: Props) => {
         goal: 5,
       });
 
-      console.log("Respuesta de upsertAgency:", response);
 
       if (!response) {
         toast({
@@ -169,7 +161,6 @@ const AgencyDetails = ({ data }: Props) => {
   const handleDeleteAgency = async () => {
     if (!data?.id) return;
     setDeletingAgency(true);
-    // WIP: discontinue the subscription
     try {
       const response = await deleteAgency(data.id);
       toast({
@@ -178,7 +169,6 @@ const AgencyDetails = ({ data }: Props) => {
       });
       router.refresh();
     } catch (error) {
-      console.log(error);
       toast({ 
         variant:'destructive',
         title: "¡Ups!",

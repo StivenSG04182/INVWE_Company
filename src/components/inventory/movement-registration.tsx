@@ -5,33 +5,14 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  ArrowLeft,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  ArrowLeftRight,
-  Save,
-  Package,
-  AlertTriangle,
-} from "lucide-react";
+import { ArrowLeft, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Save, Package, AlertTriangle, } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -378,9 +359,9 @@ export default function MovementRegistration({
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/agency/${agencyId}/products`}>
+          <Link href={`/agency/${agencyId}/movements`}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver al inventario
+            Volver a movimientos
           </Link>
         </Button>
       </div>

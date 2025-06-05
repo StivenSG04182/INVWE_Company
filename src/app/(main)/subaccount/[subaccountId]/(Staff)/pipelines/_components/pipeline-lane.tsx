@@ -64,7 +64,6 @@ const PipelineLane: React.FC<PipelaneLaneProps> = ({
   })
 
   const laneAmt = useMemo(() => {
-    console.log(tickets)
     return tickets.reduce(
       (sum, ticket) => sum + (Number(ticket?.value) || 0),
       0
@@ -115,8 +114,6 @@ const PipelineLane: React.FC<PipelaneLaneProps> = ({
         subaccountId,
       })
       router.refresh()
-    } catch (error) {
-      console.log(error)
     }
   }
 

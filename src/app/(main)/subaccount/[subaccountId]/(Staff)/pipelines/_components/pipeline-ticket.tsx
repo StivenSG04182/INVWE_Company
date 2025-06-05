@@ -86,7 +86,6 @@ const PipelineTicket = ({
                 title: 'Oppse!',
                 description: 'Could not delete the ticket.',
               })
-              console.log(error)
             }
           }
 

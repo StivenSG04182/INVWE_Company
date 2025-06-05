@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Eye, Smartphone, Tablet, Monitor, Copy, Download } from "lucide-react"
+import Image from "next/image"
 
 export const PreviewPanel: React.FC = () => {
   const { elements } = useEmailEditorStore()
@@ -21,7 +22,7 @@ export const PreviewPanel: React.FC = () => {
         return <p style={element.styles}>{element.content}</p>
       case "image":
         return (
-          <img src={element.content?.src || "/placeholder.svg"} alt={element.content?.alt} style={element.styles} />
+          <Image src={element.content?.src || "/placeholder.svg"} alt={element.content?.alt} style={element.styles} />
         )
       case "button":
         return (
@@ -73,7 +74,7 @@ export const PreviewPanel: React.FC = () => {
         case "text":
           return `<p style="${styleString}">${element.content}</p>`
         case "image":
-          return `<img src="${element.content?.src}" alt="${element.content?.alt || ""}" style="${styleString}" />`
+          return `<Image src="${element.content?.src}" alt="${element.content?.alt || ""}" style="${styleString}" />`
         case "button":
           return `<a href="${element.content?.url || "#"}" style="${styleString}">${element.content?.text || "Button"}</a>`
         case "divider":

@@ -1,21 +1,12 @@
-/**
- * Utilidades para la autenticación de pasarelas de pago
- * Este archivo contiene funciones para obtener tokens de acceso
- * y manejar la autenticación OAuth2 para las diferentes pasarelas
- */
-
 import { db } from '@/lib/db';
 import { getGatewayCredentials, shouldUseSandbox, simulateOAuthResponse } from './test-utils';
 
-// Determinar si estamos en modo de desarrollo/sandbox
 const IS_SANDBOX = shouldUseSandbox();
 
-// Obtener las credenciales según el entorno
 const getCredentials = (gatewayId: string) => {
     if (IS_SANDBOX) {
         return getGatewayCredentials(gatewayId);
     } else {
-        // En producción, usar las credenciales reales
         switch (gatewayId) {
             case 'paypal':
                 return {
@@ -36,7 +27,6 @@ const getCredentials = (gatewayId: string) => {
 };
 
 
-// URL de redirección después de la autenticación
 const getRedirectUrl = (agencyId: string) => {
     const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
     return `${baseUrl}/agency/${agencyId}/launchpad`;
@@ -47,9 +37,7 @@ const getRedirectUrl = (agencyId: string) => {
  */
 export async function getPayPalAccessToken(code: string, agencyId: string) {
     try {
-        // Si estamos en modo sandbox y es desarrollo, podemos simular la respuesta
         if (IS_SANDBOX && process.env.NODE_ENV !== 'production') {
-            console.log('Simulando respuesta OAuth de PayPal en modo desarrollo');
             const simulatedResponse = simulateOAuthResponse('paypal', agencyId);
             return {
                 accessToken: simulatedResponse.access_token,
@@ -64,7 +52,6 @@ export async function getPayPalAccessToken(code: string, agencyId: string) {
             };
         }
 
-        // Obtener credenciales según el entorno
         const { clientId, clientSecret, tokenUrl } = getCredentials('paypal');
         const redirectUri = getRedirectUrl(agencyId);
         const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
@@ -110,9 +97,7 @@ export async function getPayPalAccessToken(code: string, agencyId: string) {
  */
 export async function getMercadoPagoAccessToken(code: string, agencyId: string) {
     try {
-        // Si estamos en modo sandbox y es desarrollo, podemos simular la respuesta
         if (IS_SANDBOX && process.env.NODE_ENV !== 'production') {
-            console.log('Simulando respuesta OAuth de MercadoPago en modo desarrollo');
             const simulatedResponse = simulateOAuthResponse('mercadopago', agencyId);
             return {
                 accessToken: simulatedResponse.access_token,
@@ -128,7 +113,6 @@ export async function getMercadoPagoAccessToken(code: string, agencyId: string) 
             };
         }
 
-        // Obtener credenciales según el entorno
         const { clientId, clientSecret, tokenUrl } = getCredentials('mercadopago');
         const redirectUri = getRedirectUrl(agencyId);
 
@@ -194,14 +178,12 @@ export async function refreshGatewayToken(gatewayId: string, refreshToken: strin
             throw new Error('No se pudo actualizar el token de acceso');
         }
 
-        // Calcular la fecha de expiración si se proporciona
         let expiresAt = null;
         if (tokenResponse.expiresIn) {
             expiresAt = new Date();
             expiresAt.setSeconds(expiresAt.getSeconds() + tokenResponse.expiresIn);
         }
 
-        // Actualizar la conexión en la base de datos
         const connection = await db.paymentGatewayConnection.update({
             where: {
                 agencyId_gatewayId: {
@@ -224,11 +206,8 @@ export async function refreshGatewayToken(gatewayId: string, refreshToken: strin
     }
 }
 
-// Funciones específicas para actualizar tokens
 async function refreshPayPalToken(refreshToken: string) {
-    // Si estamos en modo sandbox y es desarrollo, podemos simular la respuesta
     if (IS_SANDBOX && process.env.NODE_ENV !== 'production') {
-        console.log('Simulando actualización de token de PayPal en modo desarrollo');
         return {
             accessToken: `sim_paypal_refresh_access_${Date.now()}`,
             refreshToken: `sim_paypal_refresh_token_${Date.now()}`,
@@ -236,7 +215,6 @@ async function refreshPayPalToken(refreshToken: string) {
         };
     }
 
-    // Obtener credenciales según el entorno
     const { clientId, clientSecret, tokenUrl } = getCredentials('paypal');
     const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
@@ -266,9 +244,7 @@ async function refreshPayPalToken(refreshToken: string) {
 }
 
 async function refreshMercadoPagoToken(refreshToken: string) {
-    // Si estamos en modo sandbox y es desarrollo, podemos simular la respuesta
     if (IS_SANDBOX && process.env.NODE_ENV !== 'production') {
-        console.log('Simulando actualización de token de MercadoPago en modo desarrollo');
         return {
             accessToken: `sim_mp_refresh_access_${Date.now()}`,
             refreshToken: `sim_mp_refresh_token_${Date.now()}`,
@@ -276,7 +252,6 @@ async function refreshMercadoPagoToken(refreshToken: string) {
         };
     }
 
-    // Obtener credenciales según el entorno
     const { clientId, clientSecret, tokenUrl } = getCredentials('mercadopago');
 
     const response = await fetch(tokenUrl, {

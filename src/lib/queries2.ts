@@ -110,14 +110,11 @@ export const saveActivityLogsNotification = async ({
     }
 
     if (!userData) {
-        console.log("Could not find a user");
         return;
     }
     let foundAgencyId = agencyId;
     if (!foundAgencyId) {
         if (!subaccountId) {
-            // Si no hay ID de agencia ni de tienda, simplemente registramos y retornamos
-            console.log("No agency ID or subaccount ID provided for activity log");
             return;
         }
         const response = await db.subAccount.findUnique({
@@ -126,7 +123,6 @@ export const saveActivityLogsNotification = async ({
         if (response) foundAgencyId = response.agencyId;
     }
     if (!foundAgencyId) {
-        console.log("No agency ID found for activity log after processing");
         return;
     }
 
@@ -168,197 +164,25 @@ export const saveActivityLogsNotification = async ({
     }
 };
 
-// TODO: Crea usuario de equipo
-export const createTeamUser = async (agencyId: string, user: User) => {
-    if (user.role === "AGENCY_OWNER") return null;
-    const response = await db.user.create({ data: { ...user } });
-    return response;
-};
-
-// TODO: Verifica invitaciones
-export const verifyAndAcceptInvitation = async () => {
-    const user = await currentUser();
-    if (!user) return redirect("/sign-in");
-
-    console.log('Verificando invitaciones para:', user.emailAddresses[0].emailAddress);
-
-    // Primero verificamos si hay metadata en el usuario que indique una invitación
-    const metadata = user.publicMetadata;
-    const invitationId = metadata?.invitationId as string | undefined;
-
-    // Buscar la invitación por ID si está disponible en los metadatos
-    let invitationExists;
-
-    if (invitationId) {
-        console.log('Buscando invitación por ID:', invitationId);
-        invitationExists = await db.invitation.findUnique({
-            where: {
-                id: invitationId,
-                status: "PENDING",
-            },
-        });
-    }
-
-    // Si no se encontró por ID o no había ID, buscar por email
-    if (!invitationExists) {
-        console.log('Buscando invitación por email:', user.emailAddresses[0].emailAddress);
-        invitationExists = await db.invitation.findUnique({
-            where: {
-                email: user.emailAddresses[0].emailAddress,
-                status: "PENDING",
-            },
-        });
-    }
-
-    if (invitationExists) {
-        // Verificar si la invitación ha expirado (24 horas desde su creación)
-        const now = new Date();
-        const createdAt = invitationExists.createdAt;
-        const expirationTime = new Date(createdAt);
-        expirationTime.setHours(expirationTime.getHours() + 24);
-
-        if (now > expirationTime) {
-            console.log('Invitación expirada:', invitationExists.email, 'Creada el:', createdAt, 'Expiró el:', expirationTime);
-
-            // Actualizamos el estado de la invitación a REVOKED (usamos este estado en lugar de EXPIRED ya que no requiere migración)
-            await db.invitation.update({
-                where: { id: invitationExists.id },
-                data: { status: "REVOKED" }
-            });
-
-            // Guardamos un log de la expiración
-            await saveActivityLogsNotification({
-                agencyId: invitationExists.agencyId,
-                description: `Invitación para ${invitationExists.email} expirada (más de 24 horas)`,
-                subaccountId: undefined,
-            });
-
-            // Redirigimos con un mensaje de error
-            throw new Error('La invitación ha expirado. Por favor, solicita una nueva invitación.');
-        }
-
-        // La invitación es válida, procedemos a aceptarla
-        const userDetails = await createTeamUser(invitationExists.agencyId, {
-            email: invitationExists.email,
-            agencyId: invitationExists.agencyId,
-            avatarUrl: user.imageUrl,
-            id: user.id,
-            name: `${user.firstName} ${user.lastName}`,
-            role: invitationExists.role,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-
-        await saveActivityLogsNotification({
-            agencyId: invitationExists?.agencyId,
-            description: `Joined`,
-            subaccountId: undefined,
-        });
-
-        if (userDetails) {
-            // Actualizar metadatos del usuario en Clerk
-            await clerkClient.users.updateUserMetadata(user.id, {
-                privateMetadata: {
-                    role: userDetails.role || "SUBACCOUNT_USER",
-                },
-            });
-
-            try {
-                // Intentar revocar la invitación en Clerk
-                console.log('Revocando invitación en Clerk para:', userDetails.email);
-
-                // Obtener todas las invitaciones pendientes para este email
-                const invitations = await clerkClient.invitations.getInvitationList({
-                    emailAddress: userDetails.email,
-                });
-
-                console.log(`Se encontraron ${invitations.length} invitaciones en Clerk para ${userDetails.email}`);
-
-                // Filtrar solo las invitaciones pendientes
-                const pendingInvitations = invitations.filter(inv => inv.status === 'pending');
-                console.log(`De las cuales ${pendingInvitations.length} están pendientes`);
-
-                if (pendingInvitations.length > 0) {
-                    // Revocar todas las invitaciones pendientes para este email
-                    for (const invitation of pendingInvitations) {
-                        try {
-                            console.log(`Revocando invitación ID: ${invitation.id}, Status: ${invitation.status}`);
-                            await clerkClient.invitations.revokeInvitation(invitation.id);
-                            console.log('✅ Invitación revocada exitosamente en Clerk, ID:', invitation.id);
-                        } catch (revocationError) {
-                            console.error(`Error al revocar invitación específica ${invitation.id}:`, revocationError);
-                        }
-                    }
-
-                    // Verificar que se hayan revocado todas las invitaciones
-                    const checkInvitations = await clerkClient.invitations.getInvitationList({
-                        emailAddress: userDetails.email,
-                        status: 'pending'
-                    });
-
-                    if (checkInvitations.length > 0) {
-                        console.warn(`⚠️ Aún quedan ${checkInvitations.length} invitaciones pendientes después de intentar revocarlas`);
-                    } else {
-                        console.log('✅ Todas las invitaciones fueron revocadas correctamente');
-                    }
-                } else {
-                    console.log('No se encontraron invitaciones pendientes en Clerk para:', userDetails.email);
-                }
-            } catch (clerkError) {
-                // Si hay un error al revocar la invitación en Clerk, lo registramos pero continuamos
-                console.error('Error al obtener o revocar invitaciones en Clerk:', clerkError);
-            }
-
-            // Eliminar la invitación de nuestra base de datos
-            await db.invitation.delete({
-                where: { email: userDetails.email },
-            });
-
-            return userDetails.agencyId;
-        } else return null;
-    } else {
-        const agency = await db.user.findUnique({
-            where: {
-                email: user.emailAddresses[0].emailAddress,
-            },
-        });
-        return agency ? agency.agencyId : null;
-    }
-};
-
-// TODO: Actualiza agencia
-export const updateAgencyDetails = async (
-    agencyId: string,
-    agencyDetails: Partial<Agency>
-) => {
-    const response = await db.agency.update({
-        where: { id: agencyId },
-        data: { ...agencyDetails },
-    });
-    return response;
-};
-
 // TODO: Lista productos
 export const getProducts = async (agencyId: string, subAccountId?: string) => {
     try {
-        console.log('Fetching products for agency:', agencyId, 'subAccount:', subAccountId);
         const products = await db.product.findMany({
             where: { 
                 agencyId,
                 active: true,
-                ...(subAccountId && { subAccountId }) // Filtrar por subAccount si se proporciona
+                ...(subAccountId && { subAccountId })
             },
             include: {
                 Category: true,
                 Movements: true,
-                SubAccount: true, // Incluir información de la subAccount
+                SubAccount: true,
             },
             orderBy: {
                 name: 'asc'
             }
         });
         
-        // Convertir los campos Decimal a número para evitar problemas con el cliente
         const formattedProducts = products.map(product => ({
             ...product,
             price: Number(product.price),
@@ -368,7 +192,6 @@ export const getProducts = async (agencyId: string, subAccountId?: string) => {
             taxRate: product.taxRate ? Number(product.taxRate) : 0
         }));
 
-        console.log('Products found:', formattedProducts.length);
         return formattedProducts;
     } catch (error) {
         console.error('Error fetching products:', error);
@@ -433,7 +256,6 @@ export const createProduct = async (data: any) => {
         },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId: data.agencyId,
         description: `Producto creado: ${data.name}`,
@@ -483,7 +305,6 @@ export const updateProduct = async (productId: string, data: any) => {
         },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId: data.agencyId,
         description: `Producto actualizado: ${data.name}`,
@@ -495,12 +316,10 @@ export const updateProduct = async (productId: string, data: any) => {
 
 // TODO: Elimina producto
 export const deleteProduct = async (agencyId: string, productId: string, subaccountId?: string) => {
-    // Verificar que el ID del producto sea válido
     if (!productId) {
         throw new Error("ID de producto no proporcionado");
     }
 
-    // Obtener el producto antes de eliminarlo para tener su nombre
     const productToDelete = await db.product.findUnique({
         where: { id: productId },
     });
@@ -509,19 +328,16 @@ export const deleteProduct = async (agencyId: string, productId: string, subacco
         throw new Error("Producto no encontrado");
     }
 
-    // Eliminar el producto
     const product = await db.product.delete({
         where: { id: productId },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId,
         description: `Producto eliminado: ${productToDelete.name}`,
         subaccountId,
     });
 
-    // Convertir los campos Decimal a número para evitar problemas al pasar a componentes cliente
     return {
         ...product,
         price: Number(product.price),
@@ -534,12 +350,10 @@ export const deleteProduct = async (agencyId: string, productId: string, subacco
 
 // TODO: Duplica producto
 export const duplicateProduct = async (agencyId: string, productId: string, subaccountId?: string) => {
-    // Verificar que el ID del producto sea válido
     if (!productId) {
         throw new Error("ID de producto no proporcionado");
     }
 
-    // Obtener el producto original
     const originalProduct = await db.product.findFirst({
         where: {
             id: productId,
@@ -551,7 +365,6 @@ export const duplicateProduct = async (agencyId: string, productId: string, suba
         throw new Error("Producto no encontrado");
     }
 
-    // Crear una copia del producto con un nuevo SKU
     const newProduct = await db.product.create({
         data: {
             name: `${originalProduct.name} (Copia)`,
@@ -571,7 +384,7 @@ export const duplicateProduct = async (agencyId: string, productId: string, suba
             unit: originalProduct.unit,
             barcode: originalProduct.barcode,
             isActive: originalProduct.isActive,
-            quantity: 0, // Iniciar con 0 unidades
+            quantity: 0,
             locationId: originalProduct.locationId,
             warehouseId: originalProduct.warehouseId,
             isReturnable: originalProduct.isReturnable,
@@ -583,14 +396,12 @@ export const duplicateProduct = async (agencyId: string, productId: string, suba
         },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId,
         description: `Producto duplicado: ${originalProduct.name} → ${newProduct.name}`,
         subaccountId,
     });
 
-    // Convertir los campos Decimal a número para evitar problemas al pasar a componentes cliente
     return {
         ...newProduct,
         price: Number(newProduct.price),
@@ -605,7 +416,6 @@ export const duplicateProduct = async (agencyId: string, productId: string, suba
 export const getActiveDiscounts = async (agencyId: string) => {
     const now = new Date();
 
-    // Obtener productos con descuentos activos
     const productsWithDiscount = await db.product.findMany({
         where: {
             agencyId,
@@ -615,7 +425,6 @@ export const getActiveDiscounts = async (agencyId: string) => {
         },
     });
 
-    // Combinar y formatear los resultados
     const discounts = [
         ...productsWithDiscount.map((p) => ({
             _id: p.id,
@@ -649,7 +458,6 @@ export const createCategory = async (data: any) => {
         },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId: data.agencyId,
         description: `Categoría creada: ${data.name}`,
@@ -669,7 +477,6 @@ export const updateCategory = async (categoryId: string, data: any) => {
         },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId: data.agencyId,
         description: `Categoría actualizada: ${data.name}`,
@@ -685,7 +492,6 @@ export const deleteCategory = async (agencyId: string, categoryId: string, subac
         where: { id: categoryId },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId,
         description: `Categoría eliminada: ${category.name}`,
@@ -727,7 +533,6 @@ export const createProvider = async (data: any) => {
         },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId: data.agencyId,
         description: `Proveedor creado: ${data.name}`,
@@ -752,7 +557,6 @@ export const updateProvider = async (providerId: string, data: any) => {
         },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId: data.agencyId,
         description: `Proveedor actualizado: ${data.name}`,
@@ -768,7 +572,6 @@ export const deleteProvider = async (agencyId: string, providerId: string, subac
         where: { id: providerId },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId,
         description: `Proveedor eliminado: ${provider.name}`,
@@ -842,7 +645,6 @@ export const createClient = async (agencyId: string, data: any, subAccountId?: s
         },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId,
         description: `Cliente creado: ${data.name}`,
@@ -854,7 +656,6 @@ export const createClient = async (agencyId: string, data: any, subAccountId?: s
 
 // TODO: Actualiza cliente
 export const updateClient = async (clientId: string, data: any) => {
-    // Validar que el cliente exista
     const existingClient = await db.client.findUnique({
         where: { id: clientId },
     });
@@ -880,7 +681,6 @@ export const updateClient = async (clientId: string, data: any) => {
         },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId: existingClient.agencyId,
         description: `Cliente actualizado: ${data.name}`,
@@ -892,7 +692,6 @@ export const updateClient = async (clientId: string, data: any) => {
 
 // TODO: Elimina cliente
 export const deleteClient = async (clientId: string) => {
-    // Validar que el cliente exista
     const clientToDelete = await db.client.findUnique({
         where: { id: clientId },
     });
@@ -901,12 +700,10 @@ export const deleteClient = async (clientId: string) => {
         throw new Error("Cliente no encontrado");
     }
 
-    // Eliminar el cliente
     const client = await db.client.delete({
         where: { id: clientId },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId: clientToDelete.agencyId,
         description: `Cliente eliminado: ${clientToDelete.name}`,
@@ -993,7 +790,6 @@ export const createArea = async (data: any) => {
         },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId: data.agencyId,
         description: `Área creada: ${data.name}`,
@@ -1014,7 +810,6 @@ export const updateArea = async (areaId: string, data: any) => {
         },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId: data.agencyId,
         description: `Área actualizada: ${data.name}`,
@@ -1026,7 +821,6 @@ export const updateArea = async (areaId: string, data: any) => {
 
 // TODO: Elimina área
 export const deleteArea = async (agencyId: string, areaId: string, subaccountId?: string) => {
-    // Verificar si hay productos en esta área
     const productsInArea = await db.movement.findMany({
         where: { areaId }
     });
@@ -1039,7 +833,6 @@ export const deleteArea = async (agencyId: string, areaId: string, subaccountId?
         where: { id: areaId },
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId,
         description: `Área eliminada: ${area.name}`,
@@ -1062,7 +855,6 @@ export const getSubAccounts = async (agencyId: string) => {
 export const getMovements = async (agencyId: string, subAccountId?: string) => {
     const whereClause: any = { agencyId };
 
-    // Si se proporciona un ID de tienda, filtrar por esa tienda
     if (subAccountId) {
         whereClause.subAccountId = subAccountId;
     }
@@ -1079,20 +871,17 @@ export const getMovements = async (agencyId: string, subAccountId?: string) => {
     });
 };
 
+// TODO: Crear movimiento
 export const createMovement = async (data: any) => {
-    // Validaciones existentes...
     if (!data.type || !data.productId || !data.areaId || !data.quantity || !data.agencyId) {
         throw new Error('Faltan campos requeridos para crear el movimiento');
     }
 
-    // Validar que la cantidad sea positiva
     if (data.quantity <= 0) {
         throw new Error('La cantidad debe ser mayor a cero');
     }
 
-    // Crear el movimiento en una transacción junto con la actualización del producto
     const movement = await db.$transaction(async (tx) => {
-        // Obtener el producto actual
         const currentProduct = await tx.product.findUnique({
             where: { id: data.productId }
         });
@@ -1103,21 +892,17 @@ export const createMovement = async (data: any) => {
 
         let updateData = {};
 
-        // Manejar los diferentes tipos de movimientos
         switch (data.type) {
             case 'entrada':
-                // Sumar la cantidad al stock actual
                 updateData = {
                     quantity: (currentProduct.quantity || 0) + data.quantity
                 };
                 break;
 
             case 'salida':
-                // Verificar si hay suficiente stock
                 if ((currentProduct.quantity || 0) < data.quantity) {
                     throw new Error(`Stock insuficiente. Solo hay ${currentProduct.quantity} unidades disponibles.`);
                 }
-                // Restar la cantidad al stock actual
                 updateData = {
                     quantity: currentProduct.quantity - data.quantity
                 };
@@ -1132,14 +917,12 @@ export const createMovement = async (data: any) => {
                     throw new Error('El área de origen y destino no pueden ser la misma');
                 }
 
-                // Verificar stock suficiente
                 if ((currentProduct.quantity || 0) < data.quantity) {
                     throw new Error(`Stock insuficiente para transferir. Solo hay ${currentProduct.quantity} unidades disponibles.`);
                 }
 
-                // En una transferencia solo cambiamos el área, la cantidad total permanece igual
                 updateData = {
-                    quantity: currentProduct.quantity // No cambia la cantidad total
+                    quantity: currentProduct.quantity
                 };
                 break;
 
@@ -1147,13 +930,11 @@ export const createMovement = async (data: any) => {
                 throw new Error('Tipo de movimiento no válido');
         }
 
-        // Actualizar el producto
         await tx.product.update({
             where: { id: data.productId },
             data: updateData
         });
 
-        // Crear el registro del movimiento
         const newMovement = await tx.movement.create({
             data: {
                 type: data.type,
@@ -1172,7 +953,6 @@ export const createMovement = async (data: any) => {
         return newMovement;
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId: data.agencyId,
         description: `Movimiento de inventario: ${data.type} de ${data.quantity} unidades`,
@@ -1193,16 +973,13 @@ export const getMovementsByOptions = async (agencyId: string, options?: {
 }) => {
     const { subAccountId, productId, areaId, type, startDate, endDate } = options || {};
 
-    // Construir la consulta base
     const whereClause: any = { agencyId };
 
-    // Añadir filtros adicionales si se proporcionan
     if (subAccountId) whereClause.subAccountId = subAccountId;
     if (productId) whereClause.productId = productId;
     if (areaId) whereClause.areaId = areaId;
     if (type) whereClause.type = type;
 
-    // Filtro de fechas
     if (startDate || endDate) {
         whereClause.createdAt = {};
         if (startDate) whereClause.createdAt.gte = startDate;
@@ -1237,9 +1014,6 @@ export const getMovementById = async (movementId: string) => {
 
 // TODO: Crea descuento
 export const createDiscount = async (data: any) => {
-    console.log('Datos recibidos en createDiscount:', data);
-
-    // Validar datos requeridos
     if (!data.discount || !data.startDate || !data.endDate || !data.agencyId) {
         throw new Error("Faltan datos requeridos para el descuento");
     }
@@ -1248,12 +1022,10 @@ export const createDiscount = async (data: any) => {
         throw new Error("No se han proporcionado IDs de productos para actualizar");
     }
 
-    // Validar que el descuento sea un valor válido
     if (data.discount <= 0 || data.discount >= 100) {
         throw new Error("El descuento debe ser mayor a 0% y menor a 100%");
     }
 
-    // Validar fechas
     const startDate = new Date(data.startDate);
     const endDate = new Date(data.endDate);
 
@@ -1262,9 +1034,7 @@ export const createDiscount = async (data: any) => {
     }
 
     try {
-        // Aplicar descuento según el tipo
         if (data.discountType === "product") {
-            // Si es para todos los productos
             if (data.applyToAll) {
                 const products = await db.product.findMany({
                     where: { agencyId: data.agencyId }
@@ -1295,7 +1065,6 @@ export const createDiscount = async (data: any) => {
 
                 await Promise.all(updatePromises);
 
-                // Registrar actividad
                 await saveActivityLogsNotification({
                     agencyId: data.agencyId,
                     description: `Descuento global aplicado: ${data.discount}% a todos los productos`,
@@ -1306,7 +1075,6 @@ export const createDiscount = async (data: any) => {
             }
             // Si es para productos específicos
             else if (data.itemIds && data.itemIds.length > 0) {
-                console.log('IDs de productos recibidos:', data.itemIds);
                 let updatedCount = 0;
                 const updatePromises = data.itemIds.map(async (productId) => {
                     try {
@@ -1314,7 +1082,6 @@ export const createDiscount = async (data: any) => {
                             console.error('ID de producto inválido:', productId);
                             return;
                         }
-                        console.log('Actualizando producto con ID:', productId);
                         await db.product.update({
                             where: { id: productId },
                             data: {
@@ -1332,7 +1099,6 @@ export const createDiscount = async (data: any) => {
 
                 await Promise.all(updatePromises);
 
-                // Registrar actividad
                 await saveActivityLogsNotification({
                     agencyId: data.agencyId,
                     description: `Descuento aplicado: ${data.discount}% a ${updatedCount} productos`,
@@ -1344,12 +1110,9 @@ export const createDiscount = async (data: any) => {
         }
         // Si es para categorías
         else if (data.discountType === "category") {
-            // Implementación para descuentos por categoría
-            // Esta funcionalidad requeriría actualizar todos los productos de las categorías seleccionadas
             if (data.itemIds && data.itemIds.length > 0) {
                 let updatedCount = 0;
-                
-                // Obtener productos por categorías seleccionadas
+
                 const products = await db.product.findMany({
                     where: {
                         categoryId: {
@@ -1359,7 +1122,6 @@ export const createDiscount = async (data: any) => {
                     }
                 });
 
-                // Actualizar cada producto en las categorías seleccionadas
                 for (const product of products) {
                     try {
                         await db.product.update({
@@ -1410,7 +1172,6 @@ export const removeDiscount = async (agencyId: string, productId: string, subacc
         }
     });
 
-    // Registrar actividad
     await saveActivityLogsNotification({
         agencyId,
         description: `Descuento eliminado del producto: ${product.name}`,
@@ -2154,17 +1915,11 @@ export const sendInvoiceByEmail = async (invoiceId: string) => {
             throw new Error("El cliente no tiene correo electrónico");
         }
 
-        // Aquí iría la lógica para enviar el correo electrónico
-        // Por ahora, solo simulamos que se envió correctamente
-        console.log(`Simulando envío de factura ${invoice.invoiceNumber} a ${invoice.Customer.email}`);
-
-        // Preparar datos para el correo
         const emailData = {
             to: invoice.Customer.email,
             subject: `Factura ${invoice.invoiceNumber}`,
             body: `Estimado/a ${invoice.Customer.name},\n\nAdjunto encontrará su factura ${invoice.invoiceNumber} por un total de ${invoice.total}.\n\nGracias por su compra.`,
             attachments: []
-            // En una implementación real, aquí se generaría un PDF y se adjuntaría
         };
 
         // Actualizar la factura para indicar que se envió

@@ -22,8 +22,6 @@ const FunnelSettings: React.FC<FunnelSettingsProps> = async ({
   subaccountId,
   defaultData,
 }) => {
-  //CHALLENGE: go connect your stripe to sell products
-
   const subaccountDetails = await db.subAccount.findUnique({
     where: {
       id: subaccountId,
@@ -36,7 +34,6 @@ const FunnelSettings: React.FC<FunnelSettingsProps> = async ({
     subaccountDetails.connectAccountId
   )
   
-  console.log(subaccountDetails)
   return (
     <div className="flex gap-4 flex-col xl:!flex-row">
       <Card className="flex-1 flex-shrink">

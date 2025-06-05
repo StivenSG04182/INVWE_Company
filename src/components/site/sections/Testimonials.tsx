@@ -1,8 +1,8 @@
 "use client";
-import avatar1 from "@/components/site/assets/avatar-1.png";
-import avatar2 from "@/components/site/assets/avatar-2.png";
-import avatar3 from "@/components/site/assets/avatar-3.png";
-import avatar4 from "@/components/site/assets/avatar-4.png";
+import avatar1 from "../../../../public/assets/avatar-1.png";
+import avatar2 from "../../../../public/assets/avatar-2.png";
+import avatar3 from "../../../../public/assets/avatar-3.png";
+import avatar4 from "../../../../public/assets/avatar-4.png";
 import Image from "next/image";
 import {motion} from "framer-motion";
 

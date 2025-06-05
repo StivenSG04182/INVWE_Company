@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Barcode, Camera, AlertTriangle, Check, X } from "lucide-react"
+import Image from "next/image"
 
 interface BarcodeScannerProps {
     agencyId: string
@@ -218,7 +219,7 @@ export default function BarcodeScanner({ agencyId, onProductFound }: BarcodeScan
                         <div className="flex items-start gap-4">
                             <div className="w-16 h-16 bg-muted rounded-md flex-shrink-0">
                                 {scanResult.images && scanResult.images.length > 0 ? (
-                                    <img
+                                    <Image
                                         src={scanResult.images[0] || "/placeholder.svg"}
                                         alt={scanResult.name}
                                         className="w-full h-full object-cover rounded-md"

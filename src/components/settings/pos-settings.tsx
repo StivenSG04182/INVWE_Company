@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useToast } from "@/components/ui/use-toast"
+import Image from "next/image"
 
 interface PosSettingsProps {
     agencyId: string
@@ -36,8 +37,8 @@ const PosSettingsContent = ({ agencyId }: PosSettingsProps) => {
     const [posSettings, setPosSettings] = useState({
         general: {
             storeName: "Mi Tienda",
-            currency: "USD",
-            taxRate: 19,
+            currency: "COL",
+            taxRate: 0,
             address: "Calle Principal #123",
             logo: null,
         },
@@ -299,9 +300,11 @@ const PosSettingsContent = ({ agencyId }: PosSettingsProps) => {
                                             <div className="flex items-center space-x-4 mt-2">
                                                 <div className="h-20 w-20 rounded-md bg-muted flex items-center justify-center">
                                                     {posSettings.general.logo ? (
-                                                        <img
-                                                            src={posSettings.general.logo || "/placeholder.svg"}
+                                                        <Image
+                                                            src={posSettings.general.logo || "/placeholder-logo.png"}
                                                             alt="Logo"
+                                                            width={80} 
+                                                            height={80} 
                                                             className="h-full w-full object-contain"
                                                         />
                                                     ) : (

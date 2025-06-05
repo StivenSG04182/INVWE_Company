@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/components/ui/use-toast"
+import Image from "next/image"
 import type { Agency } from "@prisma/client"
 
 interface CompanySettingsProps {
@@ -159,10 +160,12 @@ const CompanySettingsContent = ({ agencyId, agencyDetails }: CompanySettingsProp
                                 <div className="border-2 border-dashed rounded-md p-4 flex flex-col items-center justify-center">
                                     {formData.agencyLogo ? (
                                         <div className="relative w-32 h-32">
-                                            <img
-                                                src={formData.agencyLogo || "/placeholder.svg"}
+                                            <Image
+                                                src={formData.agencyLogo || "/placeholder-logo.png"} // Asegúrate de que este archivo exista en la carpeta public
                                                 alt="Logo de la empresa"
-                                                className="w-full h-full object-contain"
+                                                fill
+                                                className="object-contain"
+                                                sizes="(max-width: 128px) 100vw, 128px"
                                             />
                                             <button
                                                 className="absolute top-0 right-0 bg-destructive text-white rounded-full p-1"
