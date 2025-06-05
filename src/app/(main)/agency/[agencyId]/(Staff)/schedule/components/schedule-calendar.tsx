@@ -17,6 +17,7 @@ import { AssignScheduleDialog } from "./assign-schedule-dialog"
 import { cn } from "@/lib/utils"
 import { getSchedules, createSchedule, updateSchedule, deleteSchedule } from "@/lib/queries"
 import { validateScheduleOverlap, generateComplianceAlerts, calculateHoursBetween } from "../utils/payroll-calculator"
+import { isHoliday } from "../utils/holiday-utils"
 
 interface ScheduleCalendarProps {
     teamMembers: any[]
@@ -68,11 +69,6 @@ export function ScheduleCalendar({
         viewMode === "week"
             ? Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i))
             : eachDayOfInterval({ start: monthStart, end: monthEnd })
-
-    // Función para verificar si un día es festivo
-    const isHoliday = (date: Date) => {
-        return holidays.some((holiday) => isSameDay(new Date(holiday.date), date))
-    }
 
     // Función para obtener los horarios de un día específico
     const getDaySchedules = (date: Date) => {
@@ -296,7 +292,7 @@ export function ScheduleCalendar({
                                     key={dayIndex}
                                     className={cn(
                                         "min-h-[120px] p-2 border border-dashed hover:border-primary/50 hover:bg-muted/50 transition-colors cursor-pointer relative",
-                                        isHoliday(day) ? "bg-red-50/30" : "",
+                                        isHoliday(day) ? "bg-red-100 text-red-700 border-red-200" : "",
                                         isSameDay(day, new Date()) ? "ring-2 ring-blue-200" : "",
                                         viewMode === "month" && "min-h-[80px]",
                                     )}
@@ -304,6 +300,12 @@ export function ScheduleCalendar({
                                 >
                                     {/* Indicador de fecha para vista mensual */}
                                     {viewMode === "month" && <div className="text-xs font-medium mb-1">{format(day, "d")}</div>}
+
+                                    {viewMode === "month" && isHoliday(day) && (
+                                        <Badge variant="destructive" className="mb-1 text-[10px]">
+                                            Festivo
+                                        </Badge>
+                                    )}
 
                                     {/* Indicador de carga de trabajo */}
                                     <div
