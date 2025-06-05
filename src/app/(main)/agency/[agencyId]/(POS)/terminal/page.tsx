@@ -164,7 +164,6 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                 const subaccountsData = await getSubAccountsForAgency(agencyId)
                 
                 // Asegurarse de que las tiendas se carguen correctamente
-                console.log("Tiendas cargadas:", subaccountsData)
                 setSubaccounts(subaccountsData || [])
                 
                 // Si hay subaccounts, abrir el modal de selección
@@ -334,7 +333,6 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                     // Implementar la vinculación entre venta y factura
                                     const linkResult = await linkSaleToInvoice(result.id, invoiceResult.data.id);
                                     if (linkResult.success) {
-                                        console.log(`Venta ${result.id} vinculada a factura ${invoiceResult.data.id}`);
                                     } else {
                                         console.error("Error al vincular venta con factura:", linkResult.error);
                                     }
@@ -356,9 +354,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                 }
                             }
                         }
-                    } else {
-                        console.log("No se generó factura: cliente general sin ID");
-                    }
+                    } 
                 } catch (error) {
                     console.error("Error en el proceso de facturación:", error)
                     toast.error("Se completó la venta pero hubo un error al generar la factura")
@@ -550,24 +546,19 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
             // Si estamos usando una tienda específica, incluirla en las opciones
             if (!useAgencyProducts && selectedSubaccount) {
                 options.subAccountId = selectedSubaccount
-                console.log("Usando subAccountId para filtrar productos:", selectedSubaccount)
             }
 
             // Añadir filtros adicionales
             if (selectedCategory && selectedCategory !== "Todos") options.categoryId = selectedCategory
             if (searchTerm) options.search = searchTerm
 
-            console.log("Cargando productos con opciones:", options)
-
             // Usar la función de queries2.ts para obtener productos
             const productsData = await getProductsForPOS(agencyId, options)
-            console.log("Datos de productos recibidos:", productsData.length)
 
             // Transformar los datos para el formato esperado por la UI
             const productsWithQuantity = productsData
                 .map((product) => {
                     if (!product || typeof product !== "object") {
-                        console.log("Producto inválido:", product)
                         return null
                     }
 
@@ -601,7 +592,6 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                 })
                 .filter(Boolean)
 
-            console.log("Productos procesados:", productsWithQuantity.length)
             setProducts(productsWithQuantity)
         } catch (error) {
             console.error("Error cargando productos:", error)

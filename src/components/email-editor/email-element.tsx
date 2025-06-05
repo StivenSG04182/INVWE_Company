@@ -6,6 +6,7 @@ import { useDrag, useDrop } from "react-dnd"
 import { useEmailEditorStore } from "@/providers/email-editor/email-editor-provider"
 import { Button } from "@/components/ui/button"
 import { Trash2, Copy, Move, Settings } from "lucide-react"
+import Image from "next/image"
 
 interface EmailElementProps {
   element: any
@@ -79,7 +80,7 @@ const EmailElement: React.FC<EmailElementProps> = memo(({ element, index, parent
         return <p style={element.styles}>{element.content}</p>
       case "image":
         return (
-          <img src={element.content?.src || "/placeholder.svg"} alt={element.content?.alt} style={element.styles} />
+          <Image src={element.content?.src || "/placeholder.svg"} alt={element.content?.alt} style={element.styles} />
         )
       case "button":
         return (

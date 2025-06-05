@@ -1,11 +1,11 @@
 'use client';
 import Image from "next/image";
-import acmeLogo from "../assets/logo-acme.png";
-import apexLogo from "../assets/logo-apex.png";
-import celestiallogo from "../assets/logo-celestial.png";
-import quantumLogo from "../assets/logo-quantum.png";
-import pulseLogo from "../assets/logo-pulse.png";
-import echoLogo from "../assets/logo-echo.png";
+import acmeLogo from "../../../../public/assets/logo-acme.png";
+import apexLogo from "../../../../public/assets/logo-apex.png";
+import celestiallogo from "../../../../public/assets/logo-celestial.png";
+import quantumLogo from "../../../../public/assets/logo-quantum.png";
+import pulseLogo from "../../../../public/assets/logo-pulse.png";
+import echoLogo from "../../../../public/assets/logo-echo.png";
 import { motion } from "framer-motion";
 
 export const LogoTicker = () => {

@@ -280,7 +280,7 @@ export default async function DashboardPage({
                           </div>
 
                           <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/agency/${agencyId}/(Inventory)/movements/${movement._id}`}>Ver detalles</Link>
+                            <Link href={`/agency/${agencyId}/movements/${movement.id}`}>Ver detalles</Link>
                           </Button>
                         </div>
                       ))}
@@ -290,7 +290,7 @@ export default async function DashboardPage({
 
                 <div className="mt-4 flex justify-center">
                   <Button variant="outline" asChild>
-                    <Link href={`/agency/${agencyId}/(Inventory)/movements`}>
+                    <Link href={`/agency/${agencyId}/movements`}>
                       Ver historial completo
                       <ArrowUpRight className="ml-1 h-4 w-4" />
                     </Link>
@@ -341,7 +341,7 @@ export default async function DashboardPage({
 
                 <div className="mt-4 flex justify-center">
                   <Button variant="outline" asChild>
-                    <Link href={`/agency/${agencyId}/(Inventory)/stock`}>
+                    <Link href={`/agency/${agencyId}/products`}>
                       Ver todos los productos
                       <ArrowUpRight className="ml-1 h-4 w-4" />
                     </Link>
@@ -397,7 +397,7 @@ export default async function DashboardPage({
               </CardContent>
               <CardFooter>
                 <Button variant="link" size="sm" className="ml-auto" asChild>
-                  <Link href={`/agency/${agencyId}/(Reports)/sales-reports`}>
+                  <Link href={`/agency/${agencyId}/reports-all`}>
                     Ver informe completo
                     <ArrowUpRight className="ml-1 h-4 w-4" />
                   </Link>
@@ -446,7 +446,7 @@ export default async function DashboardPage({
               </CardContent>
               <CardFooter>
                 <Button variant="link" size="sm" className="ml-auto" asChild>
-                  <Link href={`/agency/${agencyId}/(Inventory)/areas`}>
+                  <Link href={`/agency/${agencyId}/areas`}>
                     Ver todas las áreas
                     <ArrowUpRight className="ml-1 h-4 w-4" />
                   </Link>
@@ -514,7 +514,7 @@ export default async function DashboardPage({
 
               <div className="flex justify-center">
                 <Button variant="outline" className="mt-2" asChild>
-                  <Link href={`/agency/${agencyId}/(Reports)/performance`}>
+                  <Link href={`/agency/${agencyId}/reports-all`}>
                     Ver informes detallados
                     <ArrowUpRight className="ml-1 h-4 w-4" />
                   </Link>
@@ -603,7 +603,7 @@ export default async function DashboardPage({
                                   </div>
 
                                   <Button variant="ghost" size="sm" asChild>
-                                    <Link href={`/agency/${agencyId}/(Inventory)/movements/${movement._id}`}>
+                                    <Link href={`/agency/${agencyId}/movements/${movement.id}`}>
                                       Ver detalles
                                     </Link>
                                   </Button>
@@ -620,7 +620,7 @@ export default async function DashboardPage({
 
               <div className="mt-6 text-center">
                 <Button variant="outline" asChild>
-                  <Link href={`/agency/${agencyId}/(Inventory)/movements`}>
+                  <Link href={`/agency/${agencyId}/movements`}>
                     Ver historial completo
                     <ArrowUpRight className="ml-1 h-4 w-4" />
                   </Link>
@@ -936,7 +936,7 @@ export default async function DashboardPage({
 
           <div className="mt-6 flex justify-end">
             <Button asChild>
-              <Link href={`/agency/${agencyId}/(Reports)/inventory-reports`}>
+              <Link href={`/agency/${agencyId}/reports-all`}>
                 Ver informes detallados
                 <ArrowUpRight className="ml-1 h-4 w-4" />
               </Link>

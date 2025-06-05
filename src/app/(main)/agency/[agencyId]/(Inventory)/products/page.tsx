@@ -3,16 +3,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import StockAlertNotification from "@/components/inventory/stock-alert-notification"
-import {
-  Package,
-  Plus,
-  Tag,
-  BarChart3,
-  AlertTriangle,
-  Truck,
-  DollarSign,
-  Clock,
-} from "lucide-react"
+import { Package, Plus, Tag, BarChart3, AlertTriangle, Truck, DollarSign, Clock } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { FilteredProducts } from "@/components/inventory/filtered-products"
 import { Badge } from "@/components/ui/badge"
@@ -28,20 +19,34 @@ const ProductsPage = async ({ params }: { params: { agencyId: string } }) => {
     return redirect("/agency")
   }
 
-  // Obtener productos y categorías usando las funciones del servidor
-  const rawProducts = await getProducts(agencyId)
-  const categories = await getCategories(agencyId)
-  
-  // Convertir valores Decimal a números normales para evitar errores de serialización
-  const products = rawProducts.map(product => ({
-    ...product,
-    price: product.price ? Number(product.price) : 0,
-    cost: product.cost ? Number(product.cost) : 0,
-    discount: product.discount ? Number(product.discount) : 0,
-    taxRate: product.taxRate ? Number(product.taxRate) : 0,
-    discountMinimumPrice: product.discountMinimumPrice ? Number(product.discountMinimumPrice) : null
-  }))
-  
+  // Obtener productos y categorías en paralelo
+  const [rawProducts, categories] = await Promise.all([getProducts(agencyId), getCategories(agencyId)])
+
+  // Convertir valores Decimal a números normales y calcular stock una sola vez
+  const products = rawProducts.map((product) => {
+    const price = product.price ? Number(product.price) : 0
+    const cost = product.cost ? Number(product.cost) : 0
+    const discount = product.discount ? Number(product.discount) : 0
+    const taxRate = product.taxRate ? Number(product.taxRate) : 0
+    const discountMinimumPrice = product.discountMinimumPrice ? Number(product.discountMinimumPrice) : null
+    const stockQuantity = product.Movements
+      ? product.Movements.reduce((sum: number, movement: any) => {
+          if (movement.type === "ENTRADA") return sum + movement.quantity
+          if (movement.type === "SALIDA") return sum - movement.quantity
+          return sum
+        }, 0)
+      : product.quantity || 0 // Usar quantity si no hay movimientos
+    return {
+      ...product,
+      price,
+      cost,
+      discount,
+      taxRate,
+      discountMinimumPrice,
+      stockQuantity,
+    }
+  })
+
   // Obtener tiendas de la agencia
   const subAccounts = user.Agency.SubAccount || []
 
@@ -50,54 +55,59 @@ const ProductsPage = async ({ params }: { params: { agencyId: string } }) => {
   const activeProducts = products.filter((product: any) => product.active !== false).length
   const totalCategories = categories.length
 
-  // Calcular valor total del inventario y estadísticas de stock basadas en movimientos
+  // ✅ CORREGIDO: Calcular valor total del inventario usando PRECIO DE VENTA * CANTIDAD
   const inventoryValue = products.reduce((total: number, product: any) => {
-    // Calcular cantidad actual basada en movimientos
-    const stockQuantity = product.Movements ? product.Movements.reduce((sum: number, movement: any) => {
-      if (movement.type === 'ENTRADA') return sum + movement.quantity
-      if (movement.type === 'SALIDA') return sum - movement.quantity
-      return sum
-    }, 0) : 0
-    
-    return total + (product.cost || 0) * (stockQuantity || 0)
+    const quantity = product.stockQuantity || 0
+    const salePrice = product.price || 0
+    return total + salePrice * quantity
   }, 0)
 
-  // Calcular productos con bajo stock
+  // Función para formatear números con separadores de miles
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency: "COL",
+      minimumFractionDigits: 2,
+    }).format(value)
+  }
+
+  // ✅ CORREGIDO: Calcular productos con bajo stock (menos del 10%, menos de 10 unidades, o sin stock)
   const lowStockProducts = products.filter((product: any) => {
-    // Calcular cantidad actual basada en movimientos
-    const stockQuantity = product.Movements ? product.Movements.reduce((sum: number, movement: any) => {
-      if (movement.type === 'ENTRADA') return sum + movement.quantity
-      if (movement.type === 'SALIDA') return sum - movement.quantity
-      return sum
-    }, 0) : 0
-    
-    return stockQuantity <= (product.minStock || 0) && stockQuantity > 0
+    const currentStock = product.stockQuantity || 0
+    const minStock = product.minStock || 0
+
+    // Sin stock
+    if (currentStock <= 0) return true
+
+    // Menos de 10 unidades
+    if (currentStock < 10) return true
+
+    // Menos del 10% del stock mínimo (si está definido)
+    if (minStock > 0 && currentStock < minStock * 0.1) return true
+
+    // Menos del stock mínimo definido
+    if (minStock > 0 && currentStock <= minStock) return true
+
+    return false
   }).length
 
   // Calcular productos sin stock
   const outOfStockProducts = products.filter((product: any) => {
-    // Calcular cantidad actual basada en movimientos
-    const stockQuantity = product.Movements ? product.Movements.reduce((sum: number, movement: any) => {
-      if (movement.type === 'ENTRADA') return sum + movement.quantity
-      if (movement.type === 'SALIDA') return sum - movement.quantity
-      return sum
-    }, 0) : 0
-    
-    return stockQuantity <= 0
+    return (product.stockQuantity || 0) <= 0
   }).length
 
   // Calcular productos con descuento
   const discountedProducts = products.filter((product: any) => (product.discount || 0) > 0).length
 
-  // Calcular productos próximos a vencer (en los próximos 30 días)
+  // Calcular productos próximos a vencer (en los próximos 5 días)
   const today = new Date()
-  const thirtyDaysFromNow = new Date()
-  thirtyDaysFromNow.setDate(today.getDate() + 30)
+  const fiveDaysFromNow = new Date()
+  fiveDaysFromNow.setDate(today.getDate() + 5)
 
   const expiringProducts = products.filter((product: any) => {
     if (!product.expirationDate) return false
     const expirationDate = new Date(product.expirationDate)
-    return expirationDate > today && expirationDate <= thirtyDaysFromNow
+    return expirationDate > today && expirationDate <= fiveDaysFromNow
   }).length
 
   return (
@@ -134,7 +144,7 @@ const ProductsPage = async ({ params }: { params: { agencyId: string } }) => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Valor Inventario</p>
-                    <p className="text-2xl font-bold">${inventoryValue.toFixed(2)}</p>
+                    <p className="text-2xl font-bold">{formatCurrency(inventoryValue)}</p>
                     <p className="text-xs text-muted-foreground mt-1">{totalCategories} categorías</p>
                   </div>
                   <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -206,7 +216,7 @@ const ProductsPage = async ({ params }: { params: { agencyId: string } }) => {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold">{expiringProducts}</p>
-                <p className="text-sm text-muted-foreground">Productos que vencerán en los próximos 30 días</p>
+                <p className="text-sm text-muted-foreground">Productos que vencerán en los próximos 5 días</p>
                 <Separator className="my-3" />
                 <Link href={`/agency/${agencyId}/products?filter=expiring`}>
                   <Button variant="outline" size="sm" className="w-full">

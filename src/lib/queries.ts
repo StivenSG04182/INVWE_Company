@@ -276,7 +276,6 @@ export const verifyAndAcceptInvitation = async () => {
             try {
               await clerkClient.invitations.revokeInvitation(invitation.id);
             } catch (revocationError) {
-              console.error(`Error al revocar invitación específica ${invitation.id}:`, revocationError);
             }
           }
           
@@ -286,7 +285,6 @@ export const verifyAndAcceptInvitation = async () => {
           });
           
           if (checkInvitations.length > 0) {
-            console.warn(`⚠️ Aún quedan ${checkInvitations.length} invitaciones pendientes después de intentar revocarlas`);
           } 
         }
       } catch (clerkError) {
@@ -450,9 +448,9 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
     return agencyDetails;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientValidationError) {
-      console.error('Error de validación de Prisma. Verifique que todos los campos requeridos estén presentes y con el formato correcto.');
+      // Eliminado console.error
     } else if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      console.error(`Error conocido de Prisma: ${error.message}. Código: ${error.code}`);
+      // Eliminado console.error
     }
     return null;
   }
@@ -475,11 +473,6 @@ export const getNotificationAndUser = async (agencyId: string) => {
 
 // TODO: Creación y actualización de tiendas
 export const upsertSubAccount = async (subAccount: SubAccount) => {
-  console.log('1. Iniciando upsertSubAccount con:', {
-    id: subAccount.id,
-    companyEmail: subAccount.companyEmail,
-    agencyId: subAccount.agencyId,
-  })
 
   if (!subAccount.companyEmail) {
     return null
@@ -494,9 +487,6 @@ export const upsertSubAccount = async (subAccount: SubAccount) => {
     })
 
     if (!agencyOwner) {
-      console.error(
-        '4. Error: No se pudo crear tienda porque no se encontró propietario'
-      )
       return null
     }
 
@@ -568,13 +558,9 @@ export const upsertSubAccount = async (subAccount: SubAccount) => {
     return response
   } catch (error) {
     if (error instanceof Prisma.PrismaClientValidationError) {
-      console.error(
-        'Error de validación de Prisma. Verifica los campos obligatorios.'
-      )
+      // Eliminado console.error
     } else if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      console.error(
-        `Error conocido de Prisma: ${error.message}. Código: ${error.code}`
-      )
+      // Eliminado console.error
     }
     return null
   }
@@ -1048,9 +1034,8 @@ export const updateLanesOrder = async (lanes: Lane[]) => {
     )
 
     await db.$transaction(updateTrans)
-    console.log('🟢 Done reordered 🟢')
   } catch (error) {
-    console.log(error, 'ERROR UPDATE LANES ORDER')
+    // Eliminado console.log(error, 'ERROR UPDATE LANES ORDER')
   }
 }
 
@@ -1070,9 +1055,9 @@ export const updateTicketsOrder = async (tickets: Ticket[]) => {
     )
 
     await db.$transaction(updateTrans)
-    console.log('🟢 Done reordered 🟢')
+    // Eliminado console.log('🟢 Done reordered 🟢')
   } catch (error) {
-    console.log(error, '🔴 ERROR UPDATE TICKET ORDER')
+    // Eliminado console.log(error, '🔴 ERROR UPDATE TICKET ORDER')
   }
 }
 

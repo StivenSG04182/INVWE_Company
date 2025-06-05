@@ -626,15 +626,12 @@ export const useNotificationSystem = (agencyId: string) => {
     return {
         sendScheduleChangeNotification: (data: any) => {
             // Implementar lógica de envío
-            console.log("Enviando notificación de cambio de horario:", data)
         },
         sendOvertimeAlert: (data: any) => {
             // Implementar lógica de envío
-            console.log("Enviando alerta de horas extras:", data)
         },
         sendVacationRequest: (data: any) => {
             // Implementar lógica de envío
-            console.log("Enviando solicitud de vacaciones:", data)
         },
     }
 }

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import Image from "next/image"
 import { Plus, Search, Filter, MoreHorizontal, Eye, Edit, Copy, Trash2, Mail, Zap, Calendar } from "lucide-react"
 
 const EmailTemplatesPage = async ({ params }: { params: { agencyId: string } }) => {
@@ -161,7 +162,7 @@ const EmailTemplatesPage = async ({ params }: { params: { agencyId: string } }) 
                     {templates.map((template) => (
                         <Card key={template.id} className="hover:shadow-lg transition-all duration-200 group cursor-pointer">
                             <div className="relative">
-                                <img
+                                <Image
                                     src={template.thumbnail || "/placeholder.svg"}
                                     alt={template.name}
                                     className="w-full h-32 object-cover rounded-t-lg bg-muted"

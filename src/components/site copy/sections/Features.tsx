@@ -1,7 +1,7 @@
 "use client";
 import { DotLottieCommonPlayer, DotLottiePlayer, } from "@dotlottie/react-player";
 import { ComponentPropsWithoutRef, useEffect, useRef, useState, } from "react";
-import productImage from "../assets/product-image.png";
+import productImage from "../../../../public/assets/product-image.png";
 import { animate, motion, useMotionTemplate, useMotionValue, ValueAnimationTransition, } from "framer-motion";
 const tabs = [
   {

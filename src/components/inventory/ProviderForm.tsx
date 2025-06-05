@@ -42,19 +42,19 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
   });
 
   // Cargar tiendas al montar el componente
-   useEffect(() => {
-      async function fetchSubaccounts() {
-        try {
-          const { getSubAccountsForAgency } = await import("@/lib/queries2");
-          const result = await getSubAccountsForAgency(agencyId);
-          setSubaccounts(result || []);
-        } catch (error) {
-          setSubaccounts([]);
-        }
+  useEffect(() => {
+    async function fetchSubaccounts() {
+      try {
+        const { getSubAccountsForAgency } = await import("@/lib/queries2");
+        const result = await getSubAccountsForAgency(agencyId);
+        setSubaccounts(result || []);
+      } catch (error) {
+        setSubaccounts([]);
       }
-      if (agencyId) fetchSubaccounts();
-    }, [agencyId]);
-  
+    }
+    if (agencyId) fetchSubaccounts();
+  }, [agencyId]);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -95,14 +95,14 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
       };
 
       let result;
-      
+
       if (isEditing && provider) {
         // Usar el ID correcto del proveedor (puede estar en _id o id)
         const providerId = provider._id || provider.id;
         if (!providerId) {
           throw new Error('ID de proveedor no encontrado');
         }
-        
+
         result = await updateProvider(providerId, providerData);
       } else {
         result = await createProvider(providerData);

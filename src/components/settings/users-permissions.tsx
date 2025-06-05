@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/components/ui/use-toast"
+import Image from "next/image"
 
 interface UsersPermissionsProps {
     agencyId: string
@@ -215,7 +216,7 @@ const UsersPermissionsContent = ({ agencyId }: UsersPermissionsProps) => {
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
                                                         {member.avatarUrl ? (
-                                                            <img
+                                                            <Image
                                                                 src={member.avatarUrl || "/placeholder.svg"}
                                                                 alt={member.name}
                                                                 className="w-full h-full object-cover"

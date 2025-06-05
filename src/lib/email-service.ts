@@ -2,6 +2,7 @@ import nodemailer from "nodemailer"
 import { generateInvoicePDF } from "./pdf-generator"
 import { generateTransactionPDF } from "./transaction-pdf-generator"
 import { db } from "./db"
+import Image from "next/image"
 
 interface EmailConfig {
     host: string
@@ -178,7 +179,7 @@ const generateTransactionEmailTemplate = (
     </head>
     <body>
         <div class="header">
-            ${agency.logo ? `<img src="${agency.logo}" alt="${agency.name}" class="logo">` : ""}
+            ${agency.logo ? `<Image src="${agency.logo}" alt="${agency.name}" class="logo">` : ""}
             <h1>${agency.name || "Mi Empresa"}</h1>
             <p>Recibo de Compra</p>
         </div>
@@ -447,7 +448,7 @@ const renderElement = (element: any, data: { invoice: any; agency: any }): strin
         case "text":
             return `<p style="${styleObjectToString(element.styles)}">${replaceVariables(element.content, data)}</p>`
         case "image":
-            return `<img src="${element.content?.src || data.agency.logo || ""}" alt="${element.content?.alt || ""}" style="${styleObjectToString(element.styles)}" />`
+            return `<Image src="${element.content?.src || data.agency.logo || ""}" alt="${element.content?.alt || ""}" style="${styleObjectToString(element.styles)}" />`
         case "button":
             return `<a href="${element.content?.url || "#"}" style="${styleObjectToString(element.styles)}">${replaceVariables(element.content?.text || "", data)}</a>`
         case "divider":
@@ -611,7 +612,7 @@ const generateDefaultEmailTemplate = (invoice: any, agency: any): string => {
     </head>
     <body>
         <div class="header">
-            ${agency.logo ? `<img src="${agency.logo}" alt="${agency.name}" class="logo">` : ""}
+            ${agency.logo ? `<Image src="${agency.logo}" alt="${agency.name}" class="logo">` : ""}
             <h1>${agency.name || "Mi Empresa"}</h1>
             <p>Factura de Venta</p>
         </div>

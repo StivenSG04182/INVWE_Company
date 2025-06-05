@@ -160,8 +160,6 @@ export function PDFReports({ teamMembers, schedules, holidays = [], agencyId }: 
                 `$${emp.payroll.totalAmount?.toLocaleString("es-CO") ?? "0"}`
             ])
 
-            console.log("tableData", tableData);
-
             try {
                 doc.autoTable({
                     head: [["Col1", "Col2"]],
