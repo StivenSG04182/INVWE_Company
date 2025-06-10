@@ -4,17 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {
-    PlusCircle,
-    Users,
-    BarChart3,
-    MessageSquare,
-    Search,
-    Filter,
-    Download,
-    UserPlus,
-    PlusSquare,
-} from "lucide-react"
+import { PlusCircle, Users, BarChart3, Search, Filter,Download, UserPlus, } from "lucide-react"
 import ClientsDirectory from "./clients-directory"
 import CrmDashboard from "./crm-dashboard"
 import PqrChat from "./pqr-chat"
@@ -24,25 +14,16 @@ export default function UnifiedClientsDashboard({ agencyId, user }: { agencyId: 
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-
-    // Get the active tab from URL or default to "directory"
     const [activeTab, setActiveTab] = useState(() => {
         const tab = searchParams.get("tab")
         return tab && ["directory", "crm", "pqr"].includes(tab) ? tab : "directory"
     })
-
-    // Get the selected client ID from URL if any
     const [selectedClientId, setSelectedClientId] = useState<string | null>(searchParams.get("clientId"))
-    
-    // Referencia para acceder al componente ClientsDirectory
     const clientsDirectoryRef = useRef<any>(null)
-
-    // Mock client data for demonstration
     const [clients, setClients] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
-        // Update URL when tab changes
         const newSearchParams = new URLSearchParams(searchParams)
         newSearchParams.set("tab", activeTab)
         if (selectedClientId) {
@@ -55,17 +36,11 @@ export default function UnifiedClientsDashboard({ agencyId, user }: { agencyId: 
     }, [activeTab, selectedClientId, pathname, router, searchParams])
 
     useEffect(() => {
-        // Cargar datos reales de clientes
         const loadClients = async () => {
             try {
                 setIsLoading(true)
-                // Importar la función getClients de client-queries.ts
                 const { getClients } = await import('@/lib/client-queries')
-                
-                // Obtener los clientes reales de la base de datos
                 const clientsData = await getClients(agencyId)
-                
-                // Establecer los clientes obtenidos en el estado
                 setClients(clientsData)
                 setIsLoading(false)
             } catch (error) {
@@ -77,24 +52,16 @@ export default function UnifiedClientsDashboard({ agencyId, user }: { agencyId: 
         loadClients()
     }, [agencyId])
 
-    // Function to handle client selection
     const handleClientSelect = (clientId: string) => {
         setSelectedClientId(clientId)
         if (activeTab === "directory") {
             setActiveTab("crm")
         }
     }
-
-    // Function to add a new client using real database function
     const handleAddClient = async (clientData: any) => {
         try {
-            // Importar la función createClient de client-queries.ts
             const { createClient } = await import('@/lib/client-queries')
-            
-            // Crear el cliente usando la función real
             const newClient = await createClient(agencyId, clientData)
-            
-            // Actualizar la lista de clientes
             setClients([...clients, newClient])
             return newClient
         } catch (error) {
@@ -164,18 +131,8 @@ export default function UnifiedClientsDashboard({ agencyId, user }: { agencyId: 
                     )}
 
                     <Button variant="outline" className="flex items-center gap-2">
-                        <Filter className="h-4 w-4" />
-                        <span>Filtrar</span>
-                    </Button>
-
-                    <Button variant="outline" className="flex items-center gap-2">
                         <Download className="h-4 w-4" />
                         <span>Exportar</span>
-                    </Button>
-
-                    <Button variant="outline" className="flex items-center gap-2">
-                        <Search className="h-4 w-4" />
-                        <span className="hidden sm:inline">Buscar</span>
                     </Button>
                 </div>
             </div>

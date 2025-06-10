@@ -18,11 +18,7 @@ const ProductsPage = async ({ params }: { params: { agencyId: string } }) => {
   if (!user.Agency) {
     return redirect("/agency")
   }
-
-  // Obtener productos y categorías en paralelo
   const [rawProducts, categories] = await Promise.all([getProducts(agencyId), getCategories(agencyId)])
-
-  // Convertir valores Decimal a números normales y calcular stock una sola vez
   const products = rawProducts.map((product) => {
     const price = product.price ? Number(product.price) : 0
     const cost = product.cost ? Number(product.cost) : 0
@@ -35,7 +31,7 @@ const ProductsPage = async ({ params }: { params: { agencyId: string } }) => {
           if (movement.type === "SALIDA") return sum - movement.quantity
           return sum
         }, 0)
-      : product.quantity || 0 // Usar quantity si no hay movimientos
+      : product.quantity || 0
     return {
       ...product,
       price,
@@ -46,23 +42,15 @@ const ProductsPage = async ({ params }: { params: { agencyId: string } }) => {
       stockQuantity,
     }
   })
-
-  // Obtener tiendas de la agencia
   const subAccounts = user.Agency.SubAccount || []
-
-  // Calcular estadísticas
   const totalProducts = products.length
   const activeProducts = products.filter((product: any) => product.active !== false).length
   const totalCategories = categories.length
-
-  // ✅ CORREGIDO: Calcular valor total del inventario usando PRECIO DE VENTA * CANTIDAD
   const inventoryValue = products.reduce((total: number, product: any) => {
     const quantity = product.stockQuantity || 0
     const salePrice = product.price || 0
     return total + salePrice * quantity
   }, 0)
-
-  // Función para formatear números con separadores de miles
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("es-ES", {
       style: "currency",
@@ -70,40 +58,22 @@ const ProductsPage = async ({ params }: { params: { agencyId: string } }) => {
       minimumFractionDigits: 2,
     }).format(value)
   }
-
-  // ✅ CORREGIDO: Calcular productos con bajo stock (menos del 10%, menos de 10 unidades, o sin stock)
   const lowStockProducts = products.filter((product: any) => {
     const currentStock = product.stockQuantity || 0
     const minStock = product.minStock || 0
-
-    // Sin stock
     if (currentStock <= 0) return true
-
-    // Menos de 10 unidades
     if (currentStock < 10) return true
-
-    // Menos del 10% del stock mínimo (si está definido)
     if (minStock > 0 && currentStock < minStock * 0.1) return true
-
-    // Menos del stock mínimo definido
     if (minStock > 0 && currentStock <= minStock) return true
-
     return false
   }).length
-
-  // Calcular productos sin stock
   const outOfStockProducts = products.filter((product: any) => {
     return (product.stockQuantity || 0) <= 0
   }).length
-
-  // Calcular productos con descuento
   const discountedProducts = products.filter((product: any) => (product.discount || 0) > 0).length
-
-  // Calcular productos próximos a vencer (en los próximos 5 días)
   const today = new Date()
   const fiveDaysFromNow = new Date()
   fiveDaysFromNow.setDate(today.getDate() + 5)
-
   const expiringProducts = products.filter((product: any) => {
     if (!product.expirationDate) return false
     const expirationDate = new Date(product.expirationDate)
