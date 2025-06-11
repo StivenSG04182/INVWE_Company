@@ -44,17 +44,11 @@ export const getSubaccountDetails = async (subaccountId: string) => {
 
 export const getDashboardData = async (subaccountId: string) => {
     try {
-        // Obtener productos y su información relacionada
         const products = await db.product.findMany({
             where: {
                 subAccountId: subaccountId,
-            },
-            include: {
-                stocks: true,
-            },
+            }
         });
-
-        // Calcular estadísticas
         const totalProducts = products.length;
         const activeProducts = products.filter(product => product.active).length;
 
