@@ -108,7 +108,7 @@ export default function ProductFormFixed({ agencyId, product, isEditing = false 
         cost: product?.cost || "",
         minStock: product?.minStock || "",
         images: product?.images || [],
-        subaccountId: product?.subaccountId || "",
+        subaccountId: product?.subAccountId || "",
         categoryId: product?.categoryId || "",
 
         // Información adicional
@@ -128,7 +128,7 @@ export default function ProductFormFixed({ agencyId, product, isEditing = false 
         // Ciclo de vida
         warrantyMonths: product?.warrantyMonths || "",
         isReturnable: product?.isReturnable || false,
-        isActive: product?.isActive !== false, // Por defecto activo
+        isActive: product?.active !== false, // Por defecto activo
 
         // Gestión comercial
         discount: product?.discount || "",
@@ -166,8 +166,8 @@ export default function ProductFormFixed({ agencyId, product, isEditing = false 
 
                 // Cargar detalles de la agencia para obtener tiendas
                 const agencyDetails = await getAgencyDetails(agencyId)
-                if (agencyDetails && agencyDetails.SubAccount) {
-                    setSubaccounts(agencyDetails.SubAccount || [])
+                if (agencyDetails) {
+                    setSubaccounts(agencyDetails.subaccounts || [])
                 } else {
                     console.error("Error al cargar tiendas: No se encontraron tiendas")
                 }
@@ -345,22 +345,24 @@ export default function ProductFormFixed({ agencyId, product, isEditing = false 
 
     const calculateProfit = () => {
         if (!formData.price || !formData.cost) return 0
-        return formData.price - formData.cost
+        return Number(formData.price) - Number(formData.cost)
     }
 
     const calculateMargin = () => {
         if (!formData.price || !formData.cost) return 0
-        return ((formData.price - formData.cost) / formData.price) * 100
+        const price = Number(formData.price)
+        const cost = Number(formData.cost)
+        return ((price - cost) / price) * 100
     }
 
     const calculateDiscountedPrice = () => {
         if (!formData.price || !formData.discount) return formData.price
 
-        const discountedPrice = formData.price * (1 - formData.discount / 100)
+        const discountedPrice = Number(formData.price) * (1 - Number(formData.discount) / 100)
 
         // Si hay un precio mínimo configurado, no permitir que el precio baje de ese valor
-        if (hasMinimumPrice && formData.discountMinimumPrice > 0) {
-            return Math.max(discountedPrice, formData.discountMinimumPrice)
+        if (hasMinimumPrice && Number(formData.discountMinimumPrice) > 0) {
+            return Math.max(discountedPrice, Number(formData.discountMinimumPrice))
         }
 
         return discountedPrice

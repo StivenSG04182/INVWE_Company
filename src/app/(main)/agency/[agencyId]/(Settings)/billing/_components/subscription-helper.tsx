@@ -35,7 +35,7 @@ const SubscriptionHelper = ({ customerId, planExists, prices }: Props) => {
           },
         })
       )
-  }, [plan])
+  }, [plan, customerId, planExists, prices, setOpen])
 
   return <div>Ayudante de suscripción</div>
 }

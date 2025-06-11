@@ -274,7 +274,7 @@ export default async function DashboardPage({
                                 <span className="text-muted-foreground">Ubicación:</span> {movement.areaName}
                               </p>
                               {movement.notes && (
-                                <p className="mt-1 text-muted-foreground italic">"{movement.notes}"</p>
+                                <p className="mt-1 text-muted-foreground italic">&ldquo;{movement.notes}&rdquo;</p>
                               )}
                             </div>
                           </div>
@@ -597,7 +597,7 @@ export default async function DashboardPage({
                                         <span className="text-muted-foreground">Ubicación:</span> {movement.areaName}
                                       </p>
                                       {movement.notes && (
-                                        <p className="mt-1 text-muted-foreground italic">"{movement.notes}"</p>
+                                        <p className="mt-1 text-muted-foreground italic">&ldquo;{movement.notes}&rdquo;</p>
                                       )}
                                     </div>
                                   </div>

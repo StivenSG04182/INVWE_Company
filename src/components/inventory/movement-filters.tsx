@@ -116,7 +116,7 @@ export function MovementFilters({
             areas: allAreasSelected ? [] : selectedAreas,
             subAccounts: allSubAccountsSelected ? [] : selectedSubAccounts,
         });
-    }, [selectedAreas, selectedSubAccounts, selectedTypes, allAreasSelected, allSubAccountsSelected, allTypesSelected]);
+    }, [selectedAreas, selectedSubAccounts, selectedTypes, allAreasSelected, allSubAccountsSelected, allTypesSelected, onFilterChange]);
 
     return (
         <div className="flex flex-wrap gap-2">

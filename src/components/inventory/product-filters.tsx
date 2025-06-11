@@ -96,7 +96,7 @@ export function ProductFilters({
             categories: allCategoriesSelected ? [] : selectedCategories,
             subAccounts: allSubAccountsSelected ? [] : selectedSubAccounts,
         });
-    }, [selectedCategories, selectedSubAccounts, allCategoriesSelected, allSubAccountsSelected]);
+    }, [selectedCategories, selectedSubAccounts, allCategoriesSelected, allSubAccountsSelected, onFilterChange]);
 
     return (
         <div className="flex flex-wrap gap-2">

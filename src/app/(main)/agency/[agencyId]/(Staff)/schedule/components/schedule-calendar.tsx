@@ -57,7 +57,7 @@ export function ScheduleCalendar({
         }
 
         loadSchedules()
-    }, [agencyId, selectedEmployee])
+    }, [agencyId, selectedEmployee, holidays])
 
     // Obtener el inicio de la semana (lunes) o mes
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
@@ -137,14 +137,17 @@ export function ScheduleCalendar({
                 throw new Error(`Conflicto de horarios detectado. El empleado ya tiene turnos asignados en estos horarios.`)
             }
 
-            const newSchedule = await createSchedule(scheduleData)
+            const newSchedule = await createSchedule({
+                ...scheduleData,
+                breakTime: "01:00",
+                isOvertime: false,
+                hourlyRate: 0
+            })
             setSchedules((prev) => [...prev, newSchedule])
 
             // Regenerar alertas
             const complianceAlerts = generateComplianceAlerts([...schedules, newSchedule], holidays)
             setAlerts(complianceAlerts)
-
-            return newSchedule
         } catch (error) {
             console.error("Error al crear horario:", error)
             throw error

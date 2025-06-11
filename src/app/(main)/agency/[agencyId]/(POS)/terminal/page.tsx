@@ -6,107 +6,140 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { getProductsForPOS, processSale as processSaleQuery, saveSaleState, getSavedSales as getSavedSalesQuery, deleteSavedSale as deleteSavedSaleQuery, getCategoriesForPOS, getClientsForPOS, getSubAccountsForAgency, generateInvoice, sendInvoiceByEmail, linkSaleToInvoice } from "@/lib/queries2"
 import ClientsDirectory from "@/components/clients/clients-directory"
-import {
-    ShoppingCart,
-    DollarSign,
-    CreditCard,
-    Package,
-    User,
-    Plus,
-    Minus,
-    Trash2,
-    Receipt,
-    Save,
-    Calculator,
-    Search,
-    BarChart3,
-    Clock,
-    Filter,
-    UserPlus,
-    Building,
-    Store,
-    RefreshCw,
-} from "lucide-react"
+import { ShoppingCart, DollarSign, CreditCard, Package, User, Plus, Minus, Trash2, Receipt, Save, Calculator, Search, BarChart3, Clock, Filter, UserPlus, Building, Store, RefreshCw, } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,} from "@/components/ui/dropdown-menu"
 import { MoreVertical, FileText } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@clerk/nextjs"
 import Image from "next/image"
+import { useCallback as useCallbackReact } from 'react'
 
 
 const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
     const agencyId = params.agencyId
     const { userId } = useAuth()
-    const [user, setUser] = useState(null)
+    interface User {
+        id: string | null;
+    }
+    const [user, setUser] = useState<User | null>(null)
 
-    // Redirigir si no hay usuario después de cargar los datos
     useEffect(() => {
-        if (user === null) return // Aún cargando
+        if (user === null) return 
         if (!user) redirect("/sign-in")
     }, [user])
     const [cartOpen, setCartOpen] = useState(false)
     const [newClientOpen, setNewClientOpen] = useState(false)
-    const [selectedProducts, setSelectedProducts] = useState([])
-    const [selectedClient, setSelectedClient] = useState({
+    interface SelectedProduct {
+        id: string;
+        name: string;
+        price: number;
+        quantity: number;
+        subtotal: number;
+    }
+    const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([])
+    const [selectedClient, setSelectedClient] = useState<{
+        name: string;
+        id: string | null;
+        email?: string | null;
+        phone?: string | null;
+        address?: string | null;
+    }>({
         name: "Cliente General",
         id: null,
     })
-    const clientsDirectoryRef = useRef(null)
+    interface ClientsDirectoryRef {
+        openAddClientDialog: () => void;
+    }
+    const clientsDirectoryRef = useRef<ClientsDirectoryRef>(null)
     const [paymentMethod, setPaymentMethod] = useState("")
     const [amountReceived, setAmountReceived] = useState("")
     const [filtersOpen, setFiltersOpen] = useState(false)
     const [savedSalesOpen, setSavedSalesOpen] = useState(false)
-    const [savedSales, setSavedSales] = useState([])
-    const [selectedProducts2, setSelectedProducts2] = useState([]) // IDs de productos seleccionados
-
-    // Estados para datos reales
-    const [products, setProducts] = useState([])
-    const [clients, setClients] = useState([])
+    interface SavedSale {
+        products: any;
+        client: any;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        agencyId: string;
+        subAccountId: string | null;
+        total: number;
+        areaId: string;
+    }
+    const [savedSales, setSavedSales] = useState<SavedSale[]>([])
+    const [selectedProducts2, setSelectedProducts2] = useState<string[]>([])
+    interface Product {
+        id: string;
+        name: string;
+        description: string | null;
+        sku: string;
+        price: number;
+        cost: string | number;
+        quantity: number;
+        categoryId: string | null;
+        categoryName: string;
+        unit: string;
+        tags: string[];
+        model: string;
+        brand: string;
+        images: string[];
+        productImage: string;
+        discount: number;
+        discountStartDate: string | null;
+        discountEndDate: string | null;
+        discountMinimumPrice: string | number;
+        taxRate: number;
+        supplierId: string | null;
+        isReturnable: boolean;
+        isActive: boolean;
+        expirationDate: string | null;
+        serialNumber: string;
+    }
+    const [products, setProducts] = useState<Product[]>([])
+    interface Client {
+        name: string;
+        id: string;
+        email: string | null;
+        address: string | null;
+        phone: string | null;
+        type: string;
+        city: string | null;
+        zipCode: string | null;
+        state: string | null;
+        country: string | null;
+    }
+    const [clients, setClients] = useState<Client[]>([])
     const [categories, setCategories] = useState([{ id: "Todos", name: "Todos" }])
-    const [subaccounts, setSubaccounts] = useState([])
+    interface Subaccount {
+        id: string;
+        name: string;
+        createdAt: Date;
+        updatedAt: Date;
+        subAccountLogo: string;
+        address?: string;
+    }
+    
+    const [subaccounts, setSubaccounts] = useState<Subaccount[]>([])
     const [selectedSubaccount, setSelectedSubaccount] = useState("")
-    // Se eliminó la referencia a áreas para simplificar el flujo de venta
     const [isLoading, setIsLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCategory, setSelectedCategory] = useState("Todos")
-
-    // Estado para el modal de selección de subaccount
     const [subaccountModalOpen, setSubaccountModalOpen] = useState(true)
     const [useAgencyProducts, setUseAgencyProducts] = useState(false)
-
-    // Estado para el modal de creación de productos
     const [productFormOpen, setProductFormOpen] = useState(false)
+    const modalRef = useRef<HTMLDivElement>(null)
 
-    // Referencia para detectar clics fuera del modal
-    const modalRef = useRef(null)
-
-    // Cargar datos del usuario autenticado
     useEffect(() => {
         const loadUser = async () => {
             try {
-                // Usar useAuth hook en lugar de auth() del servidor
                 setUser(userId ? { id: userId } : null)
             } catch (error) {
                 console.error("Error loading user:", error)
@@ -116,7 +149,6 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         loadUser()
     }, [userId])
 
-    // Cargar carrito desde localStorage al iniciar
     useEffect(() => {
         const savedCart = localStorage.getItem(`pos-cart-${agencyId}-${selectedSubaccount || 'agency'}`)
         if (savedCart) {
@@ -131,20 +163,17 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         }
     }, [agencyId, selectedSubaccount])
 
-    // Función para recargar clientes (necesaria para actualizar después de crear uno nuevo)
-    const loadClients = async () => {
+    const loadClients = useCallback(async () => {
         if (!agencyId) return
 
         try {
             const clientsData = await getClientsForPOS(agencyId, selectedSubaccount || undefined)
             setClients(clientsData)
         } catch (error) {
-            console.error("Error al cargar clientes:", error)
             toast.error("Error al cargar lista de clientes")
         }
-    }
+    }, [agencyId, selectedSubaccount])
 
-    // Guardar carrito en localStorage automáticamente (excepto cuando se presiona guardar)
     useEffect(() => {
         const cartData = {
             products: selectedProducts,
@@ -154,52 +183,33 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         localStorage.setItem(`pos-cart-${agencyId}-${selectedSubaccount || 'agency'}`, JSON.stringify(cartData))
     }, [selectedProducts, selectedClient, agencyId, selectedSubaccount])
 
-    // Cargar subaccounts de la agencia
     useEffect(() => {
         const loadSubaccounts = async () => {
             if (!agencyId) return
-
             try {
-                // Obtener tiendas directamente usando la función del servidor
                 const subaccountsData = await getSubAccountsForAgency(agencyId)
-                
-                // Asegurarse de que las tiendas se carguen correctamente
                 setSubaccounts(subaccountsData || [])
-                
-                // Si hay subaccounts, abrir el modal de selección
                 if (subaccountsData && subaccountsData.length > 0) {
                     setSubaccountModalOpen(true)
                 } else {
-                    // Si no hay subaccounts, usar productos de la agencia
                     setUseAgencyProducts(true)
                     setSubaccountModalOpen(false)
                 }
             } catch (error) {
-                console.error("Error al cargar subaccounts:", error)
                 toast.error("Error al cargar tiendas. Usando productos de la agencia.")
-                // En caso de error, usar productos de la agencia
                 setUseAgencyProducts(true)
                 setSubaccountModalOpen(false)
             }
         }
-
         loadSubaccounts()
     }, [agencyId])
-
-    // Se eliminó la carga de áreas para simplificar el flujo de venta
-
-    // Cargar categorías para filtrado
     useEffect(() => {
         const loadCategories = async () => {
             if (!agencyId) return
-
             try {
-                // Usar la función de queries2.ts para obtener categorías
                 const categoriesData = await getCategoriesForPOS(agencyId, selectedSubaccount || undefined)
-                // Añadir la opción "Todos" al inicio
                 setCategories([{ id: "Todos", name: "Todos" }, ...categoriesData])
             } catch (error) {
-                console.error("Error al cargar categorías:", error)
                 toast.error("Error al cargar categorías de productos")
             }
         }
@@ -208,51 +218,40 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
     }, [agencyId, selectedSubaccount])
 
 
-    // Cargar clientes para selección
     useEffect(() => {
-        loadClients()
-    }, [agencyId, selectedSubaccount])
+        loadClients();
+    }, [loadClients]); 
 
-    // Función para guardar el carrito actual en la base de datos usando la función de queries2.ts
     const saveCartState = async () => {
-        // Solo guardar si hay productos en el carrito
         if (selectedProducts.length > 0) {
             try {
-                // Preparar datos para la función
                 const cartData = {
                     agencyId,
-                    subAccountId: selectedSubaccount || null,
+                    subAccountId: selectedSubaccount || undefined,
                     products: selectedProducts,
                     client: selectedClient,
                 }
-
-                // Usar la función de queries2.ts para guardar el carrito
                 const result = await saveSaleState(cartData)
 
                 if (result) {
                     toast.success("Venta guardada correctamente")
-                    // Actualizar la lista de ventas guardadas
                     loadSavedSales()
                 }
             } catch (error) {
-                console.error("Error saving cart:", error)
                 toast.error(error.message || "Error al guardar la venta")
             }
         }
     }
 
-    // Función para procesar la venta utilizando la función de queries2.ts
     const [isProcessing, setIsProcessing] = useState(false)
 
     const processSale = async () => {
         if (selectedProducts.length === 0) return
 
-        // Se eliminó la validación de área seleccionada
 
         try {
             setIsProcessing(true)
 
-            // Verificar cantidad disponible antes de procesar
             for (const product of selectedProducts) {
                 const productData = products.find((p) => p.id === product.id)
                 if (!productData) {
@@ -268,10 +267,9 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                 }
             }
 
-            // Preparar datos para la función de procesamiento
             const saleData = {
                 agencyId,
-                subAccountId: selectedSubaccount || null,
+                subAccountId: selectedSubaccount || undefined,
                 products: selectedProducts.map((p) => ({
                     id: p.id,
                     name: p.name,
@@ -283,34 +281,25 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                 total: total,
             }
 
-            // Usar la función de queries2.ts para procesar la venta
             const result = await processSaleQuery(saleData)
 
             if (result) {
-                // Limpiar carrito
                 clearCart()
                 setCartOpen(false)
 
-                // Mostrar mensaje de éxito
                 toast.success("Venta procesada correctamente")
 
-                // Actualizar la lista de productos para reflejar la nueva cantidad
                 loadProducts()
 
-                // Generar factura automáticamente
                 try {
-                    // Determinar si debemos generar factura
                     const shouldGenerateInvoice = selectedClient.id !== null;
                     
                     if (shouldGenerateInvoice) {
-                        // Obtener cliente completo con datos fiscales
                         const clientData = clients.find(c => c.id === selectedClient.id);
-                        
-                        // Crear factura usando la función del servidor
                         const invoiceResult = await generateInvoice({
                             agencyId,
                             subAccountId: selectedSubaccount || null,
-                            customerId: selectedClient.id,
+                            customerId: selectedClient.id || '',
                             items: selectedProducts.map((p) => ({
                                 productId: p.id,
                                 description: p.name,
@@ -327,10 +316,8 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                         if (invoiceResult.success) {
                             toast.success("Factura generada correctamente")
 
-                            // Vincular la factura con la venta
                             if (result.id && invoiceResult.data?.id) {
                                 try {
-                                    // Implementar la vinculación entre venta y factura
                                     const linkResult = await linkSaleToInvoice(result.id, invoiceResult.data.id);
                                     if (linkResult.success) {
                                     } else {
@@ -340,8 +327,6 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                     console.error("Error al vincular venta con factura:", linkError);
                                 }
                             }
-
-                            // Enviar factura por correo si hay email
                             if (clientData?.email) {
                                 try {
                                     const emailResult = await sendInvoiceByEmail(invoiceResult.data.id)
@@ -349,26 +334,22 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                         toast.success(`Factura enviada a ${clientData.email}`)
                                     }
                                 } catch (emailError) {
-                                    console.error("Error al enviar factura por correo:", emailError);
                                     toast.error(`No se pudo enviar la factura por correo a ${clientData.email}`)
                                 }
                             }
                         }
                     } 
                 } catch (error) {
-                    console.error("Error en el proceso de facturación:", error)
                     toast.error("Se completó la venta pero hubo un error al generar la factura")
                 }
             }
         } catch (error) {
-            console.error("Error processing sale:", error)
             toast.error(error.message || "Error al procesar la venta")
         } finally {
             setIsProcessing(false)
         }
     }
 
-    // Función para cargar una venta guardada
     const loadSavedSale = (sale) => {
         setSelectedProducts(sale.products)
         setSelectedProducts2(sale.products.map((p) => p.id))
@@ -376,30 +357,27 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         setSavedSalesOpen(false)
         setCartOpen(true)
     }
-
-    // Función para cargar ventas guardadas usando la función de queries2.ts
     const loadSavedSales = async () => {
         try {
-            // Preparar opciones para la consulta
             const options: {
                 subAccountId?: string;
             } = {}
 
             if (selectedSubaccount) options.subAccountId = selectedSubaccount
 
-            // Usar la función de queries2.ts para obtener ventas guardadas
             const savedSalesData = await getSavedSalesQuery(agencyId, options)
-            setSavedSales(savedSalesData)
+            const convertedSales = savedSalesData.map(sale => ({
+                ...sale,
+                total: Number(sale.total)
+            }))
+            setSavedSales(convertedSales)
         } catch (error) {
-            console.error("Error al cargar ventas guardadas:", error)
             toast.error(error.message || "Error al cargar ventas guardadas")
         }
     }
 
-    // Función para eliminar una venta guardada usando la función de queries2.ts
     const deleteSavedSale = async (id) => {
         try {
-            // Usar la función de queries2.ts para eliminar la venta guardada
             const result = await deleteSavedSaleQuery(id)
             
             if (result && result.success) {
@@ -407,19 +385,17 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                 setSavedSales((prev) => prev.filter((sale) => sale.id !== id))
             }
         } catch (error) {
-            console.error("Error deleting saved sale:", error)
+            
             toast.error(error.message || "Error al eliminar la venta")
         }
     }
 
-    // Cargar ventas guardadas al iniciar
     useEffect(() => {
         if (agencyId) {
             loadSavedSales()
         }
     }, [agencyId, selectedSubaccount])
 
-    // Manejar clic fuera del modal para cerrarlo
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (modalRef.current && !modalRef.current.contains(event.target)) {
@@ -437,33 +413,26 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         return () => {
             document.removeEventListener("mousedown", handleClickOutside)
         }
-    }, [cartOpen, newClientOpen, selectedProducts])
+    }, [cartOpen, newClientOpen, selectedProducts, loadSavedSales])
 
-    // Calcular totales
     const subtotal = selectedProducts.reduce((sum, product) => sum + product.subtotal, 0)
     const iva = subtotal * 0.19
     const total = subtotal + iva
 
-    // Función para actualizar cantidad de producto
-    const updateQuantity = (id, newQuantity) => {
-        // Validar cantidad mínima
+    const updateQuantity = (id: string, newQuantity: number) => {
         if (newQuantity < 1) return
 
-        // Obtener datos del producto del inventario
-        const productData = products.find((p) => p.id === id);
+        const productData = products.find((p: Product) => p.id === id);
         if (!productData) return;
 
-        // Obtener el producto del carrito
         const product = selectedProducts.find((p) => p.id === id)
         if (!product) return
 
-        // Verificar si hay suficiente cantidad
         if (newQuantity > productData.quantity) {
             toast.error(`Cantidad insuficiente: solo hay ${productData.quantity} unidades disponibles de ${product.name}`);
             return;
         }
 
-        // Actualizar el producto en el carrito
         setSelectedProducts((prev) =>
             prev.map((product) =>
                 product.id === id
@@ -477,42 +446,33 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         )
     }
 
-    // Función para eliminar producto
     const removeProduct = (id) => {
         setSelectedProducts((prev) => prev.filter((product) => product.id !== id))
         setSelectedProducts2((prev) => prev.filter((productId) => productId !== id))
     }
 
-    // Función para vaciar carrito
     const clearCart = () => {
         setSelectedProducts([])
         setSelectedProducts2([])
-        // Limpiar también el localStorage
         localStorage.removeItem(`pos-cart-${agencyId}-${selectedSubaccount || 'agency'}`)
     }
 
-    // Función para obtener el nombre de la categoría por su ID
     const getCategoryName = (categoryId: string) => {
-        // Convertir a string para asegurar una comparación consistente
         const category = categories.find(cat => String(cat.id) === String(categoryId))
         return category ? category.name : "Sin categoría"
     }
 
-    // Función para seleccionar o deseleccionar un producto
     const toggleProductSelection = (product) => {
-        // Si ya está en el carrito, removerlo (deseleccionar)
         if (selectedProducts2.includes(product.id)) {
             removeProduct(product.id)
             return
         }
 
-        // Validar que el producto tenga quantity > 1
         if (product.quantity <= 1) {
             toast.error(`No se puede seleccionar ${product.name}. Debe tener más de 1 unidad disponible. Disponible: ${product.quantity}`)
             return
         }
 
-        // Agregar nuevo producto
         setSelectedProducts((prev) => [
             ...prev,
             {
@@ -525,110 +485,90 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         ])
         setSelectedProducts2((prev) => [...prev, product.id])
 
-        // Mostrar confirmación de producto agregado
         toast.success(`${product.name} agregado al carrito`)
     }
 
-    // Función para cargar productos utilizando la función de queries2.ts
-    const loadProducts = async () => {
+    const loadProducts = useCallback(async () => {
         if (!agencyId) return
 
         try {
             setIsLoading(true)
 
-            // Preparar opciones para la consulta
             const options: {
                 subAccountId?: string;
                 categoryId?: string;
                 search?: string;
             } = {}
 
-            // Si estamos usando una tienda específica, incluirla en las opciones
             if (!useAgencyProducts && selectedSubaccount) {
                 options.subAccountId = selectedSubaccount
             }
 
-            // Añadir filtros adicionales
             if (selectedCategory && selectedCategory !== "Todos") options.categoryId = selectedCategory
             if (searchTerm) options.search = searchTerm
 
-            // Usar la función de queries2.ts para obtener productos
             const productsData = await getProductsForPOS(agencyId, options)
 
-            // Transformar los datos para el formato esperado por la UI
             const productsWithQuantity = productsData
-                .map((product) => {
-                    if (!product || typeof product !== "object") {
-                        return null
-                    }
-
-                    return {
-                        id: product.id,
-                        name: product.name,
-                        description: product.description,
-                        sku: product.sku,
-                        price: Number(product.price),
-                        cost: product.cost ? Number(product.cost) : "",
-                        quantity: Number(product.quantity) || 0,
-                        categoryId: product.categoryId,
-                        categoryName: product.Category?.name || "Sin categoría",
-                        unit: product.unit || "",
-                        tags: product.tags || [],
-                        model: product.model || "",
-                        brand: product.brand || "",
-                        images: product.images || [],
-                        productImage: product.productImage || "",
-                        discount: Number(product.discount) || 0,
-                        discountStartDate: product.discountStartDate || null,
-                        discountEndDate: product.discountEndDate || null,
-                        discountMinimumPrice: product.discountMinimumPrice ? Number(product.discountMinimumPrice) : "",
-                        taxRate: Number(product.taxRate) || 0,
-                        supplierId: product.supplierId || null,
-                        isReturnable: product.isReturnable || false,
-                        isActive: product.active !== false,
-                        expirationDate: product.expirationDate || null,
-                        serialNumber: product.serialNumber || "",
-                    }
-                })
-                .filter(Boolean)
+                .filter((product): product is NonNullable<typeof product> => 
+                    product !== null && typeof product === "object"
+                )
+                .map((product) => ({
+                    id: product.id,
+                    name: product.name,
+                    description: product.description,
+                    sku: product.sku,
+                    price: Number(product.price),
+                    cost: product.cost ? Number(product.cost) : "",
+                    quantity: Number(product.quantity) || 0,
+                    categoryId: product.categoryId,
+                    categoryName: product.Category?.name || "Sin categoría",
+                    unit: product.unit || "",
+                    tags: product.tags || [],
+                    model: product.model || "",
+                    brand: product.brand || "",
+                    images: product.images || [],
+                    productImage: product.images?.[0] || "",
+                    discount: Number(product.discount) || 0,
+                    discountStartDate: product.discountStartDate || null,
+                    discountEndDate: product.discountEndDate || null,
+                    discountMinimumPrice: product.discountMinimumPrice ? Number(product.discountMinimumPrice) : "",
+                    taxRate: Number(product.taxRate) || 0,
+                    supplierId: product.supplierId || null,
+                    isReturnable: product.isReturnable || false,
+                    isActive: product.active !== false,
+                    expirationDate: product.expirationDate || null,
+                    serialNumber: product.serialNumber || "",
+                })) as Product[]
 
             setProducts(productsWithQuantity)
         } catch (error) {
-            console.error("Error cargando productos:", error)
             toast.error("Error al cargar productos: " + (error instanceof Error ? error.message : "Error desconocido"))
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [agencyId, useAgencyProducts, selectedSubaccount, selectedCategory, searchTerm])
 
-    // Cargar productos cuando cambian los filtros o la subaccount
     useEffect(() => {
         if (agencyId && (selectedSubaccount || useAgencyProducts)) {
             loadProducts()
         }
-    }, [agencyId, selectedSubaccount, selectedCategory, searchTerm, useAgencyProducts])
+    }, [agencyId, selectedSubaccount, selectedCategory, searchTerm, useAgencyProducts, loadProducts])
 
-    // Función para cambiar la subaccount y actualizar la consulta de productos
     const handleSubaccountChange = (subaccountId) => {
-        // Si seleccionamos "Usar productos de la agencia"
         if (subaccountId === "agency") {
             setUseAgencyProducts(true)
             setSelectedSubaccount("")
-            // Al seleccionar agencia, la consulta se hará con agencyId
         } else {
             setUseAgencyProducts(false)
             setSelectedSubaccount(subaccountId)
-            // Al seleccionar una tienda, la consulta se hará con subAccountId
         }
 
-        // Limpiar carrito al cambiar de subaccount
         clearCart()
 
-        // Cerrar el modal
         setSubaccountModalOpen(false)
     }
 
-    // Función para manejar la creación exitosa de un producto
     const handleProductCreated = () => {
         setProductFormOpen(false)
         toast.success("Producto creado correctamente. Actualizando lista...")
@@ -779,8 +719,8 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                         </SelectTrigger>
                                         <SelectContent>
                                             {categories.map((category) => (
-                                                <SelectItem key={category.id || category} value={category.id || category}>
-                                                    {category.name || category}
+                                                <SelectItem key={typeof category === 'string' ? category : category.id} value={typeof category === 'string' ? category : category.id}>
+                                                    {typeof category === 'string' ? category : category.name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -1398,8 +1338,8 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                                     ) : (
                                         savedSales.map((sale) => (
                                             <tr key={sale.id} className="border-b hover:bg-muted/50">
-                                                <td className="py-3 px-4">{sale.date}</td>
-                                                <td className="py-3 px-4">{sale.items} productos</td>
+                                                <td className="py-3 px-4">{new Date(sale.createdAt).toLocaleDateString()}</td>
+                                                <td className="py-3 px-4">{sale.products.length} productos</td>
                                                 <td className="py-3 px-4 font-medium">${sale.total.toLocaleString()}</td>
                                                 <td className="py-3 px-4">
                                                     <div className="flex gap-2">
@@ -1443,3 +1383,13 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
 }
 
 export default TerminalPage
+
+
+// Implementation of useCallback that matches React's useCallback
+function useCallback<T extends (...args: any[]) => any>(
+    callback: T,
+    deps: ReadonlyArray<any>
+): T {
+    return useCallbackReact(callback, deps)
+}
+

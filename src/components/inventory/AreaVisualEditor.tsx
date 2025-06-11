@@ -98,7 +98,7 @@ export const AreaVisualEditor = ({
       setHistory([initialLayout])
       setHistoryIndex(0)
     }
-  }, [])
+  }, [initialLayout])
 
   // Añadir al historial cuando cambia el layout
   const addToHistory = (newLayout: AreaLayout) => {

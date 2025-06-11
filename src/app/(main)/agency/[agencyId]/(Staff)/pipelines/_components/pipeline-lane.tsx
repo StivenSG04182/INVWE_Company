@@ -111,6 +111,8 @@ const PipelineLane: React.FC<PipelaneLaneProps> = ({
         subaccountId,
       })
       router.refresh()
+    } catch (error) {
+      console.error('Error deleting lane:', error)
     }
   }
 

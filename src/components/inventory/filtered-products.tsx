@@ -239,7 +239,7 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
 
             <div className="text-sm text-muted-foreground">
                 {filteredAndSortedProducts.length} de {products.length} productos encontrados
-                {searchTerm && <span className="ml-2">• Búsqueda: "{searchTerm}"</span>}
+                {searchTerm && <span className="ml-2">• Búsqueda: &quot;{searchTerm}&quot;</span>}
                 {selectedCategory !== "all" && <span className="ml-2">• Categoría: {getCategoryName(selectedCategory)}</span>}
             </div>
 

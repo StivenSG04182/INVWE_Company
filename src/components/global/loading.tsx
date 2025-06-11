@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useEffect, useRef } from 'react';
 
 const StoreLoading = () => {
@@ -5,20 +7,20 @@ const StoreLoading = () => {
   const storeRef = useRef(null);
   const awningRef = useRef(null);
   const sphereRef = useRef(null);
-  const cubesRef = useRef([]);
+  const cubesRef = useRef<(HTMLDivElement | null)[]>([]);
   const mascotRef = useRef(null);
-  const iconsRef = useRef([]);
+  const iconsRef = useRef<(HTMLDivElement | null)[]>([]);
   const nftPanelRef = useRef(null);
-  const dotsRef = useRef([]);
-  const inventoryItemsRef = useRef([]);
+  const dotsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const inventoryItemsRef = useRef<(HTMLDivElement | null)[]>([]);
   const conveyorRef = useRef(null);
   const scannerRef = useRef(null);
   const barcodeRef = useRef(null);
-  const counterRef = useRef(null);
-  const packagesRef = useRef([]);
+  const counterRef = useRef<HTMLDivElement>(null);
+  const packagesRef = useRef<(HTMLDivElement | null)[]>([]);
   const inventoryPanelRef = useRef(null);
-  const stockIndicatorsRef = useRef([]);
-  const dataStreamRef = useRef([]);
+  const stockIndicatorsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const dataStreamRef = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
     // Load GSAP from CDN
@@ -165,7 +167,7 @@ const StoreLoading = () => {
         onUpdate: function() {
           currentCount = Math.floor(Math.random() * 999) + 100;
           if (counterRef.current) {
-            counterRef.current.textContent = currentCount;
+            counterRef.current.textContent = currentCount.toString();
           }
         }
       });
@@ -307,7 +309,7 @@ const StoreLoading = () => {
   }, []);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-100 via-blue-50 to-green-50">
+    <div className="fixed inset-0 flex items-center justify-center w-screen h-screen overflow-hidden bg-gradient-to-br from-gray-100 via-blue-50 to-green-50">
       <div ref={containerRef} className="relative opacity-0">
         {/* Base platform */}
         <div className="w-96 h-44 bg-white rounded-xl shadow-2xl transform perspective-1000 rotate-x-12 relative overflow-visible">
@@ -368,19 +370,19 @@ const StoreLoading = () => {
           {/* Left sidebar with inventory controls */}
           <div className="absolute top-4 left-4 w-10 h-20 bg-gradient-to-b from-green-500 to-green-600 rounded-lg shadow-lg flex flex-col items-center justify-around py-2 border border-green-400">
             <div 
-              ref={el => iconsRef.current[0] = el}
+              ref={el => {iconsRef.current[0] = el}}
               className="w-7 h-7 bg-gradient-to-br from-white to-gray-100 rounded-md flex items-center justify-center shadow-md border border-gray-200"
             >
               <div className="w-4 h-4 bg-gradient-to-br from-green-500 to-green-600 rounded-sm shadow-sm"></div>
             </div>
             <div 
-              ref={el => iconsRef.current[1] = el}
+              ref={el => {iconsRef.current[1] = el}}
               className="w-7 h-7 bg-gradient-to-br from-white to-gray-100 rounded-md flex items-center justify-center shadow-md border border-gray-200"
             >
               <div className="w-3 h-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full shadow-sm"></div>
             </div>
             <div 
-              ref={el => iconsRef.current[2] = el}
+              ref={el => {iconsRef.current[2] = el}}
               className="w-7 h-7 bg-gradient-to-br from-white to-gray-100 rounded-md flex items-center justify-center shadow-md border border-gray-200"
             >
               <div className="text-xs font-bold text-green-600" ref={counterRef}>124</div>
@@ -400,16 +402,16 @@ const StoreLoading = () => {
               
               {/* Stock indicators */}
               <div className="absolute top-6 left-2 space-y-1">
-                <div ref={el => stockIndicatorsRef.current[0] = el} className="w-3 h-1 bg-green-400 rounded-full"></div>
-                <div ref={el => stockIndicatorsRef.current[1] = el} className="w-4 h-1 bg-yellow-400 rounded-full"></div>
-                <div ref={el => stockIndicatorsRef.current[2] = el} className="w-2 h-1 bg-red-400 rounded-full"></div>
+                <div ref={el => { stockIndicatorsRef.current[0] = el }} className="w-3 h-1 bg-green-400 rounded-full"></div>
+                <div ref={el => { stockIndicatorsRef.current[1] = el}} className="w-4 h-1 bg-yellow-400 rounded-full"></div>
+                <div ref={el => { stockIndicatorsRef.current[2] = el}} className="w-2 h-1 bg-red-400 rounded-full"></div>
               </div>
               
               {/* Data stream */}
               <div className="absolute top-6 right-2 space-y-1">
-                <div ref={el => dataStreamRef.current[0] = el} className="w-1 h-1 bg-green-300 rounded-full opacity-60"></div>
-                <div ref={el => dataStreamRef.current[1] = el} className="w-1 h-1 bg-green-300 rounded-full opacity-60"></div>
-                <div ref={el => dataStreamRef.current[2] = el} className="w-1 h-1 bg-green-300 rounded-full opacity-60"></div>
+                <div ref={el => {dataStreamRef.current[0] = el}} className="w-1 h-1 bg-green-300 rounded-full opacity-60"></div>
+                <div ref={el => {dataStreamRef.current[1] = el}} className="w-1 h-1 bg-green-300 rounded-full opacity-60"></div>
+                <div ref={el => {dataStreamRef.current[2] = el}} className="w-1 h-1 bg-green-300 rounded-full opacity-60"></div>
               </div>
 
               {/* Barcode scanner */}
@@ -441,15 +443,15 @@ const StoreLoading = () => {
           {/* Inventory items */}
           <div className="absolute top-6 left-28 space-x-2 flex">
             <div 
-              ref={el => inventoryItemsRef.current[0] = el}
+              ref={el => {inventoryItemsRef.current[0] = el}}
               className="w-4 h-6 bg-gradient-to-b from-orange-400 to-orange-600 rounded-sm shadow-md border border-orange-300"
             ></div>
             <div 
-              ref={el => inventoryItemsRef.current[1] = el}
+              ref={el => {inventoryItemsRef.current[1] = el}}
               className="w-4 h-5 bg-gradient-to-b from-purple-400 to-purple-600 rounded-sm shadow-md border border-purple-300"
             ></div>
             <div 
-              ref={el => inventoryItemsRef.current[2] = el}
+              ref={el => {inventoryItemsRef.current[2] = el}}
               className="w-4 h-7 bg-gradient-to-b from-red-400 to-red-600 rounded-sm shadow-md border border-red-300"
             ></div>
           </div>
@@ -467,7 +469,7 @@ const StoreLoading = () => {
             
             {/* Package boxes */}
             <div 
-              ref={el => cubesRef.current[0] = el}
+              ref={el => {cubesRef.current[0] = el}}
               className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 shadow-lg transform rotate-12 relative border border-amber-300 rounded-sm"
             >
               <div className="absolute inset-1 bg-gradient-to-br from-amber-300 to-amber-400 opacity-60 rounded-sm"></div>
@@ -476,7 +478,7 @@ const StoreLoading = () => {
             </div>
             
             <div 
-              ref={el => cubesRef.current[1] = el}
+              ref={el => {cubesRef.current[1] = el}}
               className="w-8 h-8 bg-gradient-to-br from-teal-500 to-teal-700 shadow-md transform -rotate-12 relative border border-teal-400 rounded-sm"
             >
               <div className="absolute inset-1 bg-gradient-to-br from-teal-400 to-teal-500 opacity-60 rounded-sm"></div>
@@ -487,9 +489,9 @@ const StoreLoading = () => {
 
           {/* Small packages on conveyor */}
           <div className="absolute bottom-6 left-12 flex space-x-3">
-            <div ref={el => packagesRef.current[0] = el} className="w-3 h-3 bg-gradient-to-br from-gray-400 to-gray-600 rounded-sm shadow-sm border border-gray-300"></div>
-            <div ref={el => packagesRef.current[1] = el} className="w-3 h-4 bg-gradient-to-br from-blue-400 to-blue-600 rounded-sm shadow-sm border border-blue-300"></div>
-            <div ref={el => packagesRef.current[2] = el} className="w-3 h-3 bg-gradient-to-br from-green-400 to-green-600 rounded-sm shadow-sm border border-green-300"></div>
+            <div ref={el => {packagesRef.current[0] = el}} className="w-3 h-3 bg-gradient-to-br from-gray-400 to-gray-600 rounded-sm shadow-sm border border-gray-300"></div>
+            <div ref={el => {packagesRef.current[1] = el}} className="w-3 h-4 bg-gradient-to-br from-blue-400 to-blue-600 rounded-sm shadow-sm border border-blue-300"></div>
+            <div ref={el => {packagesRef.current[2] = el}} className="w-3 h-3 bg-gradient-to-br from-green-400 to-green-600 rounded-sm shadow-sm border border-green-300"></div>
           </div>
 
           {/* Warehouse worker/mascot */}
@@ -521,9 +523,9 @@ const StoreLoading = () => {
         {/* Loading animation */}
         <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2">
           <div className="flex space-x-2">
-            <div ref={el => dotsRef.current[0] = el} className="w-3 h-3 bg-gradient-to-br from-green-500 to-green-600 rounded-full shadow-md"></div>
-            <div ref={el => dotsRef.current[1] = el} className="w-3 h-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full shadow-md"></div>
-            <div ref={el => dotsRef.current[2] = el} className="w-3 h-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full shadow-md"></div>
+            <div ref={el => {dotsRef.current[0] = el}} className="w-3 h-3 bg-gradient-to-br from-green-500 to-green-600 rounded-full shadow-md"></div>
+            <div ref={el => {dotsRef.current[1] = el}} className="w-3 h-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full shadow-md"></div>
+            <div ref={el => {dotsRef.current[2] = el}} className="w-3 h-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full shadow-md"></div>
           </div>
           <p className="text-gray-600 text-sm mt-3 text-center font-medium tracking-wide">Cargando inventario...</p>
           <div className="text-center mt-1">

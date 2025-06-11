@@ -304,7 +304,7 @@ export default function BulkProductForm({ agencyId, subaccountId }: BulkProductF
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
 
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as unknown[][];
 
                     const headers = jsonData[1] as string[];
                     setExcelHeaders(headers);
@@ -323,9 +323,9 @@ export default function BulkProductForm({ agencyId, subaccountId }: BulkProductF
                     });
                     setColumnMapping(initialMapping);
 
-                    const preview = [];
+                    const preview: Record<string, string>[] = [];
                     for (let i = 3; i < Math.min(jsonData.length, 8); i++) {
-                        if (jsonData[i]?.length) {
+                        if (Array.isArray(jsonData[i]) && jsonData[i].length) {
                             const row: Record<string, string> = {};
                             headers.forEach((header, index) => {
                                 row[header] = jsonData[i][index]?.toString() || "";
@@ -370,7 +370,7 @@ export default function BulkProductForm({ agencyId, subaccountId }: BulkProductF
         setIsLoading(true);
 
         try {
-            let productsToSubmit = [];
+            let productsToSubmit: ProductFields[] = [];
 
             if (activeTab === "manual") {
                 // Validar cada producto
@@ -396,17 +396,47 @@ export default function BulkProductForm({ agencyId, subaccountId }: BulkProductF
                 }
 
                 productsToSubmit = excelPreview.map((row) => {
-                    const product: Record<string, any> = {
-                        subaccountId: selectedSubaccount,
+                    const product: ProductFields = {
+                        ...defaultProduct,
+                        name: "",
+                        sku: "",
+                        price: "",
+                        description: "",
+                        categoryId: "",
+                        brand: "",
+                        model: "",
                         isActive: true,
+                        quantity: "0",
+                        minStock: "",
+                        maxStock: "",
+                        location: "",
+                        unit: "unidad",
+                        allowNegativeStock: false,
+                        barcode: "",
+                        supplierRef: "",
+                        gtin: "",
+                        weight: "",
+                        height: "",
+                        width: "",
+                        depth: "",
+                        countryOfOrigin: "",
+                        cost: "",
+                        taxRate: "",
+                        margin: "",
+                        suggestedPrice: "",
+                        supplierId: "",
+                        restockTime: "",
+                        minOrderQuantity: "",
+                        productImage: "",
                     }
 
                     Object.entries(columnMapping).forEach(([header, productField]) => {
                         if (productField && row[header] !== undefined) {
+                            const typedField = productField as keyof ProductFields;
                             if (["price", "cost", "minStock", "quantity"].includes(productField)) {
-                                product[productField] = Number.parseFloat(row[header]) || 0
+                                (product[typedField] as string) = String(Number.parseFloat(row[header]) || 0);
                             } else {
-                                product[productField] = row[header]
+                                (product[typedField] as string) = String(row[header]);
                             }
                         }
                     })
