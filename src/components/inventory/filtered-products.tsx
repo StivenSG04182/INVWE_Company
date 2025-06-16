@@ -350,13 +350,13 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                                         <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem asChild>
-                                                            <Link href={`/agency/${agencyId}/products/${product.id || product._id}`}>
+                                                            <Link href={`/agency/${agencyId}/products/${product.id || product.id}`}>
                                                                 <Eye className="h-4 w-4 mr-2" />
                                                                 Ver detalles
                                                             </Link>
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem asChild>
-                                                            <Link href={`/agency/${agencyId}/products/${product.id || product._id}/edit`}>
+                                                            <Link href={`/agency/${agencyId}/products/${product.id || product.id}/edit`}>
                                                                 <Edit className="h-4 w-4 mr-2" />
                                                                 Editar
                                                             </Link>

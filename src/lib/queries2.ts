@@ -215,7 +215,7 @@ export const getProductById = async (agencyId: string, productId: string, subAcc
     });
 };
 
-// TODO: Crea producto
+/// TODO: Crea producto
 export const createProduct = async (data: any) => {
     const product = await db.product.create({
         data: {
@@ -236,7 +236,7 @@ export const createProduct = async (data: any) => {
             barcode: data.barcode,
             quantity: data.quantity ? Number.parseInt(data.quantity) : 0,
             locationId: data.locationId,
-            warehouseId: data.warehouseId,
+            warehouseId: data.warehouseId !== "no-area" ? data.warehouseId : null,
             batchNumber: data.batchNumber,
             expirationDate: data.expirationDate ? new Date(data.expirationDate) : null,
             serialNumber: data.serialNumber,

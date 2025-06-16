@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -36,6 +36,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { toast } from "@/components/ui/use-toast"
+import { getProviders, getSubAccountsForAgency } from "@/lib/queries2"
 
 // Tipo para el proveedor
 type Provider = {
@@ -52,16 +54,83 @@ type Provider = {
 
 // Props del componente
 interface ProvidersPageProps {
-    providers: Provider[]
     agencyId: string
 }
 
-const ProvidersPage = ({ providers, agencyId }: ProvidersPageProps) => {
+const ProvidersPage = ({ agencyId }: ProvidersPageProps) => {
+    // Estados para proveedores y subcuentas
+    const [providers, setProviders] = useState<Provider[]>([])
+    const [subaccounts, setSubaccounts] = useState<any[]>([])
+    const [selectedStores, setSelectedStores] = useState<string[]>(["all"])
+    const [filteredProviders, setFilteredProviders] = useState<Provider[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+
     // Estados para filtros y búsqueda
     const [searchTerm, setSearchTerm] = useState("")
     const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all")
     const [sortBy, setSortBy] = useState<"name-asc" | "name-desc" | "date-newest" | "date-oldest">("name-asc")
-    const [selectedStores, setSelectedStores] = useState<string[]>(["all"])
+
+    // Cargar subaccounts y proveedores
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                setIsLoading(true)
+                const [subaccountsData, providersData] = await Promise.all([
+                    getSubAccountsForAgency(agencyId),
+                    getProviders(agencyId),
+                ])
+
+                setSubaccounts(subaccountsData || [])
+                setProviders(providersData || [])
+                setFilteredProviders(providersData || [])
+            } catch (error) {
+                console.error("Error al cargar datos:", error)
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "No se pudieron cargar los datos. Por favor, intente de nuevo.",
+                })
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        loadData()
+    }, [agencyId])
+
+    // Manejar la selección de tiendas
+    const handleStoreSelection = (storeId: string) => {
+        setSelectedStores((prev) => {
+            let newSelection: string[]
+            if (storeId === "all") {
+                // Si se selecciona "all", alternar entre todas las tiendas o ninguna
+                newSelection = prev.includes("all") ? [] : ["all", ...subaccounts.map((sa) => sa.id)]
+            } else {
+                if (prev.includes(storeId)) {
+                    // Remover la tienda si ya está seleccionada
+                    newSelection = prev.filter((id) => id !== storeId && id !== "all")
+                } else {
+                    // Agregar la tienda
+                    newSelection = [...prev.filter((id) => id !== "all"), storeId]
+                    // Verificar si todas las tiendas están seleccionadas
+                    if (newSelection.length === subaccounts.length) {
+                        newSelection = ["all", ...newSelection]
+                    }
+                }
+            }
+            return newSelection
+        })
+    }
+
+    // Filtrar proveedores cuando cambia la selección de tiendas
+    useEffect(() => {
+        if (selectedStores.length === 0 || selectedStores.includes("all")) {
+            setFilteredProviders(providers)
+        } else {
+            const filtered = providers.filter((provider) => selectedStores.includes(provider.subAccountId))
+            setFilteredProviders(filtered)
+        }
+    }, [selectedStores, providers])
 
     // Función para exportar a Excel (simulada)
     const handleExportToExcel = () => {
@@ -77,26 +146,9 @@ const ProvidersPage = ({ providers, agencyId }: ProvidersPageProps) => {
         alert("Funcionalidad de generación de directorio - Implementar según tus necesidades")
     }
 
-    // Función para manejar selección de tiendas
-    const handleStoreSelection = (storeId: string) => {
-        if (storeId === "all") {
-            setSelectedStores(["all"])
-        } else {
-            setSelectedStores((prev) => {
-                const newSelection = prev.filter((id) => id !== "all")
-                if (newSelection.includes(storeId)) {
-                    const filtered = newSelection.filter((id) => id !== storeId)
-                    return filtered.length === 0 ? ["all"] : filtered
-                } else {
-                    return [...newSelection, storeId]
-                }
-            })
-        }
-    }
-
     // Proveedores filtrados y ordenados
     const filteredAndSortedProviders = useMemo(() => {
-        let filtered = providers
+        let filtered = filteredProviders
 
         // Filtrar por término de búsqueda
         if (searchTerm) {
@@ -134,7 +186,7 @@ const ProvidersPage = ({ providers, agencyId }: ProvidersPageProps) => {
         })
 
         return filtered
-    }, [providers, searchTerm, statusFilter, sortBy])
+    }, [filteredProviders, searchTerm, statusFilter, sortBy])
 
     // Estadísticas calculadas
     const stats = useMemo(() => {
@@ -316,45 +368,21 @@ const ProvidersPage = ({ providers, agencyId }: ProvidersPageProps) => {
                                             Todas las tiendas
                                         </label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id="subcuenta1"
-                                            checked={selectedStores.includes("tienda1")}
-                                            onCheckedChange={() => handleStoreSelection("tienda1")}
-                                        />
-                                        <label
-                                            htmlFor="subcuenta1"
-                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                        >
-                                            Tienda 1
-                                        </label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id="subcuenta2"
-                                            checked={selectedStores.includes("tienda2")}
-                                            onCheckedChange={() => handleStoreSelection("tienda2")}
-                                        />
-                                        <label
-                                            htmlFor="subcuenta2"
-                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                        >
-                                            Tienda 2
-                                        </label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id="subcuenta3"
-                                            checked={selectedStores.includes("tienda3")}
-                                            onCheckedChange={() => handleStoreSelection("tienda3")}
-                                        />
-                                        <label
-                                            htmlFor="subcuenta3"
-                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                        >
-                                            Tienda 3
-                                        </label>
-                                    </div>
+                                    {subaccounts.map((subaccount) => (
+                                        <div className="flex items-center space-x-2" key={subaccount.id}>
+                                            <Checkbox
+                                                id={`subcuenta-${subaccount.id}`}
+                                                checked={selectedStores.includes(subaccount.id)}
+                                                onCheckedChange={() => handleStoreSelection(subaccount.id)}
+                                            />
+                                            <label
+                                                htmlFor={`subcuenta-${subaccount.id}`}
+                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                            >
+                                                {subaccount.name}
+                                            </label>
+                                        </div>
+                                    ))}
                                 </div>
                             </DropdownMenuContent>
                         </DropdownMenu>

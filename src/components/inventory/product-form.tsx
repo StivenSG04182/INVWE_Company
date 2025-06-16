@@ -11,14 +11,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, } from "@/components/ui/card";
 import { UploadButton } from "@/lib/uploadthing";
 import Image from "next/image";
-import { Loader2, ArrowLeft, Trash2, DollarSign, Barcode, Tag, ImageIcon, Info, Box, Percent, Layers, FileText, Settings, Plus, X, Save, Globe, } from "lucide-react";
+import { Loader2, ArrowLeft, Trash2, DollarSign, Barcode, Tag, ImageIcon, Info, Box, Percent, Layers, FileText, Settings, Plus, X, Save, Globe, AlertCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table";
-import { createCategory, createProduct, getSubAccountsForAgency, getProviders, } from "@/lib/queries2";
+import { createCategory, createProduct, getSubAccountsForAgency, getProviders, getCategories, getAreas } from "@/lib/queries2";
 
 interface ProductFormProps {
   agencyId: string;
@@ -82,39 +82,40 @@ export default function ProductFormFixed({
   const [newTag, setNewTag] = useState("");
   const [newVariantName, setNewVariantName] = useState("");
   const [newVariantValue, setNewVariantValue] = useState("");
-  const [hasDiscountDates, setHasDiscountDates] = useState(false);
-  const [hasMinimumPrice, setHasMinimumPrice] = useState(false);
-
+  const [hasDiscountDates, setHasDiscountDates] = useState(false);  const [hasMinimumPrice, setHasMinimumPrice] = useState(false);
+  const [invalidFields, setInvalidFields] = useState<{[key: string]: boolean}>({});
+  const [tabsWithErrors, setTabsWithErrors] = useState<{[key: string]: boolean}>({});
+  const [areas, setAreas] = useState<any[]>([]);;
   const [formData, setFormData] = useState({
     name: product?.name || "",
     description: product?.description || "",
     sku: product?.sku || "",
     barcode: product?.barcode || "",
-    price: product?.price || "",
-    cost: product?.cost || "",
-    minStock: product?.minStock || "",
+    price: product?.price?.toString() || "0",
+    cost: product?.cost?.toString() || "0",
+    minStock: product?.minStock?.toString() || "0",
     images: product?.images || [],
     subaccountId: product?.subAccountId || "",
-    categoryId: product?.categoryId || "",
+    categoryId: product?.categoryId || "no-category",
     brand: product?.brand || "",
     model: product?.model || "",
     tags: product?.tags || [],
     unit: product?.unit || "pieza",
-    quantity: product?.quantity || "",
+    quantity: product?.quantity?.toString() || "0",
     locationId: product?.locationId || "",
-    warehouseId: product?.warehouseId || "",
+    warehouseId: product?.warehouseId || "no-area",
     batchNumber: product?.batchNumber || "",
-    expirationDate: product?.expirationDate || "",
+    expirationDate: product?.expirationDate ? new Date(product.expirationDate).toISOString().split('T')[0] : "",
     serialNumber: product?.serialNumber || "",
-    warrantyMonths: product?.warrantyMonths || "",
+    warrantyMonths: product?.warrantyMonths?.toString() || "",
     isReturnable: product?.isReturnable || false,
     isActive: product?.active !== false,
-    discount: product?.discount || "",
-    discountStartDate: product?.discountStartDate || "",
-    discountEndDate: product?.discountEndDate || "",
-    discountMinimumPrice: product?.discountMinimumPrice || "",
-    taxRate: product?.taxRate || "",
-    supplierId: product?.supplierId || "",
+    discount: product?.discount?.toString() || "0",
+    discountStartDate: product?.discountStartDate ? new Date(product.discountStartDate).toISOString().split('T')[0] : "",
+    discountEndDate: product?.discountEndDate ? new Date(product.discountEndDate).toISOString().split('T')[0] : "",
+    discountMinimumPrice: product?.discountMinimumPrice?.toString() || "",
+    taxRate: product?.taxRate?.toString() || "0",
+    supplierId: product?.supplierId || "no-supplier",
     variants: product?.variants || [],
     documents: product?.documents || [],
     customFields: product?.customFields || {},
@@ -150,18 +151,38 @@ export default function ProductFormFixed({
           );
         }
       } catch (error) {
-        console.error("Error al cargar datos:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description:
-            "No se pudieron cargar los datos necesarios. Inténtalo de nuevo.",
-        });
       }
     };
 
     fetchData();
   }, [agencyId, toast]);
+
+  // Efecto para cargar áreas cuando se seleccione una tienda
+  useEffect(() => {
+    const loadAreas = async () => {
+      if (formData.subaccountId) {
+        try {
+          const areasData = await getAreas(agencyId, formData.subaccountId);
+          if (areasData && Array.isArray(areasData)) {
+            setAreas(areasData);
+          } else {
+            console.error("Error al cargar áreas: No se encontraron áreas");
+          }
+        } catch (error) {
+          console.error("Error al cargar áreas:", error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "No se pudieron cargar las áreas disponibles.",
+          });
+        }
+      } else {
+        setAreas([]);
+      }
+    };
+
+    loadAreas();
+  }, [agencyId, formData.subaccountId, toast]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -234,40 +255,57 @@ export default function ProductFormFixed({
       variants: prev.variants.filter((_, i) => i !== index),
     }));
   };
-
-  // Función para crear categoría usando server action
+  // Función para crear categoría usando la función de queries2.ts
   const createCategoryAction = async () => {
-    if (!newCategory.trim()) return;
+    if (!newCategory.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Campo requerido",
+        description: "El nombre de la categoría no puede estar vacío."
+      });
+      return;
+    }
 
     try {
-      const { createCategory } = await import("@/lib/queries2");
-
       const result = await createCategory({
-        name: newCategory,
+        name: newCategory.trim(),
         description: "",
         agencyId: agencyId,
         subaccountId: formData.subaccountId,
       });
 
       if (result) {
-        toast({
-          title: "Categoría creada",
-          description: `La categoría ${newCategory} ha sido creada exitosamente.`,
-        });
-        setCategories([...categories, result]);
+        // Actualizar la lista de categorías
+        const updatedCategories = await getCategories(agencyId);
+        setCategories(updatedCategories);
+
+        // Actualizar el formulario con la nueva categoría
         setFormData((prev) => ({
           ...prev,
           categoryId: result.id,
         }));
+
         setNewCategory("");
+
+        toast({
+          title: "Categoría creada",
+          description: `La categoría "${newCategory}" ha sido creada exitosamente.`,
+        });
+
+        // Limpiar el estado de error si existe
+        if (invalidFields.categoryId) {
+          setInvalidFields(prev => ({
+            ...prev,
+            categoryId: false
+          }));
+        }
       }
     } catch (error) {
       console.error("Error al crear categoría:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description:
-          "Hubo un problema al crear la categoría. Inténtalo de nuevo.",
+        description: "Hubo un problema al crear la categoría. Inténtalo de nuevo."
       });
     }
   };
@@ -313,23 +351,24 @@ export default function ProductFormFixed({
     }
   };
 
-  const calculateProfit = () => {
-    if (!formData.price || !formData.cost) return 0;
-    return Number(formData.price) - Number(formData.cost);
-  };
-
-  const calculateMargin = () => {
-    if (!formData.price || !formData.cost) return 0;
-    const price = Number(formData.price);
-    const cost = Number(formData.cost);
-    return ((price - cost) / price) * 100;
+  const validateFormValues = () => {
+    const number = (value: string | number) => typeof value === 'string' ? parseFloat(value) || 0 : value;
+    
+    return {
+      ...formData,
+      price: number(formData.price),
+      cost: number(formData.cost),
+      quantity: number(formData.quantity),
+      taxRate: number(formData.taxRate),
+      minStock: number(formData.minStock)
+    };
   };
 
   const calculateDiscountedPrice = () => {
-    if (!formData.price || !formData.discount) return formData.price;
+    const values = validateFormValues();
+    if (!values.price || !values.discount) return values.price;
 
-    const discountedPrice =
-      Number(formData.price) * (1 - Number(formData.discount) / 100);
+    const discountedPrice = values.price * (1 - Number(values.discount) / 100);
 
     // Si hay un precio mínimo configurado, no permitir que el precio baje de ese valor
     if (hasMinimumPrice && Number(formData.discountMinimumPrice) > 0) {
@@ -339,41 +378,64 @@ export default function ProductFormFixed({
     return discountedPrice;
   };
 
-  const isDiscountActive = () => {
-    if (!formData.discount) return false;
+  const calculateProfit = () => {
+    const values = validateFormValues();
+    if (!values.price || !values.cost) return 0;
+    return values.price - values.cost;
+  };
 
-    if (!hasDiscountDates) return true;
+  const calculateMargin = () => {
+    const values = validateFormValues();
+    if (!values.price || !values.cost) return 0;
+    return ((values.price - values.cost) / values.price) * 100;
+  };    const validateRequiredFields = () => {
+    const requiredFields: FormValidation = {
+      name: { value: formData.name, tab: "general" },
+      subaccountId: { value: formData.subaccountId, tab: "general" },
+      description: { value: formData.description, tab: "general" },
+      sku: { value: formData.sku, tab: "general" },
+      unit: { value: formData.unit, tab: "general" },
+      categoryId: { value: formData.categoryId, tab: "general", invalidValues: ["no-category"] },
+      price: { value: formData.price, tab: "pricing" },
+      cost: { value: formData.cost, tab: "pricing" },
+      supplierId: { value: formData.supplierId, tab: "pricing", invalidValues: ["no-supplier"] },
+      minStock: { value: formData.minStock, tab: "inventory" },
+      quantity: { value: formData.quantity, tab: "inventory" },
+      warehouseId: { value: formData.warehouseId, tab: "inventory", invalidValues: ["no-area"] }
+    };const newInvalidFields: {[key: string]: boolean} = {};
+    const newTabsWithErrors: {[key: string]: boolean} = {};
+    const missingFields: string[] = [];
 
-    const now = new Date();
-    const startDate = formData.discountStartDate
-      ? new Date(formData.discountStartDate)
-      : null;
-    const endDate = formData.discountEndDate
-      ? new Date(formData.discountEndDate)
-      : null;
+    for (const [fieldName, field] of Object.entries(requiredFields)) {      const invalidValues = field.invalidValues || [];
+      const isInvalid = !field.value || 
+                       field.value === "" || 
+                       (typeof field.value === 'string' && invalidValues.includes(field.value));
+                       
+      newInvalidFields[fieldName] = isInvalid;
+      if (isInvalid) {
+        newTabsWithErrors[field.tab] = true;
+        missingFields.push(fieldName.charAt(0).toUpperCase() + fieldName.slice(1).replace(/([A-Z])/g, ' $1').trim());
+      }
+    }
 
-    if (startDate && endDate) {
-      return now >= startDate && now <= endDate;
-    } else if (startDate) {
-      return now >= startDate;
-    } else if (endDate) {
-      return now <= endDate;
+    setInvalidFields(newInvalidFields);
+    setTabsWithErrors(newTabsWithErrors);
+
+    if (missingFields.length > 0) {
+      toast({
+        variant: "destructive",
+        title: "Campos requeridos faltantes",
+        description: `Por favor complete los siguientes campos: ${missingFields.join(", ")}`,
+      });
+      return false;
     }
 
     return true;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  };  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Validar que se haya seleccionado una tienda
-    if (!formData.subaccountId) {
-      toast({
-        variant: "destructive",
-        title: "Tienda requerida",
-        description: "Por favor selecciona una tienda para continuar.",
-      });
+    if (!validateRequiredFields()) {
       setIsLoading(false);
       return;
     }
@@ -384,30 +446,78 @@ export default function ProductFormFixed({
         "@/lib/queries2"
       );
 
+      const initialQuantity = parseInt(formData.quantity);
+
+      // Preparar los datos del formulario asegurando que los valores numéricos son números
+      const preparedData = {
+        ...formData,
+        agencyId,
+        price: parseFloat(formData.price) || 0,
+        cost: parseFloat(formData.cost) || 0,
+        minStock: parseInt(formData.minStock) || 0,
+        quantity: initialQuantity || 0,
+        warrantyMonths: formData.warrantyMonths ? parseInt(formData.warrantyMonths) : null,
+        discount: parseFloat(formData.discount) || 0,
+        discountMinimumPrice: formData.discountMinimumPrice ? parseFloat(formData.discountMinimumPrice) : null,
+        taxRate: parseFloat(formData.taxRate) || 0,
+        // Asegurarse de que las fechas sean objetos Date válidos
+        discountStartDate: formData.discountStartDate ? new Date(formData.discountStartDate).toISOString() : null,
+        discountEndDate: formData.discountEndDate ? new Date(formData.discountEndDate).toISOString() : null,
+        // Manejar valores especiales
+        categoryId: formData.categoryId === "no-category" ? null : formData.categoryId,
+        supplierId: formData.supplierId === "no-supplier" ? null : formData.supplierId,
+        warehouseId: formData.warehouseId === "no-area" ? null : formData.warehouseId,
+        // Asegurar que los arrays estén inicializados
+        images: formData.images || [],
+        tags: formData.tags || [],
+        variants: formData.variants || [],
+        documents: formData.documents || [],
+        // Asegurar que los objetos estén inicializados
+        customFields: formData.customFields || {},
+        externalIntegrations: formData.externalIntegrations || {}
+      };
+
       let result;
 
       if (isEditing && product?._id) {
         // Actualizar producto existente
-        result = await updateProduct(product._id, { ...formData, agencyId });
+        result = await updateProduct(product._id, preparedData);
       } else {
         // Crear nuevo producto
-        result = await createProduct({ ...formData, agencyId });
-      }
+        result = await createProduct(preparedData);
 
-      if (result) {
-        // Si es un producto nuevo y tiene cantidad inicial, crear un registro de movimiento usando server action
-        if (!isEditing && formData.quantity > 0) {
+        // Crear movimiento inicial si es necesario
+        if (result && initialQuantity > 0) {
           try {
             await createMovement({
               type: "entrada",
-              quantity: formData.quantity,
+              quantity: initialQuantity,
               notes: "Stock inicial al crear el producto",
               productId: result.id,
-              areaId:
-                formData.locationId || formData.warehouseId || "default-area",
+              areaId: formData.locationId || formData.warehouseId || "default-area",
               agencyId: agencyId,
               subaccountId: formData.subaccountId,
             });
+          } catch (movementError) {
+            console.error("Error al registrar el movimiento inicial:", movementError);
+            // No interrumpimos el flujo si falla el registro del movimiento
+          }
+        }
+      }
+
+      if (result) {
+        // Si es un producto nuevo y tiene cantidad inicial, crear un registro de movimiento usando server action      const values = validateFormValues();      const initialQuantity = parseInt(formData.quantity);
+      if (!isEditing && initialQuantity > 0 && result) {
+        try {
+          await createMovement({
+            type: "entrada",
+            quantity: initialQuantity,
+            notes: "Stock inicial al crear el producto",
+            productId: result.id,
+            areaId: formData.locationId || formData.warehouseId || "default-area",
+            agencyId: agencyId,
+            subaccountId: formData.subaccountId,
+          });
           } catch (movementError) {
             console.error(
               "Error al registrar el movimiento de stock inicial:",
@@ -621,9 +731,24 @@ export default function ProductFormFixed({
           <div className="lg:col-span-3">
             <Tabs defaultValue="general" className="w-full">
               <TabsList className="grid grid-cols-5 mb-4">
-                <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="pricing">Precios</TabsTrigger>
-                <TabsTrigger value="inventory">Inventario</TabsTrigger>
+                <TabsTrigger value="general" className="relative">
+                  General
+                  {tabsWithErrors.general && (
+                    <AlertCircle className="w-4 h-4 text-destructive absolute -top-1 -right-1" />
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="pricing" className="relative">
+                  Precios
+                  {tabsWithErrors.pricing && (
+                    <AlertCircle className="w-4 h-4 text-destructive absolute -top-1 -right-1" />
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="inventory" className="relative">
+                  Inventario
+                  {tabsWithErrors.inventory && (
+                    <AlertCircle className="w-4 h-4 text-destructive absolute -top-1 -right-1" />
+                  )}
+                </TabsTrigger>
                 <TabsTrigger value="variants">Variantes</TabsTrigger>
                 <TabsTrigger value="advanced">Avanzado</TabsTrigger>
               </TabsList>
@@ -643,7 +768,9 @@ export default function ProductFormFixed({
                   <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="name">Nombre del Producto *</Label>
+                        <Label htmlFor="name" className={invalidFields.name ? "text-destructive" : ""}>
+                          Nombre del Producto *
+                        </Label>
                         <Input
                           id="name"
                           name="name"
@@ -651,19 +778,20 @@ export default function ProductFormFixed({
                           onChange={handleChange}
                           placeholder="Ej. Camiseta de algodón"
                           required
+                          className={invalidFields.name ? "border-destructive" : ""}
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="subaccountId">Tienda *</Label>
+                        <Label htmlFor="subaccountId" className={invalidFields.subaccountId ? "text-destructive" : ""}>
+                          Tienda *
+                        </Label>
                         <Select
                           value={formData.subaccountId}
-                          onValueChange={(value) =>
-                            handleSelectChange("subaccountId", value)
-                          }
+                          onValueChange={(value) => handleSelectChange("subaccountId", value)}
                           required
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className={invalidFields.subaccountId ? "border-destructive" : ""}>
                             <SelectValue placeholder="Seleccionar tienda" />
                           </SelectTrigger>
                           <SelectContent>
@@ -689,11 +817,18 @@ export default function ProductFormFixed({
                             antes de continuar.
                           </p>
                         )}
+                        {invalidFields.subaccountId && (
+                          <p className="text-sm text-destructive">
+                            Este campo es requerido
+                          </p>
+                        )}
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="description">Descripción *</Label>
+                      <Label htmlFor="description" className={invalidFields.description ? "text-destructive" : ""}>
+                        Descripción *
+                      </Label>
                       <Textarea
                         id="description"
                         name="description"
@@ -702,12 +837,13 @@ export default function ProductFormFixed({
                         placeholder="Describe tu producto con detalle"
                         rows={3}
                         required
+                        className={invalidFields.description ? "border-destructive" : ""}
                       />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="sku" className="flex items-center">
+                        <Label htmlFor="sku" className={`flex items-center ${invalidFields.sku ? "text-destructive" : ""}`}>
                           <Tag className="h-4 w-4 mr-2" />
                           SKU *
                         </Label>
@@ -718,6 +854,7 @@ export default function ProductFormFixed({
                           onChange={handleChange}
                           placeholder="Ej. CAM-001"
                           required
+                          className={invalidFields.sku ? "border-destructive" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -734,14 +871,15 @@ export default function ProductFormFixed({
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="unit">Unidad de Medida</Label>
+                        <Label htmlFor="unit" className={invalidFields.unit ? "text-destructive" : ""}>
+                          Unidad de Medida *
+                        </Label>
                         <Select
                           value={formData.unit}
-                          onValueChange={(value) =>
-                            handleSelectChange("unit", value)
-                          }
+                          onValueChange={(value) => handleSelectChange("unit", value)}
+                          required
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className={invalidFields.unit ? "border-destructive" : ""}>
                             <SelectValue placeholder="Seleccionar unidad" />
                           </SelectTrigger>
                           <SelectContent>
@@ -791,7 +929,9 @@ export default function ProductFormFixed({
 
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <Label htmlFor="categoryId">Categoría</Label>
+                        <Label htmlFor="categoryId" className={invalidFields.categoryId ? "text-destructive" : ""}>
+                          Categoría *
+                        </Label>
                         <div className="flex items-center space-x-2">
                           <Input
                             placeholder="Nueva categoría"
@@ -810,11 +950,10 @@ export default function ProductFormFixed({
                       </div>
                       <Select
                         value={formData.categoryId}
-                        onValueChange={(value) =>
-                          handleSelectChange("categoryId", value)
-                        }
+                        onValueChange={(value) => handleSelectChange("categoryId", value)}
+                        required
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className={invalidFields.categoryId ? "border-destructive" : ""}>
                           <SelectValue placeholder="Seleccionar categoría" />
                         </SelectTrigger>
                         <SelectContent>
@@ -893,7 +1032,9 @@ export default function ProductFormFixed({
                   <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="price">Precio de Venta *</Label>
+                        <Label htmlFor="price" className={invalidFields.price ? "text-destructive" : ""}>
+                          Precio de Venta *
+                        </Label>
                         <div className="relative">
                           <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                           <Input
@@ -904,13 +1045,20 @@ export default function ProductFormFixed({
                             min="0"
                             value={formData.price}
                             onChange={handleChange}
-                            className="pl-9"
+                            className={`pl-9 ${invalidFields.price ? "border-destructive" : ""}`}
                             required
                           />
                         </div>
+                        {invalidFields.price && (
+                          <p className="text-sm text-destructive">
+                            Este campo es requerido
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="cost">Costo *</Label>
+                        <Label htmlFor="cost" className={invalidFields.cost ? "text-destructive" : ""}>
+                          Costo *
+                        </Label>
                         <div className="relative">
                           <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                           <Input
@@ -921,10 +1069,15 @@ export default function ProductFormFixed({
                             min="0"
                             value={formData.cost}
                             onChange={handleChange}
-                            className="pl-9"
+                            className={`pl-9 ${invalidFields.cost ? "border-destructive" : ""}`}
                             required
                           />
                         </div>
+                        {invalidFields.cost && (
+                          <p className="text-sm text-destructive">
+                            Este campo es requerido
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="taxRate">Tasa de Impuesto (%)</Label>
@@ -945,7 +1098,7 @@ export default function ProductFormFixed({
                       </div>
                     </div>
 
-                    {formData.cost > 0 && formData.price > 0 && (
+                    {parseFloat(formData.cost) > 0 && parseFloat(formData.price) > 0 && (
                       <>
                         <Separator />
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -971,9 +1124,8 @@ export default function ProductFormFixed({
                             </div>
                             <div className="text-xl font-semibold">
                               $
-                              {(
-                                formData.price *
-                                (1 + formData.taxRate / 100)
+                              {(                                parseFloat(formData.price) *
+                                (1 + parseFloat(formData.taxRate) / 100)
                               ).toFixed(2)}
                             </div>
                           </div>
@@ -985,30 +1137,16 @@ export default function ProductFormFixed({
 
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <Label htmlFor="supplierId">Proveedor</Label>
-                        <div className="flex items-center space-x-2">
-                          <Input
-                            placeholder="Nuevo proveedor"
-                            value={newProvider}
-                            onChange={(e) => setNewProvider(e.target.value)}
-                            className="w-48"
-                          />
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={createProviderAction}
-                          >
-                            Crear
-                          </Button>
-                        </div>
+                        <Label htmlFor="supplierId" className={invalidFields.supplierId ? "text-destructive" : ""}>
+                          Proveedor *
+                        </Label>
                       </div>
                       <Select
                         value={formData.supplierId}
-                        onValueChange={(value) =>
-                          handleSelectChange("supplierId", value)
-                        }
+                        onValueChange={(value) => handleSelectChange("supplierId", value)}
+                        required
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className={invalidFields.supplierId ? "border-destructive" : ""}>
                           <SelectValue placeholder="Seleccionar proveedor" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1027,7 +1165,7 @@ export default function ProductFormFixed({
                 </Card>
               </TabsContent>
 
-              {/* Las demás pestañas permanecen igual... */}
+              {/* Pestaña de Inventario */}
               <TabsContent value="inventory">
                 <Card>
                   <CardHeader>
@@ -1042,7 +1180,9 @@ export default function ProductFormFixed({
                   <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="minStock">Stock Mínimo *</Label>
+                        <Label htmlFor="minStock" className={invalidFields.minStock ? "text-destructive" : ""}>
+                          Stock Mínimo *
+                        </Label>
                         <Input
                           id="minStock"
                           name="minStock"
@@ -1050,15 +1190,23 @@ export default function ProductFormFixed({
                           min="0"
                           value={formData.minStock}
                           onChange={handleChange}
+                          className={invalidFields.minStock ? "border-destructive" : ""}
                           required
                         />
                         <p className="text-xs text-muted-foreground">
                           Cantidad mínima antes de alertar por bajo stock
                         </p>
+                        {invalidFields.minStock && (
+                          <p className="text-sm text-destructive">
+                            Este campo es requerido
+                          </p>
+                        )}
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="quantity">Stock Inicial</Label>
+                        <Label htmlFor="quantity" className={invalidFields.quantity ? "text-destructive" : ""}>
+                          Stock Inicial *
+                        </Label>
                         <Input
                           id="quantity"
                           name="quantity"
@@ -1066,30 +1214,45 @@ export default function ProductFormFixed({
                           min="0"
                           value={formData.quantity}
                           onChange={handleChange}
+                          className={invalidFields.quantity ? "border-destructive" : ""}
+                          required
                         />
                         <p className="text-xs text-muted-foreground">
                           Cantidad inicial en inventario
                         </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="warehouseId">Almacén</Label>
-                        <Select
-                          value={formData.warehouseId}
-                          onValueChange={(value) =>
-                            handleSelectChange("warehouseId", value)
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar almacén" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="default">
-                              Almacén Principal
+                      </div>                    <div className="space-y-2">
+                      <Label htmlFor="warehouseId" className={invalidFields.warehouseId ? "text-destructive" : ""}>
+                        Almacén *
+                      </Label>
+                      <Select
+                        value={formData.warehouseId}
+                        onValueChange={(value) => handleSelectChange("warehouseId", value)}
+                        required
+                      >
+                        <SelectTrigger className={invalidFields.warehouseId ? "border-destructive" : ""}>
+                          <SelectValue placeholder="Seleccionar almacén" />
+                        </SelectTrigger>                        <SelectContent>
+                          {areas.length > 0 ? (
+                            areas.map((area) => (
+                              <SelectItem key={area.id} value={area.id}>
+                                {area.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="no-area" disabled>
+                              {formData.subaccountId 
+                                ? "No hay áreas disponibles para esta tienda" 
+                                : "Primero selecciona una tienda"}
                             </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {areas.length === 0 && formData.subaccountId && (
+                        <p className="text-sm text-destructive mt-1">
+                          No hay áreas disponibles. Debes crear un área en la tienda seleccionada antes de continuar.
+                        </p>
+                      )}
+                    </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -1305,4 +1468,14 @@ export default function ProductFormFixed({
       </form>
     </div>
   );
+}
+
+interface RequiredField {
+  value: string | number | boolean;
+  tab: string;
+  invalidValues?: string[];
+}
+
+interface FormValidation {
+  [key: string]: RequiredField;
 }
