@@ -10,12 +10,9 @@ import { useCart } from './contexts/CartContext'
 import { UserButton, useAuth, SignUpButton } from "@clerk/nextjs"
 
 const navigationItems = [
-    { label: 'Inicio', href: '/' },
     { label: 'Equipo', href: '/site/equipo' },
-    { label: 'Contáctanos', href: '/site/contacto' },
     { label: 'Blog', href: '/site/blog' },
     { label: 'Productos', href: '/site/productos' },
-    { label: 'Sistema POS', href: '/site/sistema-pos' },
     { label: 'FAQ', href: '/site/faq' },
     { label: 'Sobre Nosotros', href: '/site/sobre-nosotros' },
     { label: 'Servicios', href: '/site/servicios' },
@@ -31,28 +28,30 @@ export function Header() {
         <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-sm border-b border-[#486283]/20">
             <div className="container mx-auto px-4 h-20 flex items-center justify-between">
                 {/* Logo */}
-                <Link href="/" className="flex-shrink-0">
+                <Link href="/site" className="flex-shrink-0">
                     <Image
-                        src="/ellipse-2523.png"
+                        src="/logoNatulanda.png"
                         alt="Natulanda Logo"
-                        width={60}
-                        height={60}
+                        width={90}
+                        height={90}
                         className="object-cover rounded-full"
                     />
                 </Link>
 
                 {/* Desktop Navigation */}
-                <nav className="hidden lg:flex items-center space-x-8">
-                    {navigationItems.map((item) => (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className="text-[#486283] hover:text-[#899735] transition-colors duration-200 font-medium"
-                        >
-                            {item.label}
-                        </Link>
-                    ))}
-                </nav>
+                <div className="flex-1 flex justify-center">
+                  <nav className="hidden lg:flex items-center space-x-8">
+                      {navigationItems.map((item) => (
+                          <Link
+                              key={item.href}
+                              href={item.href}
+                              className="text-[#486283] hover:text-[#899735] transition-colors duration-200 font-medium"
+                          >
+                              {item.label}
+                          </Link>
+                      ))}
+                  </nav>
+                </div>
 
                 {/* Actions */}
                 <div className="flex items-center space-x-4">
