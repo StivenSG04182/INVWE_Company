@@ -418,7 +418,7 @@ const MenuOptions = ({
                         </CommandItem>
                       </CommandGroup>
                     )}
-                  <CommandGroup heading="Cuentas">
+                  <CommandGroup heading="Tiendas">
                     {!!subAccounts
                       ? subAccounts.map((subaccount) => (
                         <CommandItem key={subaccount.id}>

@@ -2,7 +2,6 @@
 import { Contact, Lane, Notification, Prisma, Role, Tag, Ticket, User } from "@prisma/client";
 import { _getTicketsWithAllRelations, getAuthUserDetails, getFunnels, getMedia, getPipelineDetails, getTicketsWithTags, getUserPermissions } from "./queries";
 import { db } from "./db";
-import { PrimitiveLabelProps } from "@radix-ui/react-label";
 import { z } from "zod";
 
 export type NotificationWithUser =

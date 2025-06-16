@@ -30,23 +30,46 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import dynamic from "next/dynamic"
 
-// Cargamos los componentes de gráficos de forma dinámica para evitar errores de SSR
-const PieChartComponent = dynamic(
-  () => import("@/components/charts/client-charts").then((mod) => mod.PieChartComponent),
-  { ssr: false },
-)
+import { PieChart, BarChart, LineChart } from "@/components/ui/charts"
 
-const BarChartComponent = dynamic(
-  () => import("@/components/charts/client-charts").then((mod) => mod.BarChartComponent),
-  { ssr: false },
-)
+// --- Utilidades para adaptar los datos al formato Chart.js ---
+function toBarChartData(data, xAxisKey, bars) {
+  return {
+    labels: data.map((item) => item[xAxisKey]),
+    datasets: bars.map((bar) => ({
+      label: bar.name || bar.dataKey,
+      data: data.map((item) => item[bar.dataKey]),
+      backgroundColor: bar.fill,
+    })),
+  }
+}
 
-const LineChartComponent = dynamic(
-  () => import("@/components/charts/client-charts").then((mod) => mod.LineChartComponent),
-  { ssr: false },
-)
+function toLineChartData(data, xAxisKey, lines) {
+  return {
+    labels: data.map((item) => item[xAxisKey]),
+    datasets: lines.map((line) => ({
+      label: line.name || line.dataKey,
+      data: data.map((item) => item[line.dataKey]),
+      borderColor: line.stroke,
+      backgroundColor: line.stroke + '33',
+      fill: false,
+      tension: 0.4,
+    })),
+  }
+}
+
+function toPieChartData(data, nameKey, valueKey, colors) {
+  return {
+    labels: data.map((item) => item[nameKey]),
+    datasets: [
+      {
+        data: data.map((item) => item[valueKey]),
+        backgroundColor: colors,
+      },
+    ],
+  }
+}
 
 // Servicio para obtener datos del dashboard
 const getDashboardDataService = async (agencyId: string) => {
@@ -352,13 +375,15 @@ export default async function DashboardPage({
                 ) : (
                   <>
                     <div className="h-[200px] mb-4">
-                      <BarChartComponent
-                        data={dashboardData.topProducts.map((product: any) => ({
-                          name: product.name.length > 15 ? product.name.substring(0, 15) + "..." : product.name,
-                          ventas: product.sales,
-                        }))}
-                        xAxisKey="name"
-                        bars={[{ dataKey: "ventas", name: "Ventas", fill: "#3b82f6" }]}
+                      <BarChart
+                        data={toBarChartData(
+                          dashboardData.topProducts.map((product) => ({
+                            name: product.name.length > 15 ? product.name.substring(0, 15) + "..." : product.name,
+                            ventas: product.sales,
+                          })),
+                          "name",
+                          [{ dataKey: "ventas", name: "Ventas", fill: "#3b82f6" }]
+                        )}
                       />
                     </div>
 
@@ -405,14 +430,13 @@ export default async function DashboardPage({
                 ) : (
                   <>
                     <div className="h-[200px] mb-4">
-                      <PieChartComponent
-                        data={dashboardData.productsByArea.map((area: any) => ({
-                          name: area.name,
-                          value: area.totalValue,
-                        }))}
-                        dataKey="value"
-                        nameKey="name"
-                        colors={["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"]}
+                      <PieChart
+                        data={toPieChartData(
+                          dashboardData.productsByArea,
+                          "name",
+                          "totalValue",
+                          ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"]
+                        )}
                       />
                     </div>
 
@@ -451,14 +475,16 @@ export default async function DashboardPage({
                 <div className="border rounded-lg p-4">
                   <h3 className="text-sm font-medium mb-2">Distribución de Entradas/Salidas</h3>
                   <div className="h-[200px]">
-                    <PieChartComponent
-                      data={[
-                        { name: "Entradas", value: dashboardData.entriesCount },
-                        { name: "Salidas", value: dashboardData.exitsCount },
-                      ]}
-                      dataKey="value"
-                      nameKey="name"
-                      colors={["#10b981", "#f43f5e"]}
+                    <PieChart
+                      data={toPieChartData(
+                        [
+                          { name: "Entradas", value: dashboardData.entriesCount },
+                          { name: "Salidas", value: dashboardData.exitsCount },
+                        ],
+                        "name",
+                        "value",
+                        ["#10b981", "#f43f5e"]
+                      )}
                     />
                   </div>
                   <div className="flex justify-between items-center mt-2 text-sm">
@@ -476,13 +502,15 @@ export default async function DashboardPage({
                 <div className="border rounded-lg p-4">
                   <h3 className="text-sm font-medium mb-2">Productos por Estado de Stock</h3>
                   <div className="h-[200px]">
-                    <BarChartComponent
-                      data={[
-                        { name: "Stock Normal", value: dashboardData.productsCount - dashboardData.lowStockCount },
-                        { name: "Stock Bajo", value: dashboardData.lowStockCount },
-                      ]}
-                      xAxisKey="name"
-                      bars={[{ dataKey: "value", name: "Productos", fill: "#3b82f6" }]}
+                    <BarChart
+                      data={toBarChartData(
+                        [
+                          { name: "Stock Normal", value: dashboardData.productsCount - dashboardData.lowStockCount },
+                          { name: "Stock Bajo", value: dashboardData.lowStockCount },
+                        ],
+                        "name",
+                        [{ dataKey: "value", name: "Productos", fill: "#3b82f6" }]
+                      )}
                     />
                   </div>
                   <div className="flex justify-between items-center mt-2 text-sm">
@@ -623,14 +651,16 @@ export default async function DashboardPage({
               </CardHeader>
               <CardContent>
                 <div className="h-[180px]">
-                  <PieChartComponent
-                    data={[
-                      { name: "Entradas", value: dashboardData.entriesCount },
-                      { name: "Salidas", value: dashboardData.exitsCount },
-                    ]}
-                    dataKey="value"
-                    nameKey="name"
-                    colors={["#10b981", "#f43f5e"]}
+                  <PieChart
+                    data={toPieChartData(
+                      [
+                        { name: "Entradas", value: dashboardData.entriesCount },
+                        { name: "Salidas", value: dashboardData.exitsCount },
+                      ],
+                      "name",
+                      "value",
+                      ["#10b981", "#f43f5e"]
+                    )}
                   />
                 </div>
                 <div className="flex justify-between items-center mt-2 text-sm">
@@ -790,10 +820,12 @@ export default async function DashboardPage({
                 </CardHeader>
                 <CardContent>
                   <div className="h-[350px] p-4">
-                    <LineChartComponent
-                      data={dashboardData.inventoryValueTrend}
-                      xAxisKey="month"
-                      lines={[{ dataKey: "value", stroke: "#0ea5e9", name: "Valor del Inventario" }]}
+                    <LineChart
+                      data={toLineChartData(
+                        dashboardData.inventoryValueTrend,
+                        "month",
+                        [{ dataKey: "value", stroke: "#0ea5e9", name: "Valor del Inventario" }]
+                      )}
                     />
                   </div>
                 </CardContent>
@@ -808,11 +840,13 @@ export default async function DashboardPage({
                 </CardHeader>
                 <CardContent>
                   <div className="h-[350px] p-4">
-                    <PieChartComponent
-                      data={dashboardData.inventoryByCategory}
-                      dataKey="value"
-                      nameKey="category"
-                      colors={["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]}
+                    <PieChart
+                      data={toPieChartData(
+                        dashboardData.inventoryByCategory,
+                        "category",
+                        "value",
+                        ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
+                      )}
                     />
                   </div>
                 </CardContent>
@@ -827,13 +861,15 @@ export default async function DashboardPage({
                 </CardHeader>
                 <CardContent>
                   <div className="h-[350px] p-4">
-                    <BarChartComponent
-                      data={dashboardData.movementsByMonth}
-                      xAxisKey="month"
-                      bars={[
-                        { dataKey: "entradas", fill: "#10b981", name: "Entradas" },
-                        { dataKey: "salidas", fill: "#f43f5e", name: "Salidas" },
-                      ]}
+                    <BarChart
+                      data={toBarChartData(
+                        dashboardData.movementsByMonth,
+                        "month",
+                        [
+                          { dataKey: "entradas", fill: "#10b981", name: "Entradas" },
+                          { dataKey: "salidas", fill: "#f43f5e", name: "Salidas" },
+                        ]
+                      )}
                     />
                   </div>
 
@@ -875,10 +911,12 @@ export default async function DashboardPage({
                 </CardHeader>
                 <CardContent>
                   <div className="h-[350px] p-4">
-                    <BarChartComponent
-                      data={dashboardData.inventoryTurnover}
-                      xAxisKey="category"
-                      bars={[{ dataKey: "turnover", fill: "#8884d8", name: "Índice de Rotación" }]}
+                    <BarChart
+                      data={toBarChartData(
+                        dashboardData.inventoryTurnover,
+                        "category",
+                        [{ dataKey: "turnover", fill: "#8884d8", name: "Índice de Rotación" }]
+                      )}
                     />
                   </div>
 
@@ -940,15 +978,17 @@ export default async function DashboardPage({
               </CardHeader>
               <CardContent>
                 <div className="h-[200px] mb-4">
-                  <PieChartComponent
-                    data={[
-                      { name: "Activas", value: 3 },
-                      { name: "Inactivas", value: 1 },
-                      { name: "Pendientes", value: 2 },
-                    ]}
-                    dataKey="value"
-                    nameKey="name"
-                    colors={["#10b981", "#f43f5e", "#f59e0b"]}
+                  <PieChart
+                    data={toPieChartData(
+                      [
+                        { name: "Activas", value: 3 },
+                        { name: "Inactivas", value: 1 },
+                        { name: "Pendientes", value: 2 },
+                      ],
+                      "name",
+                      "value",
+                      ["#10b981", "#f43f5e", "#f59e0b"]
+                    )}
                   />
                 </div>
 
@@ -1011,7 +1051,7 @@ export default async function DashboardPage({
               </CardHeader>
               <CardContent>
                 <div className="h-[200px] mb-4">
-                  <LineChartComponent
+                  <LineChart
                     data={[
                       { name: "Lun", requests: 120, tiempo: 230 },
                       { name: "Mar", requests: 180, tiempo: 250 },
