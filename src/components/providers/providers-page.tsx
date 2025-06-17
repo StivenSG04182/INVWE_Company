@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -24,6 +24,7 @@ import {
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
+import ProviderForm from "@/components/inventory/ProviderForm"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -41,15 +42,16 @@ import { getProviders, getSubAccountsForAgency } from "@/lib/queries2"
 
 // Tipo para el proveedor
 type Provider = {
-    id: string | number
+    id: string
     name: string
-    contactName?: string | null
-    email?: string | null
-    phone?: string | null
-    address?: string | null
+    contactName: string | null
+    email: string | null
+    phone: string | null
+    address: string | null
     active: boolean
     createdAt: Date | string
     agencyId: string
+    subAccountId: string | null
 }
 
 // Props del componente
@@ -58,19 +60,22 @@ interface ProvidersPageProps {
 }
 
 const ProvidersPage = ({ agencyId }: ProvidersPageProps) => {
+    const router = useRouter()
     // Estados para proveedores y subcuentas
     const [providers, setProviders] = useState<Provider[]>([])
     const [subaccounts, setSubaccounts] = useState<any[]>([])
     const [selectedStores, setSelectedStores] = useState<string[]>(["all"])
     const [filteredProviders, setFilteredProviders] = useState<Provider[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [isProviderModalOpen, setIsProviderModalOpen] = useState(false)
+    const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null)
 
     // Estados para filtros y búsqueda
     const [searchTerm, setSearchTerm] = useState("")
     const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all")
     const [sortBy, setSortBy] = useState<"name-asc" | "name-desc" | "date-newest" | "date-oldest">("name-asc")
 
-    // Cargar subaccounts y proveedores
+    // Cargar datos iniciales
     useEffect(() => {
         const loadData = async () => {
             try {
@@ -103,16 +108,12 @@ const ProvidersPage = ({ agencyId }: ProvidersPageProps) => {
         setSelectedStores((prev) => {
             let newSelection: string[]
             if (storeId === "all") {
-                // Si se selecciona "all", alternar entre todas las tiendas o ninguna
                 newSelection = prev.includes("all") ? [] : ["all", ...subaccounts.map((sa) => sa.id)]
             } else {
                 if (prev.includes(storeId)) {
-                    // Remover la tienda si ya está seleccionada
                     newSelection = prev.filter((id) => id !== storeId && id !== "all")
                 } else {
-                    // Agregar la tienda
                     newSelection = [...prev.filter((id) => id !== "all"), storeId]
-                    // Verificar si todas las tiendas están seleccionadas
                     if (newSelection.length === subaccounts.length) {
                         newSelection = ["all", ...newSelection]
                     }
@@ -122,28 +123,43 @@ const ProvidersPage = ({ agencyId }: ProvidersPageProps) => {
         })
     }
 
-    // Filtrar proveedores cuando cambia la selección de tiendas
+    // Efecto para filtrar proveedores
     useEffect(() => {
         if (selectedStores.length === 0 || selectedStores.includes("all")) {
             setFilteredProviders(providers)
         } else {
-            const filtered = providers.filter((provider) => selectedStores.includes(provider.subAccountId))
+            const filtered = providers.filter((provider) => 
+                provider.subAccountId && selectedStores.includes(provider.subAccountId)
+            )
             setFilteredProviders(filtered)
         }
     }, [selectedStores, providers])
 
-    // Función para exportar a Excel (simulada)
+    // Funciones de exportación
     const handleExportToExcel = () => {
-        // Aquí implementarías la lógica real de exportación
         console.log("Exportando a Excel...")
-        alert("Funcionalidad de exportación a Excel - Implementar según tus necesidades")
+        toast({
+            title: "Exportación a Excel",
+            description: "Funcionalidad en desarrollo",
+        })
     }
 
-    // Función para generar directorio (simulada)
     const handleGenerateDirectory = () => {
-        // Aquí implementarías la lógica real de generación de directorio
         console.log("Generando directorio...")
-        alert("Funcionalidad de generación de directorio - Implementar según tus necesidades")
+        toast({
+            title: "Generación de directorio",
+            description: "Funcionalidad en desarrollo",
+        })
+    }
+
+    const handleEditProvider = (provider: Provider) => {
+        setSelectedProvider(provider)
+        setIsProviderModalOpen(true)
+    }
+
+    const handleCloseModal = () => {
+        setIsProviderModalOpen(false)
+        setSelectedProvider(null)
     }
 
     // Proveedores filtrados y ordenados
@@ -199,6 +215,7 @@ const ProvidersPage = ({ agencyId }: ProvidersPageProps) => {
 
     return (
         <div className="container mx-auto p-6">
+            {/* Header con título y acciones */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
                     <h1 className="text-2xl font-bold">Gestión de Proveedores</h1>
@@ -223,15 +240,11 @@ const ProvidersPage = ({ agencyId }: ProvidersPageProps) => {
                             <DropdownMenuRadioGroup value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
                                 <DropdownMenuRadioItem value="all">Todos los proveedores</DropdownMenuRadioItem>
                                 <DropdownMenuRadioItem value="active">
-                                    <Badge variant="outline" className="mr-2">
-                                        Activos
-                                    </Badge>
+                                    <Badge variant="outline" className="mr-2">Activos</Badge>
                                     Solo activos
                                 </DropdownMenuRadioItem>
                                 <DropdownMenuRadioItem value="inactive">
-                                    <Badge variant="outline" className="mr-2">
-                                        Inactivos
-                                    </Badge>
+                                    <Badge variant="outline" className="mr-2">Inactivos</Badge>
                                     Solo inactivos
                                 </DropdownMenuRadioItem>
                             </DropdownMenuRadioGroup>
@@ -277,15 +290,33 @@ const ProvidersPage = ({ agencyId }: ProvidersPageProps) => {
                         </DropdownMenuContent>
                     </DropdownMenu>
 
-                    <Link href={`/agency/${agencyId}/providers/new`}>
-                        <Button size="sm">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Nuevo Proveedor
-                        </Button>
-                    </Link>
+                    <Button size="sm" onClick={() => {
+                        setSelectedProvider(null)
+                        setIsProviderModalOpen(true)
+                    }}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nuevo Proveedor
+                    </Button>
                 </div>
             </div>
 
+            {/* Modal de Proveedor */}
+            <ProviderForm
+                agencyId={agencyId}
+                isOpen={isProviderModalOpen}
+                onClose={handleCloseModal}                provider={selectedProvider ? {
+                    id: selectedProvider.id,
+                    name: selectedProvider.name,
+                    contactName: selectedProvider.contactName || undefined,
+                    email: selectedProvider.email || undefined,
+                    phone: selectedProvider.phone || undefined,
+                    address: selectedProvider.address || undefined,
+                    subAccountId: selectedProvider.subAccountId || undefined
+                } : undefined}
+                isEditing={!!selectedProvider}
+            />
+
+            {/* Estadísticas */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <Card>
                     <CardContent className="p-6">
@@ -330,6 +361,7 @@ const ProvidersPage = ({ agencyId }: ProvidersPageProps) => {
                 </Card>
             </div>
 
+            {/* Búsqueda y filtros */}
             <div className="mb-6">
                 <div className="flex flex-col md:flex-row gap-4">
                     <div className="relative flex-1">
@@ -390,6 +422,7 @@ const ProvidersPage = ({ agencyId }: ProvidersPageProps) => {
                 </div>
             </div>
 
+            {/* Pestañas de visualización */}
             <Tabs defaultValue="cards" className="w-full">
                 <div className="flex justify-between items-center mb-4">
                     <TabsList>
@@ -441,7 +474,7 @@ const ProvidersPage = ({ agencyId }: ProvidersPageProps) => {
                     </TabsList>
                     <div className="text-sm text-muted-foreground">
                         Mostrando {filteredAndSortedProviders.length} de {providers.length} proveedores
-                        {searchTerm && <span className="ml-2">• Búsqueda: "{searchTerm}"</span>}
+                        {searchTerm && <span className="ml-2">• Búsqueda: &quot;{searchTerm}&quot;</span>}
                     </div>
                 </div>
 
@@ -459,12 +492,13 @@ const ProvidersPage = ({ agencyId }: ProvidersPageProps) => {
                                         : "Intente ajustar los filtros o el término de búsqueda."}
                                 </p>
                                 {providers.length === 0 && (
-                                    <Link href={`/agency/${agencyId}/providers/new`}>
-                                        <Button>
-                                            <Plus className="h-4 w-4 mr-2" />
-                                            Nuevo Proveedor
-                                        </Button>
-                                    </Link>
+                                    <Button onClick={() => {
+                                        setSelectedProvider(null)
+                                        setIsProviderModalOpen(true)
+                                    }}>
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Nuevo Proveedor
+                                    </Button>
                                 )}
                             </CardContent>
                         </Card>
@@ -509,12 +543,14 @@ const ProvidersPage = ({ agencyId }: ProvidersPageProps) => {
                                         <div className="flex justify-between items-center mt-6">
                                             <span className="text-sm text-muted-foreground">Sin órdenes pendientes</span>
 
-                                            <Link href={`/agency/${agencyId}/providers/${provider.id?.toString()}`}>
-                                                <Button variant="outline" size="sm">
-                                                    <Pencil className="h-4 w-4 mr-2" />
-                                                    Editar
-                                                </Button>
-                                            </Link>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleEditProvider(provider)}
+                                            >
+                                                <Pencil className="h-4 w-4 mr-2" />
+                                                Editar
+                                            </Button>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -538,12 +574,13 @@ const ProvidersPage = ({ agencyId }: ProvidersPageProps) => {
                                             : "Intente ajustar los filtros o el término de búsqueda."}
                                     </p>
                                     {providers.length === 0 && (
-                                        <Link href={`/agency/${agencyId}/providers/new`}>
-                                            <Button>
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Nuevo Proveedor
-                                            </Button>
-                                        </Link>
+                                        <Button onClick={() => {
+                                            setSelectedProvider(null)
+                                            setIsProviderModalOpen(true)
+                                        }}>
+                                            <Plus className="h-4 w-4 mr-2" />
+                                            Nuevo Proveedor
+                                        </Button>
                                     )}
                                 </div>
                             ) : (
@@ -562,7 +599,9 @@ const ProvidersPage = ({ agencyId }: ProvidersPageProps) => {
                                         {filteredAndSortedProviders.map((provider) => (
                                             <TableRow key={provider.id?.toString()}>
                                                 <TableCell className="font-medium">{provider.name}</TableCell>
-                                                <TableCell className="hidden md:table-cell">{provider.contactName || "—"}</TableCell>
+                                                <TableCell className="hidden md:table-cell">
+                                                    {provider.contactName || "—"}
+                                                </TableCell>
                                                 <TableCell className="hidden md:table-cell">
                                                     <div>{provider.email || "—"}</div>
                                                     <div className="text-sm text-muted-foreground">{provider.phone || "—"}</div>
@@ -577,12 +616,14 @@ const ProvidersPage = ({ agencyId }: ProvidersPageProps) => {
                                                 </TableCell>
                                                 <TableCell className="text-right">
                                                     <div className="flex justify-end gap-2">
-                                                        <Link href={`/agency/${agencyId}/providers/${provider.id?.toString()}`}>
-                                                            <Button variant="outline" size="sm">
-                                                                <Pencil className="h-4 w-4 mr-2" />
-                                                                Editar
-                                                            </Button>
-                                                        </Link>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleEditProvider(provider)}
+                                                        >
+                                                            <Pencil className="h-4 w-4 mr-2" />
+                                                            Editar
+                                                        </Button>
                                                     </div>
                                                 </TableCell>
                                             </TableRow>

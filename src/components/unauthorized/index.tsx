@@ -15,7 +15,7 @@ const Unauthorized = (props: Props) => {
         No tienes permiso para acceder a esta página. Por favor, contacta al administrador
         si crees que esto es un error.
       </p>
-      <Button onClick={() => router.push("/")}>Volver al inicio</Button>
+      <Button onClick={() => router.push("/site")}>Volver al inicio</Button>
     </div>
   )
 }

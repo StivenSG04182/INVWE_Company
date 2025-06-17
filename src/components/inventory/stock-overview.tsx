@@ -30,6 +30,9 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import { getMovements, getSubAccountsForAgency, getProducts } from "@/lib/queries2"
+import EntradaMovementModal from "@/components/inventory/entrada-movement-modal"
+import SalidaMovementModal from "@/components/inventory/salida-movement-modal"
+import TransferenciaMovementModal from "@/components/inventory/transferencia-movement-modal"
 
 interface StockOverviewProps {
     agencyId: string
@@ -42,11 +45,9 @@ interface StockOverviewProps {
 
 export default function StockOverview({
     agencyId,
-    stocks,
     products: initialProducts,
     areas,
     productsMap: initialProductsMap,
-    areasMap,
 }: StockOverviewProps) {
     const router = useRouter()
 
@@ -72,6 +73,11 @@ export default function StockOverview({
     const [isLoading, setIsLoading] = useState(false)
     const [movementSearchTerm, setMovementSearchTerm] = useState("")
     const [movementSortBy, setMovementSortBy] = useState("date-desc")
+
+    // Estados para modales
+    const [isEntradaModalOpen, setIsEntradaModalOpen] = useState(false)
+    const [isSalidaModalOpen, setIsSalidaModalOpen] = useState(false)
+    const [isTransferenciaModalOpen, setIsTransferenciaModalOpen] = useState(false)
 
     // Cargar datos iniciales
     useEffect(() => {
@@ -152,21 +158,19 @@ export default function StockOverview({
                 product.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 product.model?.toLowerCase().includes(searchTerm.toLowerCase())
 
-            // Calcular estado de stock
-            const totalQuantity = product.quantity || 0
+            // Calcular estado de stock basado en quantity
+            const quantity = product.quantity || 0
             let stockStatus = "normal"
 
-            if (totalQuantity === 0) {
+            if (quantity === 0) {
                 stockStatus = "out"
-            } else if (product.maxStock && product.maxStock > 0) {
-                const stockPercentage = (totalQuantity / product.maxStock) * 100
+            } else if (product.minStock && product.minStock > 0) {
+                const stockPercentage = (quantity / product.minStock) * 100
                 if (stockPercentage <= 10) {
                     stockStatus = "low"
                 } else if (stockPercentage >= 75) {
                     stockStatus = "high"
                 }
-            } else if (product.minStock && totalQuantity <= product.minStock) {
-                stockStatus = "low"
             }
 
             // Filtro por estado de stock
@@ -202,30 +206,27 @@ export default function StockOverview({
         })
 
         return filtered.map((product) => {
-            const totalQuantity = product.quantity || 0
+            const quantity = product.quantity || 0
             let stockStatus = "normal"
             let stockPercentage = 0
 
-            if (totalQuantity === 0) {
+            if (quantity === 0) {
                 stockStatus = "out"
-            } else if (product.maxStock && product.maxStock > 0) {
-                stockPercentage = (totalQuantity / product.maxStock) * 100
+            } else if (product.minStock && product.minStock > 0) {
+                stockPercentage = (quantity / product.minStock) * 100
                 if (stockPercentage <= 10) {
                     stockStatus = "low"
                 } else if (stockPercentage >= 75) {
                     stockStatus = "high"
                 }
-            } else if (product.minStock && totalQuantity <= product.minStock) {
-                stockStatus = "low"
             }
 
             return {
                 productId: product.id,
                 product,
-                totalQuantity,
+                totalQuantity: quantity,
                 stockStatus,
                 stockPercentage,
-                stocks: [],
             }
         })
     }, [products, searchTerm, selectedArea, selectedStatus, productSortBy])
@@ -356,15 +357,15 @@ export default function StockOverview({
                     <p className="text-muted-foreground">Administra productos, stock y movimientos de inventario</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <Button onClick={() => navigateToMovement("entrada")} variant="outline">
+                    <Button onClick={() => setIsEntradaModalOpen(true)} variant="outline">
                         <ArrowDownToLine className="h-4 w-4 mr-2" />
                         Nueva Entrada
                     </Button>
-                    <Button onClick={() => navigateToMovement("salida")} variant="outline">
+                    <Button onClick={() => setIsSalidaModalOpen(true)} variant="outline">
                         <ArrowUpFromLine className="h-4 w-4 mr-2" />
                         Nueva Salida
                     </Button>
-                    <Button onClick={() => navigateToMovement("transferencia")} variant="outline">
+                    <Button onClick={() => setIsTransferenciaModalOpen(true)} variant="outline">
                         <ArrowLeftRight className="h-4 w-4 mr-2" />
                         Transferencia
                     </Button>
@@ -601,19 +602,19 @@ export default function StockOverview({
                                                                 <Button
                                                                     variant="outline"
                                                                     size="sm"
-                                                                    onClick={() => navigateToMovement("entrada", item.productId)}
+                                                                    onClick={() => setIsEntradaModalOpen(true)}
                                                                     className="text-green-600 border-green-200 hover:bg-green-50"
                                                                 >
-                                                                    <ArrowDownToLine className="h-4 w-4" />
+                                                                    <ArrowUpFromLine className="h-4 w-4" />
                                                                 </Button>
                                                                 <Button
                                                                     variant="outline"
                                                                     size="sm"
-                                                                    onClick={() => navigateToMovement("salida", item.productId)}
+                                                                    onClick={() => setIsSalidaModalOpen(true)}
                                                                     disabled={item.totalQuantity === 0}
                                                                     className="text-red-600 border-red-200 hover:bg-red-50 disabled:opacity-50"
                                                                 >
-                                                                    <ArrowUpFromLine className="h-4 w-4" />
+                                                                    <ArrowDownToLine className="h-4 w-4" />
                                                                 </Button>
                                                                 <Button variant="ghost" size="sm" asChild>
                                                                     <Link href={`/agency/${agencyId}/products/${item.productId}`}>
@@ -634,7 +635,6 @@ export default function StockOverview({
                 </TabsContent>
 
                 <TabsContent value="movements" className="space-y-4">
-                    {/* ✅ CORREGIDO: Estadísticas de movimientos con filtrado interactivo */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <Card
                             className={`cursor-pointer transition-colors hover:bg-muted/50 ${selectedMovementType === "all" ? "ring-2 ring-primary" : ""
@@ -925,7 +925,7 @@ export default function StockOverview({
                                                         <TableCell className="text-center">
                                                             <div
                                                                 className={`font-bold text-lg ${movement.type === "entrada"
-                                                                        ? "text-green-600"
+                                                                        ? "text-green-200"
                                                                         : movement.type === "salida"
                                                                             ? "text-red-600"
                                                                             : "text-blue-600"
@@ -996,6 +996,23 @@ export default function StockOverview({
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            {/* Modales para movimientos */}
+            <EntradaMovementModal
+                isOpen={isEntradaModalOpen}
+                onClose={() => setIsEntradaModalOpen(false)}
+                agencyId={agencyId}
+            />
+            <SalidaMovementModal
+                isOpen={isSalidaModalOpen}
+                onClose={() => setIsSalidaModalOpen(false)}
+                agencyId={agencyId}
+            />
+            <TransferenciaMovementModal
+                isOpen={isTransferenciaModalOpen}
+                onClose={() => setIsTransferenciaModalOpen(false)}
+                agencyId={agencyId}
+            />
         </div>
     )
 }

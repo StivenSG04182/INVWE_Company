@@ -7,12 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getSubAccountsForAgency, createArea } from '@/lib/queries2';
 
 interface AreaFormProps {
   agencyId: string;
+  isOpen: boolean;
+  onClose: () => void;
   area?: {
     _id?: string;
     name: string;
@@ -22,7 +24,7 @@ interface AreaFormProps {
   isEditing?: boolean;
 }
 
-export default function AreaForm({ agencyId, area, isEditing = false }: AreaFormProps) {
+export default function AreaForm({ agencyId, isOpen, onClose, area, isEditing = false }: AreaFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -37,7 +39,6 @@ export default function AreaForm({ agencyId, area, isEditing = false }: AreaForm
   useEffect(() => {
     const fetchSubaccounts = async () => {
       try {
-        // Llama directamente a la función del servidor para obtener tiendas
         const subaccountsData = await getSubAccountsForAgency(agencyId);
         setSubaccounts(subaccountsData || []);
       } catch (error: any) {
@@ -50,8 +51,21 @@ export default function AreaForm({ agencyId, area, isEditing = false }: AreaForm
       }
     };
 
-    fetchSubaccounts();
-  }, [agencyId, toast]);
+    if (isOpen) {
+      fetchSubaccounts();
+    }
+  }, [agencyId, toast, isOpen]);
+
+  // Reset form when opening modal
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        name: area?.name || '',
+        description: area?.description || '',
+        subaccountId: area?.subaccountId || '',
+      });
+    }
+  }, [isOpen, area]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -72,7 +86,6 @@ export default function AreaForm({ agencyId, area, isEditing = false }: AreaForm
     e.preventDefault();
     setIsLoading(true);
 
-    // Validar que se haya seleccionado una tienda
     if (!formData.subaccountId) {
       toast({
         variant: 'destructive',
@@ -84,14 +97,13 @@ export default function AreaForm({ agencyId, area, isEditing = false }: AreaForm
     }
 
     try {
-      // Llama directamente a la función del servidor para crear el área
       const areaCreated = await createArea({ ...formData, agencyId });
       toast({
-        title: 'Área creada',
-        description: `El área ${formData.name} ha sido creada exitosamente.`,
+        title: isEditing ? 'Área actualizada' : 'Área creada',
+        description: `El área ${formData.name} ha sido ${isEditing ? 'actualizada' : 'creada'} exitosamente.`,
       });
       router.refresh();
-      router.push(`/agency/${agencyId}/areas`);
+      onClose();
     } catch (error) {
       console.error('Error al guardar el área:', error);
       toast({
@@ -105,80 +117,82 @@ export default function AreaForm({ agencyId, area, isEditing = false }: AreaForm
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>{isEditing ? 'Editar Área' : 'Nueva Área'}</CardTitle>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nombre del Área *</Label>
-            <Input
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{isEditing ? 'Editar Área' : 'Nueva Área'}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nombre del Área *</Label>
+              <Input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
-            <Textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows={3}
-              placeholder="Descripción o detalles adicionales sobre esta área"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Descripción</Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={3}
+                placeholder="Descripción o detalles adicionales sobre esta área"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="subaccountId">Tienda *</Label>
-            <Select
-              value={formData.subaccountId}
-              onValueChange={(value) => handleSelectChange('subaccountId', value)}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar tienda" />
-              </SelectTrigger>
-              <SelectContent>
-                {subaccounts.length > 0 ? (
-                  subaccounts.map((subaccount) => (
-                    <SelectItem key={subaccount.id} value={subaccount.id}>
-                      {subaccount.name}
+            <div className="space-y-2">
+              <Label htmlFor="subaccountId">Tienda *</Label>
+              <Select
+                value={formData.subaccountId}
+                onValueChange={(value) => handleSelectChange('subaccountId', value)}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar tienda" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subaccounts.length > 0 ? (
+                    subaccounts.map((subaccount) => (
+                      <SelectItem key={subaccount.id} value={subaccount.id}>
+                        {subaccount.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-subaccounts" disabled>
+                      No hay tiendas disponibles. Por favor, crea una tienda primero.
                     </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="no-subaccounts" disabled>
-                    No hay tiendas disponibles. Por favor, crea una tienda primero.
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-            {subaccounts.length === 0 && (
-              <p className="text-sm text-destructive mt-1">
-                No hay tiendas disponibles. Debes crear una tienda antes de continuar.
-              </p>
-            )}
+                  )}
+                </SelectContent>
+              </Select>
+              {subaccounts.length === 0 && (
+                <p className="text-sm text-destructive mt-1">
+                  No hay tiendas disponibles. Debes crear una tienda antes de continuar.
+                </p>
+              )}
+            </div>
           </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.back()}
-            disabled={isLoading}
-          >
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Guardando...' : isEditing ? 'Actualizar' : 'Guardar'}
-          </Button>
-        </CardFooter>
-      </form>
-    </Card>
+          <div className="flex justify-end gap-4 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isLoading}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Guardando...' : isEditing ? 'Actualizar' : 'Guardar'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

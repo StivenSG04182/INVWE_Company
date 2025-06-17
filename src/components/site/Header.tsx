@@ -40,17 +40,17 @@ export function Header() {
 
                 {/* Desktop Navigation */}
                 <div className="flex-1 flex justify-center">
-                  <nav className="hidden lg:flex items-center space-x-8">
-                      {navigationItems.map((item) => (
-                          <Link
-                              key={item.href}
-                              href={item.href}
-                              className="text-[#486283] hover:text-[#899735] transition-colors duration-200 font-medium"
-                          >
-                              {item.label}
-                          </Link>
-                      ))}
-                  </nav>
+                    <nav className="hidden lg:flex items-center space-x-8">
+                        {navigationItems.map((item) => (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className="text-[#486283] hover:text-[#899735] transition-colors duration-200 font-medium"
+                            >
+                                {item.label}
+                            </Link>
+                        ))}
+                    </nav>
                 </div>
 
                 {/* Actions */}
@@ -71,7 +71,7 @@ export function Header() {
                     <div className="hidden md:flex items-center space-x-2">
                         {isSignedIn ? (
                             <>
-                                <UserButton afterSignOutUrl="/" />
+                                <UserButton afterSignOutUrl="/site" />
                                 <Button asChild className="bg-[#899735] hover:bg-[#899735]/90 text-white">
                                     <Link href="/agency">
                                         Dashboard
@@ -124,7 +124,7 @@ export function Header() {
                             {isSignedIn ? (
                                 <>
                                     <div className="flex items-center justify-between">
-                                        <UserButton afterSignOutUrl="/" />
+                                        <UserButton afterSignOutUrl="/site" />
                                         <Button asChild className="w-full ml-2 bg-[#899735] hover:bg-[#899735]/90 text-white">
                                             <Link href="/agency">
                                                 Dashboard

@@ -1,7 +1,9 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { getAuthUserDetails } from "@/lib/queries"
+import { getAreas} from "@/lib/queries2"
 import { redirect } from "next/navigation"
-import { AreaService } from "@/lib/services/inventory-service"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,27 +13,49 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import AreaForm from "@/components/inventory/AreaForm"
 
-const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
-  const user = await getAuthUserDetails()
-  if (!user) return redirect("/sign-in")
+const AreasPage = ({ params }: { params: { agencyId: string } }) => {
+  const [isAreaModalOpen, setIsAreaModalOpen] = useState(false)
+  const [selectedArea, setSelectedArea] = useState<any>(null)
+  const [areas, setAreas] = useState<any[]>([])
 
-  const agencyId = params.agencyId
-  if (!user.Agency) {
-    return redirect("/agency")
+  // Cargar datos iniciales
+  useEffect(() => {
+    const loadAreas = async () => {
+      try {
+        const user = await getAuthUserDetails()
+        if (!user) return redirect("/sign-in")
+        if (!user.Agency) return redirect("/agency")
+
+        const areasData = await getAreas(params.agencyId)
+        setAreas(areasData || [])
+      } catch (error) {
+        console.error("Error loading areas:", error)
+      }
+    }
+    loadAreas()
+  }, [params.agencyId])
+
+  const handleCloseModal = async () => {
+    setIsAreaModalOpen(false)
+    setSelectedArea(null)
+    // Recargar áreas después de cerrar el modal
+    try {
+      const areasData = await getAreas(params.agencyId)
+      setAreas(areasData || [])
+    } catch (error) {
+      console.error("Error reloading areas:", error)
+    }
   }
 
-  let areas = []
-  try {
-    areas = await AreaService.getAreas(agencyId)
-  } catch (error) {
-    // Eliminado console.error
+  const handleOpenModal = (area?: any) => {
+    setSelectedArea(area || null)
+    setIsAreaModalOpen(true)
   }
 
   // Calcular estadísticas
   const totalAreas = areas.length
-
-  // Simulación de datos para capacidad y ocupación
   const totalCapacity = 1000 // m²
   const totalOccupation = 350 // m²
   const occupationPercentage = Math.round((totalOccupation / totalCapacity) * 100)
@@ -82,14 +106,21 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Link href={`/agency/${agencyId}/areas/new`}>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Área
-            </Button>
-          </Link>
+          <Button size="sm" onClick={() => handleOpenModal()}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nueva Área
+          </Button>
         </div>
       </div>
+
+      {/* Modal de Área */}
+      <AreaForm
+        agencyId={params.agencyId}
+        isOpen={isAreaModalOpen}
+        onClose={handleCloseModal}
+        area={selectedArea}
+        isEditing={!!selectedArea}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card>
@@ -257,12 +288,10 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                 <p className="text-muted-foreground text-center mb-6">
                   Cree su primera área para comenzar a organizar su inventario.
                 </p>
-                <Link href={`/agency/${agencyId}/areas/new`}>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nueva Área
-                  </Button>
-                </Link>
+                <Button onClick={() => handleOpenModal()}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nueva Área
+                </Button>
               </CardContent>
             </Card>
           ) : (
@@ -293,12 +322,14 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                       <Grid3X3 className="h-12 w-12 text-muted-foreground/30" />
                     )}
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <Link href={`/agency/${agencyId}/areas/${area.id}`}>
-                        <Button size="sm" variant="secondary">
-                          <Edit className="h-4 w-4 mr-2" />
-                          Editar
-                        </Button>
-                      </Link>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => handleOpenModal(area)}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar
+                      </Button>
                     </div>
                   </div>
                   <CardContent className="p-4">
@@ -328,12 +359,10 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                   <p className="text-muted-foreground text-center mb-6">
                     Cree su primera área para comenzar a organizar su inventario.
                   </p>
-                  <Link href={`/agency/${agencyId}/areas/new`}>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nueva Área
-                    </Button>
-                  </Link>
+                  <Button onClick={() => handleOpenModal()}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nueva Área
+                  </Button>
                 </div>
               ) : (
                 <Table>
@@ -349,18 +378,22 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                     {areas.map((area: any) => (
                       <TableRow key={area._id}>
                         <TableCell className="font-medium">{area.name}</TableCell>
-                        <TableCell className="hidden md:table-cell">{area.description || "Sin descripción"}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {area.description || "Sin descripción"}
+                        </TableCell>
                         <TableCell className="hidden md:table-cell">
                           {new Date(area.createdAt).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Link href={`/agency/${agencyId}/areas${area.id}`}>
-                              <Button variant="outline" size="sm">
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Editar
-                              </Button>
-                            </Link>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenModal(area)}
+                            >
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Editar
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>

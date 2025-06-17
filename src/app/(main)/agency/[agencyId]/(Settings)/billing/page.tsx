@@ -25,11 +25,11 @@ type Props = {
 
 const page = async ({ params }: Props) => {
   const user = await currentUser()
-  if (!user) return redirect('/')
+  if (!user) return redirect('/site')
 
   const agencyDetails = await getAgencyDetails(params.agencyId)
 
-  if (!agencyDetails) return redirect('/')
+  if (!agencyDetails) return redirect('/site')
 
   // Obtener los planes de PayPal
   const paypalPlans = await paypal.listPlans()

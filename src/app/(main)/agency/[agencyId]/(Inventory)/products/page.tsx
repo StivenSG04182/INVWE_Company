@@ -25,13 +25,7 @@ const ProductsPage = async ({ params }: { params: { agencyId: string } }) => {
     const discount = product.discount ? Number(product.discount) : 0
     const taxRate = product.taxRate ? Number(product.taxRate) : 0
     const discountMinimumPrice = product.discountMinimumPrice ? Number(product.discountMinimumPrice) : null
-    const stockQuantity = product.Movements
-      ? product.Movements.reduce((sum: number, movement: any) => {
-          if (movement.type === "ENTRADA") return sum + movement.quantity
-          if (movement.type === "SALIDA") return sum - movement.quantity
-          return sum
-        }, 0)
-      : product.quantity || 0
+    const quantity = product.quantity || 0
     return {
       ...product,
       price,
@@ -39,7 +33,7 @@ const ProductsPage = async ({ params }: { params: { agencyId: string } }) => {
       discount,
       taxRate,
       discountMinimumPrice,
-      stockQuantity,
+      quantity,
     }
   })
   const subAccounts = user.Agency.SubAccount || []
@@ -47,28 +41,30 @@ const ProductsPage = async ({ params }: { params: { agencyId: string } }) => {
   const activeProducts = products.filter((product: any) => product.active !== false).length
   const totalCategories = categories.length
   const inventoryValue = products.reduce((total: number, product: any) => {
-    const quantity = product.stockQuantity || 0
-    const salePrice = product.price || 0
-    return total + salePrice * quantity
+    const quantity = product.quantity || 0
+    const price = product.price || 0
+    return total + (price * quantity)
   }, 0)
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("es-ES", {
       style: "currency",
       currency: "COL",
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+      useGrouping: true,
     }).format(value)
   }
   const lowStockProducts = products.filter((product: any) => {
-    const currentStock = product.stockQuantity || 0
+    const currentQuantity = product.quantity || 0
     const minStock = product.minStock || 0
-    if (currentStock <= 0) return true
-    if (currentStock < 10) return true
-    if (minStock > 0 && currentStock < minStock * 0.1) return true
-    if (minStock > 0 && currentStock <= minStock) return true
+    if (currentQuantity <= 0) return true
+    if (currentQuantity < 10) return true
+    if (minStock > 0 && currentQuantity < minStock * 0.1) return true
+    if (minStock > 0 && currentQuantity <= minStock) return true
     return false
   }).length
   const outOfStockProducts = products.filter((product: any) => {
-    return (product.stockQuantity || 0) <= 0
+    return (product.quantity || 0) <= 0
   }).length
   const discountedProducts = products.filter((product: any) => (product.discount || 0) > 0).length
   const today = new Date()

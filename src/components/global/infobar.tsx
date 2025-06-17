@@ -283,7 +283,7 @@ const InfoBar = ({ notifications, subAccountId, className, role }: Props) => {
             </Tooltip>
           </TooltipProvider>
 
-          <UserButton afterSignOutUrl="/" />
+          <UserButton afterSignOutUrl="/site" />
           <ModeToggle />
         </div>
       </div>

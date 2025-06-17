@@ -2,7 +2,7 @@
   "name": "INVWE - Gestión de Inventario",
   "short_name": "INVWE",
   "description": "Solución de gestión de inventario para tu negocio",
-  "start_url": "/",
+  "start_url": "/site",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
