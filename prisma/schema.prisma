@@ -306,7 +306,6 @@ model Contact {
   subAccountId String
   Subaccount   SubAccount @relation(fields: [subAccountId], references: [id], onDelete: Cascade)
   Ticket       Ticket[]
-  Invoices     Invoice[]
   Sale         Sale[]
 
   @@index([subAccountId])
@@ -624,6 +623,7 @@ model Client {
   Opportunities        Opportunity[]
   Cases                Case[]
   PQRs                 PQR[]
+  Invoices     Invoice[]
 
   @@index([agencyId])
   @@index([subAccountId])
@@ -919,7 +919,7 @@ model Invoice {
   retentionICA       Decimal           @default(0)
   Agency             Agency            @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   SubAccount         SubAccount?       @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-  Customer           Contact?          @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  Customer           Client?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
   Items              InvoiceItem[]
   Payments           Payment[]
   Taxes              InvoiceTax[]

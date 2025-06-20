@@ -13,7 +13,7 @@ import { Eye, Download, Printer, Mail, MoreHorizontal, FileText, CreditCard, Cop
 import Link from "next/link"
 import { toast } from "sonner"
 import { EmailModal } from "./email-modal"
-import { generateInvoicePDFById } from "@/lib/queries3" // Importamos la función de queries3.ts
+import { generateInvoicePDFById } from "@/lib/queries3"
 
 interface InvoiceActionsEnhancedProps {
     invoice: any

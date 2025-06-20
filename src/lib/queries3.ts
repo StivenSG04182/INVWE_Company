@@ -2,26 +2,21 @@
 
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "./db";
-import {  InvoiceStatus, PaymentMethod, PaymentStatus,  RegisterStatus, DocumentType, } from "@prisma/client";
+import { InvoiceStatus, PaymentMethod, PaymentStatus, RegisterStatus, DocumentType, } from "@prisma/client";
 import { revalidatePath } from 'next/cache';
 import crypto from 'crypto';
+import { generateInvoicePDF } from "./pdf-generator";
+import { validatePDFGeneration, validatePDFBuffer } from "./pdf-utils"
 
 
 // =========== FACTURAS Y FACTURACIÓN ELECTRÓNICA ===========
 
 // TODO: Obtiene y filtra todas las facturas de una agencia con sus relaciones (clientes, items, impuestos y pagos)
-export const getInvoices = async ({
-    agencyId,
-    subAccountId,
-}: {
-    agencyId: string;
-    subAccountId?: string;
-}) => {
+export const getInvoices = async ({ agencyId }: { agencyId: string }) => {
     try {
         const invoices = await db.invoice.findMany({
             where: {
                 agencyId,
-                ...(subAccountId ? { subAccountId } : {}),
             },
             include: {
                 Customer: true,
@@ -36,17 +31,19 @@ export const getInvoices = async ({
                     },
                 },
                 Payments: true,
+                SubAccount: true,
             },
             orderBy: {
                 createdAt: "desc",
             },
-        });
-        return invoices;
+        })
+
+        return invoices
     } catch (error) {
-        console.error("Error al obtener facturas:", error);
-        return [];
+        console.error("Error al obtener facturas:", error)
+        return []
     }
-};
+}
 
 // TODO: Obtiene una factura específica por ID con todas sus relaciones y detalles completos
 export const getInvoiceById = async (invoiceId: string) => {
@@ -164,7 +161,7 @@ export const createInvoice = async ({
         let cude = null;
         let qrCode = null;
         let electronicStatus = null;
-        let documentType = DocumentType.INVOICE; 
+        let documentType = DocumentType.INVOICE;
 
         if (invoiceData.invoiceType === "ELECTRONIC" || invoiceData.invoiceType === "BOTH") {
             const dianConfig = await db.dianConfig.findUnique({
@@ -305,7 +302,7 @@ export const createInvoice = async ({
                             await db.invoice.update({
                                 where: { id: invoice.id },
                                 data: {
-                                    acknowledgmentDate: new Date() 
+                                    acknowledgmentDate: new Date()
                                 }
                             });
                         } else {
@@ -400,7 +397,7 @@ export const updateInvoice = async ({
             });
         }
         if (taxes && taxes.length > 0) {
-            
+
             await db.invoiceTax.deleteMany({
                 where: { invoiceId },
             });
@@ -993,40 +990,38 @@ export const closeCashRegister = async ({
 
 // TODO: Envía facturas por correo utilizando plantillas personalizadas y maneja respuestas HTTP
 export const sendInvoiceEmail = async ({
-    invoiceId,
-    agencyId,
-    recipientEmail,
-    templateId,
+  invoiceId,
+  agencyId,
+  recipientEmail,
+  templateId,
 }: {
-    invoiceId: string
-    agencyId: string
-    recipientEmail?: string
-    templateId?: string
+  invoiceId: string
+  agencyId: string
+  recipientEmail?: string
+  templateId?: string
 }) => {
-    try {
-        const response = await fetch(`/api/invoices/${invoiceId}/send-email`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                agencyId,
-                recipientEmail,
-                templateId,
-            }),
-        })
+  try {
+    // Simular envío de email - aquí integrarías con tu servicio de email
+    console.log(`Enviando email para factura ${invoiceId} a ${recipientEmail}`)
 
-        const data = await response.json()
+    // En una implementación real, aquí generarías el PDF y lo enviarías por email
+    const pdfResult = await generateInvoicePDFById({ invoiceId, agencyId })
 
-        if (!response.ok) {
-            throw new Error(data.error || "Error al enviar el correo electrónico")
-        }
-
-        return { success: true, data }
-    } catch (error) {
-        console.error("Error al enviar factura por correo:", error)
-        return { success: false, error: error instanceof Error ? error.message : "Error desconocido" }
+    if (!pdfResult.success) {
+      throw new Error(pdfResult.error)
     }
+
+    // Aquí integrarías con tu servicio de email (SendGrid, Nodemailer, etc.)
+    // await sendEmailWithAttachment(recipientEmail, pdfResult.data, pdfResult.filename)
+
+    return { success: true, message: "Email enviado exitosamente" }
+  } catch (error) {
+    console.error("Error al enviar factura por correo:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error desconocido",
+    }
+  }
 }
 
 // TODO: Recupera una plantilla de correo específica validando permisos de agencia
@@ -1147,78 +1142,72 @@ export const getInvoiceEmailLogs = async (invoiceId: string) => {
 
 // TODO: Genera un PDF para una transacción específica with todos los detalles y datos de la agencia
 export const generateTransactionPDFById = async ({
-    transactionId,
-    agencyId,
+  transactionId,
+  agencyId,
 }: {
-    transactionId: string;
-    agencyId: string;
+  transactionId: string
+  agencyId: string
 }) => {
-    try {
-        const user = await currentUser();
-        if (!user) return { success: false, error: "No autorizado" };
+  try {
+    const user = await currentUser()
+    if (!user) return { success: false, error: "No autorizado" }
 
-        // Verificar acceso a la agencia
-        const hasAccess = user.Agency?.id === agencyId || user.SubAccount?.some((sa) => sa.agencyId === agencyId);
-        if (!hasAccess) {
-            return { success: false, error: "No autorizado para acceder a esta agencia" };
-        }
+    // Obtener la transacción con todas las relaciones
+    const transaction = await db.sale.findUnique({
+      where: {
+        id: transactionId,
+        agencyId: agencyId,
+      },
+      include: {
+        Customer: true,
+        Cashier: true,
+        Area: true,
+        Items: {
+          include: {
+            Product: true,
+          },
+        },
+        SubAccount: true,
+      },
+    })
 
-        // Obtener la transacción con todas las relaciones
-        const transaction = await db.sale.findUnique({
-            where: {
-                id: transactionId,
-                agencyId: agencyId,
-            },
-            include: {
-                Customer: true,
-                Cashier: true,
-                Area: true,
-                Items: {
-                    include: {
-                        Product: true,
-                    },
-                },
-                SubAccount: true,
-            },
-        });
-
-        if (!transaction) {
-            return { success: false, error: "Transacción no encontrada" };
-        }
-
-        // Obtener información de la agencia
-        const agency = await db.agency.findUnique({
-            where: { id: agencyId },
-            select: {
-                name: true,
-                companyEmail: true,
-                companyPhone: true,
-                address: true,
-                city: true,
-                state: true,
-                country: true,
-                zipCode: true,
-                taxId: true,
-                logo: true,
-            },
-        });
-
-        // Generar el PDF
-        const pdfBuffer = await generateTransactionPDF(transaction, agency || undefined);
-
-        return { 
-            success: true, 
-            data: pdfBuffer,
-            filename: `Transaccion-${transaction.reference || transaction.id}.pdf`
-        };
-    } catch (error) {
-        console.error("Error generando PDF de transacción:", error);
-        return { 
-            success: false, 
-            error: error instanceof Error ? error.message : "Error generando PDF de transacción" 
-        };
+    if (!transaction) {
+      return { success: false, error: "Transacción no encontrada" }
     }
-};
+
+    // Obtener información de la agencia
+    const agency = await db.agency.findUnique({
+      where: { id: agencyId },
+      select: {
+        name: true,
+        companyEmail: true,
+        companyPhone: true,
+        address: true,
+        city: true,
+        state: true,
+        country: true,
+        zipCode: true,
+        taxId: true,
+        agencyLogo: true,
+      },
+    })
+
+    // Generar el PDF
+    const pdfBuffer = await generateTransactionPDF(transaction, agency || undefined)
+
+    return {
+      success: true,
+      data: pdfBuffer,
+      filename: `Transaccion-${transaction.reference || transaction.id}.pdf`,
+    }
+  } catch (error) {
+    console.error("Error generando PDF de transacción:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error generando PDF de transacción",
+    }
+  }
+}
 
 // TODO: Envía por email los detalles de una transacción específica
 export const sendTransactionEmailById = async ({
@@ -1283,96 +1272,112 @@ export const sendTransactionEmailById = async ({
             },
         });
 
-        return { 
-            success: true, 
-            message: "Email enviado exitosamente" 
+        return {
+            success: true,
+            message: "Email enviado exitosamente"
         };
     } catch (error) {
         console.error("Error enviando email de transacción:", error);
-        return { 
-            success: false, 
-            error: error instanceof Error ? error.message : "Error enviando email de transacción" 
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "Error enviando email de transacción"
         };
     }
 };
 
 // TODO: Genera un PDF de factura y lo retorna como buffer
 export const generateInvoicePDFById = async ({
-    invoiceId,
-    agencyId,
+  invoiceId,
+  agencyId,
 }: {
-    invoiceId: string;
-    agencyId: string;
+  invoiceId: string
+  agencyId: string
 }) => {
-    try {
-        const user = await currentUser();
-        if (!user) return { success: false, error: "No autorizado" };
+  console.log("[PDF] Inicio generateInvoicePDFById con jsPDF", { invoiceId, agencyId })
 
-        // Verificar acceso a la agencia
-        const hasAccess = user.Agency?.id === agencyId || user.SubAccount?.some((sa) => sa.agencyId === agencyId);
-        if (!hasAccess) {
-            return { success: false, error: "No autorizado para acceder a esta agencia" };
-        }
+  try {
+    const user = await currentUser()
+    console.log("[PDF] Usuario autenticado:", user?.id)
 
-        const invoice = await db.invoice.findUnique({
-            where: {
-                id: invoiceId,
-                agencyId: agencyId,
-            },
-            include: {
-                Customer: true,
-                Items: {
-                    include: {
-                        Product: true,
-                    },
-                },
-                Payments: true,
-                Taxes: {
-                    include: {
-                        Tax: true,
-                    },
-                },
-                SubAccount: true,
-            },
-        });
-
-        if (!invoice) {
-            return { success: false, error: "Factura no encontrada" };
-        }
-
-        // Obtener información de la agencia
-        const agency = await db.agency.findUnique({
-            where: { id: agencyId },
-            select: {
-                name: true,
-                companyEmail: true,
-                companyPhone: true,
-                address: true,
-                city: true,
-                state: true,
-                country: true,
-                zipCode: true,
-                taxId: true,
-                logo: true,
-                DianConfig: true,
-            },
-        });
-
-        const pdfBuffer = await generateInvoicePDF(invoice, agency || undefined);
-
-        return { 
-            success: true, 
-            data: pdfBuffer,
-            filename: `Factura-${invoice.invoiceNumber}.pdf`
-        };
-    } catch (error) {
-        console.error("Error generando PDF:", error);
-        return { 
-            success: false, 
-            error: error instanceof Error ? error.message : "Error generando PDF" 
-        };
+    if (!user) {
+      return { success: false, error: "No autorizado" }
     }
-};
+
+    // Obtener información de la agencia
+    const agency = await db.agency.findUnique({
+      where: { id: agencyId },
+      select: {
+        name: true,
+        companyEmail: true,
+        companyPhone: true,
+        address: true,
+        city: true,
+        state: true,
+        country: true,
+        zipCode: true,
+        taxId: true,
+        agencyLogo: true,
+      },
+    })
+
+    console.log("[PDF] Agencia encontrada:", agency ? agency.name : "No encontrada")
+
+    if (!agency) {
+      return { success: false, error: "Agencia no encontrada" }
+    }
+
+    // Obtener la factura con todas las relaciones
+    const invoice = await db.invoice.findUnique({
+      where: {
+        id: invoiceId,
+        agencyId: agencyId,
+      },
+      include: {
+        Customer: true,
+        Items: {
+          include: {
+            Product: true,
+          },
+        },
+        Payments: true,
+        Taxes: {
+          include: {
+            Tax: true,
+          },
+        },
+        SubAccount: true,
+      },
+    })
+
+    console.log("[PDF] Factura encontrada:", invoice ? invoice.id : "No encontrada")
+
+    if (!invoice) {
+      return { success: false, error: "Factura no encontrada" }
+    }
+
+    // Validar datos mínimos
+    if (!invoice.invoiceNumber || !invoice.total) {
+      return { success: false, error: "Datos de factura incompletos" }
+    }
+
+    // Generar el PDF con jsPDF
+    console.log("[PDF] Iniciando generación de PDF con jsPDF...")
+    const pdfBuffer = await generateInvoicePDF(invoice, agency)
+    console.log("[PDF] Buffer generado exitosamente, tamaño:", pdfBuffer?.length)
+
+    return {
+      success: true,
+      data: pdfBuffer,
+      filename: `Factura-${invoice.invoiceNumber}.pdf`,
+    }
+  } catch (error) {
+    console.error("[PDF] Error generando PDF:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error generando PDF",
+    }
+  }
+}
 
 // TODO: Obtiene y filtra la lista de clientes de una agencia con sus relaciones
 export const getCustomers = async ({

@@ -62,6 +62,15 @@ const FormSchema = z.object({
   state: z.string().min(1),
   country: z.string().min(1),
   agencyLogo: z.string().min(1),
+  acceptTerms: z.boolean().refine((val) => val === true, {
+    message: "Debes aceptar los términos y condiciones",
+  }),
+  acceptPrivacy: z.boolean().refine((val) => val === true, {
+    message: "Debes aceptar las políticas de privacidad",
+  }),
+  acceptAll: z.boolean().refine((val) => val === true, {
+    message: "Debes aceptar todos los términos",
+  }),
 });
 
 const AgencyDetails = ({ data }: Props) => {
@@ -84,6 +93,9 @@ const AgencyDetails = ({ data }: Props) => {
       state: data?.state || "",
       country: data?.country || "",
       agencyLogo: data?.agencyLogo || "",
+      acceptTerms: false,
+      acceptPrivacy: false,
+      acceptAll: false,
     },
   });
 
@@ -92,6 +104,19 @@ const AgencyDetails = ({ data }: Props) => {
       form.reset(data);
     }
   }, [data]);
+
+  // Sincronizar checkboxes individuales con "aceptar todo"
+  useEffect(() => {
+    const acceptTerms = form.watch("acceptTerms");
+    const acceptPrivacy = form.watch("acceptPrivacy");
+    
+    // Si ambos checkboxes individuales están marcados, marcar "aceptar todo"
+    if (acceptTerms && acceptPrivacy) {
+      form.setValue("acceptAll", true);
+    } else {
+      form.setValue("acceptAll", false);
+    }
+  }, [form.watch("acceptTerms"), form.watch("acceptPrivacy")]);
 
   const handleSubmit = async (values: z.infer<typeof FormSchema>) => {
     try {
@@ -122,8 +147,16 @@ const AgencyDetails = ({ data }: Props) => {
         createdAt: new Date(),
         updatedAt: new Date(),
         companyEmail: values.companyEmail,
-        connectAccountId: "",
-        goal: 5,
+        connectAccountId: null,
+        goal: 3,
+        taxId: null,
+        taxName: null,
+        fiscalRegime: null,
+        fiscalResponsibility: null,
+        economicActivity: null,
+        invoiceResolution: null,
+        invoicePrefix: null,
+        invoiceNextNumber: null,
       });
 
 
@@ -352,6 +385,108 @@ const AgencyDetails = ({ data }: Props) => {
                   </FormItem>
                 )}
               />
+              
+              {/* Términos y Condiciones */}
+              <div className="space-y-4 border rounded-lg p-4">
+                <FormLabel className="text-base font-semibold">Términos y Condiciones</FormLabel>
+                
+                <FormField
+                  disabled={isLoading}
+                  control={form.control}
+                  name="acceptTerms"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={field.onChange}
+                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm font-normal">
+                          Acepto los{" "}
+                          <a
+                            href="/site/terminos"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline font-medium"
+                          >
+                            términos y condiciones
+                          </a>
+                        </FormLabel>
+                        <FormMessage />
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  disabled={isLoading}
+                  control={form.control}
+                  name="acceptPrivacy"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={field.onChange}
+                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm font-normal">
+                          Acepto las{" "}
+                          <a
+                            href="/site/condiciones"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline font-medium"
+                          >
+                            políticas de privacidad
+                          </a>
+                        </FormLabel>
+                        <FormMessage />
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  disabled={isLoading}
+                  control={form.control}
+                  name="acceptAll"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            field.onChange(checked);
+                            // Si se marca "aceptar todo", marcar los otros dos
+                            if (checked) {
+                              form.setValue("acceptTerms", true);
+                              form.setValue("acceptPrivacy", true);
+                            }
+                          }}
+                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm font-medium">
+                          Acepto todos los términos y condiciones
+                        </FormLabel>
+                        <FormMessage />
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
               {data?.id && (
                 <div className="flex flex-col gap-2">
                   <FormLabel>Crear un Objetivo</FormLabel>

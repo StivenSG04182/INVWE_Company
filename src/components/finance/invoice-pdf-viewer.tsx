@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Download, Printer, Mail, Loader2 } from "lucide-react"
+import { Download, Printer, Mail, Loader2, ExternalLink } from "lucide-react"
 import { toast } from "sonner"
 import { sendInvoiceEmail, generateInvoicePDFById } from "@/lib/queries3"
+import Link from "next/link"
 
 interface InvoicePDFViewerProps {
     invoice: any
@@ -20,21 +21,25 @@ export const InvoicePDFViewer = ({ invoice, agencyId }: InvoicePDFViewerProps) =
         const generatePDF = async () => {
             setIsLoading(true)
             try {
+                console.log("[PDF] Solicitando PDF para factura", invoice.id, "de agencia", agencyId)
                 const result = await generateInvoicePDFById({
                     invoiceId: invoice.id,
-                    agencyId
+                    agencyId,
                 })
 
-                if (!result.success) {
-                    throw new Error(result.error)
+                console.log("[PDF] Resultado de generateInvoicePDFById:", result)
+
+                if (!result.success || !result.data) {
+                    throw new Error(result.error || "Error al generar el PDF")
                 }
 
                 // Crear el blob a partir del buffer
-                const blob = new Blob([result.data], { type: 'application/pdf' })
+                const blob = new Blob([result.data], { type: "application/pdf" })
                 const url = URL.createObjectURL(blob)
                 setPdfUrl(url)
+                console.log("[PDF] Blob y URL creados para visor PDF")
             } catch (error) {
-                console.error("Error generating PDF:", error)
+                console.log("[PDF] Error en generatePDF:", error)
                 toast.error("Error al generar el PDF")
             } finally {
                 setIsLoading(false)
@@ -89,7 +94,7 @@ export const InvoicePDFViewer = ({ invoice, agencyId }: InvoicePDFViewerProps) =
             const result = await sendInvoiceEmail({
                 invoiceId: invoice.id,
                 agencyId: agencyId,
-                recipientEmail: invoice.Customer.email
+                recipientEmail: invoice.Customer.email,
             })
 
             if (result.success) {
@@ -119,7 +124,7 @@ export const InvoicePDFViewer = ({ invoice, agencyId }: InvoicePDFViewerProps) =
     return (
         <div className="flex flex-col h-full">
             {/* Barra de herramientas */}
-            <div className="flex justify-between items-center p-4 border-b">
+            <div className="flex justify-between items-center p-4 border-b bg-muted/50">
                 <div>
                     <h3 className="font-semibold">Factura {invoice.invoiceNumber}</h3>
                     <p className="text-sm text-muted-foreground">{invoice.Customer?.name || "Cliente general"}</p>
@@ -144,6 +149,13 @@ export const InvoicePDFViewer = ({ invoice, agencyId }: InvoicePDFViewerProps) =
                     >
                         <Mail className="h-4 w-4 mr-2" />
                         {isSendingEmail ? "Enviando..." : "Enviar"}
+                    </Button>
+
+                    <Button variant="outline" size="sm" asChild>
+                        <Link href={`/agency/${agencyId}/finance/invoices/${invoice.id}`}>
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Detalles
+                        </Link>
                     </Button>
                 </div>
             </div>

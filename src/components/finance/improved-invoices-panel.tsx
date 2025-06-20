@@ -13,7 +13,7 @@ import Link from "next/link"
 import { getInvoices } from "@/lib/queries3"
 import type { Invoice, InvoiceStatus } from "@prisma/client"
 import { InvoicePDFViewer } from "./invoice-pdf-viewer"
-import { InvoiceActions } from "./invoice-actions"
+import { InvoiceActionsUpdated as InvoiceActions } from "./invoice-actions"
 
 type InvoiceWithRelations = Invoice & {
     Customer?: {

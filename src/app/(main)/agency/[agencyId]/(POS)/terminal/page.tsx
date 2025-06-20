@@ -299,7 +299,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                         const invoiceResult = await generateInvoice({
                             agencyId,
                             subAccountId: selectedSubaccount || null,
-                            customerId: selectedClient.id || '',
+                            customerId: selectedClient.id || "general",
                             items: selectedProducts.map((p) => ({
                                 productId: p.id,
                                 description: p.name,

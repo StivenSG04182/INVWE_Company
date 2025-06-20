@@ -5,13 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { PlusCircle, FileDown, Search, FileText } from "lucide-react"
+import { PlusCircle, FileDown, FileText, Search } from "lucide-react"
 import Link from "next/link"
 import { getInvoices } from "@/lib/queries3"
 import type { Invoice, InvoiceStatus } from "@prisma/client"
-import { InvoiceActionsEnhanced } from "./invoice-actions-enhanced"
+import { InvoicePDFViewer } from "./invoice-pdf-viewer"
+import { InvoiceActionsUpdated as InvoiceActions } from "./invoice-actions"
+import { InvoiceDetailModal } from "./invoice-detail-modal"
 
 type InvoiceWithRelations = Invoice & {
     Customer?: {
@@ -37,6 +40,11 @@ export const InvoicesPanel = ({ agencyId }: { agencyId: string }) => {
     const [startDate, setStartDate] = useState("")
     const [endDate, setEndDate] = useState("")
 
+    // Estados para modales
+    const [selectedInvoice, setSelectedInvoice] = useState<InvoiceWithRelations | null>(null)
+    const [showPDFModal, setShowPDFModal] = useState(false)
+    const [showDetailModal, setShowDetailModal] = useState(false)
+
     // Estadísticas calculadas
     const totalInvoices = invoices.length
     const pendingInvoices = invoices.filter(
@@ -53,7 +61,7 @@ export const InvoicesPanel = ({ agencyId }: { agencyId: string }) => {
             setIsLoading(true)
             try {
                 const invoicesData = await getInvoices({ agencyId })
-                setInvoices(invoicesData)
+                setInvoices(invoicesData as InvoiceWithRelations[])
             } catch (error) {
                 console.error("Error al cargar facturas:", error)
             } finally {
@@ -87,6 +95,31 @@ export const InvoicesPanel = ({ agencyId }: { agencyId: string }) => {
         return searchMatch && statusMatch && typeMatch && dateMatch
     })
 
+    const handleViewPDF = (invoice: InvoiceWithRelations) => {
+        setSelectedInvoice(invoice)
+        setShowPDFModal(true)
+    }
+
+    const handleViewDetails = (invoice: InvoiceWithRelations) => {
+        setSelectedInvoice(invoice)
+        setShowDetailModal(true)
+    }
+
+    const handleClosePDFModal = () => {
+        setShowPDFModal(false)
+        setSelectedInvoice(null)
+    }
+
+    const handleCloseDetailModal = () => {
+        setShowDetailModal(false)
+        setSelectedInvoice(null)
+    }
+
+    const handleViewPDFFromDetail = () => {
+        setShowDetailModal(false)
+        setShowPDFModal(true)
+    }
+
     return (
         <>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -110,7 +143,7 @@ export const InvoicesPanel = ({ agencyId }: { agencyId: string }) => {
                 </div>
             </div>
 
-            {/* Estadísticas mejoradas */}
+            {/* Estadísticas */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <Card>
                     <CardContent className="p-6">
@@ -179,7 +212,7 @@ export const InvoicesPanel = ({ agencyId }: { agencyId: string }) => {
                 </CardHeader>
 
                 <CardContent>
-                    {/* Filtros mejorados */}
+                    {/* Filtros */}
                     <div className="space-y-4 mb-6">
                         <div className="flex flex-col lg:flex-row gap-4">
                             <div className="flex-1 relative">
@@ -238,7 +271,7 @@ export const InvoicesPanel = ({ agencyId }: { agencyId: string }) => {
 
                     <Separator className="mb-4" />
 
-                    {/* Tabla mejorada */}
+                    {/* Tabla */}
                     <div className="border rounded-lg overflow-hidden">
                         {isLoading ? (
                             <div className="p-8 text-center">
@@ -322,7 +355,12 @@ export const InvoicesPanel = ({ agencyId }: { agencyId: string }) => {
                                                     </Badge>
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    <InvoiceActionsEnhanced invoice={invoice} agencyId={agencyId} />
+                                                    <InvoiceActions
+                                                        invoice={invoice}
+                                                        agencyId={agencyId}
+                                                        onViewPDF={() => handleViewPDF(invoice)}
+                                                        onViewDetails={() => handleViewDetails(invoice)}
+                                                    />
                                                 </td>
                                             </tr>
                                         ))}
@@ -333,11 +371,30 @@ export const InvoicesPanel = ({ agencyId }: { agencyId: string }) => {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Modal de visualización PDF */}
+            <Dialog open={showPDFModal} onOpenChange={handleClosePDFModal}>
+                <DialogContent className="max-w-5xl h-[90vh]">
+                    <DialogHeader>
+                        <DialogTitle>Vista PDF - Factura {selectedInvoice?.invoiceNumber}</DialogTitle>
+                    </DialogHeader>
+                    {selectedInvoice && <InvoicePDFViewer invoice={selectedInvoice} agencyId={agencyId} />}
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal de detalles */}
+            <InvoiceDetailModal
+                invoice={selectedInvoice}
+                agencyId={agencyId}
+                isOpen={showDetailModal}
+                onClose={handleCloseDetailModal}
+                onViewPDF={handleViewPDFFromDetail}
+            />
         </>
     )
 }
 
-// Funciones auxiliares para mostrar el estado de la factura
+// Funciones auxiliares
 const getStatusText = (status: InvoiceStatus): string => {
     switch (status) {
         case "PAID":

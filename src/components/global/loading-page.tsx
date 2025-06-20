@@ -1,54 +1,60 @@
 "use client"
 
-import Loading from "./loading"
 import { useState, useEffect } from "react"
+import Loading from "./loading"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Package, BarChart3, Users, ShoppingCart } from "lucide-react"
 
 export default function Home() {
-  const [progress, setProgress] = useState(0)
-  const [status, setStatus] = useState("Iniciando sistema...")
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const loadingStates = [
-      { progress: 0, status: "Iniciando sistema...", delay: 1000 },
-      { progress: 25, status: "Cargando inventario...", delay: 1500 },
-      { progress: 50, status: "Verificando productos...", delay: 1200 },
-      { progress: 75, status: "Sincronizando datos...", delay: 1800 },
-      { progress: 100, status: "¡Sistema listo!", delay: 1000 },
-    ]
+    // Simular carga de 6 segundos
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 6000)
 
-    let currentIndex = 0
-
-    const updateProgress = () => {
-      if (currentIndex < loadingStates.length) {
-        const currentState = loadingStates[currentIndex]
-        setProgress(currentState.progress)
-        setStatus(currentState.status)
-
-        setTimeout(() => {
-          currentIndex++
-          if (currentIndex >= loadingStates.length) {
-            currentIndex = 0
-          }
-          updateProgress()
-        }, currentState.delay)
-      }
-    }
-
-    updateProgress()
+    return () => clearTimeout(timer)
   }, [])
 
+  if (isLoading) {
+    return <Loading />
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gradient-to-br from-amber-50 to-orange-100">
-      <div className="w-full max-w-5xl">
-        <h1 className="text-4xl font-bold mb-8 text-center text-gray-800">Sistema de Inventario SaaS</h1>
-        <div className="bg-white p-12 rounded-xl shadow-2xl border border-gray-100">
-          <div className="text-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">Preparando su plataforma</h2>
-            <p className="text-gray-500">Configurando módulos de inventario, POS y facturación electrónica</p>
-          </div>
-          <Loading progress={progress} status={status} />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-slate-800 mb-4">InventoryPro Dashboard</h1>
+          <p className="text-slate-600 text-lg">Sistema de Gestión Inteligente - Carga Completada</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[
+            { icon: Package, title: "Productos", value: "1,234", color: "blue" },
+            { icon: ShoppingCart, title: "Ventas Hoy", value: "$12,345", color: "green" },
+            { icon: Users, title: "Personal", value: "24", color: "purple" },
+            { icon: BarChart3, title: "Reportes", value: "156", color: "orange" },
+          ].map(({ icon: Icon, title, value, color }, index) => (
+            <Card key={title} className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-slate-600">{title}</CardTitle>
+                <Icon className={`h-4 w-4 text-${color}-600`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-slate-800">{value}</div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="text-center">
+          <Button onClick={() => setIsLoading(true)} className="bg-blue-600 hover:bg-blue-700">
+            Mostrar Loading Nuevamente
+          </Button>
         </div>
       </div>
-    </main>
+    </div>
   )
 }

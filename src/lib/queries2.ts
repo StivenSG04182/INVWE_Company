@@ -179,7 +179,7 @@ export const getProducts = async (agencyId: string, subAccountId?: string) => {
                 SubAccount: true,
             },
             orderBy: {
-                name: 'asc'
+                name: 'desc'
             }
         });
         
@@ -1824,75 +1824,83 @@ export const generateInvoice = async (data: {
     total: number;
     notes?: string;
 }) => {
-    if (!data.items || data.items.length === 0) {
-        throw new Error("No hay productos en la factura");
-    }
-
-    const client = await db.client.findUnique({
-        where: { id: data.customerId }
-    });
-
-    if (!client) {
-        throw new Error("Cliente no encontrado");
-    }
-
-    // Generar número de factura único con formato
-    const date = new Date();
-    const formattedDate = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
-    const randomPart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    const invoiceNumber = `INV-${formattedDate}-${randomPart}`;
-
-    // Crear la factura con los items correctamente formateados
-    const invoice = await db.invoice.create({
-        data: {
-            invoiceNumber: invoiceNumber,
-            status: "PENDING",
-            invoiceType: "PHYSICAL", // Por defecto física
-            documentType: "INVOICE", // Tipo de documento: factura
-            subtotal: data.subtotal,
-            tax: data.tax,
-            discount: 0, // Por defecto sin descuento
-            total: data.total,
-            notes: data.notes || "",
-            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 días después
-            customerId: data.customerId,
-            agencyId: data.agencyId,
-            subAccountId: data.subAccountId,
-            // Datos fiscales del cliente
-            customerTaxId: client.taxId || null,
-            customerTaxType: client.taxIdType || null,
-            customerEmail: client.email || null,
-            customerPhone: client.phone || null,
-            customerAddress: client.address || null,
-            // Crear los items de la factura
-            Items: {
-                create: data.items.map(item => ({
-                    quantity: item.quantity,
-                    unitPrice: item.unitPrice,
-                    discount: 0, // Por defecto sin descuento
-                    tax: data.tax / data.subtotal * item.subtotal, // Distribuir el impuesto proporcionalmente
-                    total: item.subtotal * (1 + (data.tax / data.subtotal)), // Subtotal + impuesto proporcional
-                    description: item.description,
-                    productId: item.productId
-                }))
-            }
-        },
-        include: {
-            Items: true,
-            Customer: true
+    try {
+        if (!data.items || data.items.length === 0) {
+            throw new Error("No hay productos en la factura");
         }
-    });
 
-    await saveActivityLogsNotification({
-        agencyId: data.agencyId,
-        description: `Factura ${invoiceNumber} generada para ${client.name}`,
-        subaccountId: data.subAccountId || undefined,
-    });
+        // Verificar que el cliente existe en la tabla Client
+        const client = await db.client.findUnique({
+            where: { 
+                id: data.customerId
+            }
+        });
 
-    return {
-        success: true,
-        data: invoice
-    };
+        if (!client) {
+            throw new Error(`Cliente con ID ${data.customerId} no encontrado`);
+        }
+
+        // Generar número de factura único con formato
+        const date = new Date();
+        const formattedDate = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
+        const randomPart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        const invoiceNumber = `INV-${formattedDate}-${randomPart}`;
+
+        // Crear la factura con los items correctamente formateados
+        const invoice = await db.invoice.create({
+            data: {
+                invoiceNumber: invoiceNumber,
+                status: "PENDING",
+                invoiceType: "PHYSICAL",
+                documentType: "INVOICE",
+                subtotal: data.subtotal,
+                tax: data.tax,
+                discount: 0,
+                total: data.total,
+                notes: data.notes || "",
+                dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                customerId: client.id, // Usamos directamente el ID del Client
+                agencyId: data.agencyId,
+                subAccountId: data.subAccountId,
+                customerTaxId: client.taxId || null,
+                customerTaxType: client.taxIdType || null,
+                customerEmail: client.email || null,
+                customerPhone: client.phone || null,
+                customerAddress: client.address || null,
+                Items: {
+                    create: data.items.map(item => ({
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice,
+                        discount: 0,
+                        tax: data.tax / data.subtotal * item.subtotal,
+                        total: item.subtotal * (1 + (data.tax / data.subtotal)),
+                        description: item.description,
+                        productId: item.productId
+                    }))
+                }
+            },
+            include: {
+                Items: true,
+                Customer: true
+            }
+        });
+
+        await saveActivityLogsNotification({
+            agencyId: data.agencyId,
+            description: `Factura ${invoiceNumber} generada para ${client.name}`,
+            subaccountId: data.subAccountId || undefined,
+        });
+
+        return {
+            success: true,
+            data: invoice
+        };
+    } catch (error) {
+        console.error("Error al generar la factura:", error);
+        throw error instanceof Error 
+            ? error 
+            : new Error("Error desconocido al generar la factura");
+    }
 };
 
 // TODO: Envia una factura por correo electrónico
