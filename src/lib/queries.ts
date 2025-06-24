@@ -410,7 +410,7 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             // 4. POS (Punto de Venta)
             { name: "POS (Punto de Venta)", icon: "shoppingCart", link: "#" },
             { name: "Terminal", icon: "payment", link: `/agency/${agency.id}/(POS)/terminal` },
-            { name: "Ventas POS", icon: "receipt", link: `/agency/${agency.id}/(POS)/sales-pos` },
+            /* { name: "Ventas POS", icon: "receipt", link: `/agency/${agency.id}/(POS)/sales-pos` }, */
            /*  { name: "Cierre de Caja", icon: "chart", link: `/agency/${agency.id}/(POS)/cash-closing` },   */
 
             // 5. Ventas & Facturación
