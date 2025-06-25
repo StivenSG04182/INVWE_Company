@@ -7,12 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { createProvider, updateProvider } from '@/lib/queries2';
 
 interface ProviderFormProps {
   agencyId: string;
+  isOpen: boolean;
+  onClose: () => void;
   provider?: {
     _id?: string;
     id?: string;
@@ -27,7 +29,7 @@ interface ProviderFormProps {
   isEditing?: boolean;
 }
 
-export default function ProviderForm({ agencyId, provider, isEditing = false }: ProviderFormProps) {
+export default function ProviderForm({ agencyId, isOpen, onClose, provider, isEditing = false }: ProviderFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -41,31 +43,19 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
     subaccountId: provider?.subaccountId || provider?.subAccountId || '',
   });
 
-  // Cargar subcuentas al montar el componente
+  // Cargar tiendas al montar el componente
   useEffect(() => {
-    const fetchSubaccounts = async () => {
+    async function fetchSubaccounts() {
       try {
-        const response = await fetch(`/api/agency/${agencyId}/subaccounts`, {
-          credentials: 'include',
-        });
-        const data = await response.json();
-        if (data.success) {
-          setSubaccounts(data.data || []);
-        } else {
-          console.error('Error al cargar subcuentas:', data.error);
-        }
+        const { getSubAccountsForAgency } = await import("@/lib/queries2");
+        const result = await getSubAccountsForAgency(agencyId);
+        setSubaccounts(result || []);
       } catch (error) {
-        console.error('Error al cargar subcuentas:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'No se pudieron cargar las subcuentas. Inténtalo de nuevo.',
-        });
+        setSubaccounts([]);
       }
-    };
-
-    fetchSubaccounts();
-  }, [agencyId, toast]);
+    }
+    if (agencyId) fetchSubaccounts();
+  }, [agencyId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -86,19 +76,17 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
     e.preventDefault();
     setIsLoading(true);
 
-    // Validar que se haya seleccionado una subcuenta
     if (!formData.subaccountId) {
       toast({
         variant: 'destructive',
-        title: 'Subcuenta requerida',
-        description: 'Por favor selecciona una subcuenta para continuar.',
+        title: 'Tienda requerida',
+        description: 'Por favor selecciona una tienda para continuar.',
       });
       setIsLoading(false);
       return;
     }
 
     try {
-      // Preparar datos para enviar
       const providerData = {
         ...formData,
         agencyId,
@@ -106,14 +94,13 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
       };
 
       let result;
-      
+
       if (isEditing && provider) {
-        // Usar el ID correcto del proveedor (puede estar en _id o id)
         const providerId = provider._id || provider.id;
         if (!providerId) {
           throw new Error('ID de proveedor no encontrado');
         }
-        
+
         result = await updateProvider(providerId, providerData);
       } else {
         result = await createProvider(providerData);
@@ -125,7 +112,7 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
           description: `El proveedor ${formData.name} ha sido ${isEditing ? 'actualizado' : 'creado'} exitosamente.`,
         });
         router.refresh();
-        router.push(`/agency/${agencyId}/providers`);
+        onClose();
       } else {
         throw new Error('Error al procesar la solicitud');
       }
@@ -142,112 +129,113 @@ export default function ProviderForm({ agencyId, provider, isEditing = false }: 
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>{isEditing ? 'Editar Proveedor' : 'Nuevo Proveedor'}</CardTitle>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nombre del Proveedor *</Label>
-            <Input
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{isEditing ? 'Editar Proveedor' : 'Nuevo Proveedor'}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nombre del Proveedor *</Label>
+              <Input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="subaccountId">Subcuenta *</Label>
-            <Select
-              value={formData.subaccountId}
-              onValueChange={(value) => handleSelectChange('subaccountId', value)}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar subcuenta" />
-              </SelectTrigger>
-              <SelectContent>
-                {subaccounts.length > 0 ? (
-                  subaccounts.map((subaccount) => (
-                    <SelectItem key={subaccount.id} value={subaccount.id}>
-                      {subaccount.name}
+            <div className="space-y-2">
+              <Label htmlFor="subaccountId">Tienda *</Label>
+              <Select
+                value={formData.subaccountId}
+                onValueChange={(value) => handleSelectChange('subaccountId', value)}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar tienda" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subaccounts.length > 0 ? (
+                    subaccounts.map((subaccount) => (
+                      <SelectItem key={subaccount.id} value={subaccount.id}>
+                        {subaccount.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-subaccounts" disabled>
+                      No hay tiendas disponibles. Por favor, crea una tienda primero.
                     </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="no-subaccounts" disabled>
-                    No hay subcuentas disponibles. Por favor, crea una subcuenta primero.
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-            {subaccounts.length === 0 && (
-              <p className="text-sm text-destructive mt-1">
-                No hay subcuentas disponibles. Debes crear una subcuenta antes de continuar.
-              </p>
-            )}
-          </div>
+                  )}
+                </SelectContent>
+              </Select>
+              {subaccounts.length === 0 && (
+                <p className="text-sm text-destructive mt-1">
+                  No hay tiendas disponibles. Debes crear una tienda antes de continuar.
+                </p>
+              )}
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="contactName">Persona de Contacto</Label>
-            <Input
-              id="contactName"
-              name="contactName"
-              value={formData.contactName}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Correo Electrónico</Label>
+              <Label htmlFor="contactName">Persona de Contacto</Label>
               <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
+                id="contactName"
+                name="contactName"
+                value={formData.contactName}
                 onChange={handleChange}
               />
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Correo Electrónico</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Teléfono</Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="phone">Teléfono</Label>
-              <Input
-                id="phone"
-                name="phone"
-                value={formData.phone}
+              <Label htmlFor="address">Dirección</Label>
+              <Textarea
+                id="address"
+                name="address"
+                value={formData.address}
                 onChange={handleChange}
+                rows={3}
               />
             </div>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="address">Dirección</Label>
-            <Textarea
-              id="address"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              rows={3}
-            />
+          <div className="flex justify-end gap-4 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isLoading}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Guardando...' : isEditing ? 'Actualizar' : 'Guardar'}
+            </Button>
           </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.back()}
-            disabled={isLoading}
-          >
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Guardando...' : isEditing ? 'Actualizar' : 'Guardar'}
-          </Button>
-        </CardFooter>
-      </form>
-    </Card>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
-}
 }

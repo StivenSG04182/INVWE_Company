@@ -418,7 +418,7 @@ const MenuOptions = ({
                         </CommandItem>
                       </CommandGroup>
                     )}
-                  <CommandGroup heading="Cuentas">
+                  <CommandGroup heading="Tiendas">
                     {!!subAccounts
                       ? subAccounts.map((subaccount) => (
                         <CommandItem key={subaccount.id}>
@@ -479,8 +479,8 @@ const MenuOptions = ({
                         onClick={() => {
                           setOpen(
                             <CustomModal
-                              title="Crear Subcuenta"
-                              subheading="Puedes cambiar entre tu cuenta de agencia y la subcuenta desde el sidebar"
+                              title="Crear Tienda"
+                              subheading="Puedes cambiar entre tu cuenta de agencia y la tienda desde el sidebar"
                             >
                               <SubAccountDetails
                                 agencyDetails={user?.Agency as Agency}
@@ -492,7 +492,7 @@ const MenuOptions = ({
                         }}
                       >
                         <PlusCircleIcon size={15} />
-                        Crear Subcuenta
+                        Crear Tienda
                       </Button>
                     </SheetClose>
                   )}

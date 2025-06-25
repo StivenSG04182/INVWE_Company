@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
+import { createDiscount } from "@/lib/queries2" // Importamos la función de queries2
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -57,7 +58,7 @@ export function DiscountManager({ agencyId, products, categories }: DiscountMana
     // Manejar selección de todos los items
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
-            setSelectedItems(filteredItems.map((item) => item._id))
+            setSelectedItems(filteredItems.map((item) => item.id)) // Cambiado de _id a id
         } else {
             setSelectedItems([])
         }
@@ -139,28 +140,37 @@ export function DiscountManager({ agencyId, products, categories }: DiscountMana
         setIsLoading(true)
 
         try {
-            const response = await fetch(`/api/inventory/${agencyId}/discounts`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    discountType,
-                    itemIds: applyToAll ? [] : selectedItems,
-                    applyToAll,
-                    discount: Number.parseFloat(discountValue),
-                    startDate: discountStartDate,
-                    endDate: discountEndDate,
-                    minimumPrice: showMinimumPrice ? Number.parseFloat(minimumPrice) : null,
-                    name: discountName || `Descuento ${Number.parseFloat(discountValue)}%`,
-                    description: discountDescription,
-                    showOriginalPrice,
-                    highlightInCatalog,
-                }),
-                credentials: "include",
-            })
+            // Agregar log para verificar los datos
+            console.log('Datos del descuento:', {
+                itemIds: selectedItems,
+                applyToAll,
+                discountType,
+                agencyId
+            });
 
-            const result = await response.json()
+            // Crear el objeto de datos para el descuento
+            const discountData = {
+                agencyId,
+                discountType,
+                itemIds: applyToAll ? [] : selectedItems,
+                applyToAll,
+                discount: Number.parseFloat(discountValue),
+                startDate: discountStartDate,
+                endDate: discountEndDate,
+                minimumPrice: showMinimumPrice ? Number.parseFloat(minimumPrice) : null,
+                name: discountName || `Descuento ${Number.parseFloat(discountValue)}%`,
+                description: discountDescription,
+                showOriginalPrice,
+                highlightInCatalog,
+            }
+
+            // Verificar que los IDs existen
+            if (!applyToAll && (!discountData.itemIds || discountData.itemIds.length === 0)) {
+                throw new Error("No se han seleccionado productos para aplicar el descuento");
+            }
+
+            // Llamar directamente a la función de queries2
+            const result = await createDiscount(discountData)
 
             if (result.success) {
                 toast({
@@ -177,14 +187,14 @@ export function DiscountManager({ agencyId, products, categories }: DiscountMana
                 setDiscountName("")
                 setDiscountDescription("")
             } else {
-                throw new Error(result.error || "Error al aplicar el descuento")
+                throw new Error(result.message || "Error al aplicar el descuento")
             }
         } catch (error) {
             console.error("Error al aplicar descuento:", error)
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: "Hubo un problema al aplicar el descuento. Inténtalo de nuevo.",
+                description: error instanceof Error ? error.message : "Hubo un problema al aplicar el descuento. Inténtalo de nuevo.",
             })
         } finally {
             setIsLoading(false)

@@ -9,8 +9,6 @@ const Unauthorized = () => {
   const router = useRouter();
 
   useEffect(() => {
-    console.log("=== Componente Unauthorized renderizado ===");
-    console.log("URL actual:", window.location.href);
   }, []);
 
   return (
@@ -19,7 +17,7 @@ const Unauthorized = () => {
       <p className="text-muted-foreground text-center">
         Por favor, contacta con el soporte o el propietario de la agencia para obtener acceso.
       </p>
-      <Button onClick={() => router.push("/")}>Volver al inicio</Button>
+      <Button onClick={() => router.push("/site")}>Volver al inicio</Button>
     </div>
   );
 };

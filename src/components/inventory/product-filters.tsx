@@ -67,24 +67,24 @@ export function ProductFilters({
         }
     };
 
-    // Manejar cambios en la selección de subcuentas
+    // Manejar cambios en la selección de tiendas
     const handleSubAccountChange = (subAccountId: string, checked: boolean) => {
         if (subAccountId === 'all') {
             if (checked) {
-                // Si se selecciona "Todas las subcuentas", limpiar selecciones individuales
+                // Si se selecciona "Todas las tiendas", limpiar selecciones individuales
                 setSelectedSubAccounts([]);
                 setAllSubAccountsSelected(true);
             } else {
-                // Si se deselecciona "Todas las subcuentas", mantener el estado actual
+                // Si se deselecciona "Todas las tiendas", mantener el estado actual
                 setAllSubAccountsSelected(false);
             }
         } else {
             setAllSubAccountsSelected(false);
             if (checked) {
-                // Agregar subcuenta a la selección
+                // Agregar tienda a la selección
                 setSelectedSubAccounts(prev => [...prev, subAccountId]);
             } else {
-                // Quitar subcuenta de la selección
+                // Quitar tienda de la selección
                 setSelectedSubAccounts(prev => prev.filter(id => id !== subAccountId));
             }
         }
@@ -96,7 +96,7 @@ export function ProductFilters({
             categories: allCategoriesSelected ? [] : selectedCategories,
             subAccounts: allSubAccountsSelected ? [] : selectedSubAccounts,
         });
-    }, [selectedCategories, selectedSubAccounts, allCategoriesSelected, allSubAccountsSelected]);
+    }, [selectedCategories, selectedSubAccounts, allCategoriesSelected, allSubAccountsSelected, onFilterChange]);
 
     return (
         <div className="flex flex-wrap gap-2">
@@ -157,11 +157,11 @@ export function ProductFilters({
                 </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Filtro de subcuentas */}
+            {/* Filtro de tiendas */}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="min-w-[180px] justify-between">
-                        <span>Subcuentas {!allSubAccountsSelected && `(${selectedSubAccounts.length})`}</span>
+                        <span>Tiendas {!allSubAccountsSelected && `(${selectedSubAccounts.length})`}</span>
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="16"
@@ -179,31 +179,31 @@ export function ProductFilters({
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>Seleccionar subcuentas</DropdownMenuLabel>
+                    <DropdownMenuLabel>Seleccionar tiendas</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <div className="p-2 space-y-2 max-h-[300px] overflow-y-auto">
                         <div className="flex items-center space-x-2">
                             <Checkbox
-                                id="subcuenta-todas"
+                                id="tienda-todas"
                                 checked={allSubAccountsSelected}
                                 onCheckedChange={(checked) => handleSubAccountChange('all', checked === true)}
                             />
                             <label
-                                htmlFor="subcuenta-todas"
+                                htmlFor="tienda-todas"
                                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                             >
-                                Todas las subcuentas
+                                Todas las tiendas
                             </label>
                         </div>
                         {subAccounts.map((subAccount) => (
                             <div key={subAccount.id} className="flex items-center space-x-2">
                                 <Checkbox
-                                    id={`subcuenta-${subAccount.id}`}
+                                    id={`tienda-${subAccount.id}`}
                                     checked={selectedSubAccounts.includes(subAccount.id)}
                                     onCheckedChange={(checked) => handleSubAccountChange(subAccount.id, checked === true)}
                                 />
                                 <label
-                                    htmlFor={`subcuenta-${subAccount.id}`}
+                                    htmlFor={`tienda-${subAccount.id}`}
                                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                 >
                                     {subAccount.name}

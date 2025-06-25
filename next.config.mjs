@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     images: {
-      domains: ['img.clerk.com', 'images.unsplash.com', 'utfs.io'],
+      domains: ['img.clerk.com', 'images.unsplash.com', 'utfs.io', 'images.pexels.com'], // Agrega el dominio de Pexels aquí
     },
     reactStrictMode: false,
     output: 'standalone',

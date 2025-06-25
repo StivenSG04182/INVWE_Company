@@ -105,7 +105,7 @@ const UserDetails = ({id,type,userData,subAccounts,}: Props) => {
       if (userData) {
         form.reset(userData)
       }
-    }, [userData, data])
+    }, [userData, data, form])
     
     const onChangePermission = async (subAccountId : string, val: boolean, permissionsId :string | undefined) => {
     if(!data.user?.email)return
@@ -132,8 +132,8 @@ const UserDetails = ({id,type,userData,subAccounts,}: Props) => {
     }
     if(response){
       toast({
-        title: 'Success',
-        description: 'The request was successfull',
+        title: 'Exito',
+        description: 'La petición fue exitosa',
       })
       if(subAccountPermissions){
         subAccountPermissions.Permissions.find((perm) => {
@@ -146,8 +146,8 @@ const UserDetails = ({id,type,userData,subAccounts,}: Props) => {
       else {
         toast({
           variant: 'destructive',
-          title: 'Failed',
-          description: 'Could not update permissions',
+          title: 'Error',
+          description: 'No se pudieron editar los permisos',
         })
       }
     }
@@ -173,16 +173,16 @@ const UserDetails = ({id,type,userData,subAccounts,}: Props) => {
   
         if (updatedUser) {
           toast({
-            title: 'Success',
-            description: 'Update User Information',
+            title: 'Exito!',
+            description: 'Se actualizó la información exitosamente',
           })
           setClose()
           router.refresh()
         } else {
           toast({
             variant: 'destructive',
-            title: 'Oppse!',
-            description: 'Could not update user information',
+            title: 'Upps!',
+            description: 'No se ha podido actualizar la información del usuario',
           })
         }
       } else {
@@ -207,7 +207,7 @@ const UserDetails = ({id,type,userData,subAccounts,}: Props) => {
               name="avatarUrl"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Profile picture</FormLabel>
+                  <FormLabel>Foto de Perfil</FormLabel>
                   <FormControl>
                     <FileUpload
                       apiEndpoint="avatar"
@@ -226,11 +226,11 @@ const UserDetails = ({id,type,userData,subAccounts,}: Props) => {
               name="name"
               render={({ field }) => (
                 <FormItem className="flex-1">
-                  <FormLabel>User full name</FormLabel>
+                  <FormLabel>Nombre completo del usuario</FormLabel>
                   <FormControl>
                     <Input
                       required
-                      placeholder="Full Name"
+                      placeholder="Nombre completo"
                       {...field}
                     />
                   </FormControl>
@@ -244,14 +244,14 @@ const UserDetails = ({id,type,userData,subAccounts,}: Props) => {
               name="email"
               render={({ field }) => (
                 <FormItem className="flex-1">
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Correo</FormLabel>
                   <FormControl>
                     <Input
                       readOnly={
                         userData?.role === 'AGENCY_OWNER' ||
                         form.formState.isSubmitting
                       }
-                      placeholder="Email"
+                      placeholder="Correo"
                       {...field}
                     />
                   </FormControl>
@@ -265,7 +265,7 @@ const UserDetails = ({id,type,userData,subAccounts,}: Props) => {
               name="role"
               render={({ field }) => (
                 <FormItem className="flex-1">
-                  <FormLabel>User Role</FormLabel>
+                  <FormLabel>Rol del usuario</FormLabel>
                   <Select
                     disabled={field.value === 'AGENCY_OWNER'}
                     onValueChange={(value) => {
@@ -285,25 +285,25 @@ const UserDetails = ({id,type,userData,subAccounts,}: Props) => {
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select user role..." />
+                        <SelectValue placeholder="Seleccionar un rol de usuario..." />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {/* typo ? */}
                       <SelectItem value="AGENCY_ADMIN">
-                        Agency Admin
+                        Administrador de Agencia
                       </SelectItem>
                       {(data?.user?.role === 'AGENCY_OWNER' ||
                         userData?.role === 'AGENCY_OWNER') && (
                         <SelectItem value="AGENCY_OWNER">
-                          Agency Owner
+                          Dueño de Agencia
                         </SelectItem>
                       )}
                       <SelectItem value="SUBACCOUNT_USER">
-                        Sub Account User
+                        Usuario de Tienda
                       </SelectItem>
                       <SelectItem value="SUBACCOUNT_GUEST">
-                        Sub Account Guest
+                        Invitado de Tienda
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -322,8 +322,8 @@ const UserDetails = ({id,type,userData,subAccounts,}: Props) => {
                 <Separator className="my-4" />
                 <FormLabel>Permisos de Usuario</FormLabel>
                 <FormDescription className="mb-4">
-                  Puede dar acceso a subcuentas a los miembros del equipo activando
-                  el control de acceso para cada subcuenta. Esto solo es visible para
+                  Puede dar acceso a tiendas a los miembros del equipo activando
+                  el control de acceso para cada tienda. Esto solo es visible para
                   los propietarios de la agencia
                 </FormDescription>
                 <div className='flex flex-col gap-4'>

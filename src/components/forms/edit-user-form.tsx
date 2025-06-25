@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useState } from 'react'
 import { useToast } from '@/components/ui/use-toast'
 import { User } from '@prisma/client'
+import { editUser } from '@/lib/queries'
 
 // Esquema de validación para el formulario
 const formSchema = z.object({
@@ -63,16 +64,17 @@ export default function EditUserForm({ user }: EditUserFormProps) {
         try {
             setLoading(true)
 
-            // Enviar los datos al servidor
-            const response = await fetch(`/api/users/${user.id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            })
+            // Convertir fechas a tipo Date
+            const parsedData = {
+                ...data,
+                birthDate: data.birthDate ? new Date(data.birthDate) : null,
+                hireDate: data.hireDate ? new Date(data.hireDate) : null,
+            }
 
-            if (!response.ok) {
+            // Enviar los datos al backend
+            const response = await editUser(user.id, parsedData)
+
+            if (!response) {
                 throw new Error('Error al actualizar la información del usuario')
             }
 
@@ -82,7 +84,8 @@ export default function EditUserForm({ user }: EditUserFormProps) {
                 variant: 'default'
             })
             // Cerrar el diálogo usando el DOM
-            document.querySelector('[role="dialog"]')?.querySelector('button[aria-label="Close"]')?.click()
+            const closeBtn = document.querySelector('[role="dialog"]')?.querySelector('button[aria-label="Close"]') as HTMLButtonElement | null;
+            closeBtn?.click()
         } catch (error) {
             console.error('Error al actualizar usuario:', error)
             toast({

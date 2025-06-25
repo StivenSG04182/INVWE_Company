@@ -1,7 +1,14 @@
 "use client"
 
 import { useState, useEffect, forwardRef, useImperativeHandle } from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
 import {
     Dialog,
     DialogContent,
@@ -9,13 +16,11 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog"
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -25,24 +30,10 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/ui/use-toast"
-import { ClientService, ClientData } from "@/lib/services/client-service"
+import { ClientData } from "@/lib/services/client-service"
 import { ClientStatus, ClientType } from "@prisma/client"
-import {
-    Search,
-    MoreVertical,
-    Edit,
-    Trash2,
-    UserPlus,
-    Mail,
-    Phone,
-    Building2,
-    User,
-    Calendar,
-    DollarSign,
-    Loader2,
-    AlertCircle,
-} from "lucide-react"
-import { Users } from "lucide-react" // Added import for Users
+import { Search, MoreVertical, Edit, Trash2, UserPlus, Mail, Phone, Building2, User, Calendar, DollarSign, AlertCircle, Users, Eye, FileText, MoreHorizontal, FileText as NotesIcon } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, } from "@/components/ui/tooltip"
 
 const ClientsDirectory = forwardRef(function ClientsDirectory({
     agencyId,
@@ -53,7 +44,6 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
     subAccountId?: string
     onClientSelect: (clientId: string) => void
 }, ref) {
-    // Exponer métodos al componente padre
     useImperativeHandle(ref, () => ({
         openAddClientDialog: () => setIsAddClientOpen(true)
     }));
@@ -67,9 +57,10 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
     const [clients, setClients] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [selectedClient, setSelectedClient] = useState<any>(null)
-    
+
     const [formData, setFormData] = useState<ClientData>({
         name: "",
+        rut: "",
         type: ClientType.INDIVIDUAL,
         email: "",
         phone: "",
@@ -82,15 +73,12 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
         status: ClientStatus.ACTIVE,
     })
 
-    // Cargar clientes desde la base de datos usando queries2.ts
     useEffect(() => {
         const loadClients = async () => {
             setIsLoading(true)
             try {
-                // Importar la función getClients de queries2.ts
-                const { getClients } = await import('@/lib/queries2')
-                
-                // Obtener los clientes reales de la base de datos
+                const { getClients } = await import('@/lib/client-queries')
+
                 const clientsData = await getClients(agencyId, subAccountId)
                 setClients(clientsData)
             } catch (error) {
@@ -108,7 +96,6 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
         loadClients()
     }, [agencyId, subAccountId, toast])
 
-    // Filter and sort clients
     const filteredClients = clients
         .filter((client) => {
             const matchesSearch =
@@ -129,7 +116,6 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
 
     const handleAddClient = async () => {
         try {
-            // Validar campos obligatorios
             if (!formData.name || !formData.name.trim()) {
                 toast({
                     title: "Error de validación",
@@ -156,23 +142,17 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
                 })
                 return
             }
-
-            // Asegurarse de que todos los campos requeridos estén presentes
             const clientData: ClientData = {
                 ...formData,
-                // Asegurarse de que el tipo y estado estén correctamente definidos
                 type: formData.type || ClientType.INDIVIDUAL,
-                status: formData.status || ClientStatus.ACTIVE
+                status: formData.status || ClientStatus.ACTIVE // Asegúrate de que este valor sea correcto
             }
-            
+
             try {
-                // Importar la función createClient de queries2.ts
-                const { createClient } = await import('@/lib/queries2')
-                
-                // Crear el cliente usando la función de queries2.ts
+                const { createClient } = await import('@/lib/client-queries')
+
                 const newClient = await createClient(agencyId, clientData, subAccountId)
-                
-                // Actualizar la lista de clientes
+
                 setClients([newClient, ...clients])
                 toast({
                     title: "Cliente creado",
@@ -200,19 +180,15 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
 
     const handleEditClient = async () => {
         if (!selectedClient) return
-        
+
         try {
-            // Importar la función updateClient de queries2.ts
-            const { updateClient } = await import('@/lib/queries2')
-            
-            // Actualizar el cliente usando la función de queries2.ts
+            const { updateClient } = await import('@/lib/client-queries')
             const updatedClient = await updateClient(selectedClient.id, formData)
-            
-            // Actualizar la lista de clientes
-            setClients(clients.map(client => 
+
+            setClients(clients.map(client =>
                 client.id === selectedClient.id ? updatedClient : client
             ))
-            
+
             toast({
                 title: "Cliente actualizado",
                 description: "El cliente ha sido actualizado exitosamente",
@@ -231,17 +207,14 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
 
     const handleDeleteClient = async () => {
         if (!selectedClient) return
-        
+
         try {
-            // Importar la función deleteClient de queries2.ts
-            const { deleteClient } = await import('@/lib/queries2')
-            
-            // Eliminar el cliente usando la función de queries2.ts
+            const { deleteClient } = await import('@/lib/client-queries')
+
             await deleteClient(selectedClient.id)
-            
-            // Actualizar la lista de clientes
+
             setClients(clients.filter(client => client.id !== selectedClient.id))
-            
+
             toast({
                 title: "Cliente eliminado",
                 description: "El cliente ha sido eliminado exitosamente",
@@ -260,6 +233,7 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
     const resetForm = () => {
         setFormData({
             name: "",
+            rut: "",
             type: ClientType.INDIVIDUAL,
             email: "",
             phone: "",
@@ -279,6 +253,7 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
         setSelectedClient(client)
         setFormData({
             name: client.name,
+            rut: client.rut || "",
             type: client.type,
             email: client.email || "",
             phone: client.phone || "",
@@ -329,7 +304,7 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
                     <div className="flex items-center justify-between">
                         <div>
                             <h3 className="text-lg font-medium mb-2">Clientes Activos</h3>
-                            <p className="text-3xl font-bold">{clients.filter((c) => c.status === "active").length}</p>
+                            <p className="text-3xl font-bold">{clients.filter((c) => c.status === ClientStatus.ACTIVE).length}</p>
                         </div>
                         <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center">
                             <User className="h-6 w-6 text-green-500" />
@@ -404,6 +379,17 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
                                         id="name"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        className="col-span-3"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="rut" className="text-right">
+                                        RUT
+                                    </Label>
+                                    <Input
+                                        id="rut"
+                                        value={formData.rut}
+                                        onChange={(e) => setFormData({ ...formData, rut: e.target.value })}
                                         className="col-span-3"
                                     />
                                 </div>
@@ -527,7 +513,6 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
                                         <SelectContent>
                                             <SelectItem value={ClientStatus.ACTIVE}>Activo</SelectItem>
                                             <SelectItem value={ClientStatus.INACTIVE}>Inactivo</SelectItem>
-                                            <SelectItem value={ClientStatus.LEAD}>Prospecto</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -562,7 +547,7 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
             </div>
 
             {/* Diálogo de edición de cliente */}
-             <Dialog open={isEditClientOpen} onOpenChange={setIsEditClientOpen}>
+            <Dialog open={isEditClientOpen} onOpenChange={setIsEditClientOpen}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
                         <DialogTitle>Editar Cliente</DialogTitle>
@@ -579,6 +564,17 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
                                 id="edit-name"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                className="col-span-3"
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="rut" className="text-right">
+                                RUT
+                            </Label>
+                            <Input
+                                id="rut"
+                                value={formData.rut}
+                                onChange={(e) => setFormData({ ...formData, rut: e.target.value })}
                                 className="col-span-3"
                             />
                         </div>
@@ -679,7 +675,7 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
             </Dialog>
 
             {/* Diálogo de confirmación de eliminación */}
-             <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+            <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
                         <DialogTitle>Confirmar eliminación</DialogTitle>
@@ -706,125 +702,97 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
             </Dialog>
 
             {/* Tabla de clientes */}
-             {isLoading ? (
+            {isLoading ? (
                 <div className="flex justify-center items-center h-64">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                 </div>
             ) : filteredClients.length > 0 ? (
-                <div className="rounded-md border overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Cliente</TableHead>
-                                    <TableHead>Contacto</TableHead>
-                                    <TableHead>Dirección</TableHead>
-                                    <TableHead className="text-right">Compras</TableHead>
-                                    <TableHead>Última Compra</TableHead>
-                                    <TableHead>Estado</TableHead>
-                                    <TableHead className="text-right">Acciones</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredClients.map((client) => (
-                                    <TableRow
-                                        key={client.id}
-                                        className="cursor-pointer hover:bg-muted/50"
-                                        onClick={() => onClientSelect(client.id)}
-                                    >
-                                        <TableCell className="font-medium">
-                                            <div className="flex items-center gap-2">
-                                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                                    {client.type === "empresa" ? (
-                                                        <Building2 className="h-4 w-4 text-primary" />
-                                                    ) : (
-                                                        <User className="h-4 w-4 text-primary" />
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <div>{client.name}</div>
-                                                    {client.type === "empresa" && client.contactPerson && (
-                                                        <div className="text-xs text-muted-foreground">Contacto: {client.contactPerson}</div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col">
-                                                <div className="flex items-center gap-1">
-                                                    <Mail className="h-3 w-3 text-muted-foreground" />
-                                                    <span className="text-sm">{client.email}</span>
-                                                </div>
-                                                <div className="flex items-center gap-1 mt-1">
-                                                    <Phone className="h-3 w-3 text-muted-foreground" />
-                                                    <span className="text-sm">{client.phone}</span>
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="text-sm">{client.address}</div>
-                                        </TableCell>
-                                        <TableCell className="text-right font-medium">{formatCurrency(client.totalPurchases)}</TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-1">
-                                                <Calendar className="h-3 w-3 text-muted-foreground" />
-                                                <span className="text-sm">
-                                                    {client.lastPurchase ? formatDate(client.lastPurchase) : "Sin compras"}
-                                                </span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant={client.status === "active" ? "success" : "secondary"}>
-                                                {client.status === "active" ? "Activo" : "Inactivo"}
+                <div className="rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[200px]">Información básica</TableHead>
+                                <TableHead>Contacto</TableHead>
+                                <TableHead>Ubicación</TableHead>
+                                <TableHead>Estado</TableHead>
+                                <TableHead className="text-right">Acciones</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredClients.map((client) => (
+                                <TableRow key={client.id}>
+                                    <TableCell>
+                                        <div className="flex flex-col">
+                                            <span className="font-medium">{client.name}</span>
+                                            <span className="text-sm text-muted-foreground">RUT: {client.rut}</span>
+                                            <Badge variant={client.type === 'INDIVIDUAL' ? 'default' : 'secondary'}>
+                                                {client.type === 'INDIVIDUAL' ? 'Individual' : 'Empresa'}
                                             </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                                    <Button variant="ghost" className="h-8 w-8 p-0">
-                                                        <span className="sr-only">Abrir menú</span>
-                                                        <MoreVertical className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                                    <DropdownMenuItem
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            onClientSelect(client.id)
-                                                        }}
-                                                    >
-                                                        <User className="h-4 w-4 mr-2" />
-                                                        Ver perfil
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            openEditModal(client)
-                                                        }}
-                                                    >
-                                                        <Edit className="h-4 w-4 mr-2" />
-                                                        Editar
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem 
-                                                        className="text-destructive"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            openDeleteConfirm(client)
-                                                        }}
-                                                    >
-                                                        <Trash2 className="h-4 w-4 mr-2" />
-                                                        Eliminar
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col">
+                                            <span>{client.email}</span>
+                                            <span className="text-sm text-muted-foreground">{client.phone}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col text-sm">
+                                            <span>{client.address}</span>
+                                            <span>{`${client.city}, ${client.state}`}</span>
+                                            <span>{`${client.zipCode}, ${client.country}`}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge
+                                            variant={client.status === ClientStatus.ACTIVE ? "success" : "destructive"}
+                                        >
+                                            {client.status === ClientStatus.ACTIVE ? "Activo" : "Inactivo"}
+                                        </Badge>
+                                        {client.notes && (
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger>
+                                                        <NotesIcon className="h-4 w-4 ml-2" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>{client.notes}</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => onClientSelect(client.id)}>
+                                                    <Eye className="mr-2 h-4 w-4" />
+                                                    Ver detalles
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => openEditModal(client)}>
+                                                    <Edit className="mr-2 h-4 w-4" />
+                                                    Editar
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    className="text-red-600"
+                                                    onClick={() => openDeleteConfirm(client)}
+                                                >
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Eliminar
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </div>
             ) : (
                 <div className="flex flex-col items-center justify-center h-64 border rounded-md bg-muted/20">
@@ -844,4 +812,4 @@ const ClientsDirectory = forwardRef(function ClientsDirectory({
     )
 })
 
-export default ClientsDirectory;
+export default ClientsDirectory

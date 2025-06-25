@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect, useCallback } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Barcode, Camera, AlertTriangle, Check, X } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { toast } from "@/components/ui/use-toast"
+import { Search, Camera, X, CheckCircle, AlertCircle } from "lucide-react"
+import { getProducts } from "@/lib/queries2"
 
 interface BarcodeScannerProps {
     agencyId: string
@@ -14,243 +15,218 @@ interface BarcodeScannerProps {
 }
 
 export default function BarcodeScanner({ agencyId, onProductFound }: BarcodeScannerProps) {
+    const [scanning, setScanning] = useState(false)
     const [barcode, setBarcode] = useState("")
-    const [isScanning, setIsScanning] = useState(false)
-    const [scanResult, setScanResult] = useState<any>(null)
-    const [error, setError] = useState<string | null>(null)
-    const [activeTab, setActiveTab] = useState("manual")
-
-    const videoRef = useRef<HTMLVideoElement>(null)
-    const canvasRef = useRef<HTMLCanvasElement>(null)
-    const streamRef = useRef<MediaStream | null>(null)
-
-    // Limpiar stream al desmontar
-    useEffect(() => {
-        return () => {
-            if (streamRef.current) {
-                streamRef.current.getTracks().forEach((track) => track.stop())
-            }
-        }
-    }, [])
+    const [product, setProduct] = useState<any>(null)
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState("")
 
     // Buscar producto por código de barras
-    const searchByBarcode = async (code: string) => {
+    const searchByBarcode = useCallback(async (code: string) => {
         try {
-            setError(null)
+            setIsLoading(true)
+            setError("")
 
-            if (!code) {
-                setError("Ingresa un código de barras")
-                return
-            }
+            // Obtener todos los productos y filtrar por código de barras
+            const products = await getProducts(agencyId)
+            const foundProduct = products.find(p => p.barcode === code)
 
-            const response = await fetch(`/api/search/${agencyId}?type=barcode&barcode=${encodeURIComponent(code)}`)
-            const result = await response.json()
-
-            if (result.success && result.data) {
-                setScanResult(result.data)
-                if (onProductFound) onProductFound(result.data)
+            if (foundProduct) {
+                setProduct(foundProduct)
+                if (onProductFound) {
+                    onProductFound(foundProduct)
+                }
+                toast({
+                    title: "Producto encontrado",
+                    description: foundProduct.name,
+                })
             } else {
-                setError("Producto no encontrado")
-                setScanResult(null)
+                setProduct(null)
+                setError("No se encontró ningún producto con este código de barras")
+                toast({
+                    title: "Producto no encontrado",
+                    description: "El código de barras no corresponde a ningún producto registrado",
+                    variant: "destructive",
+                })
             }
         } catch (error) {
-            console.error("Error al buscar producto:", error)
-            setError("Error al buscar producto")
-            setScanResult(null)
+            console.error("Error buscando producto:", error)
+            setError("Error al buscar el producto")
+            toast({
+                title: "Error",
+                description: "No se pudo buscar el producto",
+                variant: "destructive",
+            })
+        } finally {
+            setIsLoading(false)
+        }
+    }, [agencyId, onProductFound])
+
+    // Manejar envío del formulario
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (barcode.trim()) {
+            searchByBarcode(barcode.trim())
         }
     }
 
-    // Iniciar escaneo con cámara
-    const startScanning = async () => {
-        try {
-            setError(null)
-            setScanResult(null)
-
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                setError("Tu navegador no soporta acceso a la cámara")
-                return
-            }
-
-            const constraints = {
-                video: {
-                    facingMode: "environment",
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
-                },
-            }
-
-            const stream = await navigator.mediaDevices.getUserMedia(constraints)
-            streamRef.current = stream
-
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream
-                videoRef.current.play()
-                setIsScanning(true)
-
-                // Comenzar a capturar frames para escanear
-                requestAnimationFrame(scanFrame)
-            }
-        } catch (error) {
-            console.error("Error al acceder a la cámara:", error)
-            setError("No se pudo acceder a la cámara")
-        }
+    // Simular escaneo de código de barras
+    const simulateScan = () => {
+        setScanning(true)
+        // Simular un código de barras de ejemplo
+        const mockBarcode = "1234567890123"
+        setBarcode(mockBarcode)
+        
+        setTimeout(() => {
+            setScanning(false)
+            searchByBarcode(mockBarcode)
+        }, 1000)
     }
 
-    // Detener escaneo
-    const stopScanning = () => {
-        if (streamRef.current) {
-            streamRef.current.getTracks().forEach((track) => track.stop())
-            streamRef.current = null
-        }
-
-        setIsScanning(false)
-    }
-
-    // Escanear frame de video
-    const scanFrame = () => {
-        if (!isScanning || !videoRef.current || !canvasRef.current) return
-
-        const video = videoRef.current
-        const canvas = canvasRef.current
-        const context = canvas.getContext("2d")
-
-        if (context && video.readyState === video.HAVE_ENOUGH_DATA) {
-            // Ajustar tamaño del canvas al video
-            canvas.width = video.videoWidth
-            canvas.height = video.videoHeight
-
-            // Dibujar frame actual en el canvas
-            context.drawImage(video, 0, 0, canvas.width, canvas.height)
-
-            // Aquí iría la lógica de detección de códigos de barras
-            // En una implementación real, usaríamos una biblioteca como quagga.js o zxing
-            // Por simplicidad, simulamos una detección después de un tiempo aleatorio
-
-            // Simulación de detección (en una implementación real, esto sería reemplazado)
-            if (Math.random() < 0.01) {
-                // 1% de probabilidad por frame
-                const simulatedBarcode = "123456789012" // Código de barras simulado
-                setBarcode(simulatedBarcode)
-                searchByBarcode(simulatedBarcode)
-                stopScanning()
-                return
-            }
-        }
-
-        // Continuar escaneando
-        requestAnimationFrame(scanFrame)
-    }
-
-    // Manejar cambio de pestaña
-    const handleTabChange = (value: string) => {
-        setActiveTab(value)
-
-        if (value === "camera") {
-            startScanning()
-        } else {
-            stopScanning()
-        }
+    // Limpiar resultados
+    const clearResults = () => {
+        setProduct(null)
+        setBarcode("")
+        setError("")
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Escanear Código de Barras</CardTitle>
-                <CardDescription>Busca productos rápidamente por su código de barras</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Tabs value={activeTab} onValueChange={handleTabChange}>
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="manual">
-                            <Barcode className="h-4 w-4 mr-2" />
-                            Manual
-                        </TabsTrigger>
-                        <TabsTrigger value="camera">
-                            <Camera className="h-4 w-4 mr-2" />
-                            Cámara
-                        </TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="manual" className="space-y-4">
-                        <div className="flex gap-2 mt-4">
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                        <Camera className="w-5 h-5" />
+                        <span>Escáner de Código de Barras</span>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="flex space-x-2">
                             <Input
-                                placeholder="Ingresa el código de barras"
+                                placeholder="Ingresa o escanea el código de barras..."
                                 value={barcode}
                                 onChange={(e) => setBarcode(e.target.value)}
-                                onKeyDown={(e) => e.key === "Enter" && searchByBarcode(barcode)}
+                                className="flex-1"
+                                disabled={isLoading}
                             />
-                            <Button onClick={() => searchByBarcode(barcode)}>Buscar</Button>
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="camera">
-                        <div className="relative mt-4 rounded-md overflow-hidden bg-black aspect-video">
-                            <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
-                            <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full hidden" />
-
-                            {/* Guía visual para el escaneo */}
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <div className="border-2 border-primary w-2/3 h-1/3 rounded-md opacity-70"></div>
-                            </div>
-
-                            {isScanning && (
-                                <div className="absolute bottom-4 left-0 right-0 flex justify-center">
-                                    <Button variant="destructive" onClick={stopScanning}>
-                                        <X className="h-4 w-4 mr-2" />
-                                        Cancelar
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-                    </TabsContent>
-                </Tabs>
-
-                {error && (
-                    <Alert variant="destructive" className="mt-4">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
-
-                {scanResult && (
-                    <div className="mt-4 p-4 border rounded-md">
-                        <div className="flex items-start gap-4">
-                            <div className="w-16 h-16 bg-muted rounded-md flex-shrink-0">
-                                {scanResult.images && scanResult.images.length > 0 ? (
-                                    <img
-                                        src={scanResult.images[0] || "/placeholder.svg"}
-                                        alt={scanResult.name}
-                                        className="w-full h-full object-cover rounded-md"
-                                    />
+                            <Button
+                                type="submit"
+                                disabled={!barcode.trim() || isLoading}
+                                className="bg-blue-600 hover:bg-blue-700"
+                            >
+                                {isLoading ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                                        <Barcode className="h-8 w-8" />
+                                    <Search className="w-4 h-4" />
+                                )}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={simulateScan}
+                                disabled={scanning || isLoading}
+                            >
+                                {scanning ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                                ) : (
+                                    <Camera className="w-4 h-4" />
+                                )}
+                            </Button>
+                        </div>
+                    </form>
+                </CardContent>
+            </Card>
+
+            {/* Resultados */}
+            {product && (
+                <Card className="border-green-200 bg-green-50">
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                                <CheckCircle className="w-5 h-5 text-green-600" />
+                                <CardTitle className="text-green-800">Producto Encontrado</CardTitle>
+                            </div>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearResults}
+                            >
+                                <X className="w-4 h-4" />
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
+                                <p className="text-gray-600 mb-2">SKU: {product.sku}</p>
+                                <p className="text-gray-600 mb-2">Código: {product.barcode}</p>
+                                {product.description && (
+                                    <p className="text-gray-600 mb-4">{product.description}</p>
+                                )}
+                            </div>
+                            <div className="text-right">
+                                <div className="text-2xl font-bold text-green-600 mb-2">
+                                    ${product.price.toFixed(2)}
+                                </div>
+                                <Badge 
+                                    variant={product.quantity > 0 ? "default" : "destructive"}
+                                    className="mb-2"
+                                >
+                                    {product.quantity} en stock
+                                </Badge>
+                                {product.discount > 0 && (
+                                    <Badge variant="secondary" className="ml-2">
+                                        -{product.discount}% descuento
+                                    </Badge>
+                                )}
+                                {product.Category && (
+                                    <div className="text-sm text-gray-600 mt-2">
+                                        Categoría: {product.Category.name}
                                     </div>
                                 )}
                             </div>
-
-                            <div className="flex-1">
-                                <h3 className="font-medium">{scanResult.name}</h3>
-                                <p className="text-sm text-muted-foreground">SKU: {scanResult.sku}</p>
-                                <div className="flex items-center gap-4 mt-2">
-                                    <span className="font-bold">${scanResult.price.toFixed(2)}</span>
-                                    <span className="text-sm">
-                                        Stock: {scanResult.stock} {scanResult.isLowStock && <span className="text-red-500">(Bajo)</span>}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div>
-                                <Button variant="outline" size="sm" className="text-green-600">
-                                    <Check className="h-4 w-4 mr-2" />
-                                    Seleccionar
-                                </Button>
-                            </div>
                         </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Error */}
+            {error && (
+                <Card className="border-red-200 bg-red-50">
+                    <CardHeader>
+                        <div className="flex items-center space-x-2">
+                            <AlertCircle className="w-5 h-5 text-red-600" />
+                            <CardTitle className="text-red-800">Error</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-red-700">{error}</p>
+                        <Button
+                            variant="outline"
+                            className="mt-4"
+                            onClick={clearResults}
+                        >
+                            Intentar de nuevo
+                        </Button>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Instrucciones */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Instrucciones</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-2 text-sm text-gray-600">
+                        <p>• Ingresa manualmente el código de barras en el campo de texto</p>
+                        <p>• Usa el botón de cámara para simular un escaneo</p>
+                        <p>• El sistema buscará automáticamente el producto en la base de datos</p>
+                        <p>• Si el producto existe, se mostrarán todos sus detalles</p>
                     </div>
-                )}
-            </CardContent>
-        </Card>
+                </CardContent>
+            </Card>
+        </div>
     )
 }

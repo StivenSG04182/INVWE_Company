@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -14,9 +14,22 @@ interface NotificationBellProps {
 }
 
 export default function NotificationBell({ userId }: NotificationBellProps) {
-    const [notifications, setNotifications] = useState([])
+    const [notifications, setNotifications] = useState<any[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
     const [isOpen, setIsOpen] = useState(false)
+
+    // Cargar notificaciones desde la API
+    const loadNotifications = useCallback(async () => {
+        try {
+            const notificationsData = await NotificationService.getUserNotifications(userId, { limit: 10 })
+            setNotifications(notificationsData)
+
+            const count = await NotificationService.getUnreadCount(userId)
+            setUnreadCount(count)
+        } catch (error) {
+            console.error("Error al cargar notificaciones:", error)
+        }
+    }, [userId])
 
     // Cargar notificaciones al montar el componente
     useEffect(() => {
@@ -34,25 +47,14 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
         return () => {
             EventEmitter.off(NotificationEvents.NOTIFICATION_CREATED, unsubscribe)
         }
-    }, [userId])
-
-    // Cargar notificaciones desde la API
-    const loadNotifications = async () => {
-        try {
-            const notificationsData = await NotificationService.getUserNotifications(userId, { limit: 10 })
-            setNotifications(notificationsData)
-
-            const count = await NotificationService.getUnreadCount(userId)
-            setUnreadCount(count)
-        } catch (error) {
-            console.error("Error al cargar notificaciones:", error)
-        }
-    }
+    }, [userId, loadNotifications])
 
     // Marcar una notificación como leída
     const markAsRead = async (notificationId) => {
         try {
-            await NotificationService.markAsRead(notificationId)
+            await fetch(`/api/notifications/${notificationId}/mark-read`, {
+                method: "POST",
+            })
 
             // Actualizar estado local
             setNotifications((prev) =>
@@ -73,7 +75,9 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
         try {
             // Marcar cada notificación como leída
             for (const notification of notifications.filter((n) => !n.isRead)) {
-                await NotificationService.markAsRead(notification.id)
+                await fetch(`/api/notifications/${notification.id}/mark-read`, {
+                    method: "POST",
+                })
             }
 
             // Actualizar estado local

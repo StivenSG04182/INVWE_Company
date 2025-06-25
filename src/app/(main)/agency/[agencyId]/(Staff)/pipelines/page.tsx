@@ -11,7 +11,7 @@ type Props = {
 }
 
 const Pipelines = async ({ params }: Props) => {
-  // Obtener todas las subcuentas de la agencia
+  // Obtener todas las tiendas de la agencia
   const subAccounts = await db.subAccount.findMany({
     where: {
       agencyId: params.agencyId,
@@ -21,28 +21,28 @@ const Pipelines = async ({ params }: Props) => {
     }
   })
   
-  // Si no hay subcuentas, mostrar mensaje informativo y botón para crear subcuentas
+  // Si no hay tiendas, mostrar mensaje informativo y botón para crear tiendas
   if (subAccounts.length === 0) {
     return (
       <BlurPage>
         <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-          <h2 className="text-2xl font-bold mb-2">No hay subcuentas disponibles</h2>
-          <p className="mb-6">Necesita crear al menos una subcuenta para poder gestionar pipelines.</p>
+          <h2 className="text-2xl font-bold mb-2">No hay tiendas disponibles</h2>
+          <p className="mb-6">Necesita crear al menos una tienda para poder gestionar pipelines.</p>
           <Button asChild className="gap-2">
             <Link href={`/agency/${params.agencyId}/stores`}>
               <PlusCircleIcon size={20} />
-              Crear Subcuenta
+              Crear Tienda
             </Link>
           </Button>
           <p className="mt-4 text-sm text-muted-foreground">
-            Al crear una subcuenta, podrá gestionar pipelines y otros recursos asociados a ella.
+            Al crear una tienda, podrá gestionar pipelines y otros recursos asociados a ella.
           </p>
         </div>
       </BlurPage>
     )
   }
   
-  // Usar la primera subcuenta para mostrar sus pipelines
+  // Usar la primera tienda para mostrar sus pipelines
   const firstSubAccountId = subAccounts[0].id
   
   const pipelineExists = await db.pipeline.findFirst({
@@ -50,7 +50,7 @@ const Pipelines = async ({ params }: Props) => {
   })
 
   if (pipelineExists) {
-    // Redirigir a la vista de pipeline, permitiendo acceso tanto desde la agencia como desde la subcuenta
+    // Redirigir a la vista de pipeline, permitiendo acceso tanto desde la agencia como desde la tienda
     const redirectPath = `/subaccount/${firstSubAccountId}/pipelines/${pipelineExists.id}`
     // Añadir parámetro de consulta para indicar que venimos desde la agencia
     const redirectUrl = `${redirectPath}?from=agency&agencyId=${params.agencyId}`
@@ -62,7 +62,7 @@ const Pipelines = async ({ params }: Props) => {
       data: { name: 'First Pipeline', subAccountId: firstSubAccountId },
     })
 
-    // Redirigir a la vista de pipeline, permitiendo acceso tanto desde la agencia como desde la subcuenta
+    // Redirigir a la vista de pipeline, permitiendo acceso tanto desde la agencia como desde la tienda
     const redirectPath = `/subaccount/${firstSubAccountId}/pipelines/${response.id}`
     // Añadir parámetro de consulta para indicar que venimos desde la agencia
     const redirectUrl = `${redirectPath}?from=agency&agencyId=${params.agencyId}`

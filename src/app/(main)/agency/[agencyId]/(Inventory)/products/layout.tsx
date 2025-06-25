@@ -34,12 +34,12 @@ export default async function ProductsLayout({
                             Descuentos
                         </Link>
                     </Button>
-                    <Button variant="outline" size="sm" asChild>
+                    {/* <Button variant="outline" size="sm" asChild>
                         <Link href={`/agency/${agencyId}/products/bulk`}>
                             <Upload className="h-4 w-4 mr-2" />
                             Carga Masiva
                         </Link>
-                    </Button>
+                    </Button> */}
                     <Button size="sm" asChild>
                         <Link href={`/agency/${agencyId}/products/new`}>
                             <Plus className="h-4 w-4 mr-2" />

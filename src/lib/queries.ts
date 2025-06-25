@@ -9,7 +9,9 @@ import { v4 } from "uuid";
 import { CreateFunnelFormSchema, UpsertFunnelPage, createMediaType } from "./types";
 import { z } from "zod";
 import { revalidatePath } from 'next/cache'
+import { createBuilderPage } from './builderio'
 
+// TODO: Autenticación y gestión de usuarios
 export const getAuthUserDetails = async () => {
   const user = await currentUser();
   if (!user) {
@@ -37,6 +39,7 @@ export const getAuthUserDetails = async () => {
   return userData;
 };
 
+// TODO: Gestión de agencias
 export const getAgencyDetails = async (agencyId: string): Promise<Agency | null> => {
   return await db.agency.findUnique({
     where: {
@@ -49,6 +52,7 @@ export const getAgencyDetails = async (agencyId: string): Promise<Agency | null>
   })
 }
 
+// TODO: Registro de actividades y notificaciones
 export const saveActivityLogsNotification = async ({
   agencyId,
   description,
@@ -61,11 +65,9 @@ export const saveActivityLogsNotification = async ({
   const authUser = await currentUser();
   let userData;
   if (!authUser) {
-    // Si no hay usuario autenticado, buscar un usuario con acceso a la subcuenta o agencia
     const response = await db.user.findFirst({
       where: {
         OR: [
-          // Buscar usuarios con rol SUBACCOUNT_USER
           {
             role: 'SUBACCOUNT_USER',
             Agency: {
@@ -74,7 +76,6 @@ export const saveActivityLogsNotification = async ({
               },
             },
           },
-          // Buscar usuarios con rol SUBACCOUNT_GUEST
           {
             role: 'SUBACCOUNT_GUEST',
             Agency: {
@@ -83,14 +84,12 @@ export const saveActivityLogsNotification = async ({
               },
             },
           },
-          // Buscar usuarios con rol AGENCY_OWNER
           {
             role: 'AGENCY_OWNER',
             Agency: {
               id: agencyId,
             },
           },
-          // Buscar usuarios con rol AGENCY_ADMIN
           {
             role: 'AGENCY_ADMIN',
             Agency: {
@@ -110,14 +109,11 @@ export const saveActivityLogsNotification = async ({
   }
 
   if (!userData) {
-    console.log("Could not find a user");
     return;
   }
   let foundAgencyId = agencyId;
   if (!foundAgencyId) {
     if (!subaccountId) {
-      // Si no hay ID de agencia ni de subcuenta, simplemente registramos y retornamos
-      console.log("No agency ID or subaccount ID provided for activity log");
       return;
     }
     const response = await db.subAccount.findUnique({
@@ -126,7 +122,6 @@ export const saveActivityLogsNotification = async ({
     if (response) foundAgencyId = response.agencyId;
   }
   if (!foundAgencyId) {
-    console.log("No agency ID found for activity log after processing");
     return;
   }
 
@@ -168,17 +163,17 @@ export const saveActivityLogsNotification = async ({
   }
 };
 
+// TODO: Creación de usuarios del equipo
 export const createTeamUser = async (agencyId: string, user: User) => {
   if (user.role === "AGENCY_OWNER") return null;
   const response = await db.user.create({ data: { ...user } });
   return response;
 };
 
+// TODO: Verificación y aceptación de invitaciones
 export const verifyAndAcceptInvitation = async () => {
   const user = await currentUser();
   if (!user) return redirect("/sign-in");
-  
-  console.log('Verificando invitaciones para:', user.emailAddresses[0].emailAddress);
   
   // Primero verificamos si hay metadata en el usuario que indique una invitación
   const metadata = user.publicMetadata;
@@ -188,7 +183,6 @@ export const verifyAndAcceptInvitation = async () => {
   let invitationExists;
   
   if (invitationId) {
-    console.log('Buscando invitación por ID:', invitationId);
     invitationExists = await db.invitation.findUnique({
       where: {
         id: invitationId,
@@ -199,7 +193,6 @@ export const verifyAndAcceptInvitation = async () => {
   
   // Si no se encontró por ID o no había ID, buscar por email
   if (!invitationExists) {
-    console.log('Buscando invitación por email:', user.emailAddresses[0].emailAddress);
     invitationExists = await db.invitation.findUnique({
       where: {
         email: user.emailAddresses[0].emailAddress,
@@ -216,7 +209,6 @@ export const verifyAndAcceptInvitation = async () => {
     expirationTime.setHours(expirationTime.getHours() + 24);
     
     if (now > expirationTime) {
-      console.log('Invitación expirada:', invitationExists.email, 'Creada el:', createdAt, 'Expiró el:', expirationTime);
       
       // Actualizamos el estado de la invitación a REVOKED (usamos este estado en lugar de EXPIRED ya que no requiere migración)
       await db.invitation.update({
@@ -245,6 +237,17 @@ export const verifyAndAcceptInvitation = async () => {
       role: invitationExists.role,
       createdAt: new Date(),
       updatedAt: new Date(),
+      birthDate: null,
+      gender: null,
+      maritalStatus: null,
+      address: null,
+      phone: null,
+      position: null,
+      salary: null,
+      hireDate: null,
+      socialSecurityAffiliation: null,
+      workSchedule: null,
+      socialSecurityNumber: null
     });
     
     await saveActivityLogsNotification({
@@ -254,7 +257,6 @@ export const verifyAndAcceptInvitation = async () => {
     });
 
     if (userDetails) {
-      // Actualizar metadatos del usuario en Clerk
       await clerkClient.users.updateUserMetadata(user.id, {
         privateMetadata: {
           role: userDetails.role || "SUBACCOUNT_USER",
@@ -262,52 +264,32 @@ export const verifyAndAcceptInvitation = async () => {
       });
 
       try {
-        // Intentar revocar la invitación en Clerk
-        console.log('Revocando invitación en Clerk para:', userDetails.email);
         
-        // Obtener todas las invitaciones pendientes para este email
         const invitations = await clerkClient.invitations.getInvitationList({
           emailAddress: userDetails.email,
         });
         
-        console.log(`Se encontraron ${invitations.length} invitaciones en Clerk para ${userDetails.email}`);
-        
-        // Filtrar solo las invitaciones pendientes
         const pendingInvitations = invitations.filter(inv => inv.status === 'pending');
-        console.log(`De las cuales ${pendingInvitations.length} están pendientes`);
         
         if (pendingInvitations.length > 0) {
-          // Revocar todas las invitaciones pendientes para este email
           for (const invitation of pendingInvitations) {
             try {
-              console.log(`Revocando invitación ID: ${invitation.id}, Status: ${invitation.status}`);
               await clerkClient.invitations.revokeInvitation(invitation.id);
-              console.log('✅ Invitación revocada exitosamente en Clerk, ID:', invitation.id);
             } catch (revocationError) {
-              console.error(`Error al revocar invitación específica ${invitation.id}:`, revocationError);
             }
           }
           
-          // Verificar que se hayan revocado todas las invitaciones
           const checkInvitations = await clerkClient.invitations.getInvitationList({
             emailAddress: userDetails.email,
             status: 'pending'
           });
           
           if (checkInvitations.length > 0) {
-            console.warn(`⚠️ Aún quedan ${checkInvitations.length} invitaciones pendientes después de intentar revocarlas`);
-          } else {
-            console.log('✅ Todas las invitaciones fueron revocadas correctamente');
-          }
-        } else {
-          console.log('No se encontraron invitaciones pendientes en Clerk para:', userDetails.email);
+          } 
         }
       } catch (clerkError) {
-        // Si hay un error al revocar la invitación en Clerk, lo registramos pero continuamos
-        console.error('Error al obtener o revocar invitaciones en Clerk:', clerkError);
       }
 
-      // Eliminar la invitación de nuestra base de datos
       await db.invitation.delete({
         where: { email: userDetails.email },
       });
@@ -324,6 +306,7 @@ export const verifyAndAcceptInvitation = async () => {
   }
 };
 
+// TODO: Actualización de detalles de agencia
 export const updateAgencyDetails = async (
   agencyId: string,
   agencyDetails: Partial<Agency>
@@ -335,6 +318,7 @@ export const updateAgencyDetails = async (
   return response;
 };
 
+// TODO: Eliminación de agencia
 export const deleteAgency = async (agencyId: string) => {
   const response = await db.agency.delete({
     where: { id: agencyId },
@@ -342,22 +326,17 @@ export const deleteAgency = async (agencyId: string) => {
   return response;
 };
 
+// TODO: Inicialización de usuario
 export const initUser = async (newUser: Partial<User>) => {
-  console.log('1. Iniciando initUser con:', newUser);
 
   const user = await currentUser();
-  console.log('2. Usuario actual:', {
-    id: user?.id,
-    email: user?.emailAddresses[0]?.emailAddress
-  });
+
 
   if (!user) {
-    console.log('3. No hay usuario, retornando');
     return;
   }
 
   try {
-    console.log('4. Intentando upsert en la base de datos');
     const userData = await db.user.upsert({
       where: {
         email: user.emailAddresses[0].emailAddress,
@@ -371,11 +350,8 @@ export const initUser = async (newUser: Partial<User>) => {
         role: newUser.role || "SUBACCOUNT_USER",
       },
     });
-    console.log('5. Datos de usuario guardados:', userData);
 
-    // Actualización de metadatos en Clerk
     if (user.id) {
-      console.log('6. Preparando actualización de metadatos en Clerk');
       try {
         await clerkClient.users.updateUser(user.id, {
           privateMetadata: {
@@ -384,30 +360,26 @@ export const initUser = async (newUser: Partial<User>) => {
             email: user.emailAddresses[0].emailAddress
           },
         });
-        console.log('7. Metadatos actualizados exitosamente');
       } catch (clerkError) {
-        console.error('7.1. Error al actualizar metadatos de Clerk:', clerkError);
         throw clerkError;
       }
     }
 
     return userData;
   } catch (error) {
-    console.error('8. Error general en initUser:', error);
     return null;
   }
 };
 
+// TODO: Creación y actualización de agencia
 export const upsertAgency = async (agency: Agency, price?: Plan) => {
   if (!agency.companyEmail) return null;
   try {
-    // Verificar si el usuario existe antes de intentar conectarlo
     const userExists = await db.user.findUnique({
       where: { email: agency.companyEmail }
     });
     
     if (!userExists) {
-      console.error('Error: No se puede crear la agencia porque el usuario con email', agency.companyEmail, 'no existe');
       return null;
     }
     
@@ -430,16 +402,16 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "Áreas de Inventario", icon: "home", link: `/agency/${agency.id}/(Inventory)/areas` },
 
             // 3. Tienda & E-Commerce
-            { name: "Tienda & E-Commerce", icon: "category", link: "#" },
+            /* { name: "Tienda & E-Commerce", icon: "category", link: "#" },
             { name: "Tiendas", icon: "category", link: `/agency/${agency.id}/(Ecommerce)/stores` },
             { name: "E-Commerce", icon: "pipelines", link: `/agency/${agency.id}/(Ecommerce)/funnels` },
-            { name: "Envíos", icon: "send", link: `/agency/${agency.id}/(Ecommerce)/shipping` },
+            { name: "Envíos", icon: "send", link: `/agency/${agency.id}/(Ecommerce)/shipping` }, */
 
             // 4. POS (Punto de Venta)
             { name: "POS (Punto de Venta)", icon: "shoppingCart", link: "#" },
             { name: "Terminal", icon: "payment", link: `/agency/${agency.id}/(POS)/terminal` },
-            { name: "Ventas POS", icon: "receipt", link: `/agency/${agency.id}/(POS)/sales-pos` },
-            { name: "Cierre de Caja", icon: "chart", link: `/agency/${agency.id}/(POS)/cash-closing` },  
+            /* { name: "Ventas POS", icon: "receipt", link: `/agency/${agency.id}/(POS)/sales-pos` }, */
+           /*  { name: "Cierre de Caja", icon: "chart", link: `/agency/${agency.id}/(POS)/cash-closing` },   */
 
             // 5. Ventas & Facturación
             { name: "Ventas & Facturación", icon: "payment", link: `/agency/${agency.id}/(Billing)/finance` },
@@ -455,19 +427,19 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "Objetivos", icon: "flag", link: `/agency/${agency.id}/(Staff)/pipelines` },
 
             // 8. Comunicaciones
-            { name: "Comunicaciones", icon: "messages", link: "#" },
+            /* { name: "Comunicaciones", icon: "messages", link: "#" },
             { name: "Campañas", icon: "send", link: `/agency/${agency.id}/(Communications)/campaigns` },
             { name: "Bandeja de entrada", icon: "messages", link: `/agency/${agency.id}/(Communications)/inbox` },
             { name: "Medios", icon: "database", link: `/agency/${agency.id}/(Communications)/media` },
-            { name: "Chat", icon: "messages", link: `/agency/${agency.id}/(Communications)/chat` },
+            { name: "Chat", icon: "messages", link: `/agency/${agency.id}/(Communications)/chat` }, */
 
             // 9. Reportes & Analíticas
             { name: "Reportes & Analíticas", icon: "chartLine", link: `/agency/${agency.id}/(Reports)/reports-all` },
 
             // 10. Configuración & Administración
             { name: "Configuración & Administración", icon: "settings", link: "#" },
-            { name: "Facturación Cuenta", icon: "payment", link: `/agency/${agency.id}/(Settings)/billing` },
-            { name: "Configuración Pasarela de pagos", icon: "settings", link: `/agency/${agency.id}/(Settings)/launchpad` }, 
+            /* { name: "Facturación Cuenta", icon: "payment", link: `/agency/${agency.id}/(Settings)/billing` }, */
+            /* { name: "Configuración Pasarela de pagos", icon: "settings", link: `/agency/${agency.id}/(Settings)/launchpad` }, */ 
             { name: "Configuración General", icon: "tune", link: `/agency/${agency.id}/(Settings)/settings` },
           ],
         },
@@ -475,18 +447,16 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
     });
     return agencyDetails;
   } catch (error) {
-    console.error('Error al crear/actualizar la agencia:', error);
-    // Proporcionar información más detallada sobre el error
     if (error instanceof Prisma.PrismaClientValidationError) {
-      console.error('Error de validación de Prisma. Verifique que todos los campos requeridos estén presentes y con el formato correcto.');
+      // Eliminado console.error
     } else if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      console.error(`Error conocido de Prisma: ${error.message}. Código: ${error.code}`);
+      // Eliminado console.error
     }
     return null;
   }
 };
 
-
+// TODO: Obtención de notificaciones y usuarios
 export const getNotificationAndUser = async (agencyId: string) => {
   try {
     const response = await db.notification.findMany({
@@ -498,25 +468,17 @@ export const getNotificationAndUser = async (agencyId: string) => {
     })
     return response
   } catch (error) {
-    console.log(error)
   }
 }
 
-
+// TODO: Creación y actualización de tiendas
 export const upsertSubAccount = async (subAccount: SubAccount) => {
-  console.log('1. Iniciando upsertSubAccount con:', {
-    id: subAccount.id,
-    companyEmail: subAccount.companyEmail,
-    agencyId: subAccount.agencyId,
-  })
 
   if (!subAccount.companyEmail) {
-    console.log('2. Error: No se proporcionó email de compañía')
     return null
   }
 
   try {
-    console.log('3. Buscando propietario de la agencia:', subAccount.agencyId)
     const agencyOwner = await db.user.findFirst({
       where: {
         Agency: { id: subAccount.agencyId },
@@ -525,15 +487,10 @@ export const upsertSubAccount = async (subAccount: SubAccount) => {
     })
 
     if (!agencyOwner) {
-      console.error(
-        '4. Error: No se pudo crear subcuenta porque no se encontró propietario'
-      )
       return null
     }
 
-    console.log('5. Propietario encontrado:', agencyOwner.email)
     const permissionId = v4()
-    console.log('6. Creando subcuenta con ID de permiso:', permissionId)
 
     const response = await db.subAccount.upsert({
       where: { id: subAccount.id },
@@ -550,98 +507,66 @@ export const upsertSubAccount = async (subAccount: SubAccount) => {
         Pipeline: { create: { name: 'Lead Cycle' } },
         SidebarOption: {
           create: [
-            // 1. Dashboard & Visión general
-            { name: "Dashboard & Visión general", icon: "chart", link: "#" },
+            // 1. Dashboard
             { name: "Dashboard", icon: "category", link: `/subaccount/${subAccount.id}` },
-            { name: "Análisis", icon: "chart", link: `/subaccount/${subAccount.id}/(Dashboard)/analytics` },
-            { name: "Actividad", icon: "calendar", link: `/subaccount/${subAccount.id}/(Dashboard)/activity` },
 
             // 2. Gestión de Inventario
             { name: "Gestión de Inventario", icon: "database", link: "#" },
             { name: "Productos", icon: "category", link: `/subaccount/${subAccount.id}/(Inventory)/products` },
-            { name: "Stock", icon: "database", link: `/subaccount/${subAccount.id}/(Inventory)/stock` },
             { name: "Movimientos", icon: "compass", link: `/subaccount/${subAccount.id}/(Inventory)/movements` },
             { name: "Proveedores", icon: "person", link: `/subaccount/${subAccount.id}/(Inventory)/providers` },
             { name: "Áreas de Inventario", icon: "home", link: `/subaccount/${subAccount.id}/(Inventory)/areas` },
 
             // 3. Tienda & E-Commerce
-            { name: "Tienda & E-Commerce", icon: "category", link: "#" },
-            { name: "Tiendas", icon: "store", link: `/subaccount/${subAccount.id}/(Ecommerce)/stores` },
-            { name: "Envíos", icon: "send", link: `/subaccount/${subAccount.id}/(Ecommerce)/shipping` },
+            /* { name: "Tienda & E-Commerce", icon: "category", link: "#" },
+            { name: "Envíos", icon: "send", link: `/subaccount/${subAccount.id}/(Ecommerce)/shipping` }, */
 
             // 4. POS (Punto de Venta)
-            { name: "POS (Punto de Venta)", icon: "store", link: "#" },
-            { name: "Terminal POS", icon: "payment", link: `/subaccount/${subAccount.id}/(POS)/terminal` },
-            { name: "Ventas POS", icon: "receipt", link: `/subaccount/${subAccount.id}/(POS)/sales` },
-            { name: "Configuración POS", icon: "settings", link: `/subaccount/${subAccount.id}/(POS)/settings` },
-            { name: "Reportes POS", icon: "chart", link: `/subaccount/${subAccount.id}/(POS)/reports` },
+            { name: "POS (Punto de Venta)", icon: "shoppingCart", link: "#" },
+            { name: "Terminal", icon: "payment", link: `/subaccount/${subAccount.id}/(POS)/terminal` },
+            { name: "Ventas POS", icon: "receipt", link: `/subaccount/${subAccount.id}/(POS)/sales-pos` },
+           /*  { name: "Cierre de Caja", icon: "chart", link: `/subaccount/${subAccount.id}/(POS)/cash-closing` },   */
 
             // 5. Ventas & Facturación
-            { name: "Ventas & Facturación", icon: "payment", link: "#" },
-            { name: "Transacciones", icon: "receipt", link: `/subaccount/${subAccount.id}/(Billing)/transactions` },
-            { name: "Facturas", icon: "receipt", link: `/subaccount/${subAccount.id}/(Billing)/invoices` },
-            { name: "Notas Crédito/Débito", icon: "receipt", link: `/subaccount/${subAccount.id}/(Billing)/notes` },
-            { name: "Configuración DIAN", icon: "settings", link: `/(Billing)/dian-config` },
-            { name: "Reportes", icon: "chart", link: `/subaccount/${subAccount.id}/(Billing)/reports` },
-            { name: "Pagos", icon: "payment", link: `/subaccount/${subAccount.id}/(Billing)/payments` },
-            { name: "Billing", icon: "payment", link: `/subaccount/${subAccount.id}/(Billing)/billing-store` },
+            { name: "Ventas & Facturación", icon: "payment", link: `/subaccount/${subAccount.id}/(Billing)/finance` },
 
             // 6. Clientes & CRM
-            { name: "Clientes & CRM", icon: "person", link: "#" },
-            { name: "Clientes", icon: "person", link: `/subaccount/${subAccount.id}/(Customers)/clients` },
-            { name: "CRM", icon: "contact", link: `/subaccount/${subAccount.id}/(Customers)/crm` },
-            { name: "PQR", icon: "contact", link: `/subaccount/${subAccount.id}/(Customers)/pqr` },
+            { name:  "Clientes", icon: "person", link: `/subaccount/${subAccount.id}/(Customers)/clients` },
 
             // 7. Personal & RRHH
-            { name: "Personal & RRHH", icon: "person", link: "#" },
-            { name: "Empleados", icon: "person", link: `/subaccount/${subAccount.id}/(Staff)/team` },
-            { name: "Horarios & Nómina", icon: "calendar", link: `/subaccount/${subAccount.id}/(Staff)/schedule` },
-            { name: "Contactos", icon: "contact", link: `/subaccount/${subAccount.id}/(Staff)/contacts` },
+            { name: "Personal & RRHH", icon: "contact", link: "#" },
             { name: "Objetivos", icon: "flag", link: `/subaccount/${subAccount.id}/(Staff)/pipelines` },
 
             // 8. Comunicaciones
-            { name: "Comunicaciones", icon: "messages", link: "#" },
+            /* { name: "Comunicaciones", icon: "messages", link: "#" },
             { name: "Campañas", icon: "send", link: `/subaccount/${subAccount.id}/(Communications)/campaigns` },
             { name: "Bandeja de entrada", icon: "messages", link: `/subaccount/${subAccount.id}/(Communications)/inbox` },
             { name: "Medios", icon: "database", link: `/subaccount/${subAccount.id}/(Communications)/media` },
-            { name: "Chat", icon: "messages", link: `/subaccount/${subAccount.id}/(Communications)/chat` },
+            { name: "Chat", icon: "messages", link: `/subaccount/${subAccount.id}/(Communications)/chat` }, */
 
             // 9. Reportes & Analíticas
-            { name: "Reportes & Analíticas", icon: "chart", link: "#" },
-            { name: "Ventas", icon: "chart", link: `/subaccount/${subAccount.id}/(Reports)/sales-reports` },
-            { name: "Inventario", icon: "database", link: `/subaccount/${subAccount.id}/(Reports)/inventory-reports` },
-            { name: "Desempeño", icon: "chart", link: `/subaccount/${subAccount.id}/(Reports)/performance` },
+            { name: "Reportes & Analíticas", icon: "chartLine", link: `/subaccount/${subAccount.id}/(Reports)/reports-all` },
 
             // 10. Configuración & Administración
             { name: "Configuración & Administración", icon: "settings", link: "#" },
-            { name: "Ajustes de Empresa", icon: "settings", link: `/subaccount/${subAccount.id}/(Settings)/company-settings` },
-            { name: "Usuarios & Permisos", icon: "settings", link: `/subaccount/${subAccount.id}/(Settings)/users` },
-            { name: "General Settings", icon: "tune", link: `/subaccount/${subAccount.id}/(Settings)/settings` },
+            { name: "Configuración General", icon: "tune", link: `/subaccount/${subAccount.id}/(Settings)/settings` },
           ],
         },
       },
     })
 
-    console.log('7. Subcuenta creada/actualizada:', {
-      id: response.id,
-      name: response.name,
-    })
     return response
   } catch (error) {
-    console.error('8. Error al crear/actualizar subcuenta:', error)
     if (error instanceof Prisma.PrismaClientValidationError) {
-      console.error(
-        'Error de validación de Prisma. Verifica los campos obligatorios.'
-      )
+      // Eliminado console.error
     } else if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      console.error(
-        `Error conocido de Prisma: ${error.message}. Código: ${error.code}`
-      )
+      // Eliminado console.error
     }
     return null
   }
 }
 
+// TODO: Obtención de permisos de usuario
 export const getUserPermissions = async (userId: string) => {
   const response = await db.user.findUnique({
     where: { id: userId },
@@ -651,6 +576,7 @@ export const getUserPermissions = async (userId: string) => {
   return response
 }
 
+// TODO: Actualización de usuario
 export const updateUser = async (user: Partial<User>) => {
   const response = await db.user.update({
     where: { email: user.email },
@@ -666,7 +592,7 @@ export const updateUser = async (user: Partial<User>) => {
   return response
 }
 
-
+// TODO: Cambio de permisos de usuario
 export const changeUserPermissions = async (
   permissionsId: string | undefined,
   userEmail: string,
@@ -684,11 +610,11 @@ export const changeUserPermissions = async (
       }
     })
     return response
-  } catch (erro) {
-    console.log("💀Could not change permission")
+  } catch (error) {
   }
 }
 
+// TODO: Obtención de detalles de tienda
 export const getSubaccountDetails = async (subaccountId: string) => {
   const response = await db.subAccount.findUnique({
     where: {
@@ -698,6 +624,7 @@ export const getSubaccountDetails = async (subaccountId: string) => {
   return response
 }
 
+// TODO: Eliminación de tienda
 export const deleteSubAccount = async (subaccountId: string) => {
   const response = await db.subAccount.delete({
     where: {
@@ -707,6 +634,7 @@ export const deleteSubAccount = async (subaccountId: string) => {
   return response
 }
 
+// TODO: Eliminación de usuario
 export const deleteUser = async (userId: string) => {
   await clerkClient.users.updateUserMetadata(userId, {
     privateMetadata: {
@@ -718,6 +646,7 @@ export const deleteUser = async (userId: string) => {
   return deletedUser
 }
 
+// TODO: Obtención de usuario
 export const getUser = async (id: string) => {
   const user = await db.user.findUnique({
     where: {
@@ -728,9 +657,8 @@ export const getUser = async (id: string) => {
   return user
 }
 
-
+// TODO: Envío de invitaciones
 export const sendInvitation = async (role: Role, email: string, agencyId: string) => {
-  console.log("Creando invitación con:", { role, email, agencyId })
 
   if (!email) {
     throw new Error("El email es requerido para crear una invitación")
@@ -796,14 +724,9 @@ export const sendInvitation = async (role: Role, email: string, agencyId: string
   }
 }
 
-
-
+// TODO: Gestión de medios
 export const getMedia = async (subaccountIdOrAgencyId: string, isAgencyId: boolean = false) => {
-  console.log('getMedia llamado con:', { subaccountIdOrAgencyId, isAgencyId });
-  
   if (!subaccountIdOrAgencyId) {
-    console.log('No se proporcionó ID, devolviendo array vacío');
-    // Si no hay ID, devolver un objeto con array Media vacío
     return { Media: [] }
   }
   
@@ -811,11 +734,9 @@ export const getMedia = async (subaccountIdOrAgencyId: string, isAgencyId: boole
   
   if (isAgencyId) {
     // Si se proporciona directamente el agencyId
-    console.log('Usando directamente el agencyId:', subaccountIdOrAgencyId);
     agencyId = subaccountIdOrAgencyId;
   } else {
     // Si se proporciona un subaccountId, obtenemos su agencyId
-    console.log('Buscando agencyId para subaccountId:', subaccountIdOrAgencyId);
     const subaccount = await db.subAccount.findUnique({
       where: {
         id: subaccountIdOrAgencyId,
@@ -826,16 +747,13 @@ export const getMedia = async (subaccountIdOrAgencyId: string, isAgencyId: boole
     })
     
     if (!subaccount) {
-      console.log('No se encontró la subcuenta, devolviendo array vacío');
       return { Media: [] }
     }
     
     agencyId = subaccount.agencyId;
-    console.log('AgencyId encontrado:', agencyId);
   }
   
-  // Obtenemos todas las subcuentas asociadas a la agencia
-  console.log('Buscando subcuentas para agencyId:', agencyId);
+  // Obtenemos todas las tiendas asociadas a la agencia
   const agencySubaccounts = await db.subAccount.findMany({
     where: {
       agencyId: agencyId
@@ -846,18 +764,16 @@ export const getMedia = async (subaccountIdOrAgencyId: string, isAgencyId: boole
   })
   
   const subaccountIds = agencySubaccounts.map(sub => sub.id)
-  console.log('IDs de subcuentas encontrados:', subaccountIds);
-  
-  // Verificamos si hay subcuentas
+
+  // Verificamos si hay tiendas
   if (subaccountIds.length === 0) {
-    console.log('No se encontraron subcuentas para la agencia, buscando solo por agencyId');
   }
   
   // Construimos la consulta para buscar medios
   let whereClause: any = {};
   
   if (subaccountIds.length > 0) {
-    // Si hay subcuentas, buscamos por subcuentas y agencyId
+    // Si hay tiendas, buscamos por tiendas y agencyId
     whereClause = {
       OR: [
         {
@@ -871,13 +787,12 @@ export const getMedia = async (subaccountIdOrAgencyId: string, isAgencyId: boole
       ]
     };
   } else {
-    // Si no hay subcuentas, buscamos solo por agencyId
+    // Si no hay tiendas, buscamos solo por agencyId
     whereClause = {
       agencyId: agencyId
     };
   }
   
-  console.log('Buscando medios con condición:', JSON.stringify(whereClause, null, 2));
   
   // Ejecutamos la consulta
   const mediaFiles = await db.media.findMany({
@@ -891,7 +806,6 @@ export const getMedia = async (subaccountIdOrAgencyId: string, isAgencyId: boole
       }
     }
   }).catch(async (error) => {
-    console.log('Error en la consulta principal, intentando consulta alternativa:', error.message);
     
     // Si falla la consulta con include, intentamos sin incluir la relación Subaccount
     return await db.media.findMany({
@@ -901,7 +815,6 @@ export const getMedia = async (subaccountIdOrAgencyId: string, isAgencyId: boole
   
   // Verificamos si realmente se encontraron archivos
   if (mediaFiles.length === 0) {
-    console.log('ADVERTENCIA: No se encontraron archivos multimedia para la agencia:', agencyId);
     
     // Intentamos una búsqueda directa solo por agencyId para verificar
     const directMediaFiles = await db.media.findMany({
@@ -909,15 +822,11 @@ export const getMedia = async (subaccountIdOrAgencyId: string, isAgencyId: boole
         agencyId: agencyId
       }
     }).catch(async (error) => {
-      console.log('Error en la búsqueda directa, devolviendo array vacío:', error.message);
       return [];
     });
     
-    console.log(`Búsqueda directa por agencyId: ${directMediaFiles.length} archivos encontrados`);
-    
-    // Si encontramos archivos en la búsqueda directa pero no en la original, usamos estos
+
     if (directMediaFiles.length > 0) {
-      console.log('Usando resultados de búsqueda directa por agencyId');
       return { 
         Media: directMediaFiles,
         id: isAgencyId ? null : subaccountIdOrAgencyId
@@ -925,33 +834,24 @@ export const getMedia = async (subaccountIdOrAgencyId: string, isAgencyId: boole
     }
   }
   
-  console.log(`Se encontraron ${mediaFiles.length} archivos multimedia`);
   if (mediaFiles.length > 0) {
-    console.log('Primer archivo encontrado:', {
-      id: mediaFiles[0].id,
-      name: mediaFiles[0].name,
-      subAccountId: mediaFiles[0].subAccountId,
-      agencyId: mediaFiles[0].agencyId
-    });
   }
   
-  // Devolvemos los medios en el formato esperado por los componentes
   return { 
     Media: mediaFiles,
     id: isAgencyId ? null : subaccountIdOrAgencyId
   }
 }
 
+// TODO: Creación de medios
 export const createMedia = async (
   subaccountId: string,
   mediaFile: createMediaType
 ) => {
   try {
-    console.log('createMedia llamado con:', { subaccountId, mediaFile });
     
     // Verificamos si se proporcionó un agencyId directamente
     if (mediaFile.agencyId) {
-      console.log('Usando agencyId proporcionado directamente:', mediaFile.agencyId);
       
       const response = await db.media.create({
         data: {
@@ -962,12 +862,10 @@ export const createMedia = async (
         }
       })
       
-      console.log('Media creado exitosamente con agencyId proporcionado:', response);
       return response
     }
     
-    // Si no se proporcionó agencyId, intentamos obtenerlo de la subcuenta
-    console.log('Buscando agencyId para subaccountId:', subaccountId);
+    // Si no se proporcionó agencyId, intentamos obtenerlo de la tienda
     const subaccount = await db.subAccount.findUnique({
       where: {
         id: subaccountId,
@@ -976,12 +874,8 @@ export const createMedia = async (
         agencyId: true
       }
     })
-    
-    console.log('Resultado de búsqueda de subcuenta:', subaccount);
-    
+
     if (!subaccount) {
-      console.error('Subcuenta no encontrada y no se proporcionó agencyId');
-      // En lugar de lanzar un error, creamos el media sin agencyId
       const response = await db.media.create({
         data: {
           link: mediaFile.link,
@@ -991,23 +885,20 @@ export const createMedia = async (
         }
       })
       
-      console.log('Media creado sin agencyId:', response);
       return response
     }
     
-    // Si encontramos la subcuenta, procedemos normalmente
-    console.log('Usando agencyId de la subcuenta:', subaccount.agencyId);
+    // Si encontramos la tienda, procedemos normalmente
     
     const response = await db.media.create({
       data: {
         link: mediaFile.link,
         name: mediaFile.name,
         subAccountId: subaccountId,
-        agencyId: subaccount.agencyId, // Agregamos el agencyId obtenido de la subcuenta
+        agencyId: subaccount.agencyId, // Agregamos el agencyId obtenido de la tienda
       }
     })
     
-    console.log('Media creado exitosamente:', response);
     return response
   } catch (error) {
     console.error('Error al crear media:', error)
@@ -1015,7 +906,7 @@ export const createMedia = async (
   }
 }
 
-
+// TODO: Eliminación de medios
 export const deleteMedia = async (mediaId: string) => {
   try {
     // Primero obtenemos el media para verificar si existe
@@ -1051,6 +942,7 @@ export const deleteMedia = async (mediaId: string) => {
   }
 }
 
+// TODO: Gestión de pipelines
 export const getPipelineDetails = async (pipelineId: string) => {
   const response = await db.pipeline.findUnique(
     {
@@ -1062,6 +954,7 @@ export const getPipelineDetails = async (pipelineId: string) => {
   return response
 }
 
+// TODO: Obtención de carriles con tickets y etiquetas
 export const getLanesWithTicketAndTags = async (pipelineId: string) => {
   const response = await db.lane.findMany({
     where: {
@@ -1084,49 +977,26 @@ export const getLanesWithTicketAndTags = async (pipelineId: string) => {
   return response
 }
 
+// TODO: Creación y actualización de embudos
 export const upsertFunnel = async (
-  agencyId: string,
+  subaccountId: string,
   funnel: z.infer<typeof CreateFunnelFormSchema> & { liveProducts: string },
   funnelId: string
 ) => {
-  console.log('=== INICIO upsertFunnel ===');
-  console.log('Parámetros recibidos:', { agencyId, funnelId });
-  console.log('Datos del funnel:', JSON.stringify(funnel, null, 2));
-  
-  try {
-    // Aseguramos que el embudo esté conectado a la agencia correcta
-    console.log('Intentando operación upsert en la base de datos...');
-    const response = await db.funnel.upsert({
-      where: { id: funnelId },
-      update: {
-        ...funnel,
-        agencyId: agencyId, // Aseguramos que el agencyId se actualice correctamente
-      },
-      create: {
-        ...funnel,
-        id: funnelId || v4(),
-        agencyId: agencyId,
-      },
-    });
+  const response = await db.funnel.upsert({
+    where: { id: funnelId },
+    update: funnel,
+    create: {
+      ...funnel,
+      id: funnelId || v4(),
+      subAccountId: subaccountId,
+    },
+  })
 
-    console.log('Operación upsert completada con éxito');
-    console.log('Respuesta de la base de datos:', JSON.stringify(response, null, 2));
-
-    // Revalidamos la ruta para asegurar que los cambios se reflejen inmediatamente
-    console.log(`Revalidando ruta: /agency/${agencyId}/funnels`);
-    revalidatePath(`/agency/${agencyId}/funnels`, 'page');
-    
-    console.log('=== FIN upsertFunnel (éxito) ===');
-    return response;
-  } catch (error) {
-    console.error('=== ERROR en upsertFunnel ===');
-    console.error('Detalles del error:', error);
-    console.error('Parámetros que causaron el error:', { agencyId, funnelId, funnel });
-    throw error; // Re-lanzamos el error para que pueda ser manejado por el componente
-  }
+  return response
 }
 
-
+// TODO: Creación y actualización de pipelines
 export const upsertPipeline = async (
   pipeline: Prisma.PipelineUncheckedCreateWithoutLaneInput
 ) => {
@@ -1139,6 +1009,7 @@ export const upsertPipeline = async (
   return response
 }
 
+// TODO: Eliminación de pipeline
 export const deletePipeline = async (pipelineId: string) => {
   const response = await db.pipeline.delete({
     where: {
@@ -1148,6 +1019,7 @@ export const deletePipeline = async (pipelineId: string) => {
   return response
 }
 
+// TODO: Actualización de orden de carriles
 export const updateLanesOrder = async (lanes: Lane[]) => {
   try {
     const updateTrans = lanes.map((lane) =>
@@ -1162,12 +1034,12 @@ export const updateLanesOrder = async (lanes: Lane[]) => {
     )
 
     await db.$transaction(updateTrans)
-    console.log('🟢 Done reordered 🟢')
   } catch (error) {
-    console.log(error, 'ERROR UPDATE LANES ORDER')
+    // Eliminado console.log(error, 'ERROR UPDATE LANES ORDER')
   }
 }
 
+// TODO: Actualización de orden de tickets
 export const updateTicketsOrder = async (tickets: Ticket[]) => {
   try {
     const updateTrans = tickets.map((ticket) =>
@@ -1183,12 +1055,13 @@ export const updateTicketsOrder = async (tickets: Ticket[]) => {
     )
 
     await db.$transaction(updateTrans)
-    console.log('🟢 Done reordered 🟢')
+    // Eliminado console.log('🟢 Done reordered 🟢')
   } catch (error) {
-    console.log(error, '🔴 ERROR UPDATE TICKET ORDER')
+    // Eliminado console.log(error, '🔴 ERROR UPDATE TICKET ORDER')
   }
 }
 
+// TODO: Creación y actualización de carriles
 export const upsertLane = async (lane: Prisma.LaneUncheckedCreateInput) => {
   let order: number
 
@@ -1213,15 +1086,18 @@ export const upsertLane = async (lane: Prisma.LaneUncheckedCreateInput) => {
   return response
 }
 
+// TODO: Eliminación de carril
 export const deleteLane = async (laneId: string) => {
   const resposne = await db.lane.delete({ where: { id: laneId } })
   return resposne
 }
+
 export const deleteTicket = async (ticketId: string) => {
   const resposne = await db.ticket.delete({ where: { id: ticketId } })
   return resposne
 }
 
+// TODO: Obtención de tickets con etiquetas
 export const getTicketsWithTags = async (pipelineId: string) => {
   const response = await db.ticket.findMany({
     where: {
@@ -1234,6 +1110,7 @@ export const getTicketsWithTags = async (pipelineId: string) => {
   return response
 }
 
+// TODO: Obtención de tickets con todas las relaciones
 export const _getTicketsWithAllRelations = async (laneId: string) => {
   const response = await db.ticket.findMany({
     where: { laneId: laneId },
@@ -1247,6 +1124,7 @@ export const _getTicketsWithAllRelations = async (laneId: string) => {
   return response
 }
 
+// TODO: Obtención de miembros del equipo de tienda
 export const getSubAccountTeamMembers = async (subaccountId: string) => {
   const subaccountUsersWithAccess = await db.user.findMany({
     where: {
@@ -1269,6 +1147,7 @@ export const getSubAccountTeamMembers = async (subaccountId: string) => {
   return subaccountUsersWithAccess
 }
 
+// TODO: Búsqueda de contactos
 export const searchContacts = async (searchTerms: string) => {
   const response = await db.contact.findMany({
     where: {
@@ -1280,6 +1159,19 @@ export const searchContacts = async (searchTerms: string) => {
   return response
 }
 
+// TODO: Edición de información usuario
+export const editUser = async (
+  userId: string,
+  userData: Prisma.UserUncheckedUpdateInput
+) => {
+  const response = await db.user.update({
+    where: { id: userId },
+    data: userData,
+  })
+  return response
+}   
+
+// TODO: Creación y actualización de tickets
 export const upsertTicket = async (
   ticket: Prisma.TicketUncheckedCreateInput,
   tags: Tag[]
@@ -1311,6 +1203,7 @@ export const upsertTicket = async (
   return response
 }
 
+// TODO: Creación y actualización de etiquetas
 export const upsertTag = async (
   subaccountId: string,
   tag: Prisma.TagUncheckedCreateInput
@@ -1323,11 +1216,14 @@ export const upsertTag = async (
 
   return response
 }
+
+// TODO: Eliminación de etiqueta
 export const deleteTag = async (tagId: string) => {
   const response = await db.tag.delete({ where: { id: tagId } })
   return response
 }
 
+// TODO: Obtención de etiquetas para tienda
 export const getTagsForSubaccount = async (subaccountId: string) => {
   const response = await db.subAccount.findUnique({
     where: { id: subaccountId },
@@ -1336,6 +1232,7 @@ export const getTagsForSubaccount = async (subaccountId: string) => {
   return response
 }
 
+// TODO: Creación y actualización de contactos
 export const upsertContact = async (
   contact: Prisma.ContactUncheckedCreateInput
 ) => {
@@ -1346,31 +1243,33 @@ export const upsertContact = async (
   })
   return response
 }
-export const getFunnels = async (agencyId: string) => {
-  // Buscamos directamente los funnels asociados a esta agencia
+
+// TODO: Obtención de embudos
+export const getFunnels = async (subacountId: string) => {
   const funnels = await db.funnel.findMany({
-    where: { 
-      agencyId: agencyId 
-    },
+    where: { subAccountId: subacountId },
     include: { FunnelPages: true },
   })
 
   return funnels
 }
 
-export const getFunnel = async (funnelId: string) => {
+// TODO: Obtención de embudo específico
+export const getFunnel = async (funnelId:string) => {
   const funnel = await db.funnel.findUnique({
-    where: { id: funnelId },
-    include: {
-      FunnelPages: {
-        orderBy: {
-          order: 'asc'
+    where :{id: funnelId},
+    include:{
+      FunnelPages:{
+        orderBy:{
+          order:'asc'
         }
       }
     }
   })
   return funnel
 }
+
+// TODO: Actualización de productos de embudo
 export const updateFunnelProducts = async (
   products: string,
   funnelId: string
@@ -1382,103 +1281,138 @@ export const updateFunnelProducts = async (
   return data
 }
 
+// TODO: Creación y actualización de página de embudo
 export const upsertFunnelPage = async (
-  agencyId: string,
+  subaccountId: string,
   funnelPage: UpsertFunnelPage,
   funnelId: string
 ) => {
-  console.log('=== INICIO upsertFunnelPage ===');
-  console.log('agencyId:', agencyId);
-  console.log('funnelId:', funnelId);
-  console.log('funnelPage:', JSON.stringify(funnelPage, null, 2));
-  
-  if (!agencyId || !funnelId) {
-    console.error('Error: agencyId o funnelId no proporcionados');
-    return;
-  }
-  
-  try {
-    const response = await db.funnelPage.upsert({
-      where: { id: funnelPage.id || '' },
-      update: { ...funnelPage },
-      create: {
-        ...funnelPage,
-        content: funnelPage.content
-          ? funnelPage.content
-          : JSON.stringify([
-              {
-                content: [],
-                id: '__body',
-                name: 'Body',
-                styles: { backgroundColor: 'white' },
-                type: '__body',
-              },
-            ]),
-        funnelId,
-      },
-    });
-    
-    console.log('Respuesta de upsert:', response);
-    revalidatePath(`/agency/${agencyId}/funnels/${funnelId}`, 'page');
-    console.log('=== FIN upsertFunnelPage ===');
-    return response;
-  } catch (error) {
-    console.error('Error en upsertFunnelPage:', error);
-    throw error;
-  }
+  if (!subaccountId || !funnelId) return
+  const response = await db.funnelPage.upsert({
+    where: { id: funnelPage.id || '' },
+    update: { ...funnelPage },
+    create: {
+      ...funnelPage,
+      content: funnelPage.content
+        ? funnelPage.content
+        : JSON.stringify([
+            {
+              content: [],
+              id: '__body',
+              name: 'Body',
+              styles: { backgroundColor: 'white' },
+              type: '__body',
+            },
+          ]),
+      funnelId,
+    },
+  })
+
+  revalidatePath(`/subaccount/${subaccountId}/funnels/${funnelId}`, 'page')
+  return response
 }
 
+
+// TODO: Eliminación de página de embudo
 export const deleteFunnelePage = async (funnelPageId: string) => {
-  console.log('=== INICIO deleteFunnelePage ===');
-  console.log('funnelPageId:', funnelPageId);
-  
-  // Obtenemos la página del embudo para poder obtener el funnelId
-  try {
-    const funnelPage = await db.funnelPage.findUnique({
-      where: { id: funnelPageId },
-      include: { Funnel: true }
-    });
-    
-    console.log('funnelPage encontrado:', funnelPage);
+  const response = await db.funnelPage.delete({ where: { id: funnelPageId } })
 
-    if (!funnelPage) {
-      console.error('No se encontró la página del embudo');
-      return null;
-    }
-
-    const response = await db.funnelPage.delete({ where: { id: funnelPageId } });
-    console.log('Respuesta de delete:', response);
-
-    // Si tenemos el funnel asociado, revalidamos la ruta
-    if (funnelPage.Funnel?.agencyId) {
-      console.log('Revalidando ruta con agencyId:', funnelPage.Funnel.agencyId);
-      revalidatePath(`/agency/${funnelPage.Funnel.agencyId}/funnels/${funnelPage.funnelId}`, 'page');
-    }
-    
-    console.log('=== FIN deleteFunnelePage ===');
-    return response;
-  } catch (error) {
-    console.error('Error en deleteFunnelePage:', error);
-    throw error;
-  }
+  return response
 }
 
+// TODO: Obtención de detalles de página de embudo
 export const getFunnelPageDetails = async (funnelPageId: string) => {
-  console.log('=== INICIO getFunnelPageDetails ===');
-  console.log('funnelPageId:', funnelPageId);
-  
-  try {
-    const response = await db.funnelPage.findUnique({
-      where: {
-        id: funnelPageId,
-      },
-    });
-    
-    console.log('Detalles de la página encontrados:', response);
-    console.log('=== FIN getFunnelPageDetails ===');
-    return response;
-  } catch (error) {
-    console.error('Error en getFunnelPageDetails:', error);
-    throw error;
+  const response = await db.funnelPage.findUnique({
+    where: {
+      id: funnelPageId,
+    },
+  })
+
+  return response
+}
+
+// TODO: Gestión de horarios
+export const createSchedule = async (schedule: {
+  userId: string
+  agencyId: string
+  startTime: string
+  endTime: string
+  breakTime: string
+  isOvertime: boolean
+  hourlyRate: number
+  days: string // JSON string array
+}) => {
+  const response = await db.schedule.create({
+    data: {
+      ...schedule,
+    },
+  })
+  return response
+}
+
+//TODO: Obtener horario 
+export const getSchedules = async (agencyId: string, userId?: string) => {
+  const whereClause: any = {
+    agencyId,
   }
+  
+  if (userId) {
+    whereClause.userId = userId
+  }
+  
+  const response = await db.schedule.findMany({
+    where: whereClause,
+    include: {
+      user: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  })
+  return response
+}
+
+//TODO: Obtener horario por el ID
+export const getScheduleById = async (scheduleId: string) => {
+  const response = await db.schedule.findUnique({
+    where: {
+      id: scheduleId,
+    },
+    include: {
+      user: true,
+    },
+  })
+  return response
+}
+
+
+//TODO: Actualizar horario
+export const updateSchedule = async (
+  scheduleId: string,
+  scheduleData: Partial<{
+    startTime: string
+    endTime: string
+    breakTime: string
+    isOvertime: boolean
+    hourlyRate: number
+    days: string
+  }>
+) => {
+  const response = await db.schedule.update({
+    where: {
+      id: scheduleId,
+    },
+    data: scheduleData,
+  })
+  return response
+}
+
+//TODO: Eliminar horario
+export const deleteSchedule = async (scheduleId: string) => {
+  const response = await db.schedule.delete({
+    where: {
+      id: scheduleId,
+    },
+  })
+  return response
 }

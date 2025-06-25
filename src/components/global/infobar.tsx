@@ -124,12 +124,12 @@ const InfoBar = ({ notifications, subAccountId, className, role }: Props) => {
                     <div className="flex flex-col h-full">
                       <SheetHeader className="px-6 py-4 border-b">
                         <div className="flex items-center justify-between">
-                          <SheetTitle className="text-xl">Notifications</SheetTitle>
+                          <SheetTitle className="text-xl">Notificaciones</SheetTitle>
                           <div className="flex items-center gap-2">
                             {unreadCount > 0 && (
                               <Button variant="ghost" size="sm" onClick={handleMarkAllRead} className="text-xs h-8">
                                 <Check size={14} className="mr-1" />
-                                Mark all read
+                                Marcar todo lo leído
                               </Button>
                             )}
                             <DropdownMenu>
@@ -141,7 +141,7 @@ const InfoBar = ({ notifications, subAccountId, className, role }: Props) => {
                               <DropdownMenuContent align="end">
                                 {(role === "AGENCY_ADMIN" || role === "AGENCY_OWNER") && (
                                   <div className="flex items-center justify-between px-3 py-2">
-                                    <span className="text-sm">Current Subaccount</span>
+                                    <span className="text-sm">Tienda actual</span>
                                     <Switch checked={!showAll} onCheckedChange={handleClick} />
                                   </div>
                                 )}
@@ -152,10 +152,10 @@ const InfoBar = ({ notifications, subAccountId, className, role }: Props) => {
                         <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mt-2">
                           <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="all" className="text-xs">
-                              All
+                              Todos
                             </TabsTrigger>
                             <TabsTrigger value="unread" className="text-xs">
-                              Unread
+                              No leídos
                               {unreadCount > 0 && (
                                 <Badge variant="secondary" className="ml-1.5 h-5 text-[10px]">
                                   {unreadCount}
@@ -173,11 +173,11 @@ const InfoBar = ({ notifications, subAccountId, className, role }: Props) => {
                               <div className="bg-muted/30 p-3 rounded-full mb-3">
                                 <Bell size={24} className="text-muted-foreground" />
                               </div>
-                              <h3 className="font-medium mb-1">No notifications</h3>
+                              <h3 className="font-medium mb-1">Sin notificaciones</h3>
                               <p className="text-sm text-muted-foreground max-w-[250px]">
                                 {activeTab === "unread"
-                                  ? "You've read all your notifications"
-                                  : "You don't have any notifications yet"}
+                                  ? "Has leído todas tus notificaciones"
+                                  : "No tienes ninguna notificación aún"}
                               </p>
                             </div>
                           ) : (
@@ -252,9 +252,9 @@ const InfoBar = ({ notifications, subAccountId, className, role }: Props) => {
                                                 onClick={() => handleMarkAsRead(notification.id)}
                                                 disabled={notification.read}
                                               >
-                                                Mark as read
+                                                Marcar como leído
                                               </DropdownMenuItem>
-                                              <DropdownMenuItem className="text-destructive">Remove</DropdownMenuItem>
+                                              <DropdownMenuItem className="text-destructive">Eliminar</DropdownMenuItem>
                                             </DropdownMenuContent>
                                           </DropdownMenu>
                                         </div>
@@ -270,7 +270,7 @@ const InfoBar = ({ notifications, subAccountId, className, role }: Props) => {
 
                       <SheetFooter className="flex-shrink-0 border-t p-4">
                         <Button variant="outline" size="sm" className="w-full" onClick={() => setIsOpen(false)}>
-                          Close
+                          Cerrar
                         </Button>
                       </SheetFooter>
                     </div>
@@ -278,12 +278,12 @@ const InfoBar = ({ notifications, subAccountId, className, role }: Props) => {
                 </Sheet>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p>Notifications</p>
+                <p>Notificaciones</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
-          <UserButton afterSignOutUrl="/" />
+          <UserButton afterSignOutUrl="/site" />
           <ModeToggle />
         </div>
       </div>

@@ -3,42 +3,42 @@ generator client {
 }
 
 datasource db {
-  provider     = "postgresql"
-  url          = env("DATABASE_URL")
-  directUrl    = env("DIRECT_URL")
-  relationMode = "prisma"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id                     String         @id @default(uuid())
-  name                   String
-  avatarUrl              String
-  email                  String         @unique
-  createdAt              DateTime       @default(now())
-  updatedAt              DateTime       @updatedAt
-  role                   Role           @default(SUBACCOUNT_USER)
-  agencyId               String?
-  birthDate              DateTime?      
-  gender                 String?
-  maritalStatus          String?
-  address                String?
-  phone                  String?
-  position               String?
-  hireDate               DateTime?
-  salary                 String?
-  workSchedule           String?
-  socialSecurityNumber   String?
+  id                        String         @id @default(uuid())
+  name                      String
+  avatarUrl                 String
+  email                     String         @unique
+  createdAt                 DateTime       @default(now())
+  updatedAt                 DateTime       @updatedAt
+  role                      Role           @default(SUBACCOUNT_USER)
+  agencyId                  String?
+  birthDate                 DateTime?
+  gender                    String?
+  maritalStatus             String?
+  address                   String?
+  phone                     String?
+  position                  String?
+  hireDate                  DateTime?
+  salary                    String?
+  workSchedule              String?
+  socialSecurityNumber      String?
   socialSecurityAffiliation String?
-  Agency       Agency?        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  Permissions  Permissions[]
-  Ticket       Ticket[]
-  Notification Notification[]
-  Opportunity  Opportunity[]
-  Case         Case[]
-  PQR          PQR[]
-  Sale         Sale[]
-  CashRegister CashRegister[]
-  Schedule     Schedule[]
+  Agency                    Agency?        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  Permissions               Permissions[]
+  Ticket                    Ticket[]
+  Notification              Notification[]
+  Opportunity               Opportunity[]
+  Case                      Case[]
+  PQR                       PQR[]
+  Sale                      Sale[]
+  CashRegister              CashRegister[]
+  Schedule                  Schedule[]
+
   @@index([agencyId])
 }
 
@@ -69,52 +69,64 @@ model SidebarPermission {
 }
 
 model Agency {
-  id                String                       @id @default(uuid())
-  connectAccountId  String?                      @default("")
-  customerId        String                       @default("")
-  name              String
-  agencyLogo        String
-  companyEmail      String
-  companyPhone      String
-  whiteLabel        Boolean                      @default(true)
-  address           String
-  city              String
-  zipCode           String
-  state             String
-  country           String
-  goal              Int                          @default(5)
-  createdAt         DateTime                     @default(now())
-  updatedAt         DateTime                     @updatedAt
-  users             User[]
-  SubAccount        SubAccount[]
-  SidebarOption     AgencySidebarOption[]
-  Invitation        Invitation[]
-  Notification      Notification[]
-  Subscription      Subscription?
-  AddOns            AddOns[]
-  Media             Media[]
-  paymentGateways   PaymentGatewayConnection[]
-  settings          AgencySettings[]
-  webhookEvents     PaymentGatewayWebhookEvent[]
-  Reports           Report[]
-  Products          Product[]
-  Providers         Provider[]
-  Areas             Area[]
-  Movements         Movement[]
-  Invoices          Invoice[]
-  Payments          Payment[]
-  Taxes             Tax[]
-  ProductCategories  ProductCategory[]
-  Clients           Client[]
-  Opportunities     Opportunity[]
-  Cases             Case[]
-  PQRs              PQR[]
-  Funnels           Funnel[]
-  DianConfig        DianConfig?
-  Sale              Sale[]
-  CashRegister      CashRegister[]
-  Schedule          Schedule[]
-  Holiday           Holiday[]
+  id                   String                       @id @default(uuid())
+  connectAccountId     String?                      @default("")
+  customerId           String                       @default("")
+  name                 String
+  agencyLogo           String
+  companyEmail         String
+  companyPhone         String
+  whiteLabel           Boolean                      @default(true)
+  address              String
+  city                 String
+  zipCode              String
+  state                String
+  country              String
+  goal                 Int                          @default(5)
+  taxId                String?
+  taxName              String?
+  fiscalRegime         String?
+  fiscalResponsibility String?
+  economicActivity     String?
+  invoiceResolution    String?
+  invoicePrefix        String?
+  invoiceNextNumber    Int?
+  createdAt            DateTime                     @default(now())
+  updatedAt            DateTime                     @updatedAt
+  users                User[]
+  SubAccount           SubAccount[]
+  SidebarOption        AgencySidebarOption[]
+  Invitation           Invitation[]
+  Notification         Notification[]
+  Subscription         Subscription?
+  AddOns               AddOns[]
+  Media                Media[]
+  paymentGateways      PaymentGatewayConnection[]
+  settings             AgencySettings[]
+  webhookEvents        PaymentGatewayWebhookEvent[]
+  Reports              Report[]
+  Products             Product[]
+  Providers            Provider[]
+  Areas                Area[]
+  Movements            Movement[]
+  Invoices             Invoice[]
+  Payments             Payment[]                    @relation("AgencyToPayments")
+  Taxes                Tax[]
+  ProductCategories    ProductCategory[]
+  Clients              Client[]
+  Opportunities        Opportunity[]
+  Cases                Case[]
+  PQRs                 PQR[]
+  Funnels              Funnel[]
+  DianConfig           DianConfig?
+  Sale                 Sale[]
+  CashRegister         CashRegister[]
+  Schedule             Schedule[]
+  Holiday              Holiday[]
+  WhatsAppCred         WhatsAppCredentials[]
+  WhatsAppTemp         WhatsAppTemplate[]
+  WhatsAppLogs         WhatsAppMessageLog[]
+  EmailTemplates       EmailTemplate[]
 }
 
 model SubAccount {
@@ -149,7 +161,7 @@ model SubAccount {
   Areas             Area[]
   Movements         Movement[]
   Invoices          Invoice[]
-  Payments          Payment[]
+  Payments          Payment[]                 @relation("SubAccountToPayments")
   Taxes             Tax[]
   ProductCategories ProductCategory[]
   Clients           Client[]
@@ -287,12 +299,13 @@ model Contact {
   zipCode      String?
   country      String?
   notes        String?
+  taxId        String?
+  taxType      String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   subAccountId String
   Subaccount   SubAccount @relation(fields: [subAccountId], references: [id], onDelete: Cascade)
   Ticket       Ticket[]
-  Invoices     Invoice[]
   Sale         Sale[]
 
   @@index([subAccountId])
@@ -346,17 +359,18 @@ model ClassName {
 }
 
 model FunnelPage {
-  id           String   @id @default(uuid())
-  name         String
-  pathName     String   @default("")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  visits       Int      @default(0)
-  content      String?
-  order        Int
-  previewImage String?
-  funnelId     String
-  Funnel       Funnel   @relation(fields: [funnelId], references: [id], onDelete: Cascade)
+  id               String   @id @default(uuid())
+  name             String
+  pathName         String   @default("")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  visits           Int      @default(0)
+  content          String?
+  order            Int
+  previewImage     String?
+  funnelId         String
+  builderContentId String?
+  Funnel           Funnel   @relation(fields: [funnelId], references: [id], onDelete: Cascade)
 
   @@index([funnelId])
 }
@@ -516,6 +530,644 @@ model TagToTicket {
   @@map("_TagToTicket")
 }
 
+model SavedSale {
+  id           String   @id @default(uuid())
+  agencyId     String
+  subAccountId String?
+  areaId       String
+  products     String
+  client       String?
+  total        Decimal  @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([agencyId])
+  @@index([subAccountId])
+  @@index([areaId])
+}
+
+model Schedule {
+  id         String   @id @default(cuid())
+  userId     String
+  agencyId   String
+  startTime  String
+  endTime    String
+  breakTime  String
+  isOvertime Boolean  @default(false)
+  hourlyRate Float
+  days       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agency     Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([agencyId])
+}
+
+model Holiday {
+  id          String   @id @default(uuid())
+  date        DateTime
+  name        String
+  description String?
+  agencyId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  agency      Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([agencyId])
+}
+
+model ProductCategory {
+  id           String      @id @default(uuid())
+  name         String
+  description  String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  agencyId     String
+  subAccountId String?
+  Agency       Agency      @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount   SubAccount? @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Products     Product[]
+
+  @@index([agencyId])
+  @@index([subAccountId])
+}
+
+model Client {
+  id                   String        @id @default(uuid())
+  name                 String
+  email                String?
+  phone                String?
+  address              String?
+  city                 String?
+  state                String?
+  zipCode              String?
+  country              String?
+  notes                String?
+  type                 ClientType    @default(INDIVIDUAL)
+  status               ClientStatus  @default(ACTIVE)
+  taxId                String?
+  taxIdType            String?
+  fiscalRegime         String?
+  fiscalResponsibility String?
+  economicActivity     String?
+  legalRepresentative  String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  agencyId             String
+  subAccountId         String?
+  rut                  String?
+  Agency               Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount           SubAccount?   @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Opportunities        Opportunity[]
+  Cases                Case[]
+  PQRs                 PQR[]
+  Invoices     Invoice[]
+
+  @@index([agencyId])
+  @@index([subAccountId])
+}
+
+model Opportunity {
+  id             String            @id @default(uuid())
+  title          String
+  description    String?
+  value          Decimal           @default(0)
+  status         OpportunityStatus @default(NEW)
+  priority       Priority          @default(MEDIUM)
+  dueDate        DateTime?
+  clientId       String
+  assignedUserId String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  agencyId       String
+  subAccountId   String?
+  Client         Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  AssignedUser   User?             @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
+  Agency         Agency            @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount     SubAccount?       @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+
+  @@index([clientId])
+  @@index([assignedUserId])
+  @@index([agencyId])
+  @@index([subAccountId])
+}
+
+model Case {
+  id             String      @id @default(uuid())
+  title          String
+  description    String?
+  status         CaseStatus  @default(OPEN)
+  priority       Priority    @default(MEDIUM)
+  dueDate        DateTime?
+  clientId       String
+  assignedUserId String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  agencyId       String
+  subAccountId   String?
+  Client         Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  AssignedUser   User?       @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
+  Agency         Agency      @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount     SubAccount? @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+
+  @@index([clientId])
+  @@index([assignedUserId])
+  @@index([agencyId])
+  @@index([subAccountId])
+}
+
+model PQR {
+  id             String               @id @default(uuid())
+  title          String
+  description    String
+  type           PQRType              @default(PETITION)
+  status         PQRStatus            @default(PENDING)
+  priority       Priority             @default(MEDIUM)
+  dueDate        DateTime?
+  clientId       String
+  assignedUserId String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  agencyId       String
+  subAccountId   String?
+  WhatsAppLogs   WhatsAppMessageLog[]
+  Client         Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  AssignedUser   User?                @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
+  Agency         Agency               @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount     SubAccount?          @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+
+  @@index([clientId])
+  @@index([assignedUserId])
+  @@index([agencyId])
+  @@index([subAccountId])
+}
+
+model WhatsAppCredentials {
+  id                 String   @id @default(uuid())
+  agencyId           String   @unique
+  accessToken        String
+  phoneNumberId      String
+  businessAccountId  String
+  webhookVerifyToken String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  Agency             Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([agencyId])
+}
+
+model WhatsAppMessageLog {
+  id          String           @id @default(uuid())
+  agencyId    String
+  pqrId       String?
+  phoneNumber String
+  message     String
+  direction   MessageDirection
+  status      MessageStatus
+  metadata    String?
+  createdAt   DateTime         @default(now())
+  Agency      Agency           @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  PQR         PQR?             @relation(fields: [pqrId], references: [id], onDelete: SetNull)
+
+  @@index([agencyId])
+  @@index([pqrId])
+}
+
+model WhatsAppTemplate {
+  id        String   @id @default(uuid())
+  agencyId  String
+  name      String
+  language  String   @default("es")
+  status    String   @default("APPROVED")
+  category  String   @default("UTILITY")
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([agencyId])
+}
+
+model Product {
+  id                   String           @id @default(uuid())
+  name                 String
+  sku                  String
+  description          String?
+  price                Decimal          @default(0)
+  cost                 Decimal?         @default(0)
+  minStock             Int?
+  images               String[]         @default([])
+  categoryId           String?
+  active               Boolean          @default(true)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  agencyId             String
+  subAccountId         String?
+  brand                String?
+  model                String?
+  tags                 String[]         @default([])
+  unit                 String?
+  barcode              String?
+  isActive             Boolean?         @default(true)
+  quantity             Int?             @default(0)
+  locationId           String?
+  warehouseId          String?
+  batchNumber          String?
+  expirationDate       DateTime?
+  serialNumber         String?
+  warrantyMonths       Int?
+  isReturnable         Boolean          @default(false)
+  discount             Decimal?         @default(0)
+  discountStartDate    DateTime?
+  discountEndDate      DateTime?
+  discountMinimumPrice Decimal?
+  taxRate              Decimal?         @default(0)
+  supplierId           String?
+  variants             Json?
+  documents            String[]         @default([])
+  customFields         Json?
+  externalIntegrations Json?
+  Agency               Agency           @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount           SubAccount?      @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Category             ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  Movements            Movement[]       @relation("ProductInventory")
+  InvoiceItems         InvoiceItem[]
+  SaleItems            SaleItem[]
+
+  @@index([categoryId])
+  @@index([agencyId], map: "Product_agencyId_idx1")
+  @@index([subAccountId], map: "Product_subAccountId_idx1")
+}
+
+model Provider {
+  id           String      @id @default(uuid())
+  name         String
+  contactName  String?
+  email        String?
+  phone        String?
+  address      String?
+  active       Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  agencyId     String
+  subAccountId String?
+  Agency       Agency      @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount   SubAccount? @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Movements    Movement[]
+
+  @@index([agencyId])
+  @@index([subAccountId])
+}
+
+model Area {
+  id                   String         @id @default(uuid())
+  name                 String
+  description          String?
+  layout               Json?          @default("{\"items\": []}")
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  agencyId             String
+  subAccountId         String?
+  Agency               Agency         @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount           SubAccount?    @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Movements            Movement[]
+  DestinationMovements Movement[]     @relation("DestinationArea")
+  Sales                Sale[]
+  CashRegisters        CashRegister[]
+
+  @@index([agencyId])
+  @@index([subAccountId])
+}
+
+model Movement {
+  id                String      @id @default(uuid())
+  type              String
+  quantity          Int
+  notes             String?
+  date              DateTime    @default(now())
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  productId         String
+  areaId            String
+  destinationAreaId String?
+  providerId        String?
+  agencyId          String
+  subAccountId      String?
+  Product           Product     @relation("ProductInventory", fields: [productId], references: [id], onDelete: Cascade)
+  Area              Area        @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  DestinationArea   Area?       @relation("DestinationArea", fields: [destinationAreaId], references: [id], onDelete: SetNull)
+  Provider          Provider?   @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  Agency            Agency      @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount        SubAccount? @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+
+  @@index([productId])
+  @@index([areaId])
+  @@index([destinationAreaId])
+  @@index([providerId])
+  @@index([agencyId])
+  @@index([subAccountId])
+}
+
+model Invoice {
+  id                 String            @id @default(uuid())
+  invoiceNumber      String            @unique
+  status             InvoiceStatus     @default(DRAFT)
+  invoiceType        InvoiceType       @default(PHYSICAL)
+  documentType       DocumentType      @default(INVOICE)
+  subtotal           Decimal           @default(0)
+  tax                Decimal           @default(0)
+  discount           Decimal           @default(0)
+  total              Decimal           @default(0)
+  notes              String?
+  dueDate            DateTime?
+  issuedDate         DateTime          @default(now())
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  customerId         String?
+  agencyId           String
+  subAccountId       String?
+  customerTaxId      String?
+  customerTaxType    String?
+  customerEmail      String?
+  customerPhone      String?
+  customerAddress    String?
+  paymentMethod      PaymentMethod?
+  paymentTerms       String?
+  paymentDays        Int?
+  currency           String            @default("COP")
+  exchangeRate       Decimal?
+  isElectronic       Boolean           @default(false)
+  electronicStatus   String?
+  cufe               String?
+  cude               String?
+  qrCode             String?
+  technicalKey       String?
+  validationDate     DateTime?
+  xmlPath            String?
+  pdfPath            String?
+  signatureValue     String?
+  acknowledgmentDate DateTime?
+  receiptDate        DateTime?
+  acceptanceDate     DateTime?
+  rejectionDate      DateTime?
+  rejectionReason    String?
+  parentInvoiceId    String?
+  retentionVAT       Decimal           @default(0)
+  retentionIncome    Decimal           @default(0)
+  retentionICA       Decimal           @default(0)
+  Agency             Agency            @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount         SubAccount?       @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  Customer           Client?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  Items              InvoiceItem[]
+  Payments           Payment[]
+  Taxes              InvoiceTax[]
+  Sale               Sale[]
+  RelatedDocuments   RelatedDocument[]
+  ChildInvoices      Invoice[]         @relation("InvoiceRelation")
+  ParentInvoice      Invoice?          @relation("InvoiceRelation", fields: [parentInvoiceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([agencyId])
+  @@index([subAccountId])
+  @@index([customerId])
+  @@index([parentInvoiceId])
+}
+
+model InvoiceItem {
+  id          String   @id @default(uuid())
+  quantity    Int
+  unitPrice   Decimal
+  discount    Decimal  @default(0)
+  tax         Decimal  @default(0)
+  total       Decimal
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  invoiceId   String
+  productId   String
+  Invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  Product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([productId])
+}
+
+model Payment {
+  id           String        @id @default(uuid())
+  amount       Decimal
+  method       PaymentMethod
+  status       PaymentStatus @default(PENDING)
+  reference    String?
+  notes        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  invoiceId    String
+  agencyId     String
+  subAccountId String?
+  Invoice      Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  Agency       Agency        @relation("AgencyToPayments", fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount   SubAccount?   @relation("SubAccountToPayments", fields: [subAccountId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+  @@index([agencyId])
+  @@index([subAccountId])
+}
+
+model Tax {
+  id           String       @id @default(uuid())
+  name         String
+  rate         Decimal
+  description  String?
+  isDefault    Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  agencyId     String
+  subAccountId String?
+  Agency       Agency       @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  SubAccount   SubAccount?  @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
+  InvoiceTaxes InvoiceTax[]
+
+  @@index([agencyId])
+  @@index([subAccountId])
+}
+
+model InvoiceTax {
+  id        String   @id @default(uuid())
+  amount    Decimal
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  invoiceId String
+  taxId     String
+  Invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  Tax       Tax      @relation(fields: [taxId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([taxId])
+}
+
+model DianConfig {
+  id                  String          @id @default(uuid())
+  resolutionNumber    String
+  resolutionDate      DateTime
+  prefix              String?
+  startNumber         Int
+  endNumber           Int
+  currentNumber       Int
+  expirationDate      DateTime
+  creditNotePrefix    String?
+  creditNoteNumber    Int             @default(1)
+  debitNotePrefix     String?
+  debitNoteNumber     Int             @default(1)
+  environment         DianEnvironment @default(TESTING)
+  technicalKey        String?
+  softwareId          String?
+  softwarePin         String?
+  certificatePath     String?
+  certificatePassword String?
+  issuerName          String?
+  issuerNIT           String?
+  issuerDV            String?
+  issuerAddress       String?
+  issuerCity          String?
+  issuerState         String?
+  issuerCountry       String?
+  issuerPostalCode    String?
+  issuerEmail         String?
+  issuerPhone         String?
+  webServiceUrl       String?
+  catalogUrl          String?
+  emailHost           String?
+  emailPort           Int?
+  emailUser           String?
+  emailPassword       String?
+  emailFrom           String?
+  emailSubject        String?
+  emailBody           String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  agencyId            String          @unique
+  Agency              Agency          @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([agencyId])
+}
+
+model Sale {
+  id            String        @id @default(uuid())
+  saleNumber    String        @unique
+  subtotal      Decimal       @default(0)
+  tax           Decimal       @default(0)
+  discount      Decimal       @default(0)
+  total         Decimal       @default(0)
+  paymentMethod PaymentMethod
+  status        SaleStatus    @default(COMPLETED)
+  notes         String?
+  saleDate      DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  customerId    String?
+  cashierId     String?
+  areaId        String
+  agencyId      String
+  subAccountId  String?
+  invoiceId     String?
+  Agency        Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade, map: "SaleToAgency")
+  SubAccount    SubAccount?   @relation(fields: [subAccountId], references: [id], onDelete: SetNull, map: "SaleToSubAccount")
+  Customer      Contact?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  Cashier       User?         @relation(fields: [cashierId], references: [id], onDelete: SetNull)
+  Area          Area          @relation(fields: [areaId], references: [id], onDelete: Restrict)
+  Invoice       Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  Items         SaleItem[]
+
+  @@index([agencyId])
+  @@index([subAccountId])
+  @@index([customerId])
+  @@index([cashierId])
+  @@index([areaId])
+  @@index([invoiceId])
+}
+
+model SaleItem {
+  id          String   @id @default(uuid())
+  quantity    Int
+  unitPrice   Decimal
+  discount    Decimal  @default(0)
+  tax         Decimal  @default(0)
+  subtotal    Decimal
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  saleId      String
+  productId   String
+  Sale        Sale     @relation(fields: [saleId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  Product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([saleId])
+  @@index([productId])
+}
+
+model CashRegister {
+  id           String         @id @default(uuid())
+  openAmount   Decimal        @default(0)
+  closeAmount  Decimal?
+  cashSales    Decimal        @default(0)
+  cardSales    Decimal        @default(0)
+  otherSales   Decimal        @default(0)
+  totalSales   Decimal        @default(0)
+  difference   Decimal        @default(0)
+  notes        String?
+  status       RegisterStatus @default(OPEN)
+  openDate     DateTime       @default(now())
+  closeDate    DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  cashierId    String
+  areaId       String
+  agencyId     String
+  subAccountId String?
+  Agency       Agency         @relation(fields: [agencyId], references: [id], onDelete: Cascade, map: "CashRegisterToAgency")
+  SubAccount   SubAccount?    @relation(fields: [subAccountId], references: [id], onDelete: SetNull, map: "CashRegisterToSubAccount")
+  Cashier      User           @relation(fields: [cashierId], references: [id], onDelete: Restrict)
+  Area         Area           @relation(fields: [areaId], references: [id], onDelete: Restrict)
+
+  @@index([agencyId])
+  @@index([subAccountId])
+  @@index([cashierId])
+  @@index([areaId])
+}
+
+model RelatedDocument {
+  id             String    @id @default(uuid())
+  documentType   String
+  documentNumber String
+  documentDate   DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  invoiceId      String
+  Invoice        Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([invoiceId])
+}
+
+model EmailTemplate {
+  id          String              @id @default(cuid())
+  name        String
+  description String?
+  content     Json?
+  type        String?
+  category    String?
+  status      EmailTemplateStatus @default(DRAFT)
+  thumbnail   String?
+  isActive    Boolean             @default(false)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  agencyId    String
+  Agency      Agency              @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([agencyId])
+}
+
 enum Role {
   AGENCY_OWNER
   AGENCY_ADMIN
@@ -645,415 +1297,24 @@ enum Priority {
   URGENT
 }
 
-model SavedSale {
-  id           String    @id @default(uuid())
-  agencyId     String
-  subAccountId String?
-  areaId       String
-  products     String    // JSON string de productos
-  client       String?   // JSON string del cliente
-  total        Decimal   @default(0)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  @@index([agencyId])
-  @@index([subAccountId])
-  @@index([areaId])
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
 }
 
-
-model Schedule {
-  id          String    @id @default(uuid())
-  userId      String
-  agencyId    String
-  startTime   String
-  endTime     String
-  days        String    // Almacenado como JSON string ["Lunes", "Martes", ...]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  agency      Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([agencyId])
-}
-
-model Holiday {
-  id          String    @id @default(uuid())
-  date        DateTime
-  name        String
-  description String?
-  agencyId    String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  agency      Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-
-  @@index([agencyId])
-}
-
-model ProductCategory {
-  id           String      @id @default(uuid())
-  name         String
-  description  String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  agencyId     String
-  subAccountId String?
-  Agency       Agency      @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount   SubAccount? @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-  Products     Product[]
-
-  @@index([agencyId])
-  @@index([subAccountId])
-}
-
-model Client {
-  id            String        @id @default(uuid())
-  name          String
-  email         String?
-  phone         String?
-  address       String?
-  city          String?
-  state         String?
-  zipCode       String?
-  country       String?
-  notes         String?
-  type          ClientType    @default(INDIVIDUAL)
-  status        ClientStatus  @default(ACTIVE)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  agencyId      String
-  subAccountId  String?
-  Agency        Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount    SubAccount?   @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-  Opportunities Opportunity[]
-  Cases         Case[]
-  PQRs          PQR[]
-
-  @@index([agencyId])
-  @@index([subAccountId])
-}
-
-model Opportunity {
-  id             String            @id @default(uuid())
-  title          String
-  description    String?
-  value          Decimal           @default(0)
-  status         OpportunityStatus @default(NEW)
-  priority       Priority          @default(MEDIUM)
-  dueDate        DateTime?
-  clientId       String
-  assignedUserId String?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  agencyId       String
-  subAccountId   String?
-  Client         Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  AssignedUser   User?             @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
-  Agency         Agency            @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount     SubAccount?       @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-
-  @@index([clientId])
-  @@index([assignedUserId])
-  @@index([agencyId])
-  @@index([subAccountId])
-}
-
-model Case {
-  id             String      @id @default(uuid())
-  title          String
-  description    String?
-  status         CaseStatus  @default(OPEN)
-  priority       Priority    @default(MEDIUM)
-  dueDate        DateTime?
-  clientId       String
-  assignedUserId String?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  agencyId       String
-  subAccountId   String?
-  Client         Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  AssignedUser   User?       @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
-  Agency         Agency      @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount     SubAccount? @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-
-  @@index([clientId])
-  @@index([assignedUserId])
-  @@index([agencyId])
-  @@index([subAccountId])
-}
-
-model PQR {
-  id             String      @id @default(uuid())
-  title          String
-  description    String
-  type           PQRType     @default(PETITION)
-  status         PQRStatus   @default(PENDING)
-  priority       Priority    @default(MEDIUM)
-  dueDate        DateTime?
-  clientId       String
-  assignedUserId String?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  agencyId       String
-  subAccountId   String?
-  Client         Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  AssignedUser   User?       @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
-  Agency         Agency      @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount     SubAccount? @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-
-  @@index([clientId])
-  @@index([assignedUserId])
-  @@index([agencyId])
-  @@index([subAccountId])
-}
-
-model Product {
-  id             String           @id @default(uuid())
-  name           String
-  sku            String
-  description    String?
-  price          Decimal          @default(0)
-  cost           Decimal?         @default(0)
-  minStock       Int?
-  images         String[]         @default([])
-  categoryId     String?
-  active         Boolean          @default(true)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  agencyId       String
-  subAccountId   String?
-  brand          String?
-  model          String?
-  tags           String[]         @default([])
-  unit           String?
-  barcode        String?
-  isActive       Boolean?         @default(true)
-  quantity       Int?             @default(0)
-  locationId     String?
-  warehouseId    String?
-  batchNumber    String?
-  expirationDate DateTime?
-  serialNumber   String?
-  warrantyMonths Int?
-  isReturnable   Boolean          @default(false)
-  discount       Decimal?         @default(0)
-  discountStartDate DateTime?
-  discountEndDate   DateTime?
-  discountMinimumPrice Decimal?
-  taxRate        Decimal?         @default(0)
-  supplierId     String?
-  variants       Json?
-  documents      String[]         @default([])
-  customFields   Json?
-  externalIntegrations Json?
-
-  Agency         Agency           @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount     SubAccount?      @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-  Category       ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  Movements      Movement[]       @relation("ProductInventory")
-  InvoiceItems   InvoiceItem[]
-  SaleItems      SaleItem[]
-
-  @@index([categoryId])
-  @@index([agencyId],     map: "Product_agencyId_idx1")
-  @@index([subAccountId], map: "Product_subAccountId_idx1")
-}
-
-model Provider {
-  id           String      @id @default(uuid())
-  name         String
-  contactName  String?
-  email        String?
-  phone        String?
-  address      String?
-  active       Boolean     @default(true)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  agencyId     String
-  subAccountId String?
-  Agency       Agency      @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount   SubAccount? @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-  Movements    Movement[]
-
-  @@index([agencyId])
-  @@index([subAccountId])
-}
-
-model Area {
-  id            String         @id @default(uuid())
-  name          String
-  description   String?
-  layout        Json?          @default("{\"items\":[]}")
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  agencyId      String
-  subAccountId  String?
-  Agency        Agency         @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount    SubAccount?    @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-  Movements     Movement[]
-  Sales         Sale[]
-  CashRegisters CashRegister[]
-
-  @@index([agencyId])
-  @@index([subAccountId])
-}
-
-model Movement {
-  id               String        @id @default(uuid())
-  type             String        // "entrada", "salida", "transferencia"
-  quantity         Int
-  notes            String?
-  date             DateTime      @default(now())
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  productId        String
-  areaId           String
-  destinationAreaId String?      // Para transferencias
-  providerId       String?
-  agencyId         String
-  subAccountId     String?
-
-  Product          Product       @relation("ProductInventory", fields: [productId], references: [id], onDelete: Cascade)
-  Area             Area          @relation(fields: [areaId], references: [id], onDelete: Cascade)
-  DestinationArea  Area?         @relation("DestinationArea", fields: [destinationAreaId], references: [id], onDelete: SetNull)
-  Provider         Provider?     @relation(fields: [providerId], references: [id], onDelete: SetNull)
-  Agency           Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount       SubAccount?   @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-
-  @@index([productId])
-  @@index([areaId])
-  @@index([destinationAreaId])
-  @@index([providerId])
-  @@index([agencyId])
-  @@index([subAccountId])
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  RECEIVED
+  UNMATCHED
 }
 
 enum MovementType {
   ENTRADA
   SALIDA
   TRANSFERENCIA
-}
-
-model Invoice {
-  id            String        @id @default(uuid())
-  invoiceNumber String        @unique
-  status        InvoiceStatus @default(DRAFT)
-  subtotal      Decimal       @default(0)
-  tax           Decimal       @default(0)
-  discount      Decimal       @default(0)
-  total         Decimal       @default(0)
-  notes         String?
-  dueDate       DateTime?
-  issuedDate    DateTime      @default(now())
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  customerId    String?
-  agencyId      String
-  subAccountId  String?
-  Agency        Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount    SubAccount?   @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-  Customer      Contact?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  Items         InvoiceItem[]
-  Payments      Payment[]
-  Taxes         InvoiceTax[]
-  Sale          Sale[]
-
-  @@index([agencyId])
-  @@index([subAccountId])
-  @@index([customerId])
-}
-
-model InvoiceItem {
-  id          String   @id @default(uuid())
-  quantity    Int
-  unitPrice   Decimal
-  discount    Decimal  @default(0)
-  tax         Decimal  @default(0)
-  total       Decimal
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  invoiceId   String
-  productId   String
-  Invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  Product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@index([invoiceId])
-  @@index([productId])
-}
-
-model Payment {
-  id           String        @id @default(uuid())
-  amount       Decimal
-  method       PaymentMethod
-  status       PaymentStatus @default(PENDING)
-  reference    String?
-  notes        String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  invoiceId    String
-  agencyId     String
-  subAccountId String?
-  Invoice      Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  Agency       Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount   SubAccount?   @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-
-  @@index([invoiceId])
-  @@index([agencyId])
-  @@index([subAccountId])
-}
-
-model Tax {
-  id           String       @id @default(uuid())
-  name         String
-  rate         Decimal
-  description  String?
-  isDefault    Boolean      @default(false)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  agencyId     String
-  subAccountId String?
-  Agency       Agency       @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount   SubAccount?  @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-  InvoiceTaxes InvoiceTax[]
-
-  @@index([agencyId])
-  @@index([subAccountId])
-}
-
-model InvoiceTax {
-  id        String   @id @default(uuid())
-  amount    Decimal
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  invoiceId String
-  taxId     String
-  Invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  Tax       Tax      @relation(fields: [taxId], references: [id], onDelete: Cascade)
-
-  @@index([invoiceId])
-  @@index([taxId])
-}
-
-model DianConfig {
-  id               String          @id @default(uuid())
-  resolutionNumber String
-  resolutionDate   DateTime
-  prefix           String?
-  startNumber      Int
-  endNumber        Int
-  currentNumber    Int
-  expirationDate   DateTime
-  environment      DianEnvironment @default(TESTING)
-  technicalKey     String?
-  softwareId       String?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  agencyId         String          @unique
-  Agency           Agency          @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-
-  @@index([agencyId])
 }
 
 enum SaleStatus {
@@ -1063,93 +1324,9 @@ enum SaleStatus {
   SENT
 }
 
-model Sale {
-  id            String        @id @default(uuid())
-  saleNumber    String        @unique
-  subtotal      Decimal       @default(0)
-  tax           Decimal       @default(0)
-  discount      Decimal       @default(0)
-  total         Decimal       @default(0)
-  paymentMethod PaymentMethod
-  status        SaleStatus    @default(COMPLETED)
-  notes         String?
-  saleDate      DateTime      @default(now())
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  customerId    String?
-  cashierId     String?
-  areaId        String
-  agencyId      String
-  subAccountId  String?
-  invoiceId     String?
-  Agency        Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount    SubAccount?   @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-  Customer      Contact?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  Cashier       User?         @relation(fields: [cashierId], references: [id], onDelete: SetNull)
-  Area          Area          @relation(fields: [areaId], references: [id], onDelete: Restrict)
-  Invoice       Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
-  Items         SaleItem[]
-
-  @@index([agencyId])
-  @@index([subAccountId])
-  @@index([customerId])
-  @@index([cashierId])
-  @@index([areaId])
-  @@index([invoiceId])
-}
-
-model SaleItem {
-  id          String   @id @default(uuid())
-  quantity    Int
-  unitPrice   Decimal
-  discount    Decimal  @default(0)
-  tax         Decimal  @default(0)
-  subtotal    Decimal
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  saleId      String
-  productId   String
-  Sale        Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
-  Product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@index([saleId])
-  @@index([productId])
-}
-
 enum RegisterStatus {
   OPEN
   CLOSED
-}
-
-model CashRegister {
-  id           String         @id @default(uuid())
-  openAmount   Decimal        @default(0)
-  closeAmount  Decimal?
-  cashSales    Decimal        @default(0)
-  cardSales    Decimal        @default(0)
-  otherSales   Decimal        @default(0)
-  totalSales   Decimal        @default(0)
-  difference   Decimal        @default(0)
-  notes        String?
-  status       RegisterStatus @default(OPEN)
-  openDate     DateTime       @default(now())
-  closeDate    DateTime?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  cashierId    String
-  areaId       String
-  agencyId     String
-  subAccountId String?
-  Agency       Agency         @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  SubAccount   SubAccount?    @relation(fields: [subAccountId], references: [id], onDelete: SetNull)
-  Cashier      User           @relation(fields: [cashierId], references: [id], onDelete: Restrict)
-  Area         Area           @relation(fields: [areaId], references: [id], onDelete: Restrict)
-
-  @@index([agencyId])
-  @@index([subAccountId])
-  @@index([cashierId])
-  @@index([areaId])
 }
 
 enum InvoiceStatus {
@@ -1158,6 +1335,12 @@ enum InvoiceStatus {
   PAID
   CANCELLED
   OVERDUE
+}
+
+enum InvoiceType {
+  PHYSICAL
+  ELECTRONIC
+  BOTH
 }
 
 enum PaymentMethod {
@@ -1180,4 +1363,18 @@ enum PaymentStatus {
 enum DianEnvironment {
   TESTING
   PRODUCTION
+}
+
+enum DocumentType {
+  INVOICE
+  CREDIT_NOTE
+  DEBIT_NOTE
+  CONTINGENCY
+  EXPORT_INVOICE
+}
+
+enum EmailTemplateStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
 }

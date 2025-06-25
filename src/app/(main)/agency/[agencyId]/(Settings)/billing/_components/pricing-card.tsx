@@ -48,8 +48,8 @@ const PricingCard = ({
   const handleManagePlan = async () => {
     setOpen(
       <CustomModal
-        title={'Manage Your Plan'}
-        subheading="You can change your plan at any time from the billings settings"
+        title={'Administra tu plan'}
+        subheading="Puedes cambiar tu plan en cualquier momento desde las opciones de facturación"
       >
         <SubscriptionFormWrapper
           customerId={customerId}

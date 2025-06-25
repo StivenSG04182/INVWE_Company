@@ -623,6 +623,24 @@ export class AreaService {
 
     return defaultArea
   }
+
+  static async updateArea(areaId: string, data: any) {
+    // Actualizar el área con los datos proporcionados
+    const area = await prisma.area.update({
+      where: { id: areaId },
+      data: {
+        name: data.name,
+        description: data.description,
+        layout: data.layout,
+        subAccountId: data.subAccountId,
+      },
+    })
+
+    // Emitir evento de área actualizada si es necesario
+    EventEmitter.emit(InventoryEvents.AREA_UPDATED, area)
+
+    return area
+  }
 }
 
 // Servicio para gestión de categorías

@@ -25,11 +25,11 @@ type Props = {
 
 const page = async ({ params }: Props) => {
   const user = await currentUser()
-  if (!user) return redirect('/')
+  if (!user) return redirect('/site')
 
   const agencyDetails = await getAgencyDetails(params.agencyId)
 
-  if (!agencyDetails) return redirect('/')
+  if (!agencyDetails) return redirect('/site')
 
   // Obtener los planes de PayPal
   const paypalPlans = await paypal.listPlans()
@@ -82,9 +82,9 @@ const page = async ({ params }: Props) => {
         customerId={agencySubscription?.customerId || ''}
         planExists={agencySubscription?.Subscription?.active === true}
       />
-      <h1 className="text-4xl p-4">Billing</h1>
+      <h1 className="text-4xl p-4">Facturación</h1>
       <Separator className=" mb-6" />
-      <h2 className="text-2xl p-4">Current Plan</h2>
+      <h2 className="text-2xl p-4">Plan Actual</h2>
       <div className="flex flex-col lg:!flex-row justify-between gap-8">
         <PricingCard
           planExists={agencySubscription?.Subscription?.active === true}
@@ -97,30 +97,30 @@ const page = async ({ params }: Props) => {
           }
           buttonCta={
             agencySubscription?.Subscription?.active === true
-              ? 'Change Plan'
-              : 'Get Started'
+              ? 'Cambiar el plan'
+              : 'Empezar'
           }
-          highlightDescription="Want to modify your plan? You can do this here. If you have
-          further question contact support@invwe-app.com"
-          highlightTitle="Plan Options"
+          highlightDescription="Quieres modificar tu plan actual? Puedes hacerlo desde aquí. Si tienes mas 
+          preguntas por favor contáctanos en support@invwe-app.com"
+          highlightTitle="Opciones del plan"
           description={
             agencySubscription?.Subscription?.active === true
-              ? currentPlanDetails?.description || 'Lets get started'
-              : 'Lets get started! Pick a plan that works best for you.'
+              ? currentPlanDetails?.description || 'Empecemos!'
+              : 'Vamos a empezar! Escoge tu plan favorito.'
           }
-          duration="/ month"
+          duration="/ mes"
           features={
             agencySubscription?.Subscription?.active === true
               ? currentPlanDetails?.features || []
               : currentPlanDetails?.features ||
-                pricingCards.find((pricing) => pricing.title === 'Starter')
+                pricingCards.find((pricing) => pricing.title === 'Inicial')
                   ?.features ||
                 []
           }
           title={
             agencySubscription?.Subscription?.active === true
-              ? currentPlanDetails?.title || 'Starter'
-              : 'Starter'
+              ? currentPlanDetails?.title || 'Inicial'
+              : 'Inicial'
           }
         />
         {addOns.map((addOn) => (
@@ -134,25 +134,25 @@ const page = async ({ params }: Props) => {
                 ? `$${addOn.billing_cycles[0].pricing_scheme.fixed_price.value}`
                 : '$0'
             }
-            buttonCta="Subscribe"
-            description="Dedicated support line & teams channel for support"
-            duration="/ month"
+            buttonCta="Suscribete"
+            description="Linea de soporte y canales de atención al cliente"
+            duration="/ mes"
             features={[]}
-            title={'24/7 priority support'}
-            highlightTitle="Get support now!"
-            highlightDescription="Get priority support and skip the long long with the click of a button."
+            title={'24/7 soporte prioritario'}
+            highlightTitle="Optén ayuda ahora!"
+            highlightDescription="Adquiere el soporte prioritario y evita los timepos de respuesta!."
           />
         ))}
       </div>
-      <h2 className="text-2xl p-4">Payment History</h2>
+      <h2 className="text-2xl p-4">Historial de pagos</h2>
       <Table className="bg-card border-[1px] border-border rounded-md">
         <TableHeader className="rounded-md">
           <TableRow>
-            <TableHead className="w-[200px]">Description</TableHead>
+            <TableHead className="w-[200px]">Descripción</TableHead>
             <TableHead className="w-[200px]">Invoice Id</TableHead>
-            <TableHead className="w-[300px]">Date</TableHead>
-            <TableHead className="w-[200px]">Paid</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
+            <TableHead className="w-[300px]">Fecha</TableHead>
+            <TableHead className="w-[200px]">Pago</TableHead>
+            <TableHead className="text-right">Cantidad</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody className="font-medium truncate">

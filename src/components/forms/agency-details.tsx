@@ -62,10 +62,18 @@ const FormSchema = z.object({
   state: z.string().min(1),
   country: z.string().min(1),
   agencyLogo: z.string().min(1),
+  acceptTerms: z.boolean().refine((val) => val === true, {
+    message: "Debes aceptar los términos y condiciones",
+  }),
+  acceptPrivacy: z.boolean().refine((val) => val === true, {
+    message: "Debes aceptar las políticas de privacidad",
+  }),
+  acceptAll: z.boolean().refine((val) => val === true, {
+    message: "Debes aceptar todos los términos",
+  }),
 });
 
 const AgencyDetails = ({ data }: Props) => {
-  console.log("Renderizando AgencyDetails");
   const { toast } = useToast();
   const router = useRouter();
   const [deletingAgency, setDeletingAgency] = useState(false);
@@ -85,24 +93,35 @@ const AgencyDetails = ({ data }: Props) => {
       state: data?.state || "",
       country: data?.country || "",
       agencyLogo: data?.agencyLogo || "",
+      acceptTerms: false,
+      acceptPrivacy: false,
+      acceptAll: false,
     },
   });
 
   useEffect(() => {
     if (data) {
-      console.log("Datos de agencia recibidos:", data);
       form.reset(data);
     }
-  }, [data]);
+  }, [data, form]);
+
+  // Sincronizar checkboxes individuales con "aceptar todo"
+  useEffect(() => {
+    const acceptTerms = form.watch("acceptTerms");
+    const acceptPrivacy = form.watch("acceptPrivacy");
+    
+    // Si ambos checkboxes individuales están marcados, marcar "aceptar todo"
+    if (acceptTerms && acceptPrivacy) {
+      form.setValue("acceptAll", true);
+    } else {
+      form.setValue("acceptAll", false);
+    }
+  }, [form]);
 
   const handleSubmit = async (values: z.infer<typeof FormSchema>) => {
     try {
       setIsLoading(true);
-      console.log("Iniciando handleSubmit con valores:", values);
-
-      // Inicializar usuario
       const userData = await initUser({ role: "AGENCY_OWNER" });
-      console.log("Usuario inicializado:", userData);
 
       if (!userData) {
         toast({
@@ -113,7 +132,6 @@ const AgencyDetails = ({ data }: Props) => {
         return;
       }
 
-      // Crear o actualizar la agencia
       const response = await upsertAgency({
         id: data?.id ? data.id : v4(),
         customerId: "",
@@ -129,11 +147,18 @@ const AgencyDetails = ({ data }: Props) => {
         createdAt: new Date(),
         updatedAt: new Date(),
         companyEmail: values.companyEmail,
-        connectAccountId: "",
-        goal: 5,
+        connectAccountId: null,
+        goal: 3,
+        taxId: null,
+        taxName: null,
+        fiscalRegime: null,
+        fiscalResponsibility: null,
+        economicActivity: null,
+        invoiceResolution: null,
+        invoicePrefix: null,
+        invoiceNextNumber: null,
       });
 
-      console.log("Respuesta de upsertAgency:", response);
 
       if (!response) {
         toast({
@@ -169,20 +194,18 @@ const AgencyDetails = ({ data }: Props) => {
   const handleDeleteAgency = async () => {
     if (!data?.id) return;
     setDeletingAgency(true);
-    // WIP: discontinue the subscription
     try {
       const response = await deleteAgency(data.id);
       toast({
         title: "Agencia Eliminada",
-        description: "Se eliminó tu agencia y todas las subcuentas",
+        description: "Se eliminó tu agencia y todas las tiendas",
       });
       router.refresh();
     } catch (error) {
-      console.log(error);
       toast({ 
         variant:'destructive',
         title: "¡Ups!",
-        description: "No se pudo eliminar tu agencia y todas las subcuentas",
+        description: "No se pudo eliminar tu agencia y todas las tiendas",
       });
     }
     setDeletingAgency(false);
@@ -277,8 +300,8 @@ const AgencyDetails = ({ data }: Props) => {
                       <FormLabel>Agencia marca blanca</FormLabel>
                       <FormDescription>
                         Activar el modo white label mostrará el logo de tu agencia
-                        a todas las subcuentas por defecto. Puedes sobrescribir esta
-                        funcionalidad a través de la configuración de la subcuenta.
+                        a todas las tiendas por defecto. Puedes sobrescribir esta
+                        funcionalidad a través de la configuración de la tienda.
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -362,6 +385,108 @@ const AgencyDetails = ({ data }: Props) => {
                   </FormItem>
                 )}
               />
+              
+              {/* Términos y Condiciones */}
+              <div className="space-y-4 border rounded-lg p-4">
+                <FormLabel className="text-base font-semibold">Términos y Condiciones</FormLabel>
+                
+                <FormField
+                  disabled={isLoading}
+                  control={form.control}
+                  name="acceptTerms"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={field.onChange}
+                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm font-normal">
+                          Acepto los{" "}
+                          <a
+                            href="/site/terminos"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline font-medium"
+                          >
+                            términos y condiciones
+                          </a>
+                        </FormLabel>
+                        <FormMessage />
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  disabled={isLoading}
+                  control={form.control}
+                  name="acceptPrivacy"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={field.onChange}
+                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm font-normal">
+                          Acepto las{" "}
+                          <a
+                            href="/site/condiciones"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline font-medium"
+                          >
+                            políticas de privacidad
+                          </a>
+                        </FormLabel>
+                        <FormMessage />
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  disabled={isLoading}
+                  control={form.control}
+                  name="acceptAll"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            field.onChange(checked);
+                            // Si se marca "aceptar todo", marcar los otros dos
+                            if (checked) {
+                              form.setValue("acceptTerms", true);
+                              form.setValue("acceptPrivacy", true);
+                            }
+                          }}
+                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm font-medium">
+                          Acepto todos los términos y condiciones
+                        </FormLabel>
+                        <FormMessage />
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
               {data?.id && (
                 <div className="flex flex-col gap-2">
                   <FormLabel>Crear un Objetivo</FormLabel>
@@ -376,14 +501,14 @@ const AgencyDetails = ({ data }: Props) => {
                       await updateAgencyDetails(data.id, { goal: val });
                       await saveActivityLogsNotification({
                         agencyId: data.id,
-                        description: `Actualizado el objetivo de la agencia a | ${val} Subcuentas`,
+                        description: `Actualizado el objetivo de la agencia a | ${val} Tiendas`,
                         subaccountId: undefined,
                       });
                       router.refresh();
                     }}
                     min={1}
                     className="bg-background !border !border-input"
-                    placeholder="Objetivo de Subcuentas"
+                    placeholder="Objetivo de Tiendas"
                   />
                 </div>
               )}
@@ -399,8 +524,8 @@ const AgencyDetails = ({ data }: Props) => {
               </div>
               <div className="text-muted-foreground">
                 Eliminar tu agencia no se puede deshacer. Esto también eliminará todas
-                las subcuentas y todos los datos relacionados con tus subcuentas. Las
-                subcuentas ya no tendrán acceso a embudos, contactos, etc.
+                las tiendas y todos los datos relacionados con tus tiendas. Las
+                tiendas ya no tendrán acceso a embudos, contactos, etc.
               </div>
               <AlertDialogTrigger
                 disabled={isLoading || deletingAgency}
@@ -417,7 +542,7 @@ const AgencyDetails = ({ data }: Props) => {
               </AlertDialogTitle>
               <AlertDialogDescription className="text-left">
                 Esta acción no se puede deshacer. Esto eliminará permanentemente la
-                cuenta de Agencia y todas las subcuentas relacionadas.
+                cuenta de Agencia y todas las tiendas relacionadas.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="flex items-center">

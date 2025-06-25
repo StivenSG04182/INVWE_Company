@@ -1,7 +1,7 @@
 // Service Worker para INVWE
 const CACHE_NAME = 'invwe-cache-v1';
 const urlsToCache = [
-    '/',
+    '/site',
     '/manifest.json',
     '/agency-logo.png',
     '/images/payment-gateways/paypal-logo.png',

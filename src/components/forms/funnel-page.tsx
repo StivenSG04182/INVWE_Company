@@ -39,24 +39,15 @@ interface CreateFunnelPageProps {
   defaultData?: FunnelPage
   funnelId: string
   order: number
-  agencyId?: string
-  subaccountId?: string
+  subaccountId: string
 }
 
 const CreateFunnelPage: React.FC<CreateFunnelPageProps> = ({
   defaultData,
   funnelId,
   order,
-  agencyId,
   subaccountId,
 }) => {
-  console.log('=== INICIO CreateFunnelPage ===');
-  console.log('Props recibidas:', { defaultData, funnelId, order, agencyId, subaccountId });
-  
-  // Usar agencyId si está disponible, de lo contrario usar subaccountId
-  const effectiveId = agencyId || subaccountId;
-  console.log('ID efectivo a utilizar:', effectiveId);
-  
   const { toast } = useToast()
   const router = useRouter()
   //ch
@@ -70,85 +61,57 @@ const CreateFunnelPage: React.FC<CreateFunnelPageProps> = ({
   })
 
   useEffect(() => {
-    console.log('useEffect para defaultData:', defaultData);
     if (defaultData) {
-      console.log('Reseteando formulario con:', { name: defaultData.name, pathName: defaultData.pathName });
       form.reset({ name: defaultData.name, pathName: defaultData.pathName })
     }
   }, [defaultData, form])
 
   const onSubmit = async (values: z.infer<typeof FunnelPageSchema>) => {
-    console.log('=== INICIO onSubmit en funnel-page ===');
-    console.log('Valores del formulario:', values);
-    console.log('Order:', order);
-    
-    if (order !== 0 && !values.pathName) {
-      console.log('Error: Se requiere pathName para páginas que no son la primera');
+    if (order !== 0 && !values.pathName)
       return form.setError('pathName', {
         message:
-          "Las páginas que no son la primera en el embudo requieren un nombre de ruta, ejemplo: 'segundopaso'.",
-      });
-    }
-    
+          "Pages other than the first page in the funnel require a path name example 'secondstep'.",
+      })
     try {
-      const pageData = {
-        ...values,
-        id: defaultData?.id || v4(),
-        order: defaultData?.order || order,
-        pathName: values.pathName || '',
-      };
-      
-      console.log('Datos a enviar a upsertFunnelPage:', pageData);
-      console.log('ID efectivo:', effectiveId);
-      console.log('funnelId:', funnelId);
-      
-      if (!effectiveId) {
-        console.error('Error: No se proporcionó ID de agencia o subcuenta');
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'ID de agencia o subcuenta no disponible',
-        });
-        return;
-      }
-      
       const response = await upsertFunnelPage(
-        effectiveId,
-        pageData,
+        subaccountId,
+        {
+          ...values,
+          id: defaultData?.id || v4(),
+          order: defaultData?.order || order,
+          pathName: values.pathName || '',
+        },
         funnelId
-      );
-      
-      console.log('Respuesta de upsertFunnelPage:', response);
+      )
 
       await saveActivityLogsNotification({
-        agencyId: agencyId || undefined,
-        description: `Actualizada página de embudo | ${response?.name}`,
-        subaccountId: subaccountId || undefined,
-      });
+        agencyId: undefined,
+        description: `Updated a funnel page | ${response?.name}`,
+        subaccountId: subaccountId,
+      })
 
       toast({
-        title: 'Éxito',
-        description: 'Detalles de la página de embudo guardados',
-      });
-      router.refresh();
-      console.log('=== FIN onSubmit en funnel-page ===');
+        title: 'Success',
+        description: 'Saves Funnel Page Details',
+      })
+      router.refresh()
     } catch (error) {
-      console.error('Error en onSubmit:', error);
+      console.log(error)
       toast({
         variant: 'destructive',
-        title: '¡Ups!',
-        description: 'No se pudieron guardar los detalles de la página de embudo',
-      });
+        title: 'Oppse!',
+        description: 'Could Save Funnel Page Details',
+      })
     }
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Página de Embudo</CardTitle>
+        <CardTitle>Funnel Page</CardTitle>
         <CardDescription>
-          Las páginas de embudo fluyen en el orden en que se crean por defecto. Puedes
-          moverlas para cambiar su orden.
+          Funnel pages are flow in the order they are created by default. You
+          can move them around to change their order.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -163,10 +126,10 @@ const CreateFunnelPage: React.FC<CreateFunnelPageProps> = ({
               name="name"
               render={({ field }) => (
                 <FormItem className="flex-1">
-                  <FormLabel>Nombre</FormLabel>
+                  <FormLabel>Name</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Nombre"
+                      placeholder="Name"
                       {...field}
                     />
                   </FormControl>
@@ -175,29 +138,22 @@ const CreateFunnelPage: React.FC<CreateFunnelPageProps> = ({
               )}
             />
             <FormField
-              disabled={form.formState.isSubmitting || order === 0 || !effectiveId}
+              disabled={form.formState.isSubmitting || order === 0}
               control={form.control}
               name="pathName"
-              render={({ field }) => {
-                console.log('Renderizando campo pathName:', { 
-                  value: field.value, 
-                  isDisabled: form.formState.isSubmitting || order === 0,
-                  order
-                });
-                return (
-                  <FormItem className="flex-1">
-                    <FormLabel>Nombre de ruta</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Ruta para la página"
-                        {...field}
-                        value={field.value?.toLowerCase() || ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Path Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Path for the page"
+                      {...field}
+                      value={field.value?.toLowerCase()}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
             <div className="flex items-center gap-2">
               <Button
@@ -205,7 +161,7 @@ const CreateFunnelPage: React.FC<CreateFunnelPageProps> = ({
                 disabled={form.formState.isSubmitting}
                 type="submit"
               >
-                {form.formState.isSubmitting ? <Loading /> : 'Guardar Página'}
+                {form.formState.isSubmitting ? <Loading /> : 'Save Page'}
               </Button>
 
               {defaultData?.id && (
@@ -217,9 +173,9 @@ const CreateFunnelPage: React.FC<CreateFunnelPageProps> = ({
                   onClick={async () => {
                     const response = await deleteFunnelePage(defaultData.id)
                     await saveActivityLogsNotification({
-                      agencyId: agencyId || undefined,
+                      agencyId: undefined,
                       description: `Deleted a funnel page | ${response?.name}`,
-                      subaccountId: subaccountId || undefined,
+                      subaccountId: subaccountId,
                     })
                     router.refresh()
                   }}
@@ -234,21 +190,15 @@ const CreateFunnelPage: React.FC<CreateFunnelPageProps> = ({
                   disabled={form.formState.isSubmitting}
                   type="button"
                   onClick={async () => {
-                    if (!effectiveId) {
-                      toast({
-                        variant: 'destructive',
-                        title: 'Error',
-                        description: 'ID de agencia o subcuenta no disponible',
-                      });
-                      return;
-                    }
-                    const response = await getFunnels(effectiveId)
-                    const lastFunnelPage = response.find(
+                    const existingPages = await getFunnels(subaccountId)
+                    const currentFunnel = existingPages.find(
                       (funnel) => funnel.id === funnelId
-                    )?.FunnelPages.length
+                    )
+
+                    const lastFunnelPage = 0 
 
                     await upsertFunnelPage(
-                      effectiveId,
+                      subaccountId,
                       {
                         ...defaultData,
                         id: v4(),

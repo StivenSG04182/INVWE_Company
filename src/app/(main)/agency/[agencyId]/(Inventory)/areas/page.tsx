@@ -1,45 +1,61 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { getAuthUserDetails } from "@/lib/queries"
+import { getAreas} from "@/lib/queries2"
 import { redirect } from "next/navigation"
-import { AreaService } from "@/lib/services/inventory-service"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Grid3X3, Plus, Search, Filter, Edit, Package, LayoutGrid, ArrowUpDown, Pencil, Eye } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import AreaForm from "@/components/inventory/AreaForm"
 
-const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
-  const user = await getAuthUserDetails()
-  if (!user) return redirect("/sign-in")
+const AreasPage = ({ params }: { params: { agencyId: string } }) => {
+  const [isAreaModalOpen, setIsAreaModalOpen] = useState(false)
+  const [selectedArea, setSelectedArea] = useState<any>(null)
+  const [areas, setAreas] = useState<any[]>([])
 
-  const agencyId = params.agencyId
-  if (!user.Agency) {
-    return redirect("/agency")
+  // Cargar datos iniciales
+  useEffect(() => {
+    const loadAreas = async () => {
+      try {
+        const user = await getAuthUserDetails()
+        if (!user) return redirect("/sign-in")
+        if (!user.Agency) return redirect("/agency")
+
+        const areasData = await getAreas(params.agencyId)
+        setAreas(areasData || [])
+      } catch (error) {
+        console.error("Error loading areas:", error)
+      }
+    }
+    loadAreas()
+  }, [params.agencyId])
+
+  const handleCloseModal = async () => {
+    setIsAreaModalOpen(false)
+    setSelectedArea(null)
+    // Recargar áreas después de cerrar el modal
+    try {
+      const areasData = await getAreas(params.agencyId)
+      setAreas(areasData || [])
+    } catch (error) {
+      console.error("Error reloading areas:", error)
+    }
   }
 
-  // Obtener áreas de MongoDB
-  let areas = []
-  try {
-    areas = await AreaService.getAreas(agencyId)
-  } catch (error) {
-    console.error("Error al cargar áreas:", error)
+  const handleOpenModal = (area?: any) => {
+    setSelectedArea(area || null)
+    setIsAreaModalOpen(true)
   }
 
   // Calcular estadísticas
   const totalAreas = areas.length
-
-  // Simulación de datos para capacidad y ocupación
   const totalCapacity = 1000 // m²
   const totalOccupation = 350 // m²
   const occupationPercentage = Math.round((totalOccupation / totalCapacity) * 100)
@@ -90,14 +106,21 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Link href={`/agency/${agencyId}/areas/new`}>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Área
-            </Button>
-          </Link>
+          <Button size="sm" onClick={() => handleOpenModal()}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nueva Área
+          </Button>
         </div>
       </div>
+
+      {/* Modal de Área */}
+      <AreaForm
+        agencyId={params.agencyId}
+        isOpen={isAreaModalOpen}
+        onClose={handleCloseModal}
+        area={selectedArea}
+        isEditing={!!selectedArea}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card>
@@ -156,7 +179,7 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="min-w-[180px] justify-between">
-                  <span>Subcuentas</span>
+                  <span>Tiendas</span>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="16"
@@ -174,16 +197,16 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Seleccionar subcuentas</DropdownMenuLabel>
+                <DropdownMenuLabel>Seleccionar tiendas</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <div className="p-2 space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="subcuenta-todas" />
+                    <Checkbox id="tienda-todas" />
                     <label
-                      htmlFor="subcuenta-todas"
+                      htmlFor="tienda-todas"
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      Todas las subcuentas
+                      Todas las tiendas
                     </label>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -192,7 +215,7 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                       htmlFor="subcuenta1"
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      Subcuenta 1
+                      Tienda 1
                     </label>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -201,7 +224,7 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                       htmlFor="subcuenta2"
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      Subcuenta 2
+                      Tienda 2
                     </label>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -210,7 +233,7 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                       htmlFor="subcuenta3"
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      Subcuenta 3
+                      Tienda 3
                     </label>
                   </div>
                 </div>
@@ -265,12 +288,10 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                 <p className="text-muted-foreground text-center mb-6">
                   Cree su primera área para comenzar a organizar su inventario.
                 </p>
-                <Link href={`/agency/${agencyId}/areas/new`}>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nueva Área
-                  </Button>
-                </Link>
+                <Button onClick={() => handleOpenModal()}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nueva Área
+                </Button>
               </CardContent>
             </Card>
           ) : (
@@ -281,9 +302,9 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                     {area.layout && area.layout.items && area.layout.items.length > 0 ? (
                       <div className="w-full h-full p-4 flex items-center justify-center">
                         <div className="relative w-full h-full border border-dashed border-muted-foreground/30 rounded-md">
-                          {area.layout.items.map((item: any, index: number) => (
+                          {area.layout.items.map((item: any) => (
                             <div
-                              key={index}
+                              key={item.id}
                               className="absolute border"
                               style={{
                                 left: `${(item.x / 800) * 100}%`,
@@ -301,18 +322,14 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                       <Grid3X3 className="h-12 w-12 text-muted-foreground/30" />
                     )}
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <Link href={`/agency/${agencyId}/areas/workspace?areaId=${area._id}`}>
-                        <Button size="sm" variant="secondary">
-                          <Edit className="h-4 w-4 mr-2" />
-                          Editar
-                        </Button>
-                      </Link>
-                      <Link href={`/agency/${agencyId}/stock?areaId=${area._id}`}>
-                        <Button size="sm" variant="secondary">
-                          <Package className="h-4 w-4 mr-2" />
-                          Ver Stock
-                        </Button>
-                      </Link>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => handleOpenModal(area)}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar
+                      </Button>
                     </div>
                   </div>
                   <CardContent className="p-4">
@@ -342,12 +359,10 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                   <p className="text-muted-foreground text-center mb-6">
                     Cree su primera área para comenzar a organizar su inventario.
                   </p>
-                  <Link href={`/agency/${agencyId}/areas/new`}>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nueva Área
-                    </Button>
-                  </Link>
+                  <Button onClick={() => handleOpenModal()}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nueva Área
+                  </Button>
                 </div>
               ) : (
                 <Table>
@@ -363,24 +378,22 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                     {areas.map((area: any) => (
                       <TableRow key={area._id}>
                         <TableCell className="font-medium">{area.name}</TableCell>
-                        <TableCell className="hidden md:table-cell">{area.description || "Sin descripción"}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {area.description || "Sin descripción"}
+                        </TableCell>
                         <TableCell className="hidden md:table-cell">
                           {new Date(area.createdAt).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Link href={`/agency/${agencyId}/areas/workspace?areaId=${area._id}`}>
-                              <Button variant="outline" size="sm">
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Editar
-                              </Button>
-                            </Link>
-                            <Link href={`/agency/${agencyId}/stock?areaId=${area._id}`}>
-                              <Button variant="outline" size="sm">
-                                <Eye className="h-4 w-4 mr-2" />
-                                Ver Stock
-                              </Button>
-                            </Link>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenModal(area)}
+                            >
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Editar
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>

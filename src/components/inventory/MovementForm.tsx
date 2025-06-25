@@ -9,10 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-// Nota: Las funciones de queries2.ts se importan dinámicamente en los efectos y handlers
 
 interface MovementFormProps {
   agencyId: string;
@@ -40,18 +38,14 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
     subaccountId: '',
   });
 
-  // Cargar productos, áreas, proveedores y subcuentas al montar el componente
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Importar funciones necesarias de queries2.ts
         const { getProducts, getAreas, getProviders, getSubAccounts } = await import('@/lib/queries2');
         
-        // Cargar productos
         const productsData = await getProducts(agencyId);
         setProducts(productsData || []);
         
-        // Si hay un productId preseleccionado, buscar sus detalles
         if (productId && productsData) {
           const selectedProd = productsData.find((p: any) => p.id === productId || p._id === productId);
           if (selectedProd) {
@@ -59,17 +53,14 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
           }
         }
 
-        // Cargar áreas
         const areasData = await getAreas(agencyId);
         setAreas(areasData || []);
 
-        // Cargar proveedores (solo para entradas)
         if (type === 'entrada') {
           const providersData = await getProviders(agencyId);
           setProviders(providersData || []);
         }
 
-        // Cargar subcuentas
         const subaccountsData = await getSubAccounts(agencyId);
         setSubaccounts(subaccountsData || []);
         
@@ -101,7 +92,6 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
       [name]: value,
     }));
     
-    // Si se selecciona un producto, actualizar el estado selectedProduct
     if (name === 'productId') {
       const product = products.find((p) => p.id === value || p._id === value);
       setSelectedProduct(product || null);
@@ -112,18 +102,16 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
     e.preventDefault();
     setIsLoading(true);
 
-    // Validar que se hayan seleccionado producto, área y subcuenta
     if (!formData.productId || !formData.areaId || !formData.subaccountId) {
       toast({
         variant: 'destructive',
         title: 'Campos requeridos',
-        description: 'Por favor selecciona un producto, un área y una subcuenta para continuar.',
+        description: 'Por favor selecciona un producto, un área y una tienda para continuar.',
       });
       setIsLoading(false);
       return;
     }
 
-    // Validar que la cantidad sea un número positivo
     const quantity = Number(formData.quantity);
     if (isNaN(quantity) || quantity <= 0) {
       toast({
@@ -135,7 +123,6 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
       return;
     }
 
-    // Para salidas, verificar que haya suficiente stock
     if (type === 'salida' && selectedProduct) {
       const areaStock = selectedProduct.stocks?.find((s: any) => s.areaId === formData.areaId);
       const stockQuantity = areaStock ? areaStock.quantity : 0;
@@ -152,10 +139,8 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
     }
 
     try {
-      // Importar la función createMovement de queries2.ts
       const { createMovement } = await import('@/lib/queries2');
       
-      // Preparar los datos del movimiento
       const movementData = {
         type: formData.type,
         productId: formData.productId,
@@ -168,7 +153,6 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
         subaccountId: formData.subaccountId
       };
       
-      // Crear el movimiento usando la función de queries2.ts
       const result = await createMovement(movementData);
       
       if (result) {
@@ -191,7 +175,6 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
     }
   };
 
-  // Verificar si hay stock disponible para el producto seleccionado en el área seleccionada
   const getStockInfo = () => {
     if (!selectedProduct || !formData.areaId || type !== 'salida') return null;
     
@@ -216,14 +199,14 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="subaccountId">Subcuenta *</Label>
+            <Label htmlFor="subaccountId">Tienda *</Label>
             <Select
               value={formData.subaccountId}
               onValueChange={(value) => handleSelectChange('subaccountId', value)}
               required
             >
               <SelectTrigger>
-                <SelectValue placeholder="Seleccionar subcuenta" />
+                <SelectValue placeholder="Seleccionar tienda" />
               </SelectTrigger>
               <SelectContent>
                 {subaccounts.length > 0 ? (
@@ -234,14 +217,14 @@ export default function MovementForm({ agencyId, type, productId }: MovementForm
                   ))
                 ) : (
                   <SelectItem value="no-subaccounts" disabled>
-                    No hay subcuentas disponibles. Por favor, crea una subcuenta primero.
+                    No hay tiendas disponibles. Por favor, crea una tienda primero.
                   </SelectItem>
                 )}
               </SelectContent>
             </Select>
             {subaccounts.length === 0 && (
               <p className="text-sm text-destructive mt-1">
-                No hay subcuentas disponibles. Debes crear una subcuenta antes de continuar.
+                No hay tiendas disponibles. Debes crear una tienda antes de continuar.
               </p>
             )}
           </div>

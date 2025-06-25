@@ -17,7 +17,7 @@ const PaymentsPage = async ({ params }: { params: { agencyId: string } }) => {
     return redirect('/agency');
   }
 
-  // Obtener detalles de la agencia y subcuentas
+  // Obtener detalles de la agencia y tiendas
   const agency = await getAgencyDetails(agencyId);
   if (!agency) return redirect('/agency');
 
@@ -78,8 +78,8 @@ const PaymentsPage = async ({ params }: { params: { agencyId: string } }) => {
             <p className="text-2xl font-bold text-amber-600">{completedPayments} de {totalPayments}</p>
           </div>
           <div className="bg-background p-4 rounded-md border">
-            <h3 className="font-medium">Subcuentas</h3>
-            <p className="text-2xl font-bold">{agency.SubAccount.length}</p>
+            <h3 className="font-medium">Tiendas</h3>
+            <p className="text-2xl font-bold">0</p>
           </div>
         </div>
 
@@ -123,7 +123,7 @@ const PaymentsPage = async ({ params }: { params: { agencyId: string } }) => {
                       <th className="px-4 py-2 text-left">Referencia</th>
                       <th className="px-4 py-2 text-left">Factura</th>
                       <th className="px-4 py-2 text-left">Cliente</th>
-                      <th className="px-4 py-2 text-left">Subcuenta</th>
+                      <th className="px-4 py-2 text-left">Tienda</th>
                       <th className="px-4 py-2 text-left">Fecha</th>
                       <th className="px-4 py-2 text-left">Monto</th>
                       <th className="px-4 py-2 text-left">Método</th>
@@ -132,14 +132,12 @@ const PaymentsPage = async ({ params }: { params: { agencyId: string } }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {payments.map((payment) => {
-                      const subAccount = agency.SubAccount.find(sa => sa.id === payment.subAccountId);
-                      return (
+                    {payments.map((payment) => (
                         <tr key={payment.id} className="border-b hover:bg-muted/50">
                           <td className="px-4 py-2">{payment.reference || '-'}</td>
                           <td className="px-4 py-2">{payment.Invoice?.invoiceNumber || '-'}</td>
                           <td className="px-4 py-2">{payment.Invoice?.Customer?.name || 'Sin cliente'}</td>
-                          <td className="px-4 py-2">{subAccount?.name || 'Principal'}</td>
+                          <td className="px-4 py-2">Principal</td>
                           <td className="px-4 py-2">{new Date(payment.createdAt).toLocaleDateString()}</td>
                           <td className="px-4 py-2">{formatPrice(Number(payment.amount))}</td>
                           <td className="px-4 py-2">
@@ -165,8 +163,7 @@ const PaymentsPage = async ({ params }: { params: { agencyId: string } }) => {
                             </div>
                           </td>
                         </tr>
-                      );
-                    })}
+                      ))}
                   </tbody>
                 </table>
               </div>

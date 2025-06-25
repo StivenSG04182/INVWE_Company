@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
@@ -12,27 +12,8 @@ import StockStatusBadge from "./stock-status-badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-    Copy,
-    Edit,
-    Eye,
-    Grid,
-    List,
-    MoreHorizontal,
-    Package,
-    Search,
-    Tag,
-    Trash2,
-    Plus,
-} from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
+import { Copy, Edit, Eye, Grid, List, MoreHorizontal, Package, Search, Tag, Trash2, Plus } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { duplicateProduct, deleteProduct } from "@/lib/queries2"
 
@@ -47,19 +28,19 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
     const router = useRouter()
     const searchParams = useSearchParams()
     const { toast } = useToast()
-    
-    // Función para obtener el nombre de la categoría por su ID
-    const getCategoryName = (categoryId: string) => {
-        // Convertir a string para asegurar una comparación consistente
-        const category = categories.find(cat => String(cat.id) === String(categoryId))
-        return category ? category.name : "Sin categoría"
-    }
 
+    // Estados para filtros y búsqueda
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCategory, setSelectedCategory] = useState("all")
     const [selectedSubaccount, setSelectedSubaccount] = useState("all")
     const [sortBy, setSortBy] = useState("name-asc")
     const [viewMode, setViewMode] = useState<"grid" | "table">("table")
+
+    // Función para obtener el nombre de la categoría por su ID
+    const getCategoryName = (categoryId: string) => {
+        const category = categories.find((cat) => String(cat.id) === String(categoryId))
+        return category ? category.name : "Sin categoría"
+    }
 
     // Aplicar filtros de URL al cargar
     useEffect(() => {
@@ -76,51 +57,62 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
         if (view === "grid" || view === "table") setViewMode(view)
     }, [searchParams])
 
-    // Filtrar productos
-    const filteredProducts = products.filter((product) => {
-        // Filtro por término de búsqueda
-        const matchesSearch =
-            searchTerm === "" ||
-            product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            product.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            product.barcode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            product.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    // ✅ CORREGIDO: Filtrar y ordenar productos usando useMemo para mejor rendimiento
+    const filteredAndSortedProducts = useMemo(() => {
+        const filtered = products.filter((product) => {
+            // Filtro por término de búsqueda
+            const matchesSearch =
+                searchTerm === "" ||
+                product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                product.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                product.barcode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                product.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                product.model?.toLowerCase().includes(searchTerm.toLowerCase())
 
-        // Filtro por categoría
-        const matchesCategory = selectedCategory === "all" || product.categoryId === selectedCategory
+            // Filtro por categoría
+            const matchesCategory = selectedCategory === "all" || String(product.categoryId) === String(selectedCategory)
 
-        // Filtro por subcuenta
-        const matchesSubaccount = selectedSubaccount === "all" || product.subaccountId === selectedSubaccount
+            // Filtro por tienda/subcuenta
+            const matchesSubaccount =
+                selectedSubaccount === "all" || String(product.subAccountId) === String(selectedSubaccount)
 
-        return matchesSearch && matchesCategory && matchesSubaccount
-    })
+            return matchesSearch && matchesCategory && matchesSubaccount
+        })
 
-    // Ordenar productos
-    const sortedProducts = [...filteredProducts].sort((a, b) => {
-        switch (sortBy) {
-            case "name-asc":
-                return (a.name || "").localeCompare(b.name || "")
-            case "name-desc":
-                return (b.name || "").localeCompare(a.name || "")
-            case "price-asc":
-                return (a.price || 0) - (b.price || 0)
-            case "price-desc":
-                return (b.price || 0) - (a.price || 0)
-            case "stock-asc":
-                return (a.quantity || 0) - (b.quantity || 0)
-            case "stock-desc":
-                return (b.quantity || 0) - (a.quantity || 0)
-            default:
-                return 0
-        }
-    })
+        // Ordenar productos
+        filtered.sort((a, b) => {
+            switch (sortBy) {
+                case "name-asc":
+                    return (a.name || "").localeCompare(b.name || "")
+                case "name-desc":
+                    return (b.name || "").localeCompare(a.name || "")
+                case "price-asc":
+                    return (a.price || 0) - (b.price || 0)
+                case "price-desc":
+                    return (b.price || 0) - (a.price || 0)
+                case "stock-asc":
+                    return (a.quantity || 0) - (b.quantity || 0)
+                case "stock-desc":
+                    return (b.quantity || 0) - (a.quantity || 0)
+                default:
+                    return 0
+            }
+        })
 
-    // Función para duplicar producto
-    const handleDuplicateProduct = async (productId: string) => {
+        return filtered
+    }, [products, searchTerm, selectedCategory, selectedSubaccount, sortBy])
+
+    // ✅ CORREGIDO: Función para duplicar producto con manejo correcto del ID
+    const handleDuplicateProduct = async (product: any) => {
         try {
-            // Usar la función del servidor en lugar del endpoint API
+            const productId = String(product.id || product._id)
+            if (!productId || productId === "undefined") {
+                throw new Error("ID de producto no válido")
+            }
+
             await duplicateProduct(agencyId, productId)
-            
+
             toast({
                 title: "Producto duplicado",
                 description: "El producto se ha duplicado correctamente.",
@@ -131,21 +123,25 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: "No se pudo duplicar el producto. Inténtalo de nuevo.",
+                description: error instanceof Error ? error.message : "No se pudo duplicar el producto. Inténtalo de nuevo.",
             })
         }
     }
 
-    // Función para eliminar producto
-    const handleDeleteProduct = async (productId: string) => {
+    // ✅ CORREGIDO: Función para eliminar producto con manejo correcto del ID
+    const handleDeleteProduct = async (product: any) => {
         if (!confirm("¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.")) {
             return
         }
 
         try {
-            // Usar la función del servidor en lugar del endpoint API
+            const productId = String(product.id || product._id)
+            if (!productId || productId === "undefined") {
+                throw new Error("ID de producto no válido")
+            }
+
             await deleteProduct(agencyId, productId)
-            
+
             toast({
                 title: "Producto eliminado",
                 description: "El producto se ha eliminado correctamente.",
@@ -156,7 +152,7 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: "No se pudo eliminar el producto. Inténtalo de nuevo.",
+                description: error instanceof Error ? error.message : "No se pudo eliminar el producto. Inténtalo de nuevo.",
             })
         }
     }
@@ -168,7 +164,7 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                     <div className="relative flex-1">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder="Buscar por nombre, SKU o código de barras..."
+                            placeholder="Buscar por nombre, SKU, código de barras, marca..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-8"
@@ -182,7 +178,7 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                         <SelectContent>
                             <SelectItem value="all">Todas las categorías</SelectItem>
                             {categories.map((category) => (
-                                <SelectItem key={category._id} value={category._id}>
+                                <SelectItem key={category.id} value={String(category.id)}>
                                     {category.name}
                                 </SelectItem>
                             ))}
@@ -191,12 +187,12 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
 
                     <Select value={selectedSubaccount} onValueChange={setSelectedSubaccount}>
                         <SelectTrigger className="w-full sm:w-[180px]">
-                            <SelectValue placeholder="Subcuenta" />
+                            <SelectValue placeholder="Tienda" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">Todas las subcuentas</SelectItem>
+                            <SelectItem value="all">Todas las tiendas</SelectItem>
                             {subAccounts.map((subaccount) => (
-                                <SelectItem key={subaccount._id} value={subaccount._id}>
+                                <SelectItem key={subaccount.id} value={String(subaccount.id)}>
                                     {subaccount.name}
                                 </SelectItem>
                             ))}
@@ -224,27 +220,30 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                             variant={viewMode === "table" ? "default" : "ghost"}
                             size="icon"
                             onClick={() => setViewMode("table")}
-                            className="rounded-l-none"
+                            className="rounded-r-none"
                         >
-                            <Grid className="h-4 w-4" />
+                            <List className="h-4 w-4" />
                         </Button>
                         <Separator orientation="vertical" className="h-full" />
                         <Button
                             variant={viewMode === "grid" ? "default" : "ghost"}
                             size="icon"
                             onClick={() => setViewMode("grid")}
-                            className="rounded-r-none"
+                            className="rounded-l-none"
                         >
-                            <List className="h-4 w-4" />
+                            <Grid className="h-4 w-4" />
                         </Button>
-
                     </div>
                 </div>
             </div>
 
-            <div className="text-sm text-muted-foreground">{filteredProducts.length} productos encontrados</div>
+            <div className="text-sm text-muted-foreground">
+                {filteredAndSortedProducts.length} de {products.length} productos encontrados
+                {searchTerm && <span className="ml-2">• Búsqueda: &quot;{searchTerm}&quot;</span>}
+                {selectedCategory !== "all" && <span className="ml-2">• Categoría: {getCategoryName(selectedCategory)}</span>}
+            </div>
 
-            {viewMode === "grid" ? (
+            {viewMode === "table" ? (
                 <Card>
                     <CardContent className="p-0">
                         <Table>
@@ -261,9 +260,9 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {sortedProducts.length > 0 ? (
-                                    sortedProducts.map((product) => (
-                                        <TableRow key={product._id}>
+                                {filteredAndSortedProducts.length > 0 ? (
+                                    filteredAndSortedProducts.map((product) => (
+                                        <TableRow key={product.id || product._id}>
                                             <TableCell>
                                                 <div className="relative h-10 w-10 rounded-md overflow-hidden border">
                                                     {product.images && product.images.length > 0 ? (
@@ -296,11 +295,6 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                             <TableCell>
                                                 <div>{product.sku}</div>
                                                 {product.barcode && <div className="text-xs text-muted-foreground">{product.barcode}</div>}
-                                                {product.serialNumber && (
-                                                    <div className="text-xs text-muted-foreground mt-1">
-                                                        <span className="font-medium">S/N:</span> {product.serialNumber}
-                                                    </div>
-                                                )}
                                             </TableCell>
                                             <TableCell>
                                                 {product.categoryId ? (
@@ -309,34 +303,21 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                                         {getCategoryName(product.categoryId)}
                                                     </Badge>
                                                 ) : (
-                                                    <span className="text-muted-foreground text-xs"></span>
-                                                )}
-                                                {product.tags && product.tags.length > 0 && (
-                                                    <div className="flex flex-wrap gap-1 mt-1">
-                                                        {product.tags.slice(0, 2).map((tag: string, index: number) => (
-                                                            <Badge key={index} variant="outline" className="text-xs">{tag}</Badge>
-                                                        ))}
-                                                        {product.tags.length > 2 && (
-                                                            <Badge variant="outline" className="text-xs">+{product.tags.length - 2}</Badge>
-                                                        )}
-                                                    </div>
+                                                    <span className="text-muted-foreground text-xs">Sin categoría</span>
                                                 )}
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <div className="font-medium">${typeof product.price === 'number' ? product.price.toFixed(2) : "0.00"}</div>
+                                                <div className="font-medium">
+                                                    ${typeof product.price === "number" ? product.price.toFixed(2) : "0.00"}
+                                                </div>
                                                 {product.cost && (
                                                     <div className="text-xs text-muted-foreground">
-                                                        Costo: ${typeof product.cost === 'number' ? product.cost.toFixed(2) : "0.00"}
+                                                        Costo: ${typeof product.cost === "number" ? product.cost.toFixed(2) : "0.00"}
                                                     </div>
                                                 )}
                                                 {product.discount > 0 && (
                                                     <div className="text-xs text-green-600 dark:text-green-500 font-medium">
                                                         {product.discount}% descuento
-                                                        {product.discountStartDate && product.discountEndDate && (
-                                                            <span className="block text-[10px]">
-                                                                {new Date(product.discountStartDate).toLocaleDateString()} - {new Date(product.discountEndDate).toLocaleDateString()}
-                                                            </span>
-                                                        )}
                                                     </div>
                                                 )}
                                             </TableCell>
@@ -352,34 +333,11 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                                         Mín: {product.minStock} {product.unit || "unidades"}
                                                     </div>
                                                 )}
-                                                {product.warehouseId && (
-                                                    <div className="text-xs text-muted-foreground mt-1">
-                                                        Ubicación: {product.locationId || "General"}
-                                                    </div>
-                                                )}
-                                                {product.batchNumber && (
-                                                    <div className="text-xs text-muted-foreground mt-1">
-                                                        Lote: {product.batchNumber}
-                                                    </div>
-                                                )}
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <Badge variant={product.isActive !== false ? "default" : "secondary"}>
-                                                    {product.isActive !== false ? "Activo" : "Inactivo"}
+                                                <Badge variant={product.active !== false ? "default" : "secondary"}>
+                                                    {product.active !== false ? "Activo" : "Inactivo"}
                                                 </Badge>
-                                                {product.expirationDate && (
-                                                    <div className="text-xs mt-1">
-                                                        <span className="font-medium">Vence:</span> {new Date(product.expirationDate).toLocaleDateString()}
-                                                    </div>
-                                                )}
-                                                {product.warrantyMonths > 0 && (
-                                                    <div className="text-xs mt-1">
-                                                        <span className="font-medium">Garantía:</span> {product.warrantyMonths} meses
-                                                    </div>
-                                                )}
-                                                <div className="text-xs mt-1">
-                                                    <span className="font-medium">Retornable:</span> {product.isReturnable ? "Sí" : "No"}
-                                                </div>
                                             </TableCell>
                                             <TableCell>
                                                 <DropdownMenu>
@@ -392,24 +350,24 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                                         <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem asChild>
-                                                            <Link href={`/agency/${agencyId}/products/${product._id}`}>
+                                                            <Link href={`/agency/${agencyId}/products/${product.id || product.id}`}>
                                                                 <Eye className="h-4 w-4 mr-2" />
                                                                 Ver detalles
                                                             </Link>
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem asChild>
-                                                            <Link href={`/agency/${agencyId}/products/${product._id}/edit`}>
+                                                            <Link href={`/agency/${agencyId}/products/${product.id || product.id}/edit`}>
                                                                 <Edit className="h-4 w-4 mr-2" />
                                                                 Editar
                                                             </Link>
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => handleDuplicateProduct(product._id)}>
+                                                        <DropdownMenuItem onClick={() => handleDuplicateProduct(product)}>
                                                             <Copy className="h-4 w-4 mr-2" />
                                                             Duplicar
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem
-                                                            onClick={() => handleDeleteProduct(product._id)}
+                                                            onClick={() => handleDeleteProduct(product)}
                                                             className="text-destructive focus:text-destructive"
                                                         >
                                                             <Trash2 className="h-4 w-4 mr-2" />
@@ -433,9 +391,9 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                 </Card>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {sortedProducts.length > 0 ? (
-                        sortedProducts.map((product) => (
-                            <Card key={product._id} className="overflow-hidden">
+                    {filteredAndSortedProducts.length > 0 ? (
+                        filteredAndSortedProducts.map((product) => (
+                            <Card key={product.id || product._id} className="overflow-hidden">
                                 <div className="relative aspect-square">
                                     {product.images && product.images.length > 0 ? (
                                         <Image
@@ -461,14 +419,6 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                             </Badge>
                                         </div>
                                     )}
-                                    
-                                    {product.expirationDate && new Date(product.expirationDate) < new Date(new Date().setMonth(new Date().getMonth() + 3)) && (
-                                        <div className="absolute bottom-2 right-2">
-                                            <Badge variant="destructive" className="px-2 py-1">
-                                                Vence: {new Date(product.expirationDate).toLocaleDateString()}
-                                            </Badge>
-                                        </div>
-                                    )}
                                 </div>
 
                                 <CardContent className="p-4">
@@ -482,90 +432,50 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                                 {product.model && <span>{product.model}</span>}
                                             </p>
                                         )}
-                                        {product.serialNumber && (
-                                            <p className="text-xs mt-1">
-                                                <span className="font-medium">S/N:</span> {product.serialNumber}
-                                            </p>
-                                        )}
                                     </div>
 
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="text-sm">
-                                            <span className="font-medium">${typeof product.price === 'number' ? product.price.toFixed(2) : "0.00"}</span>
-                                            {product.discount > 0 && (
-                                                <span className="text-xs text-muted-foreground line-through ml-1">
-                                                    ${typeof product.price === 'number' ? (product.price / (1 - (product.discount || 0) / 100)).toFixed(2) : "0.00"}
-                                                </span>
-                                            )}
+                                            <span className="font-medium">
+                                                ${typeof product.price === "number" ? product.price.toFixed(2) : "0.00"}
+                                            </span>
                                             {product.cost && (
                                                 <div className="text-xs text-muted-foreground">
-                                                    Costo: ${typeof product.cost === 'number' ? product.cost.toFixed(2) : "0.00"}
-                                                </div>
-                                            )}
-                                            {product.discount > 0 && product.discountStartDate && product.discountEndDate && (
-                                                <div className="text-xs text-green-600">
-                                                    {new Date(product.discountStartDate).toLocaleDateString()} - {new Date(product.discountEndDate).toLocaleDateString()}
+                                                    Costo: ${typeof product.cost === "number" ? product.cost.toFixed(2) : "0.00"}
                                                 </div>
                                             )}
                                         </div>
                                         <div className="text-sm">
                                             <span className="text-muted-foreground">Stock:</span>{" "}
-                                            <span className="font-medium">{product.quantity || 0} {product.unit || ""}</span>
-                                            {product.minStock > 0 && (
-                                                <div className="text-xs text-muted-foreground">
-                                                    Mín: {product.minStock}
-                                                </div>
-                                            )}
+                                            <span className="font-medium">
+                                                {product.quantity || 0} {product.unit || "unidades"}
+                                            </span>
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-wrap gap-1 mb-2">
+                                    <div className="flex flex-wrap gap-1 mb-3">
                                         <Badge variant="outline" className="font-normal text-xs">
                                             <Tag className="h-3 w-3 mr-1" />
                                             {product.categoryId ? getCategoryName(product.categoryId) : "Sin categoría"}
                                         </Badge>
-                                        <Badge variant={product.isActive !== false ? "default" : "secondary"} className="text-xs">
-                                            {product.isActive !== false ? "Activo" : "Inactivo"}
+                                        <Badge variant={product.active !== false ? "default" : "secondary"} className="text-xs">
+                                            {product.active !== false ? "Activo" : "Inactivo"}
                                         </Badge>
-                                        {product.warrantyMonths > 0 && (
-                                            <Badge variant="outline" className="text-xs">
-                                                Garantía: {product.warrantyMonths}m
-                                            </Badge>
-                                        )}
                                     </div>
-                                    
-                                    {product.tags && product.tags.length > 0 && (
-                                        <div className="flex flex-wrap gap-1 mb-3">
-                                            {product.tags.slice(0, 3).map((tag: string, index: number) => (
-                                                <Badge key={index} variant="outline" className="text-xs bg-muted/50">{tag}</Badge>
-                                            ))}
-                                            {product.tags.length > 3 && (
-                                                <Badge variant="outline" className="text-xs bg-muted/50">+{product.tags.length - 3}</Badge>
-                                            )}
-                                        </div>
-                                    )}
-                                    
-                                    {(product.batchNumber || product.locationId) && (
-                                        <div className="text-xs text-muted-foreground mb-3">
-                                            {product.batchNumber && <span>Lote: {product.batchNumber}</span>}
-                                            {product.batchNumber && product.locationId && <span> | </span>}
-                                            {product.locationId && <span>Ubicación: {product.locationId}</span>}
-                                        </div>
-                                    )}
 
                                     <div className="flex justify-between gap-2">
                                         <Button variant="outline" size="sm" className="flex-1" asChild>
-                                            <Link href={`/agency/${agencyId}/products/${product._id}`}>
+                                            <Link href={`/agency/${agencyId}/products/${product.id || product._id}`}>
                                                 <Eye className="h-3.5 w-3.5 mr-1" />
                                                 Ver
                                             </Link>
                                         </Button>
                                         <Button variant="outline" size="sm" className="flex-1" asChild>
-                                            <Link href={`/agency/${agencyId}/products/${product._id}/edit`}>
+                                            <Link href={`/agency/${agencyId}/products/${product.id || product._id}/edit`}>
                                                 <Edit className="h-3.5 w-3.5 mr-1" />
                                                 Editar
                                             </Link>
-                                        </Button> 
+                                        </Button>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="outline" size="icon" className="h-8 w-8">
@@ -573,12 +483,12 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => handleDuplicateProduct(product._id)}>
+                                                <DropdownMenuItem onClick={() => handleDuplicateProduct(product)}>
                                                     <Copy className="h-4 w-4 mr-2" />
                                                     Duplicar
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
-                                                    onClick={() => handleDeleteProduct(product._id)}
+                                                    onClick={() => handleDeleteProduct(product)}
                                                     className="text-destructive focus:text-destructive"
                                                 >
                                                     <Trash2 className="h-4 w-4 mr-2" />
