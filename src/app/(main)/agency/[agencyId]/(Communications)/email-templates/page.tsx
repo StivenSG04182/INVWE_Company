@@ -61,7 +61,7 @@ const EmailTemplatesPage = async ({
                     </div>
 
                     {/* Search and Filters */}
-                    <TemplateFilters searchParams={searchParams} />
+                    <TemplateFilters />
                 </div>
 
                 {/* Quick Stats */}

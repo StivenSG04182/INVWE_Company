@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
     BarChart3,
@@ -93,12 +93,7 @@ export default function UnifiedReportsDashboard({ agencyId, user }: UnifiedRepor
 
     const currentTab = tabConfig[activeTab as keyof typeof tabConfig]
 
-    // Cargar estadísticas generales
-    useEffect(() => {
-        loadReportStats()
-    }, [agencyId, dateRange])
-
-    const loadReportStats = async () => {
+    const loadReportStats = useCallback(async () => {
         try {
             setIsLoading(true)
             const data = await getReportStats(agencyId, dateRange)
@@ -113,7 +108,12 @@ export default function UnifiedReportsDashboard({ agencyId, user }: UnifiedRepor
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [agencyId, dateRange])
+
+    // Cargar estadísticas generales
+    useEffect(() => {
+        loadReportStats()
+    }, [loadReportStats])
 
     const handleExport = async (format: string) => {
         try {

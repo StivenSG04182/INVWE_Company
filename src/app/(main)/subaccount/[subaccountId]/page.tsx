@@ -105,9 +105,8 @@ const SubAccountPageId = async ({ params }: Props) => {
                 <CardContent>
                   <div className="text-2xl font-bold mb-2">{lowStockProducts}</div>
                   <Progress
-                    className="h-2"
+                    className={`h-2 ${lowStockProducts > 0 ? 'bg-red-100' : ''}`}
                     value={totalProducts > 0 ? (lowStockProducts / totalProducts) * 100 : 0}
-                    className={lowStockProducts > 0 ? 'bg-red-100' : ''}
                   />
                 </CardContent>
               </Card>
@@ -196,10 +195,10 @@ const SubAccountPageId = async ({ params }: Props) => {
                                   <Repeat className="h-8 w-8 text-blue-500" />
                                 )}
                                 <div>
-                                  <p className="font-medium">{movement.product?.name || 'Producto no disponible'}</p>
+                                  <p className="font-medium">Producto ID: {movement.productId}</p>
                                   <p className="text-sm text-muted-foreground">
                                     {movement.type === 'entrada' ? 'Entrada' :
-                                      movement.type === 'salida' ? 'Salida' : 'Transferencia'} en {movement.area?.name || 'Área no disponible'}
+                                      movement.type === 'salida' ? 'Salida' : 'Transferencia'} en Área ID: {movement.areaId}
                                   </p>
                                 </div>
                               </div>

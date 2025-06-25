@@ -33,8 +33,8 @@ const NewInvoicePage = async ({ params }: { params: { agencyId: string } }) => {
     email: client.email || undefined,
     phone: client.phone || undefined,
     address: client.address || undefined,
-    taxId: client.taxId || undefined,
-    taxType: client.taxIdType || undefined
+    // taxId y taxType no están disponibles en el tipo de cliente actual
+    // Se pueden agregar cuando se implemente la tabla de clientes con datos fiscales
   }))
 
   // Obtener productos con información de descuentos
@@ -108,15 +108,15 @@ const NewInvoicePage = async ({ params }: { params: { agencyId: string } }) => {
         <CardContent>
           <InvoiceForm
             agencyId={agencyId}
-            subAccounts={agency.SubAccount.map((sa) => ({ id: sa.id, name: sa.name }))}
+            subAccounts={[]}
             customers={customers.map((c) => ({
               id: c.id,
               name: c.name,
               email: c.email || undefined,
               phone: c.phone || undefined,
               address: c.address || undefined,
-              taxId: c.taxId || undefined,
-              taxType: c.taxType || undefined
+              // taxId y taxType no están disponibles en el tipo de cliente actual
+              // Se pueden agregar cuando se implemente la tabla de clientes con datos fiscales
             }))}
             products={products.map((p) => {
               // Verificar si el descuento está activo (dentro del rango de fechas)
@@ -131,8 +131,8 @@ const NewInvoicePage = async ({ params }: { params: { agencyId: string } }) => {
                 name: p.name,
                 price: Number(p.price),
                 description: p.description || undefined,
-                discount: hasValidDiscount ? Number(p.discount) : 0,
-                hasDiscount: hasValidDiscount,
+                discount: hasValidDiscount ? Number(p.discount) : undefined,
+                hasDiscount: hasValidDiscount || undefined,
                 originalPrice: Number(p.price),
               };
             })}

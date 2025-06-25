@@ -103,7 +103,7 @@ const AgencyDetails = ({ data }: Props) => {
     if (data) {
       form.reset(data);
     }
-  }, [data]);
+  }, [data, form]);
 
   // Sincronizar checkboxes individuales con "aceptar todo"
   useEffect(() => {
@@ -116,7 +116,7 @@ const AgencyDetails = ({ data }: Props) => {
     } else {
       form.setValue("acceptAll", false);
     }
-  }, [form.watch("acceptTerms"), form.watch("acceptPrivacy")]);
+  }, [form]);
 
   const handleSubmit = async (values: z.infer<typeof FormSchema>) => {
     try {

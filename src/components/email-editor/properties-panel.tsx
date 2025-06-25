@@ -26,20 +26,9 @@ import {
 export const PropertiesPanel: React.FC = () => {
   const { selectedElement, updateElement } = useEmailEditorStore()
 
-  if (!selectedElement) {
-    return (
-      <div className="flex items-center justify-center h-full p-8 text-center">
-        <div>
-          <Settings className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-          <h3 className="font-semibold mb-2">No Element Selected</h3>
-          <p className="text-sm text-muted-foreground">Select an element from the canvas to edit its properties</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Usar useCallback para evitar recreaciones innecesarias de funciones
+  // Hooks SIEMPRE se llaman, usan selectedElement (puede ser null)
   const handleStyleChange = useCallback((property: string, value: any) => {
+    if (!selectedElement || !selectedElement.id) return;
     updateElement(selectedElement.id, {
       ...selectedElement,
       styles: {
@@ -50,6 +39,7 @@ export const PropertiesPanel: React.FC = () => {
   }, [selectedElement, updateElement])
 
   const handleContentChange = useCallback((value: any) => {
+    if (!selectedElement || !selectedElement.id) return;
     updateElement(selectedElement.id, {
       ...selectedElement,
       content: value,
@@ -57,6 +47,7 @@ export const PropertiesPanel: React.FC = () => {
   }, [selectedElement, updateElement])
 
   const handleNestedContentChange = useCallback((key: string, value: any) => {
+    if (!selectedElement || !selectedElement.id) return;
     if (typeof selectedElement.content === "object" && !Array.isArray(selectedElement.content)) {
       updateElement(selectedElement.id, {
         ...selectedElement,
@@ -68,8 +59,8 @@ export const PropertiesPanel: React.FC = () => {
     }
   }, [selectedElement, updateElement])
 
-  // Usar useMemo para evitar recreaciones innecesarias de componentes
   const contentControls = useMemo(() => {
+    if (!selectedElement) return null;
     switch (selectedElement.type) {
       case "header":
       case "text":
@@ -153,6 +144,18 @@ export const PropertiesPanel: React.FC = () => {
         return null
     }
   }, [selectedElement, handleContentChange, handleNestedContentChange, handleStyleChange])
+
+  if (!selectedElement) {
+    return (
+      <div className="flex items-center justify-center h-full p-8 text-center">
+        <div>
+          <Settings className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+          <h3 className="font-semibold mb-2">No Element Selected</h3>
+          <p className="text-sm text-muted-foreground">Select an element from the canvas to edit its properties</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <ScrollArea className="h-full">

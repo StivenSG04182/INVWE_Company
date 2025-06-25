@@ -95,7 +95,7 @@ const TicketForm = ({laneId, subaccountId, getNewTicket}: Props) => {
               }
               fetchData()
             }
-          }, [defaultData])
+          }, [defaultData, form])
 
           const onSubmit = async (values: z.infer<typeof TicketFormSchema>) => {
             if (!laneId) return

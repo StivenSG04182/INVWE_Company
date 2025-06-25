@@ -24,6 +24,9 @@ const Pipelines = async ({ params }: Props) => {
     return redirect(
       `/subaccount/${params.subaccountId}/pipelines/${response.id}`
     )
+  } catch (error) {
+    console.error("Error creating pipeline:", error)
+    return redirect(`/subaccount/${params.subaccountId}`)
   }
 }
 

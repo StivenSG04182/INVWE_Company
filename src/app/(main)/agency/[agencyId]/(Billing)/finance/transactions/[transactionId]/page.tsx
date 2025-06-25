@@ -19,7 +19,7 @@ export default async function TransactionDetailPage({ params }: TransactionDetai
 
     // Verificar acceso a la agencia
     const hasAccess =
-        user.Agency?.id === params.agencyId || user.SubAccount?.some((sa) => sa.agencyId === params.agencyId)
+        user.Agency?.id === params.agencyId || user.Agency?.SubAccount?.some((sa) => sa.agencyId === params.agencyId)
 
     if (!hasAccess) {
         return redirect("/unauthorized")

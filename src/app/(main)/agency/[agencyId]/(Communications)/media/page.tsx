@@ -30,7 +30,9 @@ const MediaPage = async ({ params }: Props) => {
   })
   
   const firstSubAccountId = subAccounts.length > 0 ? subAccounts[0].id : ''
-  let data = null
+  
+  // Call getMedia function to get the proper data structure
+  const data = await getMedia(params.agencyId, true) // true indicates it's an agencyId
 
   return (
     <BlurPage>

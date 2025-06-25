@@ -17,6 +17,14 @@ export function formatPrice(amount: number | string) {
   }).format(numericAmount);
 }
 
+// Función para generar enlaces OAuth de Stripe
+export function getStripeOAuthLink(entityType: string, entityId: string) {
+  const state = `launchpad___${entityId}`
+  const redirectUri = `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/${entityType}/${entityId}/launchpad`
+  
+  return `https://connect.stripe.com/oauth/authorize?client_id=${process.env.STRIPE_CLIENT_ID}&response_type=code&scope=read_write&redirect_uri=${redirectUri}&state=${state}`
+}
+
 // Función para generar enlaces OAuth para cualquier pasarela de pago
 export function getPaymentGatewayOAuthLink(gateway: string, entityType: string, entityId: string) {
   const state = `launchpad___${entityId}`

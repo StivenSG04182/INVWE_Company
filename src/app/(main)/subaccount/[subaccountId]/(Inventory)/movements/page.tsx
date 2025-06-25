@@ -6,91 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
-import { getProducts, getAreas, getStocks, getMovements } from "@/lib/queries2"
+import { getProducts, getAreas, getMovements } from "@/lib/queries2"
 import StockOverview from "@/components/inventory/stock-overview"
 import MovementRegistration from "@/components/inventory/movement-registration"
 import ProductStockDetails from "@/components/inventory/product-stock-details"
 import { Package, ArrowLeftRight, Search, Filter, DollarSign, AlertTriangle } from "lucide-react"
-
-// Función para obtener datos de stock
-export async function getStockPageData(agencyId: string) {
-  const user = await getAuthUserDetails()
-  if (!user) return { redirect: "/sign-in" }
-
-  if (!user.Agency) {
-    return { redirect: "/agency" }
-  }
-
-  try {
-    // Obtener datos usando las funciones de queries2.ts
-    const rawStocks = await getStocks(agencyId)
-    const rawProducts = await getProducts(agencyId)
-    const rawAreas = await getAreas(agencyId)
-    
-    // Convertir valores Decimal a números normales para evitar errores de serialización
-    const stocks = rawStocks.map(stock => ({
-      ...stock,
-      quantity: stock.quantity ? Number(stock.quantity) : 0
-    }))
-    
-    const products = rawProducts.map(product => ({
-      ...product,
-      price: product.price ? Number(product.price) : 0,
-      cost: product.cost ? Number(product.cost) : 0,
-      discount: product.discount ? Number(product.discount) : 0,
-      taxRate: product.taxRate ? Number(product.taxRate) : 0,
-      discountMinimumPrice: product.discountMinimumPrice ? Number(product.discountMinimumPrice) : null
-    }))
-    
-    const areas = rawAreas
-    
-    // Calcular estadísticas
-    const totalItems = stocks.reduce((sum, stock) => sum + stock.quantity, 0)
-    const totalValue = stocks.reduce((sum, stock) => {
-      const product = products.find(p => p.id === stock.productId)
-      return sum + (product?.cost || 0) * stock.quantity
-    }, 0)
-    
-    // Calcular productos con bajo stock
-    const lowStockItems = products.filter(product => {
-      if (!product.minStock) return false
-      const productStocks = stocks.filter(s => s.productId === product.id)
-      const totalStock = productStocks.reduce((sum, stock) => sum + stock.quantity, 0)
-      return totalStock <= product.minStock
-    }).length
-    
-    // Crear mapas para buscar nombres de productos y áreas
-    const productsMap = new Map(products.map((p: any) => [p.id, p]))
-    const areasMap = new Map(areas.map((a: any) => [a.id, a]))
-
-    return {
-      user,
-      stocks,
-      products,
-      areas,
-      totalItems,
-      totalValue,
-      lowStockItems,
-      productsMap,
-      areasMap,
-      subAccounts: user.Agency.SubAccount || [],
-    }
-  } catch (error) {
-    console.error("Error al cargar datos de inventario:", error)
-    return {
-      user,
-      stocks: [],
-      products: [],
-      areas: [],
-      totalItems: 0,
-      totalValue: 0,
-      lowStockItems: 0,
-      productsMap: new Map(),
-      areasMap: new Map(),
-      subAccounts: user.Agency.SubAccount || [],
-    }
-  }
-}
+import { getStockPageData } from "@/lib/services/stock-utils"
 
 export default async function InventoryPage({
   params,
@@ -138,7 +59,7 @@ export default async function InventoryPage({
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">{stockData.products.length}</div>
+              <div className="text-2xl font-bold">{stockData.products?.length || 0}</div>
               <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
                 <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
@@ -153,7 +74,7 @@ export default async function InventoryPage({
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">${stockData.totalValue.toLocaleString("es-CO")}</div>
+              <div className="text-2xl font-bold">${stockData.totalValue?.toLocaleString("es-CO") || "0"}</div>
               <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
                 <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
@@ -168,7 +89,7 @@ export default async function InventoryPage({
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">{stockData.lowStockItems}</div>
+              <div className="text-2xl font-bold">{stockData.lowStockItems || 0}</div>
               <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center">
                 <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
               </div>
@@ -200,11 +121,11 @@ export default async function InventoryPage({
           <Suspense fallback={<StockOverviewSkeleton />}>
             <StockOverview
               agencyId={agencyId}
-              stocks={stockData.stocks}
-              products={stockData.products}
-              areas={stockData.areas}
-              productsMap={stockData.productsMap}
-              areasMap={stockData.areasMap}
+              stocks={stockData.stocks || []}
+              products={stockData.products || []}
+              areas={stockData.areas || []}
+              productsMap={stockData.productsMap || new Map()}
+              areasMap={stockData.areasMap || new Map()}
             />
           </Suspense>
         </TabsContent>
@@ -213,10 +134,9 @@ export default async function InventoryPage({
           <Suspense fallback={<MovementRegistrationSkeleton />}>
             <MovementRegistration
               agencyId={agencyId}
-              type={searchParams.type as "entrada" | "salida" | "transferencia" | undefined}
-              productId={searchParams.productId}
-              products={stockData.products}
-              areas={stockData.areas}
+              type={searchParams.type || "entrada"}
+              products={stockData.products || []}
+              areas={stockData.areas || []}
             />
           </Suspense>
         </TabsContent>
@@ -227,11 +147,9 @@ export default async function InventoryPage({
               <ProductStockDetails
                 agencyId={agencyId}
                 productId={searchParams.productId}
-                products={stockData.products}
-                stocks={stockData.stocks.filter((s: any) => s.productId === searchParams.productId)}
-                areas={stockData.areas}
-                productsMap={stockData.productsMap}
-                areasMap={stockData.areasMap}
+                products={stockData.products || []}
+                areas={stockData.areas || []}
+                stocks={stockData.stocks || []}
               />
             </Suspense>
           </TabsContent>
@@ -241,37 +159,18 @@ export default async function InventoryPage({
   )
 }
 
-// Componentes Skeleton para carga suspendida
+// Componente Skeleton para carga suspendida
 const StockOverviewSkeleton = () => (
   <div className="space-y-4">
-    <div className="flex justify-between items-center">
-      <Skeleton className="h-8 w-48" />
-      <div className="flex gap-2">
-        <Skeleton className="h-9 w-24" />
-        <Skeleton className="h-9 w-24" />
-      </div>
-    </div>
-    <div className="border rounded-lg p-4">
-      <div className="space-y-4">
-        {Array(5)
-          .fill(0)
-          .map((_, i) => (
-            <div key={i} className="flex justify-between items-center">
-              <div className="space-y-2">
-                <Skeleton className="h-5 w-48" />
-                <Skeleton className="h-4 w-24" />
-              </div>
-              <div className="flex gap-2">
-                <Skeleton className="h-9 w-24" />
-                <Skeleton className="h-9 w-24" />
-              </div>
-            </div>
-          ))}
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Skeleton key={i} className="h-32 w-full" />
+      ))}
     </div>
   </div>
 )
 
+// Componente Skeleton para carga suspendida
 const MovementRegistrationSkeleton = () => (
   <div className="space-y-4">
     <Skeleton className="h-8 w-48" />
@@ -295,20 +194,21 @@ const MovementRegistrationSkeleton = () => (
   </div>
 )
 
+// Componente Skeleton para carga suspendida
 const ProductStockDetailsSkeleton = () => (
   <div className="space-y-4">
-    <div className="flex items-center">
-      <Skeleton className="h-9 w-32 mr-4" />
-      <Skeleton className="h-8 w-48" />
-    </div>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Skeleton className="h-32 w-full" />
-      <Skeleton className="h-32 w-full" />
-      <Skeleton className="h-32 w-full" />
-    </div>
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <Skeleton className="h-96 w-full" />
-      <Skeleton className="h-96 w-full lg:col-span-2" />
+    <Skeleton className="h-8 w-48" />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
     </div>
   </div>
 )

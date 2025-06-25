@@ -54,7 +54,7 @@ export const InvoicePDFViewer = ({ invoice, agencyId }: InvoicePDFViewerProps) =
                 URL.revokeObjectURL(pdfUrl)
             }
         }
-    }, [invoice.id, agencyId])
+    }, [invoice.id, agencyId, pdfUrl])
 
     const handleDownload = async () => {
         if (!pdfUrl) return

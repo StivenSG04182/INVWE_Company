@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -20,14 +20,10 @@ interface SalesReportsProps {
 export default function SalesReports({ agencyId, user, dateRange }: SalesReportsProps) {
     const [salesData, setSalesData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
-    const [selectedPeriod, setSelectedPeriod] = useState(dateRange)
+    const [selectedPeriod, setSelectedPeriod] = useState("month")
     const [selectedSalesperson, setSelectedSalesperson] = useState("all")
 
-    useEffect(() => {
-        loadSalesData()
-    }, [agencyId, selectedPeriod, selectedSalesperson])
-
-    const loadSalesData = async () => {
+    const loadSalesData = useCallback(async () => {
         try {
             setIsLoading(true)
             const data = await getSalesReportsData(agencyId, selectedPeriod, selectedSalesperson)
@@ -42,7 +38,11 @@ export default function SalesReports({ agencyId, user, dateRange }: SalesReports
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [agencyId, selectedPeriod, selectedSalesperson])
+
+    useEffect(() => {
+        loadSalesData()
+    }, [loadSalesData])
 
     const exportSales = async (format: string) => {
         try {

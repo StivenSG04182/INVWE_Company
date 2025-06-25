@@ -9,11 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DiscountManager } from "@/components/inventory/discount-manager"
 import { ActiveDiscounts } from "@/components/inventory/active-discounts"
 
-const DiscountsPage = async ({ params }: { params: { agencyId: string } }) => {
+const DiscountsPage = async ({ params }: { params: { subaccountId: string } }) => {
     const user = await getAuthUserDetails()
     if (!user) return redirect("/sign-in")
 
-    const agencyId = params.agencyId
+    const subaccountId = params.subaccountId
     if (!user.Agency) {
         return redirect("/agency")
     }
@@ -28,9 +28,9 @@ const DiscountsPage = async ({ params }: { params: { agencyId: string } }) => {
         const { serializeMongoArray } = await import("@/lib/serializers")
 
         // Obtener productos, categorías y descuentos usando las nuevas funciones del servidor
-        const rawProducts = await getProducts(agencyId)
-        const rawCategories = await getCategories(agencyId)
-        const rawDiscounts = await getActiveDiscounts(agencyId)
+        const rawProducts = await getProducts(subaccountId)
+        const rawCategories = await getCategories(subaccountId)
+        const rawDiscounts = await getActiveDiscounts(subaccountId)
 
         // Serializar para eliminar métodos y propiedades no serializables
         products = serializeMongoArray(rawProducts)
@@ -63,7 +63,7 @@ const DiscountsPage = async ({ params }: { params: { agencyId: string } }) => {
         <div className="container mx-auto p-6">
             <div className="flex items-center mb-6">
                 <Button variant="ghost" size="sm" asChild className="mr-4">
-                    <Link href={`/agency/${agencyId}/products`}>
+                    <Link href={`/agency/${subaccountId}/products`}>
                         <ArrowLeft className="h-4 w-4 mr-2" />
                         Volver a Productos
                     </Link>
@@ -125,7 +125,7 @@ const DiscountsPage = async ({ params }: { params: { agencyId: string } }) => {
 
                 <TabsContent value="active">
                     <ActiveDiscounts
-                        agencyId={agencyId}
+                        agencyId={subaccountId}
                         activeDiscounts={activeDiscounts}
                         products={products}
                         categories={categories}
@@ -133,7 +133,7 @@ const DiscountsPage = async ({ params }: { params: { agencyId: string } }) => {
                 </TabsContent>
 
                 <TabsContent value="create">
-                    <DiscountManager agencyId={agencyId} products={products} categories={categories} />
+                    <DiscountManager agencyId={subaccountId} products={products} categories={categories} />
                 </TabsContent>
 
                 <TabsContent value="history">

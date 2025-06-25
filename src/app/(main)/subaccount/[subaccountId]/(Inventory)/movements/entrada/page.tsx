@@ -8,55 +8,7 @@ import { ProductService, AreaService } from "@/lib/services/inventory-service"
 import MovementRegistration from "@/components/inventory/movement-registration"
 import { ArrowDownToLine, Package, ArrowLeft } from "lucide-react"
 import Link from "next/link"
-
-// Servicio para obtener datos necesarios
-export async function getEntryPageData(agencyId: string, productId?: string) {
-  const user = await getAuthUserDetails()
-  if (!user) return { redirect: "/sign-in" }
-
-  if (!user.Agency) {
-    return { redirect: "/agency" }
-  }
-
-  try {
-    // Obtener productos y áreas usando los servicios de Prisma
-    const rawProducts = await ProductService.getProducts(agencyId)
-    const rawAreas = await AreaService.getAreas(agencyId)
-    
-    // Convertir valores Decimal a números normales para evitar errores de serialización
-    const products = rawProducts.map(product => ({
-      ...product,
-      price: product.price ? Number(product.price) : 0,
-      cost: product.cost ? Number(product.cost) : 0,
-      discount: product.discount ? Number(product.discount) : 0,
-      taxRate: product.taxRate ? Number(product.taxRate) : 0,
-      discountMinimumPrice: product.discountMinimumPrice ? Number(product.discountMinimumPrice) : null,
-      minStock: product.minStock ? Number(product.minStock) : undefined,
-      // Asegurar que los stocks también sean números
-      stocks: product.Stocks ? product.Stocks.map((stock: any) => ({
-        ...stock,
-        quantity: stock.quantity ? Number(stock.quantity) : 0
-      })) : []
-    }))
-    
-    const areas = rawAreas
-    
-    return {
-      user,
-      products,
-      areas,
-      productId
-    }
-  } catch (error) {
-    console.error("Error al cargar datos para la página de entrada:", error)
-    return {
-      user,
-      products: [],
-      areas: [],
-      productId
-    }
-  }
-}
+import { getEntryPageData } from "@/lib/services/movement-utils"
 
 export default async function EntradaPage({
   params,

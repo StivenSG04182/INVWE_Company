@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/alt-text */
 "use client"
 
 import { useRef, useEffect } from "react"
@@ -250,6 +251,7 @@ export default function PqrChatInterface({
                             <Mic className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                            
                             <Image className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">

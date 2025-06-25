@@ -105,7 +105,7 @@ const UserDetails = ({id,type,userData,subAccounts,}: Props) => {
       if (userData) {
         form.reset(userData)
       }
-    }, [userData, data])
+    }, [userData, data, form])
     
     const onChangePermission = async (subAccountId : string, val: boolean, permissionsId :string | undefined) => {
     if(!data.user?.email)return

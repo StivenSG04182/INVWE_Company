@@ -8,28 +8,7 @@ import { ProductService, AreaService } from "@/lib/services/inventory-service"
 import MovementRegistration from "@/components/inventory/movement-registration"
 import { ArrowLeftRight, Package, ArrowLeft } from "lucide-react"
 import Link from "next/link"
-
-// Servicio para obtener datos necesarios
-export async function getTransferPageData(agencyId: string, productId?: string) {
-    const user = await getAuthUserDetails()
-    if (!user) return { redirect: "/sign-in" }
-
-    if (!user.Agency) {
-        return { redirect: "/agency" }
-    }
-
-    // Obtener productos y áreas de MongoDB
-    let products = []
-    let areas = []
-
-
-    return {
-        user,
-        products,
-        areas,
-        productId,
-    }
-}
+import { getTransferPageData } from "@/lib/services/transfer-movement-utils"
 
 export default async function TransferenciaPage({
     params,

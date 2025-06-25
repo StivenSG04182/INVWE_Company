@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { ArrowDownToLine, Calendar, TrendingUp, Package, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,11 +17,7 @@ export default function ProductReports({
     const [productData, setProductData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
 
-    useEffect(() => {
-        loadProductData()
-    }, [agencyId, dateRange])
-
-    const loadProductData = async () => {
+    const loadProductData = useCallback(async () => {
         try {
             setIsLoading(true)
             // Usar datos de inventario para productos
@@ -68,7 +64,11 @@ export default function ProductReports({
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [agencyId, dateRange])
+
+    useEffect(() => {
+        loadProductData()
+    }, [loadProductData])
 
     if (isLoading) {
         return (

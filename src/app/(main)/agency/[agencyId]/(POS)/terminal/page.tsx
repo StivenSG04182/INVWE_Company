@@ -222,7 +222,26 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         loadClients();
     }, [loadClients]); 
 
-    const saveCartState = async () => {
+    const loadSavedSales = useCallback(async () => {
+        try {
+            const options: {
+                subAccountId?: string;
+            } = {}
+
+            if (selectedSubaccount) options.subAccountId = selectedSubaccount
+
+            const savedSalesData = await getSavedSalesQuery(agencyId, options)
+            const convertedSales = savedSalesData.map(sale => ({
+                ...sale,
+                total: Number(sale.total)
+            }))
+            setSavedSales(convertedSales)
+        } catch (error) {
+            toast.error(error.message || "Error al cargar ventas guardadas")
+        }
+    }, [agencyId, selectedSubaccount])
+
+    const saveCartState = useCallback(async () => {
         if (selectedProducts.length > 0) {
             try {
                 const cartData = {
@@ -241,7 +260,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                 toast.error(error.message || "Error al guardar la venta")
             }
         }
-    }
+    }, [agencyId, selectedSubaccount, selectedProducts, selectedClient, loadSavedSales])
 
     const [isProcessing, setIsProcessing] = useState(false)
 
@@ -357,24 +376,6 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         setSavedSalesOpen(false)
         setCartOpen(true)
     }
-    const loadSavedSales = async () => {
-        try {
-            const options: {
-                subAccountId?: string;
-            } = {}
-
-            if (selectedSubaccount) options.subAccountId = selectedSubaccount
-
-            const savedSalesData = await getSavedSalesQuery(agencyId, options)
-            const convertedSales = savedSalesData.map(sale => ({
-                ...sale,
-                total: Number(sale.total)
-            }))
-            setSavedSales(convertedSales)
-        } catch (error) {
-            toast.error(error.message || "Error al cargar ventas guardadas")
-        }
-    }
 
     const deleteSavedSale = async (id) => {
         try {
@@ -394,7 +395,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         if (agencyId) {
             loadSavedSales()
         }
-    }, [agencyId, selectedSubaccount])
+    }, [agencyId, selectedSubaccount, loadSavedSales])
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -413,7 +414,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         return () => {
             document.removeEventListener("mousedown", handleClickOutside)
         }
-    }, [cartOpen, newClientOpen, selectedProducts, loadSavedSales])
+    }, [cartOpen, newClientOpen, selectedProducts, saveCartState])
 
     const subtotal = selectedProducts.reduce((sum, product) => sum + product.subtotal, 0)
     const iva = subtotal * 0.19

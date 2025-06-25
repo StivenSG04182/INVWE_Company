@@ -3,11 +3,6 @@ import { getGatewayById, getGatewayAccessToken } from '../../payment-gateways';
 import { db } from '@/lib/db';
 import { PaymentGatewayAuthResponse } from '../../payment-gateway-types';
 
-/**
- * Endpoint para autenticar una pasarela de pago mediante OAuth2
- * POST /api/payment-gateways/[gatewayId]/auth
- * Body: { code: string, agencyId: string }
- */
 export async function POST(
     req: NextRequest,
     { params }: { params: { gatewayId: string } }

@@ -1,11 +1,32 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { getSubAccountSidebarOptions, getUserSidebarPermissions, changeSidebarOptionPermission, saveActivityLogsNotification } from '@/lib/queries'
+// import { getSubAccountSidebarOptions, getUserSidebarPermissions, changeSidebarOptionPermission, saveActivityLogsNotification } from '@/lib/queries'
 import { SubAccountSidebarOption } from '@prisma/client'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/components/ui/use-toast'
+
+// Funciones temporales mientras se implementan las reales
+const getSubAccountSidebarOptions = async (subAccountId: string) => {
+  console.log('Función getSubAccountSidebarOptions pendiente de implementación')
+  return []
+}
+
+const getUserSidebarPermissions = async (permissionId: string) => {
+  console.log('Función getUserSidebarPermissions pendiente de implementación')
+  return []
+}
+
+const changeSidebarOptionPermission = async (permissionId: string, sidebarOptionId: string, checked: boolean) => {
+  console.log('Función changeSidebarOptionPermission pendiente de implementación')
+  return { success: true }
+}
+
+const saveActivityLogsNotification = async (data: any) => {
+  console.log('Función saveActivityLogsNotification pendiente de implementación')
+  return { success: true }
+}
 
 type Props = {
     subAccountId: string

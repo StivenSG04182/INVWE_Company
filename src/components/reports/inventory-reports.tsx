@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,11 +29,7 @@ export default function InventoryReports({ agencyId, user, dateRange }: Inventor
     const [sortBy, setSortBy] = useState("name")
     const [sortOrder, setSortOrder] = useState("asc")
 
-    useEffect(() => {
-        loadInventoryData()
-    }, [agencyId, dateRange, currentPage, categoryFilter, sortBy, sortOrder])
-
-    const loadInventoryData = async () => {
+    const loadInventoryData = useCallback(async () => {
         try {
             setIsLoading(true)
             const data = await getInventoryReportsData(
@@ -57,7 +53,11 @@ export default function InventoryReports({ agencyId, user, dateRange }: Inventor
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [agencyId, dateRange, currentPage, pageSize, categoryFilter, sortBy, sortOrder, searchTerm])
+
+    useEffect(() => {
+        loadInventoryData()
+    }, [loadInventoryData])
 
     const handleSearch = () => {
         setCurrentPage(1)

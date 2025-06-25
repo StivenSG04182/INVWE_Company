@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowDownToLine, Calendar, TrendingUp, TrendingDown, DollarSign, CreditCard, Loader2 } from "lucide-react"
@@ -21,11 +21,7 @@ export default function FinancialReports({ agencyId, user, dateRange }: Financia
     const [isLoading, setIsLoading] = useState(true)
     const [availableReports, setAvailableReports] = useState<any[]>([])
 
-    useEffect(() => {
-        loadFinancialData()
-    }, [agencyId, dateRange])
-
-    const loadFinancialData = async () => {
+    const loadFinancialData = useCallback(async () => {
         try {
             setIsLoading(true)
             const data = await getFinancialReportsData(agencyId, dateRange)
@@ -41,7 +37,11 @@ export default function FinancialReports({ agencyId, user, dateRange }: Financia
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [agencyId, dateRange])
+
+    useEffect(() => {
+        loadFinancialData()
+    }, [loadFinancialData])
 
     const downloadReport = async (reportType: string) => {
         try {

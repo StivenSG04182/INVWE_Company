@@ -8,29 +8,7 @@ import { ProductService, AreaService, StockService } from "@/lib/services/invent
 import { ArrowLeft, Package, Settings } from "lucide-react"
 import Link from "next/link"
 import EditStockForm from "@/components/inventory/edit-stock-form"
-
-// Servicio para obtener datos necesarios
-export async function getEditStockPageData(agencyId: string, productId: string) {
-    const user = await getAuthUserDetails()
-    if (!user) return { redirect: "/sign-in" }
-
-    if (!user.Agency) {
-        return { redirect: "/agency" }
-    }
-
-    // Obtener productos, áreas y stock de MongoDB
-    let product = null
-    let areas = []
-    let stocks = []
-
-
-    return {
-        user,
-        product,
-        areas,
-        stocks,
-    }
-}
+import { getEditStockPageData } from "@/lib/services/edit-stock-utils"
 
 export default async function EditStockPage({
     params,

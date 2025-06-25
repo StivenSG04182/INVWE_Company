@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -33,12 +33,7 @@ export function AlertSystem({ agencyId, type = "general" }: AlertSystemProps) {
     const [isLoading, setIsLoading] = useState(true)
     const [isConfiguring, setIsConfiguring] = useState(false)
 
-    useEffect(() => {
-        loadAlerts()
-        loadAlertConfig()
-    }, [agencyId, type])
-
-    const loadAlerts = async () => {
+    const loadAlerts = useCallback(async () => {
         try {
             const response = await fetch(`/api/alerts/${agencyId}?type=${type}`)
             if (response.ok) {
@@ -50,9 +45,9 @@ export function AlertSystem({ agencyId, type = "general" }: AlertSystemProps) {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [agencyId, type])
 
-    const loadAlertConfig = async () => {
+    const loadAlertConfig = useCallback(async () => {
         try {
             const response = await fetch(`/api/alerts/${agencyId}/config`)
             if (response.ok) {
@@ -62,7 +57,12 @@ export function AlertSystem({ agencyId, type = "general" }: AlertSystemProps) {
         } catch (error) {
             console.error("Error loading alert config:", error)
         }
-    }
+    }, [agencyId])
+
+    useEffect(() => {
+        loadAlerts()
+        loadAlertConfig()
+    }, [loadAlerts, loadAlertConfig])
 
     const dismissAlert = async (alertId: string) => {
         try {

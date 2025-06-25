@@ -32,7 +32,7 @@ const FunnelEditorNavigation = ({
           type: 'SET_FUNNELPAGE_ID',
           payload: { funnelPageId: funnelPageDetails.id },
         })
-      }, [funnelPageDetails])
+      }, [funnelPageDetails, dispatch])
 
       const handleOnBlurTitleChange: FocusEventHandler<HTMLInputElement> = async (
         event

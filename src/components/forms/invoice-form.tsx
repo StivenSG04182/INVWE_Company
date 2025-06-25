@@ -140,12 +140,11 @@ export const InvoiceForm = ({
     });
     
     // Mostrar/ocultar campos de facturación electrónica según el tipo seleccionado
+    const invoiceType = form.watch('invoiceType');
     useEffect(() => {
-        const invoiceType = form.watch('invoiceType');
         const isElectronic = invoiceType === 'ELECTRONIC' || invoiceType === 'BOTH';
         setShowElectronicFields(isElectronic);
         
-        // Si cambia a facturación electrónica, validar que haya un cliente seleccionado
         if (isElectronic) {
             const customerId = form.getValues('customerId');
             if (!customerId) {
@@ -156,7 +155,6 @@ export const InvoiceForm = ({
             } else {
                 form.clearErrors('customerId');
                 
-                // Verificar si el cliente tiene email
                 const customerEmail = form.getValues('customerEmail');
                 if (!customerEmail) {
                     form.setError('customerEmail', {
@@ -167,27 +165,26 @@ export const InvoiceForm = ({
                     form.clearErrors('customerEmail');
                 }
                 
-                // Inicializar destinatarios adicionales si no existen
                 if (!form.getValues('additionalRecipients')) {
                     form.setValue('additionalRecipients', []);
                 }
             }
         } else {
-            // Si no es electrónica, limpiar errores relacionados
             form.clearErrors('customerId');
             form.clearErrors('customerEmail');
         }
-    }, [form.watch('invoiceType'), form]);
-
+    }, [invoiceType, form]);
 
     // Calcular totales cuando cambian los items
+    const items = form.watch('items');
+    const formTaxes = form.watch('taxes');
     useEffect(() => {
-        const items = form.getValues('items') || [];
+        const currentItems = form.getValues('items') || [];
         let calculatedSubtotal = 0;
         let calculatedDiscount = 0;
         let calculatedTax = 0;
 
-        items.forEach((item) => {
+        currentItems.forEach((item) => {
             const lineTotal = item.quantity * item.unitPrice;
             calculatedSubtotal += lineTotal;
             // El descuento ahora viene directamente del producto
@@ -208,7 +205,7 @@ export const InvoiceForm = ({
         setDiscountTotal(calculatedDiscount);
         setTaxTotal(calculatedTax + additionalTaxTotal);
         setTotal(calculatedSubtotal - calculatedDiscount + calculatedTax + additionalTaxTotal);
-    }, [form.watch('items'), form.watch('taxes')]);
+    }, [items, formTaxes, form, products]);
 
     const onSubmit = async (data: InvoiceFormValues) => {
         // Validar que se haya seleccionado un cliente para facturas electrónicas
@@ -313,7 +310,7 @@ export const InvoiceForm = ({
             })) || [];
 
             // Preparar destinatarios para factura electrónica
-            const emailRecipients = [];
+            const emailRecipients: string[] = [];
             if (data.customerEmail) {
                 emailRecipients.push(data.customerEmail);
             }
@@ -357,7 +354,7 @@ export const InvoiceForm = ({
             currentItems[index].description = selectedProduct.description || '';
             
             // Mostrar mensaje informativo sobre el descuento aplicado si existe
-            if (selectedProduct.hasDiscount && selectedProduct.discount > 0) {
+            if (selectedProduct.hasDiscount && selectedProduct.discount && selectedProduct.discount > 0) {
                 const discountMessage = `Descuento del ${selectedProduct.discount}% aplicado automáticamente`;
                 currentItems[index].description = currentItems[index].description 
                     ? `${currentItems[index].description}\n${discountMessage}` 
@@ -463,7 +460,7 @@ export const InvoiceForm = ({
                                 <td className="p-2 text-right">${item.unitPrice.toFixed(2)}</td>
                                 <td className="p-2 text-right">{(() => {
                                     const product = products.find(p => p.id === item.productId);
-                                    return (product?.hasDiscount && product?.discount) ? `${product.discount}%` : '0%';
+                                    return (product?.hasDiscount && product?.discount) ? `${product.discount!}%` : '0%';
                                 })()}</td>
                                 <td className="p-2 text-right">${item.total.toFixed(2)}</td>
                             </tr>
@@ -820,9 +817,9 @@ export const InvoiceForm = ({
                                                 {products.map((product) => (
                                                     <SelectItem key={product.id} value={product.id}>
                                                         {product.name}
-                                                        {product.hasDiscount && product.discount > 0 && (
+                                                        {product.hasDiscount && product.discount && product.discount > 0 && (
                                                             <span className="ml-2 text-green-600">
-                                                                {` (Descuento: ${product.discount}%)`}
+                                                                {` (Descuento: ${product.discount!}%)`}
                                                             </span>
                                                         )}
                                                     </SelectItem>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +10,10 @@ import { toast } from "@/components/ui/use-toast"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getPosReportsData, exportReportData } from "@/lib/reports-queries"
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, BarElement } from "chart.js"
+import { Line, Doughnut, Bar } from "react-chartjs-2"
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, BarElement)
 
 interface PosReportsProps {
     agencyId: string
@@ -23,11 +27,7 @@ export default function PosReports({ agencyId, user, dateRange }: PosReportsProp
     const [selectedTerminal, setSelectedTerminal] = useState("all")
     const [selectedCashier, setSelectedCashier] = useState("all")
 
-    useEffect(() => {
-        loadPosData()
-    }, [agencyId, dateRange, selectedTerminal, selectedCashier])
-
-    const loadPosData = async () => {
+    const loadPosData = useCallback(async () => {
         try {
             setIsLoading(true)
             const data = await getPosReportsData(agencyId, dateRange, selectedTerminal, selectedCashier)
@@ -42,7 +42,11 @@ export default function PosReports({ agencyId, user, dateRange }: PosReportsProp
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [agencyId, dateRange, selectedTerminal, selectedCashier])
+
+    useEffect(() => {
+        loadPosData()
+    }, [loadPosData])
 
     const exportPosReport = async (format: string) => {
         try {

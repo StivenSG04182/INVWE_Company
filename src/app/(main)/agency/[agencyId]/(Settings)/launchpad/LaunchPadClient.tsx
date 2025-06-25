@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import {
     Card,
@@ -72,7 +72,7 @@ export default function LaunchPadClient({
     // ————————————————
     // VALIDACIÓN PASARELAS
     // ————————————————
-    const validateGateways = async () => {
+    const validateGateways = useCallback(async () => {
         setIsLoading(true)
         try {
             const statusMap: Record<string, PaymentGatewayValidationResponse> = {}
@@ -83,9 +83,7 @@ export default function LaunchPadClient({
                 const status = await verifyPaymentGatewayStatus(agencyId, gateway.id)
                 statusMap[gateway.id] = {
                     success: true,
-                    isValid: status.status === 'ACTIVE',
-                    isConnected: status.isConnected,
-                    status: status.status
+                    isConnected: status.isConnected
                 }
                 if (status.isConnected) hasConnected = true;
             }
@@ -102,11 +100,11 @@ export default function LaunchPadClient({
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [agencyId, toast])
 
     useEffect(() => {
         validateGateways()
-    }, [agencyId])
+    }, [agencyId, validateGateways])
 
     // ————————————————
     // CALLBACK OAUTH
@@ -159,7 +157,7 @@ export default function LaunchPadClient({
         }
         window.addEventListener('message', onMsg)
         return () => window.removeEventListener('message', onMsg)
-    }, [])
+    }, [validateGateways])
 
     // Reemplazamos handleGatewaySelect con la nueva implementación
     const handleGatewaySelect = async (

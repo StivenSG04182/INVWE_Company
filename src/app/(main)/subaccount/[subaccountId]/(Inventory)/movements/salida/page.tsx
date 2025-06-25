@@ -8,29 +8,7 @@ import { ProductService, AreaService, StockService } from "@/lib/services/invent
 import MovementRegistration from "@/components/inventory/movement-registration"
 import { ArrowUpFromLine, Package, ArrowLeft, AlertTriangle } from "lucide-react"
 import Link from "next/link"
-
-// Servicio para obtener datos necesarios
-export async function getExitPageData(agencyId: string, productId?: string) {
-    const user = await getAuthUserDetails()
-    if (!user) return { redirect: "/sign-in" }
-
-    if (!user.Agency) {
-        return { redirect: "/agency" }
-    }
-
-    let products = []
-    let areas = []
-    let stocks = []
-    let lowStockItems = 0
-
-    return {
-        user,
-        products,
-        areas,
-        lowStockItems,
-        productId,
-    }
-}
+import { getExitPageData } from "@/lib/services/exit-movement-utils"
 
 export default async function SalidaPage({
     params,

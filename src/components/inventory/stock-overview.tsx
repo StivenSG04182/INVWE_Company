@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -231,11 +231,10 @@ export default function StockOverview({
         })
     }, [products, searchTerm, selectedArea, selectedStatus, productSortBy])
 
-    // ✅ CORREGIDO: Filtrar movimientos por fecha
-    const filterByDateRange = (movement: any) => {
-        if (selectedDateRange === "all") return true
+    const filterByDateRange = useCallback((movement: any) => {
+        if (!selectedDateRange || selectedDateRange === "all") return true
 
-        const movementDate = new Date(movement.date)
+        const movementDate = new Date(movement.createdAt)
         const now = new Date()
 
         switch (selectedDateRange) {
@@ -253,50 +252,64 @@ export default function StockOverview({
             default:
                 return true
         }
-    }
+    }, [selectedDateRange])
 
     // ✅ CORREGIDO: Filtrar y ordenar movimientos usando useMemo
     const filteredAndSortedMovements = useMemo(() => {
-        const filtered = movements.filter((movement) => {
-            const matchesType = selectedMovementType === "all" || movement.type === selectedMovementType
-            const matchesSubaccount = selectedSubaccount === "all" || movement.subAccountId === selectedSubaccount
-            const matchesDate = filterByDateRange(movement)
-            const matchesSearch =
-                !movementSearchTerm ||
-                movement.Product?.name?.toLowerCase().includes(movementSearchTerm.toLowerCase()) ||
-                movement.notes?.toLowerCase().includes(movementSearchTerm.toLowerCase()) ||
-                movement.Area?.name?.toLowerCase().includes(movementSearchTerm.toLowerCase()) ||
-                movement.DestinationArea?.name?.toLowerCase().includes(movementSearchTerm.toLowerCase())
+        let filtered = movements.filter((movement) => {
+            // Filtro por tipo de movimiento
+            if (selectedMovementType !== "all" && movement.type !== selectedMovementType) {
+                return false
+            }
 
-            return matchesType && matchesSubaccount && matchesDate && matchesSearch
+            // Filtro por subcuenta
+            if (selectedSubaccount !== "all" && movement.subAccountId !== selectedSubaccount) {
+                return false
+            }
+
+            // Filtro por rango de fechas
+            if (!filterByDateRange(movement)) {
+                return false
+            }
+
+            // Filtro por término de búsqueda
+            if (movementSearchTerm) {
+                const searchLower = movementSearchTerm.toLowerCase()
+                const product = productsMap.get(movement.productId)
+                const productName = product?.name || ""
+                const productSku = product?.sku || ""
+                const movementId = movement.id || ""
+
+                if (
+                    !productName.toLowerCase().includes(searchLower) &&
+                    !productSku.toLowerCase().includes(searchLower) &&
+                    !movementId.toLowerCase().includes(searchLower)
+                ) {
+                    return false
+                }
+            }
+
+            return true
         })
 
-        // Ordenar movimientos
+        // Ordenamiento
         filtered.sort((a, b) => {
             switch (movementSortBy) {
                 case "date-desc":
-                    return new Date(b.date).getTime() - new Date(a.date).getTime()
+                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
                 case "date-asc":
-                    return new Date(a.date).getTime() - new Date(b.date).getTime()
-                case "product-asc":
-                    return (a.Product?.name || "").localeCompare(b.Product?.name || "")
-                case "product-desc":
-                    return (b.Product?.name || "").localeCompare(a.Product?.name || "")
-                case "quantity-asc":
-                    return (a.quantity || 0) - (b.quantity || 0)
+                    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
                 case "quantity-desc":
-                    return (b.quantity || 0) - (a.quantity || 0)
-                case "type-asc":
-                    return (a.type || "").localeCompare(b.type || "")
-                case "type-desc":
-                    return (b.type || "").localeCompare(a.type || "")
+                    return b.quantity - a.quantity
+                case "quantity-asc":
+                    return a.quantity - b.quantity
                 default:
-                    return new Date(b.date).getTime() - new Date(a.date).getTime()
+                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
             }
         })
 
         return filtered
-    }, [movements, selectedMovementType, selectedSubaccount, selectedDateRange, movementSearchTerm, movementSortBy])
+    }, [movements, selectedMovementType, selectedSubaccount, movementSearchTerm, movementSortBy, filterByDateRange, productsMap])
 
     // ✅ CORREGIDO: Estadísticas de movimientos calculadas correctamente
     const movementStats = useMemo(() => {

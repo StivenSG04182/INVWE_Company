@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -121,7 +121,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         }
     }, [agencyId, selectedSubaccount])
 
-    const loadClients = async () => {
+    const loadClients = useCallback(async () => {
         if (!agencyId) return
 
         try {
@@ -131,7 +131,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
             console.error("Error al cargar clientes:", error)
             toast.error("Error al cargar lista de clientes")
         }
-    }
+    }, [agencyId, selectedSubaccount])
 
     useEffect(() => {
         const cartData = {
@@ -188,9 +188,25 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
 
     useEffect(() => {
         loadClients()
+    }, [loadClients])
+
+    const loadSavedSales = useCallback(async () => {
+        try {
+            const options: {
+                subAccountId?: string;
+            } = {}
+
+            if (selectedSubaccount) options.subAccountId = selectedSubaccount
+
+            const savedSalesData = await getSavedSalesQuery(agencyId, options)
+            setSavedSales(savedSalesData)
+        } catch (error) {
+            console.error("Error al cargar ventas guardadas:", error)
+            toast.error(error.message || "Error al cargar ventas guardadas")
+        }
     }, [agencyId, selectedSubaccount])
 
-    const saveCartState = async () => {
+    const saveCartState = useCallback(async () => {
         if (selectedProducts.length > 0) {
             try {
                 const cartData = {
@@ -211,7 +227,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                 toast.error(error.message || "Error al guardar la venta")
             }
         }
-    }
+    }, [agencyId, selectedSubaccount, selectedProducts, selectedClient, loadSavedSales])
 
     const [isProcessing, setIsProcessing] = useState(false)
 
@@ -337,23 +353,6 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         setCartOpen(true)
     }
 
-    const loadSavedSales = async () => {
-        try {
-            const options: {
-                subAccountId?: string;
-            } = {}
-
-            if (selectedSubaccount) options.subAccountId = selectedSubaccount
-
-            const savedSalesData = await getSavedSalesQuery(agencyId, options)
-            setSavedSales(savedSalesData)
-        } catch (error) {
-            console.error("Error al cargar ventas guardadas:", error)
-            toast.error(error.message || "Error al cargar ventas guardadas")
-        }
-    }
-
-    
     const deleteSavedSale = async (id) => {
         try {
             const result = await deleteSavedSaleQuery(id)
@@ -372,7 +371,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         if (agencyId) {
             loadSavedSales()
         }
-    }, [agencyId, selectedSubaccount])
+    }, [agencyId, selectedSubaccount, loadSavedSales])
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -391,7 +390,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         return () => {
             document.removeEventListener("mousedown", handleClickOutside)
         }
-    }, [cartOpen, newClientOpen, selectedProducts])
+    }, [cartOpen, newClientOpen, selectedProducts, saveCartState])
 
     const subtotal = selectedProducts.reduce((sum, product) => sum + product.subtotal, 0)
     const iva = subtotal * 0.19
@@ -466,7 +465,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         toast.success(`${product.name} agregado al carrito`)
     }
 
-    const loadProducts = async () => {
+    const loadProducts = useCallback(async () => {
         if (!agencyId) return
 
         try {
@@ -530,13 +529,13 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [agencyId, useAgencyProducts, selectedSubaccount, selectedCategory, searchTerm])
 
     useEffect(() => {
         if (agencyId && (selectedSubaccount || useAgencyProducts)) {
             loadProducts()
         }
-    }, [agencyId, selectedSubaccount, selectedCategory, searchTerm, useAgencyProducts])
+    }, [agencyId, selectedSubaccount, selectedCategory, searchTerm, useAgencyProducts, loadProducts])
 
     const handleSubaccountChange = (subaccountId) => {
         if (subaccountId === "agency") {

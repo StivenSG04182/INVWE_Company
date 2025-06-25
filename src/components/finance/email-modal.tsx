@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -44,15 +44,7 @@ export const EmailModal = ({
     const [isSending, setIsSending] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
 
-    // Cargar clientes al abrir el modal
-    useEffect(() => {
-        if (isOpen) {
-            loadCustomers()
-            setDefaultValues()
-        }
-    }, [isOpen])
-
-    const loadCustomers = async () => {
+    const loadCustomers = useCallback(async () => {
         setIsLoadingCustomers(true)
         try {
             const result = await getCustomers({ agencyId })
@@ -64,9 +56,9 @@ export const EmailModal = ({
         } finally {
             setIsLoadingCustomers(false)
         }
-    }
+    }, [agencyId])
 
-    const setDefaultValues = () => {
+    const setDefaultValues = useCallback(() => {
         // Configurar valores por defecto
         if (defaultCustomer?.email) {
             setSendType("existing")
@@ -87,7 +79,14 @@ export const EmailModal = ({
                 ? `Estimado cliente,\n\nAdjunto encontrará su factura. Si tiene alguna pregunta, no dude en contactarnos.\n\nGracias por su preferencia.`
                 : `Estimado cliente,\n\nAdjunto encontrará el recibo de su transacción. Gracias por su compra.\n\nSaludos cordiales.`
         setMessage(defaultMessage)
-    }
+    }, [defaultCustomer, documentType, documentId])
+
+    useEffect(() => {
+        if (isOpen) {
+            loadCustomers()
+            setDefaultValues()
+        }
+    }, [isOpen, loadCustomers, setDefaultValues])
 
     const filteredCustomers = customers.filter(
         (customer) =>

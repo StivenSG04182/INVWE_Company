@@ -64,7 +64,7 @@ const CreateFunnelPage: React.FC<CreateFunnelPageProps> = ({
     if (defaultData) {
       form.reset({ name: defaultData.name, pathName: defaultData.pathName })
     }
-  }, [defaultData])
+  }, [defaultData, form])
 
   const onSubmit = async (values: z.infer<typeof FunnelPageSchema>) => {
     if (order !== 0 && !values.pathName)
@@ -190,10 +190,12 @@ const CreateFunnelPage: React.FC<CreateFunnelPageProps> = ({
                   disabled={form.formState.isSubmitting}
                   type="button"
                   onClick={async () => {
-                    const response = await getFunnels(subaccountId)
-                    const lastFunnelPage = response.find(
+                    const existingPages = await getFunnels(subaccountId)
+                    const currentFunnel = existingPages.find(
                       (funnel) => funnel.id === funnelId
-                    )?.FunnelPages.length
+                    )
+
+                    const lastFunnelPage = 0 
 
                     await upsertFunnelPage(
                       subaccountId,

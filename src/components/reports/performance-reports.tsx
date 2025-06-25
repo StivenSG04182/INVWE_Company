@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -16,11 +16,7 @@ export default function PerformanceReports({
     const [performanceData, setPerformanceData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
 
-    useEffect(() => {
-        loadPerformanceData()
-    }, [agencyId, dateRange])
-
-    const loadPerformanceData = async () => {
+    const loadPerformanceData = useCallback(async () => {
         try {
             setIsLoading(true)
 
@@ -93,7 +89,11 @@ export default function PerformanceReports({
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [agencyId, dateRange])
+
+    useEffect(() => {
+        loadPerformanceData()
+    }, [loadPerformanceData])
 
     if (isLoading) {
         return (

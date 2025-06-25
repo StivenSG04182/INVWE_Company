@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, User, FileText, CreditCard, Package } from "lucide-react"
 import Link from "next/link"
-import { InvoiceActions } from "./invoice-actions"
+import { InvoiceActionsUpdated as InvoiceActions } from "./invoice-actions"
 
 interface InvoiceDetailViewProps {
     invoice: any

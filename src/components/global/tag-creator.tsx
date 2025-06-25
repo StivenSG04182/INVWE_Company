@@ -51,7 +51,7 @@ const TagCreator = ({subAccountId, getSelectedTags, defaultTags}: Props) => {
         // 
         () => {getSelectedTags(selectedTags)}, 
     // opsi selain default masukan ke array depedensi
-    [selectedTags])
+    [selectedTags, getSelectedTags])
 
     useEffect(() => {
         if (subAccountId) {
