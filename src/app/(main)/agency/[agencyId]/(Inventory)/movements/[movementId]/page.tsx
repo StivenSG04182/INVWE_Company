@@ -16,7 +16,7 @@ interface MovementDetailPageProps {
 export default async function MovementDetailPage({ params }: MovementDetailPageProps) {
     // Obtener los detalles del movimiento
     const movements = await getMovements(params.agencyId)
-    const movement = movements.find(m => m._id === params.movementId)
+    const movement = movements.find(m => m.id === params.movementId)
 
     if (!movement) {
         notFound()
@@ -51,8 +51,7 @@ export default async function MovementDetailPage({ params }: MovementDetailPageP
     }
 
     // Formatear fecha
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString)
+    const formatDate = (date: Date) => {
         return date.toLocaleDateString("es-CO", {
             year: "numeric",
             month: "long",
