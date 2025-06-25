@@ -20,10 +20,10 @@ const WorkspaceEditorPage = async ({ params }: { params: { agencyId: string, are
 
 
   // Obtener el área específica
-  let area = null
+  let area: any = null
   try {
     const areas = await AreaService.getAreas(agencyId)
-    area = areas.find((a: any) => a._id === areaId)
+    area = areas.find((a: any) => a._id === areaId) || null
   } catch (error) {
     console.error("Error al cargar el área:", error)
   }
