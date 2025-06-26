@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getAuthUserDetails } from "@/lib/queries"
 import { redirect } from "next/navigation"
 import { getPaymentById } from "@/lib/client-queries"
