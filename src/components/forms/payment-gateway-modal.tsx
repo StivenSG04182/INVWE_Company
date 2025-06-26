@@ -4,10 +4,10 @@ import React, { useState } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
-import { paymentGateways } from '@/app/api/payment-gateways/payment-gateways'
-import { PaymentGatewayValidationResponse } from '@/app/api/payment-gateways/payment-gateway-types'
+import { paymentGateways, PaymentGatewayValidationResponse } from '@/lib/payment-gateway-config'
 import { CheckCircleIcon, XCircleIcon, CreditCard, Loader2Icon } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
+import { verifyPaymentGatewayStatus } from '@/lib/payment-queries'
 
 type Props = {
   isOpen: boolean
@@ -31,11 +31,10 @@ const PaymentGatewayModal = ({
 
   const handleGatewaySelect = async (gatewayId: string) => {
     try {
-      // Verificamos primero si la pasarela ya está conectada
-      const response = await fetch(`/api/payment-gateways/${gatewayId}/validate?agencyId=${agencyId}`)
-      const data = await response.json()
+      // Verificamos primero si la pasarela ya está conectada usando payment-queries
+      const status = await verifyPaymentGatewayStatus(agencyId, gatewayId)
 
-      if (data.isValid && data.status === 'connected') {
+      if (status.isConnected) {
         toast({
           title: 'Pasarela conectada',
           description: 'La pasarela de pagos está conectada correctamente',

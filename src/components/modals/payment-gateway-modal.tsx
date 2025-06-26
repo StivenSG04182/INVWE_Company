@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { paymentGateways } from "@/app/api/payment-gateways/payment-gateways"
+import { paymentGateways } from "@/lib/payment-gateway-config"
 import Image from "next/image"
 import { Button } from "../ui/button"
 import { Card } from "../ui/card"
