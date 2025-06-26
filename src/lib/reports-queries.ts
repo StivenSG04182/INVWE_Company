@@ -514,7 +514,7 @@ export const getSalesReportsData = async (agencyId: string, dateRange = "month",
     const targetAchievement = Math.round((totalSales / monthlyTarget) * 100)
 
     // Tendencia de ventas (últimos 30 días)
-    const salesTrend = []
+    const salesTrend: { period: string; sales: number; target: number }[] = []
     for (let i = 29; i >= 0; i--) {
         const date = new Date()
         date.setDate(date.getDate() - i)
@@ -806,9 +806,8 @@ export const getActiveAlerts = async (agencyId: string, type = "general") => {
     if (!user) throw new Error("No autorizado")
 
     // Generar alertas automáticas basadas en datos
-    const automaticAlerts = await generateAutomaticAlerts(agencyId, type)
-
-    return { alerts: automaticAlerts }
+    const alerts = await generateAutomaticAlerts(agencyId, type)
+    return { alerts }
 }
 
 /**
@@ -1010,7 +1009,16 @@ export const saveReportActivityLog = async ({
  * Genera alertas automáticas basadas en datos del sistema
  */
 async function generateAutomaticAlerts(agencyId: string, type: string) {
-    const alerts = []
+    const alerts: Array<{
+        id: string;
+        title: string;
+        message: string;
+        type: string;
+        priority: string;
+        isActive: boolean;
+        createdAt: Date;
+        data?: any;
+    }> = []
 
     try {
         if (type === "inventory" || type === "general") {

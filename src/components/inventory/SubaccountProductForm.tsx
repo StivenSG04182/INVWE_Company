@@ -85,7 +85,7 @@ export default function SubaccountProductForm({ subaccountId, product, isEditing
     const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "price" || name === "cost" || name === "minStock" ? Number.parseFloat(value) : value,
+      [name]: name === "price" || name === "cost" || name === "minStock" ? Number.parseFloat(value) || 0 : value,
     }))
   }
 
@@ -97,13 +97,16 @@ export default function SubaccountProductForm({ subaccountId, product, isEditing
   }
 
   const calculateProfit = () => {
-    if (!formData.price || !formData.cost) return 0
-    return formData.price - formData.cost
+    const price = typeof formData.price === 'number' ? formData.price : 0
+    const cost = typeof formData.cost === 'number' ? formData.cost : 0
+    return price - cost
   }
 
   const calculateMargin = () => {
-    if (!formData.price || !formData.cost) return 0
-    return ((formData.price - formData.cost) / formData.price) * 100
+    const price = typeof formData.price === 'number' ? formData.price : 0
+    const cost = typeof formData.cost === 'number' ? formData.cost : 0
+    if (price === 0) return 0
+    return ((price - cost) / price) * 100
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -56,7 +56,11 @@ async function hasAgencyAccess(agencyId: string) {
     if (!user) return false
 
     // Verificar si el usuario tiene acceso a esta agencia
-    return user.Agency?.id === agencyId || user.Agency?.some((agency: any) => agency.id === agencyId)
+    if (Array.isArray(user.Agency)) {
+        return user.Agency.some((agency: any) => agency.id === agencyId)
+    } else {
+        return user.Agency?.id === agencyId
+    }
 }
 
 // GET: Obtener datos para el POS (productos con stock)
@@ -115,15 +119,15 @@ export async function GET(req: NextRequest) {
         const products = await prisma.product.findMany(productsQuery)
 
         // Transformar los datos para incluir el stock disponible
-        const productsWithStock = products.map((product) => {
+        const productsWithStock = products.map((product: any) => {
             // Calcular stock disponible para el área seleccionada
             let stock = 0
             if (areaId) {
-                const stockEntry = product.Stocks.find((s) => s.areaId === areaId)
+                const stockEntry = (product.Stocks as any[]).find((s: any) => s.areaId === areaId)
                 stock = stockEntry ? stockEntry.quantity : 0
             } else {
                 // Si no hay área seleccionada, sumar todo el stock disponible
-                stock = product.Stocks.reduce((sum, s) => sum + s.quantity, 0)
+                stock = (product.Stocks as any[]).reduce((sum: number, s: any) => sum + s.quantity, 0)
             }
 
             return {
@@ -134,9 +138,9 @@ export async function GET(req: NextRequest) {
                 description: product.description,
                 stock: stock,
                 categoryId: product.categoryId,
-                categoryName: product.Category?.name,
+                categoryName: (product.Category as any)?.name,
                 images: product.images,
-                productImage: product.productImage,
+                productImage: (product as any).productImage,
             }
         })
 
@@ -164,7 +168,7 @@ export async function POST(req: NextRequest) {
 
         // Verificar stock disponible antes de procesar
         for (const product of products) {
-            const stockEntry = await prisma.stock.findUnique({
+            const stockEntry = await (prisma as any).stock.findUnique({
                 where: {
                     productId_areaId: {
                         productId: product.id,
@@ -204,7 +208,7 @@ export async function POST(req: NextRequest) {
                     status: "COMPLETED",
                     saleDate: new Date(),
                     customerId: client.id || null,
-                    cashierId: session.user?.id || null,
+                    cashierId: (session.user as any)?.id || null,
                     areaId,
                     agencyId,
                     ...(subAccountId && { subAccountId }),
@@ -225,7 +229,7 @@ export async function POST(req: NextRequest) {
 
             // 2. Actualizar el stock de cada producto
             for (const product of products) {
-                await tx.stock.update({
+                await (tx as any).stock.update({
                     where: {
                         productId_areaId: {
                             productId: product.id,
@@ -254,7 +258,7 @@ export async function POST(req: NextRequest) {
             }
 
             // 4. Generar factura si hay un cliente seleccionado
-            let invoice = null
+            let invoice: any = null
             if (client.id) {
                 const invoiceNumber = await generateInvoiceNumber()
 

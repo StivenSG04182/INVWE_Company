@@ -162,6 +162,7 @@ async function createSimulatedConnection(
             accessToken,
             refreshToken,
             expiresAt,
+            status: 'ACTIVE',
             metadata: {
                 simulatedConnection: true,
                 eventType,
@@ -176,9 +177,8 @@ async function createSimulatedConnection(
     await db.notification.create({
         data: {
             agencyId,
-            title: `Conexión con ${gatewayId === 'paypal' ? 'PayPal' : 'MercadoPago'} establecida`,
-            description: `Tu cuenta ha sido conectada exitosamente en modo de pruebas.`,
-            isRead: false,
+            userId: agencyId, // Usar agencyId como userId temporalmente
+            notification: `Conexión con ${gatewayId === 'paypal' ? 'PayPal' : 'MercadoPago'} establecida - Tu cuenta ha sido conectada exitosamente en modo de pruebas.`,
         },
     });
 }
@@ -228,9 +228,8 @@ async function updateConnectionStatus(
     await db.notification.create({
         data: {
             agencyId,
-            title: `Estado de ${gatewayId === 'paypal' ? 'PayPal' : 'MercadoPago'} actualizado`,
-            description: statusMessage,
-            isRead: false,
+            userId: agencyId, // Usar agencyId como userId temporalmente
+            notification: `Estado de ${gatewayId === 'paypal' ? 'PayPal' : 'MercadoPago'} actualizado - ${statusMessage}`,
         },
     });
 }

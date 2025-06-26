@@ -8,14 +8,15 @@ interface PayPalButtonProps {
   amount: number
   onSuccess: (details: any) => void
   onError: (error: any) => void
+  currency?: string
 }
 
-export const PayPalButton = ({ amount, onSuccess, onError }: PayPalButtonProps) => {
+export const PayPalButton = ({ amount, onSuccess, onError, currency = 'USD' }: PayPalButtonProps) => {
   const [error, setError] = useState<string | null>(null)
 
   const initialOptions = {
     clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '',
-    currency: 'USD',
+    currency: currency,
     intent: 'capture',
   }
 
@@ -25,7 +26,7 @@ export const PayPalButton = ({ amount, onSuccess, onError }: PayPalButtonProps) 
         {
           amount: {
             value: amount.toString(),
-            currency_code: 'USD',
+            currency_code: currency,
           },
         },
       ],
@@ -34,29 +35,38 @@ export const PayPalButton = ({ amount, onSuccess, onError }: PayPalButtonProps) 
 
   const onApprove = async (data: any, actions: any) => {
     try {
+      setError(null)
       const details = await actions.order.capture()
       onSuccess(details)
       toast.success('Payment successful!')
     } catch (error) {
-      setError('Payment failed. Please try again.')
+      const errorMessage = error instanceof Error ? error.message : 'Payment failed. Please try again.'
+      setError(errorMessage)
       onError(error)
-      toast.error('Payment failed. Please try again.')
+      toast.error(errorMessage)
     }
+  }
+
+  const handleError = (err: any) => {
+    const errorMessage = err.message || 'An error occurred with PayPal'
+    setError(errorMessage)
+    onError(err)
+    toast.error(errorMessage)
   }
 
   return (
     <PayPalScriptProvider options={initialOptions}>
       <div className="w-full">
-        {error && <div className="text-red-500 mb-4">{error}</div>}
+        {error && (
+          <div className="text-red-500 mb-4 p-2 bg-red-50 rounded border border-red-200">
+            {error}
+          </div>
+        )}
         <PayPalButtons
           style={{ layout: 'vertical' }}
           createOrder={createOrder}
           onApprove={onApprove}
-          onError={(err) => {
-            setError(err.message)
-            onError(err)
-            toast.error('An error occurred with PayPal')
-          }}
+          onError={handleError}
         />
       </div>
     </PayPalScriptProvider>

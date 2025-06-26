@@ -48,7 +48,7 @@ export const EmailModal = ({
         setIsLoadingCustomers(true)
         try {
             const result = await getCustomers({ agencyId })
-            if (result.success) {
+            if (result.success && result.data) {
                 setCustomers(result.data)
             }
         } catch (error) {

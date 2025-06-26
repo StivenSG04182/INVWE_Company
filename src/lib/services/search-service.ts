@@ -83,7 +83,6 @@ export class SearchService {
             where,
             include: {
                 Category: true,
-                Stocks: true,
             },
             orderBy,
             skip: filter.offset || 0,
@@ -97,7 +96,7 @@ export class SearchService {
         const results = products
             .map((product) => {
                 // Calcular stock total
-                const totalStock = product.Stocks.reduce((sum, stock) => sum + stock.quantity, 0)
+                const totalStock = product.quantity ?? 0
 
                 // Verificar si tiene stock
                 const hasStock = totalStock > 0
@@ -155,14 +154,13 @@ export class SearchService {
             },
             include: {
                 Category: true,
-                Stocks: true,
             },
         })
 
         if (!product) return null
 
         // Calcular stock total
-        const totalStock = product.Stocks.reduce((sum, stock) => sum + stock.quantity, 0)
+        const totalStock = product.quantity ?? 0
 
         return {
             id: product.id,

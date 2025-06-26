@@ -100,7 +100,7 @@ export function AnalyticsDashboard({ teamMembers, schedules, holidays, agencyId 
 
     // Datos para gráfico de evolución semanal
     const weeklyEvolutionData = useMemo(() => {
-        const weeks = []
+        const weeks: { week: string; hours: number; payroll: number; employees: number }[] = []
         const currentDate = new Date()
 
         for (let i = 7; i >= 0; i--) {

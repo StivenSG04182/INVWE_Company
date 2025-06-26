@@ -94,7 +94,7 @@ export function calculateTotalPayroll(schedules: any[], holidays: any[] = []): n
     }, {})
 
     // Calcular nómina total
-    return Object.values(employeeSchedules).reduce((total: number, empSchedules: any) => {
+    return (Object.values(employeeSchedules) as any[][]).reduce((total: number, empSchedules: any[]) => {
         const payroll = calculateEmployeePayroll(empSchedules, holidays, "current-month")
         return total + payroll.totalAmount
     }, 0)

@@ -178,7 +178,7 @@ export async function refreshGatewayToken(gatewayId: string, refreshToken: strin
             throw new Error('No se pudo actualizar el token de acceso');
         }
 
-        let expiresAt = null;
+        let expiresAt: Date | null = null;
         if (tokenResponse.expiresIn) {
             expiresAt = new Date();
             expiresAt.setSeconds(expiresAt.getSeconds() + tokenResponse.expiresIn);

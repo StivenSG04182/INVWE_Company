@@ -14,12 +14,19 @@ import { analyzeDashboard } from "./dashboard-analyzer"
 
 const localizer = momentLocalizer(moment)
 
+interface Event {
+    title: string
+    start: Date | null
+    end: Date
+    type: string
+}
+
 const ImprovedScheduleCalendar = () => {
-    const [events, setEvents] = React.useState([])
+    const [events, setEvents] = React.useState<Event[]>([])
     const [modalVisible, setModalVisible] = React.useState(false)
-    const [selectedDay, setSelectedDay] = React.useState(null)
+    const [selectedDay, setSelectedDay] = React.useState<Date | null>(null)
     const [vacationDays, setVacationDays] = React.useState(0)
-    const [selectedTemplate, setSelectedTemplate] = React.useState(null)
+    const [selectedTemplate, setSelectedTemplate] = React.useState<any>(null)
 
     const handleSelect = ({ start }) => {
         setSelectedDay(start)
@@ -31,6 +38,8 @@ const ImprovedScheduleCalendar = () => {
     }
 
     const handleRegisterHours = (values) => {
+        if (!selectedDay) return
+        
         const newEvent = {
             title: `Horas ${values.type}`,
             start: selectedDay,
@@ -48,6 +57,8 @@ const ImprovedScheduleCalendar = () => {
     }
 
     const handleApplyTemplate = () => {
+        if (!selectedDay) return
+        
         const templateEvents = applyTemplate(selectedTemplate, selectedDay)
         setEvents([...events, ...templateEvents])
     }
@@ -79,46 +90,42 @@ const ImprovedScheduleCalendar = () => {
                 selectable
                 style={{ height: 500 }}
             />
-            <Modal
-                title="Registrar Horas"
-                visible={modalVisible}
-                onCancel={handleModalClose}
-                footer={[
-                    <Button key="back" onClick={handleModalClose}>
-                        Cancelar
-                    </Button>,
-                    <Button key="submit" type="primary" onClick={handleRegisterHours}>
-                        Registrar
-                    </Button>,
-                ]}
-            >
-                <Form onFinish={handleRegisterHours}>
-                    <Form.Item
-                        label="Tipo de Horas"
-                        name="type"
-                        rules={[{ required: true, message: "Por favor selecciona el tipo de horas" }]}
-                    >
-                        <Select>
-                            <Select.Option value="normales">Normales</Select.Option>
-                            <Select.Option value="extras">Extras</Select.Option>
-                            <Select.Option value="nocturnas">Nocturnas</Select.Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item
-                        label="Número de Horas"
-                        name="hours"
-                        rules={[{ required: true, message: "Por favor ingresa el número de horas" }]}
-                    >
-                        <Input type="number" />
-                    </Form.Item>
-                </Form>
-            </Modal>
-            <Button onClick={handleGenerateReport}>Generar Reporte PDF</Button>
-            <Button onClick={handleAnalyzeDashboard}>Ver Dashboard Analítico</Button>
-            <Button onClick={handleSendNotification}>
+            <div className="modal" style={{ display: modalVisible ? 'block' : 'none' }}>
+                <div className="modal-content">
+                    <h3>Registrar Horas</h3>
+                    <form onSubmit={(e) => {
+                        e.preventDefault()
+                        const formData = new FormData(e.currentTarget)
+                        handleRegisterHours({
+                            type: formData.get('type'),
+                            hours: parseInt(formData.get('hours') as string)
+                        })
+                    }}>
+                        <div>
+                            <label>Tipo de Horas:</label>
+                            <select name="type" required>
+                                <option value="normales">Normales</option>
+                                <option value="extras">Extras</option>
+                                <option value="nocturnas">Nocturnas</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Número de Horas:</label>
+                            <input type="number" name="hours" required />
+                        </div>
+                        <div>
+                            <button type="button" onClick={handleModalClose}>Cancelar</button>
+                            <button type="submit">Registrar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <button onClick={handleGenerateReport}>Generar Reporte PDF</button>
+            <button onClick={handleAnalyzeDashboard}>Ver Dashboard Analítico</button>
+            <button onClick={handleSendNotification}>
                 <MailOutlined /> Enviar Notificación
-            </Button>
-            <Button onClick={handleApplyTemplate}>Aplicar Plantilla</Button>
+            </button>
+            <button onClick={handleApplyTemplate}>Aplicar Plantilla</button>
             <div>
                 <h2>Días de Vacaciones Disponibles: {vacationDays}</h2>
             </div>

@@ -43,12 +43,14 @@ const EmailElement: React.FC<EmailElementProps> = memo(({ element, index, parent
       const clientOffset = monitor.getClientOffset()
       const hoverClientY = clientOffset!.y - hoverBoundingRect.top
 
-      if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) return
-      if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) return
+      if (hoverIndex !== undefined) {
+        if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) return
+        if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) return
 
-      moveElement(item.id, item.parentId, parentId, hoverIndex)
-      item.index = hoverIndex
-      item.parentId = parentId
+        moveElement(item.id, item.parentId, parentId, hoverIndex)
+        item.index = hoverIndex
+        item.parentId = parentId
+      }
     },
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),

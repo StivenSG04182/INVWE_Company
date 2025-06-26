@@ -98,7 +98,7 @@ export class ReportService {
         const { startDate, endDate } = this.getDateRangeFilter(filter)
 
         // Construir la consulta base
-        const whereClause: any = {
+        const whereClause: Record<string, any> = {
             agencyId,
             createdAt: {
                 gte: startDate,
@@ -129,7 +129,13 @@ export class ReportService {
         })
 
         // Agrupar ventas por fecha
-        const salesByDate = sales.reduce((acc, sale) => {
+        type SalesByDate = Record<string, {
+            date: string
+            totalSales: number
+            totalRevenue: number
+            itemsSold: number
+        }>
+        const salesByDate: SalesByDate = sales.reduce((acc, sale) => {
             const dateKey = format(sale.createdAt, "yyyy-MM-dd")
 
             if (!acc[dateKey]) {
@@ -143,15 +149,14 @@ export class ReportService {
 
             acc[dateKey].totalSales += 1
             acc[dateKey].totalRevenue += Number(sale.total)
-            acc[dateKey].itemsSold += sale.Items.reduce((sum, item) => sum + item.quantity, 0)
+            acc[dateKey].itemsSold += Array.isArray(sale.Items) ? sale.Items.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0
 
             return acc
-        }, {})
+        }, {} as SalesByDate)
 
         // Convertir a array y calcular ticket promedio
-        const report = Object.values(salesByDate).map((item: any) => ({
+        const report: SalesReportItem[] = Object.values(salesByDate).map((item) => ({
             ...item,
-            averageTicket: item.totalSales > 0 ? item.totalRevenue / item.totalSales : 0,
             date: format(new Date(item.date), "dd MMM yyyy", { locale: es }),
             totalRevenue: Number(item.totalRevenue.toFixed(2)),
             averageTicket: Number((item.totalRevenue / item.totalSales).toFixed(2)),
@@ -164,7 +169,7 @@ export class ReportService {
     static async generateInventoryReport(agencyId: string, filter: ReportFilter): Promise<InventoryReportItem[]> {
         const { startDate, endDate } = this.getDateRangeFilter(filter)
 
-        // Obtener productos con sus stocks
+        // Obtener productos con su categoría
         const products = await prisma.product.findMany({
             where: {
                 agencyId,
@@ -173,7 +178,6 @@ export class ReportService {
             },
             include: {
                 Category: true,
-                Stocks: true,
             },
         })
 
@@ -192,7 +196,9 @@ export class ReportService {
         })
 
         // Agrupar movimientos por producto
-        const movementsByProduct = movements.reduce((acc, movement) => {
+        type MovementsByProduct = Record<string, { entries: number; exits: number; transfers: number }>
+        const movementsByProduct: MovementsByProduct = movements.reduce((acc, movement) => {
+            if (!movement.productId) return acc
             if (!acc[movement.productId]) {
                 acc[movement.productId] = {
                     entries: 0,
@@ -202,22 +208,27 @@ export class ReportService {
             }
 
             if (movement.type === "ENTRADA") {
-                acc[movement.productId].entries += movement.quantity
+                acc[movement.productId].entries += movement.quantity || 0
             } else if (movement.type === "SALIDA") {
-                acc[movement.productId].exits += movement.quantity
+                acc[movement.productId].exits += movement.quantity || 0
             } else if (movement.type === "TRANSFERENCIA") {
-                acc[movement.productId].transfers += movement.quantity
+                acc[movement.productId].transfers += movement.quantity || 0
             }
 
             return acc
-        }, {})
+        }, {} as MovementsByProduct)
 
         // Construir el reporte
-        const report = products.map((product) => {
-            const currentStock = product.Stocks.reduce((sum, stock) => sum + stock.quantity, 0)
+        const report: InventoryReportItem[] = products.map((product) => {
+            // Si el producto tiene la propiedad quantity, úsala como stock actual, si no, calcula con movimientos
+            let currentStock = typeof product.quantity === "number" ? product.quantity : 0
+            if (currentStock === 0 && movementsByProduct[product.id]) {
+                // Si no hay quantity, calcula stock como entradas - salidas
+                currentStock = movementsByProduct[product.id].entries - movementsByProduct[product.id].exits
+            }
             const movements = movementsByProduct[product.id] || { entries: 0, exits: 0, transfers: 0 }
             const initialStock = currentStock - movements.entries + movements.exits
-            const isLowStock = product.minStock ? currentStock <= product.minStock : false
+            const isLowStock = typeof product.minStock === "number" ? currentStock <= product.minStock : false
             const totalValue = currentStock * Number(product.price)
 
             return {
@@ -273,10 +284,13 @@ export class ReportService {
         })
 
         // Agrupar ventas por producto
-        const productPerformance = {}
+        type ProductPerformanceMap = Record<string, ProductPerformanceItem>
+        const productPerformance: ProductPerformanceMap = {}
 
         sales.forEach((sale) => {
+            if (!Array.isArray(sale.Items)) return
             sale.Items.forEach((item) => {
+                if (!item.productId || !item.Product) return
                 const productId = item.productId
 
                 if (!productPerformance[productId]) {
@@ -295,7 +309,7 @@ export class ReportService {
 
                 const unitCost = Number(item.Product.cost) || 0
                 const unitPrice = Number(item.unitPrice)
-                const quantity = item.quantity
+                const quantity = item.quantity || 0
                 const revenue = unitPrice * quantity
                 const profit = (unitPrice - unitCost) * quantity
 
@@ -311,15 +325,13 @@ export class ReportService {
                 agencyId,
                 id: { in: Object.keys(productPerformance) },
             },
-            include: {
-                Stocks: true,
-            },
         })
 
         // Calcular rotación de stock
         products.forEach((product) => {
             if (productPerformance[product.id]) {
-                const currentStock = product.Stocks.reduce((sum, stock) => sum + stock.quantity, 0)
+                // Si el producto tiene la propiedad quantity, úsala como stock actual
+                const currentStock = typeof product.quantity === "number" ? product.quantity : 0
                 const quantitySold = productPerformance[product.id].quantitySold
 
                 // Fórmula de rotación: Cantidad vendida / Stock promedio
@@ -331,7 +343,7 @@ export class ReportService {
         })
 
         // Convertir a array y formatear valores numéricos
-        const report = Object.values(productPerformance).map((item: any) => ({
+        const report: ProductPerformanceItem[] = Object.values(productPerformance).map((item) => ({
             ...item,
             revenue: Number(item.revenue.toFixed(2)),
             profit: Number(item.profit.toFixed(2)),
@@ -341,14 +353,14 @@ export class ReportService {
     }
 
     // Exportar reporte a CSV
-    static exportToCSV(data: any[], filename: string): string {
+    static exportToCSV(data: object[], filename: string): string {
         if (!data || data.length === 0) return ""
 
         // Obtener encabezados
         const headers = Object.keys(data[0])
 
         // Crear contenido CSV
-        const csvRows = []
+        const csvRows: string[] = []
 
         // Añadir encabezados
         csvRows.push(headers.join(","))
@@ -356,7 +368,7 @@ export class ReportService {
         // Añadir filas
         for (const row of data) {
             const values = headers.map((header) => {
-                const value = row[header]
+                const value = (row as Record<string, any>)[header]
                 // Escapar comillas y formatear valores
                 return typeof value === "string" ? `"${value.replace(/"/g, '""')}"` : value
             })

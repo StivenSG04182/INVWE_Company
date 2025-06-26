@@ -34,9 +34,8 @@ export async function PATCH(req: Request) {
     await db.subscription.update({
       where: { id: agency.Subscription?.id },
       data: {
-        planId,
-        status: updatedSubscription.status,
-        currentPeriodEnd: new Date(updatedSubscription.billing_info.next_billing_time),
+        plan: planId,
+        currentPeriodEndDate: new Date(updatedSubscription.billing_info.next_billing_time),
       },
     })
 

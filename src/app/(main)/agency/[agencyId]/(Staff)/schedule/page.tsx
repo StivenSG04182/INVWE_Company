@@ -113,6 +113,7 @@ const SchedulePage = async ({ params }: { params: { agencyId: string } }) => {
           <PDFReports
             teamMembers={teamMembers}
             schedules={schedules}
+            holidays={holidays}
             agencyId={agencyId}
           />
         </TabsContent>

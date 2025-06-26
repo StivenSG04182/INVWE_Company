@@ -143,9 +143,9 @@ const SalesPosPage = ({ params }: { params: { agencyId: string } }) => {
     const [user, setUser] = useState({ Agency: true })
     const [selectedPeriod, setSelectedPeriod] = useState("all")
     const [searchQuery, setSearchQuery] = useState("")
-    const [selectedSale, setSelectedSale] = useState(null)
+    const [selectedSale, setSelectedSale] = useState<any>(null)
     const [isDetailOpen, setIsDetailOpen] = useState(false)
-    const [sales, setSales] = useState([])
+    const [sales, setSales] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [paymentFilter, setPaymentFilter] = useState("all")
     const [sortOrder, setSortOrder] = useState("date-desc")
@@ -216,13 +216,13 @@ const SalesPosPage = ({ params }: { params: { agencyId: string } }) => {
     // Ordenar ventas
     const sortedSales = [...filteredSales].sort((a, b) => {
         if (sortOrder === "date-desc") {
-            return new Date(b.date + "T" + b.time) - new Date(a.date + "T" + a.time)
+            return new Date((b as any).date + "T" + (b as any).time).getTime() - new Date((a as any).date + "T" + (a as any).time).getTime()
         } else if (sortOrder === "date-asc") {
-            return new Date(a.date + "T" + a.time) - new Date(b.date + "T" + b.time)
+            return new Date((a as any).date + "T" + (a as any).time).getTime() - new Date((b as any).date + "T" + (b as any).time).getTime()
         } else if (sortOrder === "amount-desc") {
-            return b.total - a.total
+            return (b as any).total - (a as any).total
         } else if (sortOrder === "amount-asc") {
-            return a.total - b.total
+            return (a as any).total - (b as any).total
         }
         return 0
     })

@@ -37,16 +37,9 @@ export default async function InventoryPage({
     discountMinimumPrice: product.discountMinimumPrice ? Number(product.discountMinimumPrice) : null
   }))
 
-  // Crear el mapa de productos y áreas como objetos planos
-  const productsMap = products.reduce((acc, product) => {
-    acc[product.id] = product
-    return acc
-  }, {} as Record<string, typeof products[0]>)
-
-  const areasMap = areas.reduce((acc, area) => {
-    acc[area.id] = area
-    return acc
-  }, {} as Record<string, typeof areas[0]>)
+  // Crear el mapa de productos y áreas como Map objects
+  const productsMap = new Map(products.map(product => [product.id, product]))
+  const areasMap = new Map(areas.map(area => [area.id, area]))
 
   // Determinar la página activa basada en los parámetros de búsqueda
   const activeTab =
@@ -71,21 +64,14 @@ export default async function InventoryPage({
           agencyId={agencyId}
           type={searchParams.type as "entrada" | "salida" | "transferencia" | undefined}
           productId={searchParams.productId}
-          products={products}
-          areas={areas}
         />
       </Suspense>
     ),
     product: searchParams.productId ? (
       <Suspense>
         <ProductStockDetails
-          agencyId={agencyId}
-          productId={searchParams.productId}
-          products={products}
+          product={products.find(p => p.id === searchParams.productId)!}
           stocks={products.filter(p => p.id === searchParams.productId)}
-          areas={areas}
-          productsMap={productsMap}
-          areasMap={areasMap}
         />
       </Suspense>
     ) : null

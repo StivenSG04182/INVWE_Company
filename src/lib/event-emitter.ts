@@ -39,7 +39,7 @@ class EventEmitterClass {
         const promises = this.events[event].map((callback) => {
             try {
                 const result = callback(data)
-                return result instanceof Promise ? result : Promise.resolve(result)
+                return (result as any) instanceof Promise ? result : Promise.resolve(result)
             } catch (error) {
                 console.error(`Error en listener de evento ${event}:`, error)
                 return Promise.reject(error)

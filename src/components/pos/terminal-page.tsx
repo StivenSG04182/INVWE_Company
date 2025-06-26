@@ -83,6 +83,25 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
     // Referencias
     const modalRef = useRef<HTMLDivElement>(null)
 
+    // Cargar productos
+    const loadProducts = useCallback(async () => {
+        try {
+            const productsData = await getProductsForPOS(agencyId, {
+                subAccountId: selectedSubaccount,
+                categoryId: selectedCategory !== "Todos" ? selectedCategory : undefined,
+                search: searchTerm
+            })
+            setProducts(productsData)
+        } catch (error) {
+            console.error("Error cargando productos:", error)
+            toast({
+                title: "Error",
+                description: "No se pudieron cargar los productos",
+                variant: "destructive",
+            })
+        }
+    }, [agencyId, selectedSubaccount, selectedCategory, searchTerm])
+
     // Cargar datos iniciales
     const loadInitialData = useCallback(async () => {
         try {
@@ -113,31 +132,12 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
         } finally {
             setIsLoading(false)
         }
-    }, [agencyId, selectedSubaccount])
-
-    // Cargar productos
-    const loadProducts = useCallback(async () => {
-        try {
-            const productsData = await getProductsForPOS(agencyId, {
-                subAccountId: selectedSubaccount,
-                categoryId: selectedCategory !== "Todos" ? selectedCategory : undefined,
-                search: searchTerm
-            })
-            setProducts(productsData)
-        } catch (error) {
-            console.error("Error cargando productos:", error)
-            toast({
-                title: "Error",
-                description: "No se pudieron cargar los productos",
-                variant: "destructive",
-            })
-        }
-    }, [agencyId, selectedSubaccount, selectedCategory, searchTerm])
+    }, [agencyId, selectedSubaccount, loadProducts])
 
     // Cargar datos cuando cambien las dependencias
     useEffect(() => {
         loadInitialData()
-    }, [loadInitialData])
+    }, [loadInitialData, loadProducts])
 
     // Cargar productos cuando cambien los filtros
     useEffect(() => {
@@ -174,7 +174,7 @@ const TerminalPage = ({ params }: { params: { agencyId: string } }) => {
                 variant: "destructive",
             })
         }
-    }, [agencyId, selectedSubaccount, selectedArea, selectedProducts, selectedClient])
+    }, [agencyId, selectedSubaccount, selectedProducts, selectedClient])
 
     // Función para cargar ventas guardadas desde la API
     const loadSavedSales = useCallback(async () => {

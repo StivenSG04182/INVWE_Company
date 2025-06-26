@@ -32,9 +32,7 @@ const NewInvoicePage = async ({ params }: { params: { agencyId: string } }) => {
     name: client.name,
     email: client.email || undefined,
     phone: client.phone || undefined,
-    address: client.address || undefined,
-    taxId: client.taxId || undefined,
-    taxType: client.taxIdType || undefined
+    address: client.address || undefined
   }))
 
   // Obtener productos con información de descuentos
@@ -108,15 +106,13 @@ const NewInvoicePage = async ({ params }: { params: { agencyId: string } }) => {
         <CardContent>
           <InvoiceForm
             agencyId={agencyId}
-            subAccounts={agency.SubAccount.map((sa) => ({ id: sa.id, name: sa.name }))}
+            subAccounts={[]}
             customers={customers.map((c) => ({
               id: c.id,
               name: c.name,
               email: c.email || undefined,
               phone: c.phone || undefined,
-              address: c.address || undefined,
-              taxId: c.taxId || undefined,
-              taxType: c.taxType || undefined
+              address: c.address || undefined
             }))}
             products={products.map((p) => {
               // Verificar si el descuento está activo (dentro del rango de fechas)
@@ -132,7 +128,7 @@ const NewInvoicePage = async ({ params }: { params: { agencyId: string } }) => {
                 price: Number(p.price),
                 description: p.description || undefined,
                 discount: hasValidDiscount ? Number(p.discount) : 0,
-                hasDiscount: hasValidDiscount,
+                hasDiscount: !!hasValidDiscount,
                 originalPrice: Number(p.price),
               };
             })}

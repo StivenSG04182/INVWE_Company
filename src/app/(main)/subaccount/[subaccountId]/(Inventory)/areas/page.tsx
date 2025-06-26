@@ -29,7 +29,7 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
   }
 
   // Obtener áreas de MongoDB
-  let areas = []
+  let areas: any[] = []
   try {
     areas = await AreaService.getAreas(agencyId)
   } catch (error) {

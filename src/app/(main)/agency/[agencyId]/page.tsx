@@ -59,12 +59,13 @@ function toLineChartData(data, xAxisKey, lines) {
   }
 }
 
-function toPieChartData(data, nameKey, valueKey, colors) {
+function toPieChartData(data, nameKey, valueKey, colors, label = "Datos") {
   return {
-    labels: data.map((item) => item[nameKey]),
+    labels: data.map((item) => String(item[nameKey])),
     datasets: [
       {
-        data: data.map((item) => item[valueKey]),
+        label,
+        data: data.map((item) => Number(item[valueKey])),
         backgroundColor: colors,
       },
     ],
@@ -1052,20 +1053,22 @@ export default async function DashboardPage({
               <CardContent>
                 <div className="h-[200px] mb-4">
                   <LineChart
-                    data={[
-                      { name: "Lun", requests: 120, tiempo: 230 },
-                      { name: "Mar", requests: 180, tiempo: 250 },
-                      { name: "Mié", requests: 150, tiempo: 210 },
-                      { name: "Jue", requests: 230, tiempo: 280 },
-                      { name: "Vie", requests: 290, tiempo: 310 },
-                      { name: "Sáb", requests: 110, tiempo: 190 },
-                      { name: "Dom", requests: 90, tiempo: 180 },
-                    ]}
-                    xAxisKey="name"
-                    lines={[
-                      { dataKey: "requests", stroke: "#3b82f6", name: "Solicitudes" },
-                      { dataKey: "tiempo", stroke: "#f59e0b", name: "Tiempo (ms)" },
-                    ]}
+                    data={toLineChartData(
+                      [
+                        { name: "Lun", requests: 120, tiempo: 230 },
+                        { name: "Mar", requests: 180, tiempo: 250 },
+                        { name: "Mié", requests: 150, tiempo: 210 },
+                        { name: "Jue", requests: 230, tiempo: 280 },
+                        { name: "Vie", requests: 290, tiempo: 310 },
+                        { name: "Sáb", requests: 110, tiempo: 190 },
+                        { name: "Dom", requests: 90, tiempo: 180 },
+                      ],
+                      "name",
+                      [
+                        { dataKey: "requests", stroke: "#3b82f6", name: "Solicitudes" },
+                        { dataKey: "tiempo", stroke: "#f59e0b", name: "Tiempo (ms)" },
+                      ]
+                    )}
                   />
                 </div>
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowDownToLine, Package } from "lucide-react"
+import { ProductService, AreaService } from "@/lib/services/inventory-service"
 import MovementRegistration from "@/components/inventory/movement-registration"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -44,16 +45,13 @@ export default function EntradaMovementModal({
                     taxRate: product.taxRate ? Number(product.taxRate) : 0,
                     discountMinimumPrice: product.discountMinimumPrice ? Number(product.discountMinimumPrice) : null,
                     minStock: product.minStock ? Number(product.minStock) : undefined,
-                    stocks: product.Stocks ? product.Stocks.map((stock: any) => ({
-                        ...stock,
-                        quantity: stock.quantity ? Number(stock.quantity) : 0
-                    })) : []
                 }))
 
                 setProducts(processedProducts)
-                setAreas(rawAreas)
+                setAreas(rawAreas || [])
             } catch (error) {
                 console.error("Error al cargar datos:", error)
+                // Aquí podrías mostrar un toast de error si lo deseas
             } finally {
                 setIsLoading(false)
             }
@@ -125,9 +123,6 @@ export default function EntradaMovementModal({
                             agencyId={agencyId}
                             type="entrada"
                             productId={productId}
-                            products={products}
-                            areas={areas}
-                            onComplete={onClose}
                         />
                     )}
                 </div>

@@ -31,7 +31,7 @@ const FunnelProductsTable: React.FC<FunnelProductsTableProps> = ({
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [liveProducts, setLiveProducts] = useState<
-    { productId: string; recurring: boolean }[] | []
+    { productId: string; recurring: boolean }[]
   >(JSON.parse(defaultData.liveProducts || '[]'))
 
   const handleSaveProducts = async () => {
@@ -43,7 +43,7 @@ const FunnelProductsTable: React.FC<FunnelProductsTableProps> = ({
     await saveActivityLogsNotification({
       agencyId: undefined,
       description: `Update funnel products | ${response.name}`,
-      subaccountId: defaultData.subAccountId,
+      subaccountId: undefined,
     })
     setIsLoading(false)
     router.refresh()

@@ -13,7 +13,7 @@ export const columns: ColumnDef<FunnelsForSubAccount>[] = [
       return (
         <Link
           className="flex gap-2 items-center"
-          href={`/subaccount/${row.original.subAccountId}/funnels/${row.original.id}`}
+          href={`/subaccount/${row.original.id}/funnels/${row.original.id}`}
         >
           {row.getValue('name')}
           <ExternalLink size={15} />

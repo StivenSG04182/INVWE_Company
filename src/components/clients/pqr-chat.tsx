@@ -59,7 +59,7 @@ export default function PqrChat({
                 category: pqr.type.toLowerCase(),
                 createdAt: pqr.createdAt,
                 lastUpdated: pqr.updatedAt,
-                assignedTo: pqr.AssignedUser?.name || 'Sin asignar',
+                assignedTo: 'Sin asignar',
                 // Creamos un mensaje inicial con la descripción del PQR
                 messages: [
                     {
@@ -250,7 +250,7 @@ export default function PqrChat({
                 category: newPQR.type.toLowerCase(),
                 createdAt: newPQR.createdAt,
                 lastUpdated: newPQR.updatedAt,
-                assignedTo: newPQR.AssignedUser?.name || 'Sin asignar',
+                assignedTo: 'Sin asignar',
                 messages: [
                     {
                         id: `msg-${newPQR.id}-1`,
@@ -304,7 +304,7 @@ export default function PqrChat({
                     category: pqr.type.toLowerCase(),
                     createdAt: pqr.createdAt,
                     lastUpdated: pqr.updatedAt,
-                    assignedTo: pqr.AssignedUser?.name || 'Sin asignar',
+                    assignedTo: 'Sin asignar',
                     messages: [
                         {
                             id: `msg-${pqr.id}-1`,

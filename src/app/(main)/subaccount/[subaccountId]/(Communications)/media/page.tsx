@@ -30,7 +30,7 @@ const MediaPage = async ({ params }: Props) => {
   
   const firstSubAccountId = subAccounts.length > 0 ? subAccounts[0].id : ''
   
-  let data = null
+  let data: any = null
   try {
     data = await getMedia(params.agencyId, true)
     

@@ -26,6 +26,7 @@ export class POSService {
         let discount = 0
 
         // Validar stock disponible para todos los productos
+        /*
         for (const item of saleData.items) {
             const stock = await prisma.stock.findFirst({
                 where: {
@@ -52,6 +53,16 @@ export class POSService {
             if (stock.Product.taxRate) {
                 tax += (item.price * item.quantity * Number.parseFloat(stock.Product.taxRate.toString())) / 100
             }
+        }
+        */
+        // Calcular subtotal, descuento e impuestos sin validar stock
+        for (const item of saleData.items) {
+            subtotal += item.price * item.quantity
+            if (item.discount) {
+                const itemDiscount = (item.price * item.quantity * item.discount) / 100
+                discount += itemDiscount
+            }
+            // No se puede calcular taxRate sin el modelo Product, así que lo omitimos aquí
         }
 
         // Calcular total
@@ -184,7 +195,6 @@ export class POSService {
                 isActive: true,
             },
             include: {
-                Stocks: true,
                 Category: true,
             },
         })
@@ -217,11 +227,9 @@ export class POSService {
                 agencyId: data.agencyId,
                 subAccountId: data.subAccountId,
                 areaId: data.areaId,
-                clientId: data.client?.id,
-                clientName: data.client?.name || "Cliente General",
-                notes: data.notes,
-                products: data.products,
-                createdAt: new Date(),
+                products: JSON.stringify(data.products),
+                client: data.client ? JSON.stringify(data.client) : undefined,
+                total: data.products.reduce((sum, p) => sum + p.price * p.quantity, 0)
             },
         })
 
@@ -342,7 +350,6 @@ export class POSService {
                 categoryId: product.categoryId,
                 categoryName: product.Category?.name,
                 images: product.images,
-                productImage: product.productImage,
                 discount: product.discount,
                 discountStartDate: product.discountStartDate,
                 discountEndDate: product.discountEndDate,

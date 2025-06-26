@@ -139,7 +139,7 @@ export default function CartItem({ item, onUpdateQuantity, onRemove }: CartItemP
                                             </div>
                                         </TooltipTrigger>
                                         <TooltipContent>
-                                            <p>Quedan {item.stock - quantity} unidades disponibles</p>
+                                            <p>Quedan {item.stock ? item.stock - quantity : 0} unidades disponibles</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
@@ -151,7 +151,7 @@ export default function CartItem({ item, onUpdateQuantity, onRemove }: CartItemP
                             size="icon"
                             className="h-7 w-7"
                             onClick={incrementQuantity}
-                            disabled={item.stock && quantity >= item.stock}
+                            disabled={item.stock ? quantity >= item.stock : false}
                         >
                             <Plus className="h-3 w-3" />
                         </Button>

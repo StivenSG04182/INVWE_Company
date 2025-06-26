@@ -41,6 +41,16 @@ const EditProviderPage = async ({ params }: { params: { agencyId: string; provid
         )
     }
 
+    // Normalizar campos null a undefined
+    const normalizedProvider = {
+        ...provider,
+        contactName: provider.contactName ?? undefined,
+        email: provider.email ?? undefined,
+        phone: provider.phone ?? undefined,
+        address: provider.address ?? undefined,
+        subAccountId: provider.subAccountId ?? undefined,
+    }
+
     return (
         <div className="container mx-auto p-6">
             <div className="flex items-center mb-6">
@@ -53,7 +63,13 @@ const EditProviderPage = async ({ params }: { params: { agencyId: string; provid
                 <h1 className="text-2xl font-bold">Editar Proveedor</h1>
             </div>
             
-            <ProviderForm agencyId={agencyId} provider={provider} isEditing={true} />
+            <ProviderForm 
+                agencyId={agencyId} 
+                provider={normalizedProvider} 
+                isEditing={true}
+                isOpen={true}
+                onClose={() => {}}
+            />
         </div>
     )
 }

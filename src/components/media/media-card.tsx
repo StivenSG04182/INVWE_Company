@@ -149,7 +149,7 @@ const MediaCard = ({ file }: Props) => {
                 setLoading(true)
                 const response = await deleteMedia(file.id)
                 // Obtener el ID de la agencia desde la respuesta
-                const agencyId = response.Subaccount?.agencyId
+                const agencyId = response.agencyId
                 await saveActivityLogsNotification({
                   agencyId: agencyId, // Usar el ID de la agencia si está disponible
                   description: `Borrado de un archivo multimedia | ${response?.name}`,

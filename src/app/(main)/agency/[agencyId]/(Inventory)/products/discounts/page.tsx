@@ -19,9 +19,9 @@ const DiscountsPage = async ({ params }: { params: { agencyId: string } }) => {
     }
 
     // Obtener productos y categorías
-    let products = []
-    let categories = []
-    let activeDiscounts = []
+    let products: any[] = []
+    let categories: any[] = []
+    let activeDiscounts: any[] = []
 
     try {
         // Obtener productos, categorías y descuentos directamente

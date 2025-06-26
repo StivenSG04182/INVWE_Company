@@ -17,7 +17,7 @@ export async function PUT(
     const body = await req.json()
 
     // Verificar que el usuario tenga acceso a la agencia
-    const userAgency = user.Agency?.find((agency) => agency.id === agencyId)
+    const userAgency = user.Agency?.id === agencyId ? user.Agency : undefined
     if (!userAgency) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
@@ -48,7 +48,7 @@ export async function GET(
     const { agencyId, areaId } = params
 
     // Verificar que el usuario tenga acceso a la agencia
-    const userAgency = user.Agency?.find((agency) => agency.id === agencyId)
+    const userAgency = user.Agency?.id === agencyId ? user.Agency : undefined
     if (!userAgency) {
       return new NextResponse('Unauthorized', { status: 401 })
     }

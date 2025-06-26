@@ -1,37 +1,22 @@
-import { connectToDatabase } from '../mongodb';
 import { db } from '../db';
-import { ObjectId } from 'mongodb';
 
 // Servicio para obtener datos financieros para reportes
 export const FinancialReportService = {
     // Obtener estadísticas financieras generales
     async getFinancialStats(agencyId: string) {
         try {
-            const { db } = await connectToDatabase();
+            // Obtener todas las facturas para calcular ingresos
+            const invoices = await db.invoice.findMany({
+                where: { agencyId }
+            });
 
-            // Obtener todas las transacciones financieras
-            const transactions = await db
-                .collection('transactions')
-                .find({ agencyId })
-                .toArray();
+            // Calcular ingresos totales usando el campo total
+            const totalRevenue = invoices.reduce((sum, invoice) => {
+                return sum + (Number(invoice.total) || 0);
+            }, 0);
 
-            // Obtener ventas para calcular ingresos
-            const sales = await db
-                .collection('sales')
-                .find({ agencyId })
-                .toArray();
-
-            // Obtener gastos
-            const expenses = await db
-                .collection('expenses')
-                .find({ agencyId })
-                .toArray();
-
-            // Calcular ingresos totales
-            const totalRevenue = sales.reduce((sum: number, sale: any) => sum + (sale.total || 0), 0);
-
-            // Calcular gastos totales
-            const totalExpenses = expenses.reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0);
+            // Por ahora, establecer gastos en 0 ya que no tenemos tabla de gastos
+            const totalExpenses = 0;
 
             // Calcular beneficio neto
             const netProfit = totalRevenue - totalExpenses;
@@ -40,7 +25,7 @@ export const FinancialReportService = {
             const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
             // Obtener datos financieros mensuales
-            const monthlyFinancials = [];
+            const monthlyFinancials: Array<{month: string, revenue: number, expenses: number}> = [];
             const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
             // Año actual
@@ -56,67 +41,35 @@ export const FinancialReportService = {
             }
 
             // Calcular ingresos mensuales
-            sales.forEach((sale: any) => {
-                if (sale.date) {
-                    const saleDate = new Date(sale.date);
-                    if (saleDate.getFullYear() === currentYear) {
-                        const month = saleDate.getMonth();
-                        monthlyFinancials[month].revenue += sale.total || 0;
+            invoices.forEach((invoice) => {
+                if (invoice.createdAt) {
+                    const invoiceDate = new Date(invoice.createdAt);
+                    if (invoiceDate.getFullYear() === currentYear) {
+                        const month = invoiceDate.getMonth();
+                        const invoiceTotal = Number(invoice.total) || 0;
+                        monthlyFinancials[month].revenue += invoiceTotal;
                     }
                 }
             });
 
-            // Calcular gastos mensuales
-            expenses.forEach((expense: any) => {
-                if (expense.date) {
-                    const expenseDate = new Date(expense.date);
-                    if (expenseDate.getFullYear() === currentYear) {
-                        const month = expenseDate.getMonth();
-                        monthlyFinancials[month].expenses += expense.amount || 0;
-                    }
-                }
+            // Por ahora, categorías de gastos vacías
+            const expenseCategoriesArray: any[] = [];
+
+            // Obtener facturas recientes
+            const recentInvoices = await db.invoice.findMany({
+                where: { agencyId },
+                orderBy: { createdAt: 'desc' },
+                take: 5
             });
 
-            // Calcular categorías de gastos
-            const expenseCategories = expenses.reduce((acc: any, expense: any) => {
-                const category = expense.category || 'Otros';
-                if (!acc[category]) {
-                    acc[category] = { amount: 0, percentage: 0 };
-                }
-                acc[category].amount += expense.amount || 0;
-                return acc;
-            }, {});
-
-            // Calcular porcentajes de categorías de gastos
-            Object.values(expenseCategories).forEach((category: any) => {
-                category.percentage = totalExpenses > 0 ? Math.round((category.amount / totalExpenses) * 100) : 0;
-            });
-
-            // Convertir a array y ordenar por monto
-            const expenseCategoriesArray = Object.entries(expenseCategories).map(([name, data]: [string, any]) => {
+            // Formatear facturas recientes como transacciones
+            const formattedTransactions = recentInvoices.map((invoice) => {
                 return {
-                    name,
-                    amount: data.amount,
-                    percentage: data.percentage
-                };
-            }).sort((a, b) => b.amount - a.amount);
-
-            // Obtener transacciones recientes
-            const recentTransactions = await db
-                .collection('transactions')
-                .find({ agencyId })
-                .sort({ date: -1 })
-                .limit(5)
-                .toArray();
-
-            // Formatear transacciones recientes
-            const formattedTransactions = recentTransactions.map((transaction: any) => {
-                return {
-                    id: transaction._id.toString(),
-                    description: transaction.description || 'Transacción sin descripción',
-                    type: transaction.type || 'desconocido',
-                    amount: transaction.amount || 0,
-                    date: transaction.date ? new Date(transaction.date).toISOString().split('T')[0] : 'Fecha desconocida'
+                    id: invoice.id,
+                    description: `Factura ${invoice.invoiceNumber || 'N/A'}`,
+                    type: 'ingreso',
+                    amount: Number(invoice.total) || 0,
+                    date: invoice.createdAt ? new Date(invoice.createdAt).toISOString().split('T')[0] : 'Fecha desconocida'
                 };
             });
 
@@ -138,28 +91,29 @@ export const FinancialReportService = {
     // Obtener datos de flujo de caja
     async getCashFlow(agencyId: string, period: number = 12) {
         try {
-            const { db } = await connectToDatabase();
             const endDate = new Date();
             const startDate = new Date();
             startDate.setMonth(startDate.getMonth() - period);
 
-            // Obtener todas las transacciones en el período
-            const transactions = await db
-                .collection('transactions')
-                .find({
+            // Obtener todas las facturas en el período
+            const invoices = await db.invoice.findMany({
+                where: { 
                     agencyId,
-                    date: { $gte: startDate, $lte: endDate }
-                })
-                .sort({ date: 1 })
-                .toArray();
+                    createdAt: {
+                        gte: startDate,
+                        lte: endDate
+                    }
+                },
+                orderBy: { createdAt: 'asc' }
+            });
 
             // Agrupar por mes
-            const cashFlowByMonth = {};
+            const cashFlowByMonth: any = {};
             const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-            transactions.forEach((transaction: any) => {
-                if (transaction.date) {
-                    const date = new Date(transaction.date);
+            invoices.forEach((invoice) => {
+                if (invoice.createdAt) {
+                    const date = new Date(invoice.createdAt);
                     const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
                     const monthName = months[date.getMonth()];
 
@@ -172,12 +126,9 @@ export const FinancialReportService = {
                         };
                     }
 
-                    if (transaction.type === 'ingreso') {
-                        cashFlowByMonth[monthKey].inflow += transaction.amount || 0;
-                    } else if (transaction.type === 'gasto') {
-                        cashFlowByMonth[monthKey].outflow += transaction.amount || 0;
-                    }
-
+                    const invoiceTotal = Number(invoice.total) || 0;
+                    
+                    cashFlowByMonth[monthKey].inflow += invoiceTotal;
                     cashFlowByMonth[monthKey].balance = 
                         cashFlowByMonth[monthKey].inflow - cashFlowByMonth[monthKey].outflow;
                 }

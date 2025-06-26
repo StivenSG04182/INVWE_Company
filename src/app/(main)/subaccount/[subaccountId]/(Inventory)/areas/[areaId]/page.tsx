@@ -20,7 +20,7 @@ const WorkspaceEditorPage = async ({ params }: { params: { agencyId: string, are
 
 
   // Obtener el área específica
-  let area = null
+  let area: any = null
   try {
     const areas = await AreaService.getAreas(agencyId)
     area = areas.find((a: any) => a._id === areaId)

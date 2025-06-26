@@ -38,7 +38,7 @@ export async function POST(
         }
 
         // Calcular la fecha de expiración si se proporciona
-        let expiresAt = null;
+        let expiresAt: Date | null = null;
         if (tokenResponse.expiresIn) {
             expiresAt = new Date();
             expiresAt.setSeconds(expiresAt.getSeconds() + tokenResponse.expiresIn);

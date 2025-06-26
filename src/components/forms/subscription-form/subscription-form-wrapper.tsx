@@ -15,15 +15,26 @@ type Props = {
   planExists: boolean
 }
 
+// Tipo local para los planes de PayPal
+interface PayPalPlan {
+  id: string;
+  name: string;
+  billing_cycles?: Array<{
+    pricing_scheme?: {
+      fixed_price?: {
+        value?: string;
+      };
+    };
+  }>;
+}
+
 const SubscriptionFormWrapper = ({ customerId, planExists }: Props) => {
   const { data, setClose } = useModal()
   const router = useRouter()
-  const [selectedPriceId, setSelectedPriceId] = useState<Plan | ''>(
-    data?.plans?.defaultPriceId || ''
-  )
+  const [selectedPriceId, setSelectedPriceId] = useState<string>(data?.plans?.defaultPriceId || '')
   const [loading, setLoading] = useState(false)
 
-  const handlePlanSelection = async (priceId: Plan) => {
+  const handlePlanSelection = async (priceId: string) => {
     setSelectedPriceId(priceId)
     setLoading(true)
     try {
@@ -69,9 +80,9 @@ const SubscriptionFormWrapper = ({ customerId, planExists }: Props) => {
   return (
     <div className="border-none transition-all">
       <div className="flex flex-col gap-4">
-        {data.plans?.plans.map((price) => (
+        {(data.plans?.plans as unknown as PayPalPlan[]).map((price) => (
           <Card
-            onClick={() => handlePlanSelection(price.id as Plan)}
+            onClick={() => handlePlanSelection(price.id)}
             key={price.id}
             className={clsx('relative cursor-pointer transition-all', {
               'border-primary': selectedPriceId === price.id,
@@ -99,8 +110,8 @@ const SubscriptionFormWrapper = ({ customerId, planExists }: Props) => {
           <SubscriptionForm
             selectedPriceId={selectedPriceId}
             planAmount={
-              data.plans?.plans.find((p) => p.id === selectedPriceId)
-                ?.billing_cycles?.[0]?.pricing_scheme?.fixed_price?.value || 0
+              Number((data.plans?.plans as unknown as PayPalPlan[]).find((p) => p.id === selectedPriceId)
+                ?.billing_cycles?.[0]?.pricing_scheme?.fixed_price?.value || 0)
             }
           />
         </div>

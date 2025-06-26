@@ -40,7 +40,7 @@ export const TransactionsPanel = ({ agencyId }: { agencyId: string }) => {
     const totalTransactions = transactions.length
     const completedTransactions = transactions.filter((t) => t.status === "COMPLETED").length
     const totalIncome = transactions.filter((t) => t.status === "COMPLETED").reduce((sum, t) => sum + Number(t.total), 0)
-    const averageTransaction = totalTransactions > 0 ? totalIncome / completedTransactions : 0
+    const averageTransaction = completedTransactions > 0 ? totalIncome / completedTransactions : 0
 
     // Obtener las transacciones al cargar el componente
     useEffect(() => {
@@ -63,7 +63,7 @@ export const TransactionsPanel = ({ agencyId }: { agencyId: string }) => {
     const filteredTransactions = transactions.filter((transaction) => {
         const searchMatch =
             searchTerm === "" ||
-            transaction.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            transaction.saleNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (transaction.Customer?.name && transaction.Customer.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (transaction.Cashier?.name && transaction.Cashier.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
@@ -191,8 +191,9 @@ export const TransactionsPanel = ({ agencyId }: { agencyId: string }) => {
                                     <SelectContent>
                                         <SelectItem value="all">Todos</SelectItem>
                                         <SelectItem value="COMPLETED">Completadas</SelectItem>
-                                        <SelectItem value="PENDING">Pendientes</SelectItem>
+                                        <SelectItem value="DRAFT">Borrador</SelectItem>
                                         <SelectItem value="CANCELLED">Canceladas</SelectItem>
+                                        <SelectItem value="SENT">Enviadas</SelectItem>
                                     </SelectContent>
                                 </Select>
 
@@ -258,7 +259,7 @@ export const TransactionsPanel = ({ agencyId }: { agencyId: string }) => {
                                             <tr key={transaction.id} className="border-b hover:bg-muted/25 transition-colors">
                                                 <td className="px-4 py-3">
                                                     <div>
-                                                        <p className="font-medium">{transaction.reference || transaction.id.substring(0, 8)}</p>
+                                                        <p className="font-medium">{transaction.saleNumber || transaction.id.substring(0, 8)}</p>
                                                         <p className="text-sm text-muted-foreground">
                                                             {transaction.Area?.name || "Área principal"}
                                                         </p>
@@ -316,10 +317,12 @@ const getStatusText = (status: SaleStatus): string => {
     switch (status) {
         case "COMPLETED":
             return "Completada"
-        case "PENDING":
-            return "Pendiente"
+        case "DRAFT":
+            return "Borrador"
         case "CANCELLED":
             return "Cancelada"
+        case "SENT":
+            return "Enviada"
         default:
             return "Desconocido"
     }
@@ -329,10 +332,12 @@ const getStatusColor = (status: SaleStatus): string => {
     switch (status) {
         case "COMPLETED":
             return "bg-green-100 text-green-800 border-green-200"
-        case "PENDING":
+        case "DRAFT":
             return "bg-amber-100 text-amber-800 border-amber-200"
         case "CANCELLED":
             return "bg-red-100 text-red-800 border-red-200"
+        case "SENT":
+            return "bg-blue-100 text-blue-800 border-blue-200"
         default:
             return "bg-gray-100 text-gray-800 border-gray-200"
     }

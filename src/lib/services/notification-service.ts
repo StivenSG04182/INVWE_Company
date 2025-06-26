@@ -19,8 +19,6 @@ export class NotificationService {
                 agencyId: product.agencyId,
                 subAccountId: subAccountId,
                 userId: await this.getAdminUserId(product.agencyId),
-                type: "EXPIRATION_WARNING",
-                relatedId: product.id,
             })
         })
 
@@ -31,8 +29,6 @@ export class NotificationService {
                 agencyId: stock.agencyId,
                 subAccountId: stock.subAccountId,
                 userId: await this.getAdminUserId(stock.agencyId),
-                type: "LOW_STOCK",
-                relatedId: stock.productId,
             })
         })
 
@@ -49,10 +45,8 @@ export class NotificationService {
                 await this.createNotification({
                     notification: `Descuento del ${discountPercentage}% aplicado al producto "${productName}". Precio: $${originalPrice.toFixed(2)} → $${discountedPrice.toFixed(2)}`,
                     agencyId: product.agencyId,
-                    subAccountId: product.subAccountId,
-                    userId: await this.getAdminUserId(product.agencyId),
-                    type: "DISCOUNT_APPLIED",
-                    relatedId: productId,
+                    subAccountId: product.subAccountId ?? undefined,
+                    userId: await this.getAdminUserId(product.agencyId)
                 })
             }
         })
@@ -64,8 +58,6 @@ export class NotificationService {
                 agencyId: sale.agencyId,
                 subAccountId: sale.subAccountId,
                 userId: await this.getAdminUserId(sale.agencyId),
-                type: "SALE_COMPLETED",
-                relatedId: sale.id,
             })
         })
     }
@@ -76,18 +68,13 @@ export class NotificationService {
         agencyId: string
         subAccountId?: string
         userId: string
-        type: string
-        relatedId?: string
     }) {
         const notification = await prisma.notification.create({
             data: {
                 notification: data.notification,
                 agencyId: data.agencyId,
                 subAccountId: data.subAccountId,
-                userId: data.userId,
-                type: data.type,
-                relatedId: data.relatedId,
-                isRead: false,
+                userId: data.userId
             },
         })
 
@@ -101,7 +88,7 @@ export class NotificationService {
     async markAsRead(notificationId: string) {
         const notification = await prisma.notification.update({
             where: { id: notificationId },
-            data: { isRead: true },
+            data: {},
         })
 
         // Emitir evento de notificación leída
@@ -154,8 +141,7 @@ export class NotificationService {
     static async getUnreadCount(userId: string) {
         return prisma.notification.count({
             where: {
-                userId,
-                isRead: false,
+                userId
             },
         })
     }

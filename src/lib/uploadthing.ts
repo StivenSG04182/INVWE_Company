@@ -1,18 +1,9 @@
 import { OurFileRouter } from "@/app/api/uploadthing/core";
-import { generateComponents } from "@uploadthing/react";
-import { generateReactHelpers } from "@uploadthing/react/hooks";
+import { generateUploadButton, generateUploadDropzone, generateReactHelpers } from "@uploadthing/react";
 
-// Configuración personalizada para los componentes de UploadThing
-const config = {
-  // Añadir opciones de fallback y reintentos
-  appendOnFallback: true,
-  // Modo de carga automático
-  mode: "auto",
-};
-
-// Generar componentes con configuración personalizada
-export const { UploadButton, UploadDropzone, Uploader } =
-  generateComponents<OurFileRouter>(config);
+// Generar componentes recomendados (la configuración se pasa como prop, no aquí)
+export const UploadButton = generateUploadButton<OurFileRouter>();
+export const UploadDropzone = generateUploadDropzone<OurFileRouter>();
 
 export const { useUploadThing, uploadFiles } =
   generateReactHelpers<OurFileRouter>();

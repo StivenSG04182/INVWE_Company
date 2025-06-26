@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form'
 import { createMedia, saveActivityLogsNotification } from '@/lib/queries'
+import { createMediaType } from '@/lib/types'
 import FileUpload from '../global/file-upload'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -34,34 +35,37 @@ const UploadMediaForm = ({ subaccountId, agencyId }: Props) => {
       },
     })
 
-    async function onSubmit(values:z.infer<typeof formSchema>){
-        try{
+    async function onSubmit(values: z.infer<typeof formSchema>) {
+        try {
             console.log('UploadMediaForm - onSubmit con valores:', values);
             console.log('UploadMediaForm - Parámetros:', { subaccountId, agencyId });
             
             // Pasamos el agencyId solo si está definido
-            const mediaData = agencyId ? {...values, agencyId} : values;
+            const mediaData = {
+                link: values.link,
+                name: values.name,
+                ...(agencyId && { agencyId })
+            } as any;
             const response = await createMedia(subaccountId, mediaData)
             console.log('UploadMediaForm - Respuesta de createMedia:', response);
             
             // Guardamos la notificación con el agencyId correcto
             await saveActivityLogsNotification({
-                description:`Cargado un archivo multimedia | ${response.name}`,
-                subaccountId: subaccountId || '', // Aseguramos que siempre haya un valor, incluso si es vacío
-                agencyId: agencyId || response.agencyId // Usamos el agencyId del formulario o de la respuesta
+                description: `Cargado un archivo multimedia | ${response.name}`,
+                subaccountId: subaccountId,
+                agencyId: agencyId || response.agencyId || undefined
             })
             
-            toast({title:"Éxito", description:"Archivo multimedia cargado correctamente"})
+            toast({ title: "Éxito", description: "Archivo multimedia cargado correctamente" })
             router.refresh()
-        } catch(error){
+        } catch (error) {
             console.error('Error al cargar archivo multimedia:', error)
             toast({
-                variant:"destructive",
-                title:"Error",
-                description:"No se han podido cargar los archivos"
-            }) 
+                variant: "destructive",
+                title: "Error",
+                description: "No se han podido cargar los archivos"
+            })
         }
-
     }
 
     return <Card className='w-full'>

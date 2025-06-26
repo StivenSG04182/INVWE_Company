@@ -219,7 +219,7 @@ const EmailCanvas: React.FC = () => {
 
       const newElement = createElementByType(componentType)
       if (newElement) {
-        addElement(newElement)
+        addElement(newElement as any)
       }
     },
     collect: (monitor) => ({
@@ -275,7 +275,7 @@ const EmailCanvas: React.FC = () => {
       <ScrollArea className="flex-1">
         <div className="p-8">
           <div
-            ref={drop}
+            ref={drop as any}
             className={`mx-auto transition-all duration-200 ${isOver && canDrop ? "ring-2 ring-primary ring-offset-2" : ""
               }`}
             style={{ maxWidth: "600px" }}

@@ -29,7 +29,7 @@ export async function GET(req: Request) {
     }
 
     // Obtener los detalles de la suscripción de PayPal
-    const subscriptionDetails = await paypal.getSubscriptionDetails(subscriptionId)
+    const subscriptionDetails = await paypal.getSubscription(subscriptionId)
 
     return NextResponse.json({
       success: true,

@@ -9,7 +9,6 @@ import { v4 } from "uuid";
 import { CreateFunnelFormSchema, UpsertFunnelPage, createMediaType } from "./types";
 import { z } from "zod";
 import { revalidatePath } from 'next/cache'
-import { createBuilderPage } from './builderio'
 
 // TODO: Autenticación y gestión de usuarios
 export const getAuthUserDetails = async () => {
@@ -264,13 +263,10 @@ export const verifyAndAcceptInvitation = async () => {
       });
 
       try {
-        
-        const invitations = await clerkClient.invitations.getInvitationList({
-          emailAddress: userDetails.email,
-        });
-        
-        const pendingInvitations = invitations.filter(inv => inv.status === 'pending');
-        
+        const invitationsResponse = await clerkClient.invitations.getInvitationList();
+        const invitations = invitationsResponse.data || [];
+        const pendingInvitations = invitations.filter(inv => inv.status === 'pending' && inv.emailAddress === userDetails.email);
+
         if (pendingInvitations.length > 0) {
           for (const invitation of pendingInvitations) {
             try {
@@ -278,12 +274,8 @@ export const verifyAndAcceptInvitation = async () => {
             } catch (revocationError) {
             }
           }
-          
-          const checkInvitations = await clerkClient.invitations.getInvitationList({
-            emailAddress: userDetails.email,
-            status: 'pending'
-          });
-          
+          const checkInvitationsResponse = await clerkClient.invitations.getInvitationList();
+          const checkInvitations = checkInvitationsResponse.data.filter(inv => inv.status === 'pending' && inv.emailAddress === userDetails.email);
           if (checkInvitations.length > 0) {
           } 
         }
@@ -881,7 +873,7 @@ export const createMedia = async (
           link: mediaFile.link,
           name: mediaFile.name,
           subAccountId: subaccountId,
-          // No incluimos agencyId ya que no está disponible
+          agencyId: "", // Valor por defecto para evitar error de tipo
         }
       })
       
@@ -989,7 +981,6 @@ export const upsertFunnel = async (
     create: {
       ...funnel,
       id: funnelId || v4(),
-      subAccountId: subaccountId,
     },
   })
 
@@ -1247,7 +1238,6 @@ export const upsertContact = async (
 // TODO: Obtención de embudos
 export const getFunnels = async (subacountId: string) => {
   const funnels = await db.funnel.findMany({
-    where: { subAccountId: subacountId },
     include: { FunnelPages: true },
   })
 

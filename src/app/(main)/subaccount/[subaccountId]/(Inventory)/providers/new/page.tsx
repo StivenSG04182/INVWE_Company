@@ -11,7 +11,7 @@ const NewProviderPage = async ({ params }: { params: { agencyId: string } }) => 
         return redirect("/agency")
     }
 
-    return <ProviderForm agencyId={agencyId} />
+    return <ProviderForm agencyId={agencyId} isOpen={true} onClose={() => {}} />
 }
 
 export default NewProviderPage

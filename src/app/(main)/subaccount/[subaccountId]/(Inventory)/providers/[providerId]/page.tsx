@@ -53,7 +53,14 @@ const EditProviderPage = async ({ params }: { params: { agencyId: string; provid
                 <h1 className="text-2xl font-bold">Editar Proveedor</h1>
             </div>
             
-            <ProviderForm agencyId={agencyId} provider={provider} isEditing={true} />
+            <ProviderForm agencyId={agencyId} provider={{
+              ...provider,
+              contactName: provider.contactName ?? undefined,
+              email: provider.email ?? undefined,
+              phone: provider.phone ?? undefined,
+              address: provider.address ?? undefined,
+              subAccountId: provider.subAccountId ? provider.subAccountId : undefined,
+            }} isEditing={true} isOpen={true} onClose={() => {}} />
         </div>
     )
 }

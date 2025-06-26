@@ -18,13 +18,13 @@ export const upsertPaymentGateway = async (
                     gatewayId: gatewayData.gatewayId!
                 }
             },
-            update: gatewayData,
+            update: gatewayData as any,
             create: {
                 ...gatewayData,
                 agencyId,
                 gatewayId: gatewayData.gatewayId!,
                 status: gatewayData.status || 'PENDING'
-            }
+            } as any
         });
 
         revalidatePath(`/agency/${agencyId}/settings/launchpad`);
@@ -262,7 +262,7 @@ export const createProductAndSync = async (
     return {
         ...product,
         syncStatus: syncResult.success ? 'SUCCESS' : 'FAILED',
-        syncError: syncResult.error
+        syncError: 'error' in syncResult ? syncResult.error : null
     };
 };
 
@@ -298,7 +298,10 @@ export const updateProductAndSync = async (
 
     // Actualizar externalIntegrations si cambia la pasarela
     if (updateData.gatewayId !== undefined) {
-        updateData.externalIntegrations = { ...(existing.externalIntegrations || {}), gatewayId: updateData.gatewayId };
+        const existingIntegrations = existing.externalIntegrations && typeof existing.externalIntegrations === 'object' 
+            ? existing.externalIntegrations 
+            : {};
+        (updateData as any).externalIntegrations = { ...existingIntegrations, gatewayId: updateData.gatewayId };
     }
 
     const updatedProduct = await db.product.update({ where: { id }, data: updateData });
@@ -336,7 +339,7 @@ export const updateProductAndSync = async (
     return {
         ...updatedProduct,
         syncStatus: syncResult.success ? 'SUCCESS' : 'FAILED',
-        syncError: syncResult.error
+        syncError: 'error' in syncResult ? syncResult.error : null
     };
 };
 
@@ -372,6 +375,6 @@ export const deleteProductAndSync = async (
     return {
         success: true,
         syncStatus: syncResult.success ? 'SUCCESS' : 'FAILED',
-        syncError: syncResult.error
+        syncError: 'error' in syncResult ? syncResult.error : null
     };
 };

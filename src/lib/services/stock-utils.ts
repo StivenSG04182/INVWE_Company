@@ -18,13 +18,13 @@ export async function getStockPageData(agencyId: string) {
 
   try {
     // Obtener datos usando las funciones de queries2.ts
-    const rawStocks = await getStocks(agencyId)
+    const rawStocks: any[] = await getStocks(agencyId)
     const rawProducts = await getProducts(agencyId)
     const rawAreas = await getAreas(agencyId)
     
     // Convertir valores Decimal a números normales para evitar errores de serialización
     const stocks = rawStocks.map(stock => ({
-      ...stock,
+      ...(typeof stock.toJSON === 'function' ? stock.toJSON() : stock),
       quantity: stock.quantity ? Number(stock.quantity) : 0
     }))
     

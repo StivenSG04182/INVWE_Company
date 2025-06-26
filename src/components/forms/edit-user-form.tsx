@@ -14,13 +14,13 @@ import { editUser } from '@/lib/queries'
 
 // Esquema de validación para el formulario
 const formSchema = z.object({
-    birthDate: z.string().min(1, { message: 'La fecha de nacimiento es requerida' }),
+    birthDate: z.string().optional(),
     gender: z.string().min(1, { message: 'El género es requerido' }),
     maritalStatus: z.string().min(1, { message: 'El estado civil es requerido' }),
     address: z.string().min(1, { message: 'La dirección es requerida' }),
     phone: z.string().min(1, { message: 'El teléfono es requerido' }),
     position: z.string().min(1, { message: 'El cargo es requerido' }),
-    hireDate: z.string().min(1, { message: 'La fecha de ingreso es requerida' }),
+    hireDate: z.string().optional(),
     salary: z.string().min(1, { message: 'El salario es requerido' }),
     workSchedule: z.string().min(1, { message: 'La jornada laboral es requerida' }),
     socialSecurityNumber: z.string().min(1, { message: 'El número de seguro social es requerido' }),
@@ -39,20 +39,21 @@ export default function EditUserForm({ user }: EditUserFormProps) {
     
     // Función para cerrar el diálogo modal
     const onClose = () => {
-        document.querySelector('[role="dialog"]')?.querySelector('button[aria-label="Close"]')?.click()
+        const closeButton = document.querySelector('[role="dialog"]')?.querySelector('button[aria-label="Close"]') as HTMLButtonElement | null
+        closeButton?.click()
     }
 
     // Inicializar el formulario con los valores actuales del usuario
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            birthDate: user.birthDate ? user.birthDate.toISOString().split('T')[0] : '',
+            birthDate: user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : '',
             gender: user.gender || '',
             maritalStatus: user.maritalStatus || '',
             address: user.address || '',
             phone: user.phone || '',
             position: user.position || '',
-            hireDate: user.hireDate ? user.hireDate.toISOString().split('T')[0] : '',
+            hireDate: user.hireDate ? new Date(user.hireDate).toISOString().split('T')[0] : '',
             salary: user.salary || '',
             workSchedule: user.workSchedule || '',
             socialSecurityNumber: user.socialSecurityNumber || '',
@@ -83,9 +84,8 @@ export default function EditUserForm({ user }: EditUserFormProps) {
                 description: 'Información actualizada correctamente',
                 variant: 'default'
             })
-            // Cerrar el diálogo usando el DOM
-            const closeBtn = document.querySelector('[role="dialog"]')?.querySelector('button[aria-label="Close"]') as HTMLButtonElement | null;
-            closeBtn?.click()
+            // Cerrar el diálogo
+            onClose()
         } catch (error) {
             console.error('Error al actualizar usuario:', error)
             toast({

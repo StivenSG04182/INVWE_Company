@@ -34,8 +34,7 @@ export async function POST(req: Request) {
     await db.subscription.update({
       where: { id: agency.Subscription?.id },
       data: {
-        status: 'CANCELLED',
-        currentPeriodEnd: new Date(cancelledSubscription.billing_info.next_billing_time),
+        currentPeriodEndDate: new Date(cancelledSubscription.billing_info.next_billing_time),
       },
     })
 

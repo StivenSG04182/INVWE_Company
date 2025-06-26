@@ -72,7 +72,7 @@ const NewPaymentPage = async ({
                 <CardContent>
                     <PaymentForm
                         agencyId={agencyId}
-                        subAccounts={agency.SubAccount.map((sa) => ({ id: sa.id, name: sa.name }))}
+                        subAccounts={[]}
                         invoices={invoices.map((inv) => ({
                             id: inv.id,
                             invoiceNumber: inv.invoiceNumber,

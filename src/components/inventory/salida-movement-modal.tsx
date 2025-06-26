@@ -40,26 +40,18 @@ export default function SalidaMovementModal({
                 // Procesar productos y calcular items con bajo stock
                 let lowStock = 0
                 const processedProducts = rawProducts.map(product => {
-                    const totalStock = (product.Stocks || []).reduce((sum: number, stock: any) =>
-                        sum + (Number(stock.quantity) || 0), 0)
-                    if (product.minStock && totalStock <= Number(product.minStock)) {
-                        lowStock++
-                    }
+                    // Simplified processing without Stocks property
                     return {
                         ...product,
                         price: Number(product.price) || 0,
                         cost: Number(product.cost) || 0,
                         discount: Number(product.discount) || 0,
                         taxRate: Number(product.taxRate) || 0,
-                        stocks: (product.Stocks || []).map((stock: any) => ({
-                            ...stock,
-                            quantity: Number(stock.quantity) || 0
-                        }))
                     }
                 })
 
                 setProducts(processedProducts)
-                setAreas(rawAreas)
+                setAreas(rawAreas || [])
                 setLowStockItems(lowStock)
             } catch (error) {
                 console.error("Error al cargar datos:", error)
@@ -134,9 +126,6 @@ export default function SalidaMovementModal({
                             agencyId={agencyId}
                             type="salida"
                             productId={productId}
-                            products={products}
-                            areas={areas}
-                            onComplete={onClose}
                         />
                     )}
                 </div>

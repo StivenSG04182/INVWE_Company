@@ -2,7 +2,10 @@
 
 import { BuilderComponent, builder } from '@builder.io/react'
 
-builder.init(process.env.NEXT_PUBLIC_BUILDER_API_KEY!)
+// Only initialize if API key is available
+if (process.env.NEXT_PUBLIC_BUILDER_API_KEY) {
+  builder.init(process.env.NEXT_PUBLIC_BUILDER_API_KEY)
+}
 
 type Props = {
     model: string
@@ -11,6 +14,6 @@ type Props = {
 
 export default function BuilderEditor({ model, contentId }: Props) {
     return (
-        <BuilderComponent model={model} contentId={contentId} />
+        <BuilderComponent model={model} content={contentId as any} />
     )
 }

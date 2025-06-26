@@ -45,6 +45,27 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 
+// Tipo para la venta
+type SaleType = {
+  id: string;
+  date: string;
+  time: string;
+  total: number;
+  items: number;
+  paymentMethod: string;
+  customer: string;
+  customerId: string | null;
+  cashier: string;
+  cashierId: string;
+  status: string;
+  products: Array<{
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+  }>;
+}
+
 // Servicio ficticio para obtener datos de ventas
 const getSalesData = async (agencyId: string) => {
   // Aquí se implementaría la lógica real para obtener datos de MongoDB
@@ -145,9 +166,9 @@ const SalesPosPage = ({ params }: { params: { agencyId: string } }) => {
   const [user, setUser] = useState({ Agency: true })
   const [selectedPeriod, setSelectedPeriod] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedSale, setSelectedSale] = useState(null)
+  const [selectedSale, setSelectedSale] = useState<SaleType | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-  const [sales, setSales] = useState([])
+  const [sales, setSales] = useState<SaleType[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [paymentFilter, setPaymentFilter] = useState("all")
   const [sortOrder, setSortOrder] = useState("date-desc")
@@ -218,9 +239,9 @@ const SalesPosPage = ({ params }: { params: { agencyId: string } }) => {
   // Ordenar ventas
   const sortedSales = [...filteredSales].sort((a, b) => {
     if (sortOrder === "date-desc") {
-      return new Date(b.date + "T" + b.time) - new Date(a.date + "T" + a.time)
+      return new Date(b.date + "T" + b.time).getTime() - new Date(a.date + "T" + a.time).getTime()
     } else if (sortOrder === "date-asc") {
-      return new Date(a.date + "T" + a.time) - new Date(b.date + "T" + b.time)
+      return new Date(a.date + "T" + a.time).getTime() - new Date(b.date + "T" + b.time).getTime()
     } else if (sortOrder === "amount-desc") {
       return b.total - a.total
     } else if (sortOrder === "amount-asc") {
@@ -230,7 +251,7 @@ const SalesPosPage = ({ params }: { params: { agencyId: string } }) => {
   })
 
   // Función para ver detalles de una venta
-  const viewSaleDetails = (sale) => {
+  const viewSaleDetails = (sale: SaleType) => {
     setSelectedSale(sale)
     setIsDetailOpen(true)
   }
@@ -390,8 +411,7 @@ const SalesPosPage = ({ params }: { params: { agencyId: string } }) => {
             </div>
             <Progress
               value={(cashRevenue / totalRevenue) * 100}
-              className="h-2 mb-4 bg-muted"
-              indicatorClassName="bg-blue-500"
+              className="h-2 mb-4"
             />
 
             <div className="flex items-center justify-between mb-2">
@@ -403,8 +423,7 @@ const SalesPosPage = ({ params }: { params: { agencyId: string } }) => {
             </div>
             <Progress
               value={(cardRevenue / totalRevenue) * 100}
-              className="h-2 bg-muted"
-              indicatorClassName="bg-purple-500"
+              className="h-2"
             />
           </CardContent>
           <CardFooter className="pt-0">

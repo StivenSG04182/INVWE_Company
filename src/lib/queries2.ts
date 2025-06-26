@@ -3,7 +3,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import { db } from "./db";
-import { redirect } from "next/navigation";
+
 import { Agency, User } from "@prisma/client";
 import { StockService } from './services/inventory-service';
 
@@ -390,9 +390,9 @@ export const duplicateProduct = async (agencyId: string, productId: string, suba
             isReturnable: originalProduct.isReturnable,
             taxRate: originalProduct.taxRate,
             supplierId: originalProduct.supplierId,
-            variants: originalProduct.variants,
-            customFields: originalProduct.customFields,
-            externalIntegrations: originalProduct.externalIntegrations,
+            variants: originalProduct.variants as any,
+            customFields: originalProduct.customFields as any,
+            externalIntegrations: originalProduct.externalIntegrations as any,
         },
     });
 
@@ -904,7 +904,7 @@ export const createMovement = async (data: any) => {
                     throw new Error(`Stock insuficiente. Solo hay ${currentProduct.quantity} unidades disponibles.`);
                 }
                 updateData = {
-                    quantity: currentProduct.quantity - data.quantity
+                    quantity: (currentProduct.quantity || 0) - data.quantity
                 };
                 break;
 
@@ -1273,14 +1273,15 @@ export const exportInventoryData = async (agencyId: string, options?: {
     let filteredData = exportData;
     if (fields.length > 0) {
         filteredData = exportData.map(item => {
+            if (!item) return null;
             const filtered: Record<string, any> = {};
             fields.forEach(field => {
-                if (item[field] !== undefined) {
+                if (item && item[field] !== undefined) {
                     filtered[field] = item[field];
                 }
             });
             return filtered;
-        });
+        }).filter(Boolean) as Record<string, any>[];
     }
 
     return {
@@ -1368,14 +1369,15 @@ export const exportMovementsData = async (agencyId: string, options?: {
     let filteredData = exportData;
     if (fields.length > 0) {
         filteredData = exportData.map(item => {
+            if (!item) return null;
             const filtered: Record<string, any> = {};
             fields.forEach(field => {
-                if (item[field] !== undefined) {
+                if (item && item[field] !== undefined) {
                     filtered[field] = item[field];
                 }
             });
             return filtered;
-        });
+        }).filter(Boolean) as Record<string, any>[];
     }
 
     return {
@@ -1452,8 +1454,6 @@ export const getProductStock = async (productId: string, options?: {
     let stockStatus = 'normal';
     if (product.minStock && totalStock <= product.minStock) {
         stockStatus = 'bajo';
-    } else if (product.maxStock && totalStock >= product.maxStock) {
-        stockStatus = 'alto';
     }
 
     return {
@@ -1462,7 +1462,6 @@ export const getProductStock = async (productId: string, options?: {
         productSku: product.sku,
         totalStock,
         minStock: product.minStock || 0,
-        maxStock: product.maxStock || 0,
         stockStatus,
         stockByArea: Object.values(stockByArea),
     };
@@ -1473,7 +1472,6 @@ export const updateStockSettings = async (productId: string, data: {
     minStock?: number;
     maxStock?: number;
     reorderPoint?: number;
-    idealStock?: number;
 }) => {
     // Validar datos
     if (data.maxStock && data.minStock && data.minStock > data.maxStock) {
@@ -1490,9 +1488,6 @@ export const updateStockSettings = async (productId: string, data: {
         where: { id: productId },
         data: {
             minStock: data.minStock,
-            maxStock: data.maxStock,
-            reorderPoint: data.reorderPoint,
-            idealStock: data.idealStock,
         },
     });
 
@@ -1639,7 +1634,7 @@ export const processSale = async (data: {
                 data: {
                     saleNumber,
                     total: data.total,
-                    paymentMethod: data.paymentMethod,
+                    paymentMethod: data.paymentMethod as any,
                     status: "COMPLETED",
                     ...(clientExists && {
                         Customer: { connect: { id: data.client.id! } }
@@ -1934,8 +1929,6 @@ export const sendInvoiceByEmail = async (invoiceId: string) => {
         await db.invoice.update({
             where: { id: invoiceId },
             data: {
-                emailSent: true,
-                emailSentAt: new Date()
             }
         });
 

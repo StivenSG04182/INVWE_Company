@@ -134,9 +134,7 @@ export default async function InventoryPage({
           <Suspense fallback={<MovementRegistrationSkeleton />}>
             <MovementRegistration
               agencyId={agencyId}
-              type={searchParams.type || "entrada"}
-              products={stockData.products || []}
-              areas={stockData.areas || []}
+              type={(searchParams.type as "entrada" | "salida" | "transferencia") || "entrada"}
             />
           </Suspense>
         </TabsContent>
@@ -145,11 +143,8 @@ export default async function InventoryPage({
           <TabsContent value="product" className="space-y-6">
             <Suspense fallback={<ProductStockDetailsSkeleton />}>
               <ProductStockDetails
-                agencyId={agencyId}
-                productId={searchParams.productId}
-                products={stockData.products || []}
-                areas={stockData.areas || []}
-                stocks={stockData.stocks || []}
+                product={stockData.products?.find(p => p.id === searchParams.productId) || { name: "Producto no encontrado" }}
+                stocks={stockData.stocks?.filter(s => s.productId === searchParams.productId) || []}
               />
             </Suspense>
           </TabsContent>

@@ -42,10 +42,13 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
     return redirect(`/agency/${agencyId}/products`)
   }
 
+  const productAny = product as any
+  const categoriesAny = categories as any[]
+
   // Obtener nombre de categoría
   const getCategoryName = (categoryId: string) => {
     // Convertir a string para asegurar una comparación consistente
-    const category = categories.find((cat: any) => String(cat._id) === String(categoryId))
+    const category = categoriesAny.find((cat: any) => String(cat._id) === String(categoryId))
     return category ? category.name : "Sin categoría"
   }
 
@@ -62,9 +65,9 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
 
   // Verificar si el producto está por vencer (en los próximos 30 días)
   const isExpiringSoon = () => {
-    if (!product.expirationDate) return false
+    if (!productAny.expirationDate) return false
     const today = new Date()
-    const expirationDate = new Date(product.expirationDate)
+    const expirationDate = new Date(productAny.expirationDate)
     const thirtyDaysFromNow = new Date()
     thirtyDaysFromNow.setDate(today.getDate() + 30)
 
@@ -88,10 +91,10 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
           <Card>
             <CardContent className="p-0">
               <div className="relative aspect-square">
-                {product.images && product.images.length > 0 ? (
+                {productAny.images && productAny.images.length > 0 ? (
                   <Image
-                    src={product.images[0] || "/placeholder.svg"}
-                    alt={product.name}
+                    src={productAny.images[0] || "/placeholder.svg"}
+                    alt={productAny.name}
                     fill
                     className="object-contain"
                   />
@@ -102,13 +105,13 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
                 )}
               </div>
 
-              {product.images && product.images.length > 1 && (
+              {productAny.images && productAny.images.length > 1 && (
                 <div className="grid grid-cols-4 gap-2 p-4">
-                  {product.images.slice(1).map((image: string, index: number) => (
+                  {productAny.images.slice(1).map((image: string, index: number) => (
                     <div key={index} className="relative aspect-square rounded-md overflow-hidden border">
                       <Image
                         src={image || "/placeholder.svg"}
-                        alt={`${product.name} ${index + 2}`}
+                        alt={`${productAny.name} ${index + 2}`}
                         fill
                         className="object-cover"
                       />
@@ -134,23 +137,23 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Estado:</span>
-                <Badge variant={product.isActive !== false ? "default" : "secondary"}>
-                  {product.isActive !== false ? "Activo" : "Inactivo"}
+                <Badge variant={productAny.isActive !== false ? "default" : "secondary"}>
+                  {productAny.isActive !== false ? "Activo" : "Inactivo"}
                 </Badge>
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Devoluciones:</span>
-                <Badge variant={product.isReturnable ? "outline" : "secondary"}>
-                  {product.isReturnable ? "Permitidas" : "No permitidas"}
+                <Badge variant={productAny.isReturnable ? "outline" : "secondary"}>
+                  {productAny.isReturnable ? "Permitidas" : "No permitidas"}
                 </Badge>
               </div>
 
-              {product.warrantyMonths > 0 && (
+              {productAny.warrantyMonths > 0 && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Garantía:</span>
                   <Badge variant="outline">
-                    {product.warrantyMonths} {product.warrantyMonths === 1 ? "mes" : "meses"}
+                    {productAny.warrantyMonths} {productAny.warrantyMonths === 1 ? "mes" : "meses"}
                   </Badge>
                 </div>
               )}
@@ -159,12 +162,12 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
 
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Creado:</span>
-                <span className="text-sm">{product.createdAt ? formatDate(product.createdAt) : "N/A"}</span>
+                <span className="text-sm">{productAny.createdAt ? formatDate(productAny.createdAt) : "N/A"}</span>
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Actualizado:</span>
-                <span className="text-sm">{product.updatedAt ? formatDate(product.updatedAt) : "N/A"}</span>
+                <span className="text-sm">{productAny.updatedAt ? formatDate(productAny.updatedAt) : "N/A"}</span>
               </div>
             </CardContent>
           </Card>
@@ -177,32 +180,32 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">SKU:</span>
                 <Badge variant="outline" className="font-mono">
-                  {product.sku}
+                  {productAny.sku}
                 </Badge>
               </div>
 
-              {product.barcode && (
+              {productAny.barcode && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Código de Barras:</span>
                   <Badge variant="outline" className="font-mono">
-                    {product.barcode}
+                    {productAny.barcode}
                   </Badge>
                 </div>
               )}
 
-              {product.serialNumber && (
+              {productAny.serialNumber && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Número de Serie:</span>
                   <Badge variant="outline" className="font-mono">
-                    {product.serialNumber}
+                    {productAny.serialNumber}
                   </Badge>
                 </div>
               )}
 
-              {product.batchNumber && (
+              {productAny.batchNumber && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Número de Lote:</span>
-                  <Badge variant="outline">{product.batchNumber}</Badge>
+                  <Badge variant="outline">{productAny.batchNumber}</Badge>
                 </div>
               )}
             </CardContent>
@@ -215,21 +218,21 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-2xl">{product.name}</CardTitle>
-                  {product.brand && product.model && (
+                  <CardTitle className="text-2xl">{productAny.name}</CardTitle>
+                  {productAny.brand && productAny.model && (
                     <CardDescription className="text-base">
-                      {product.brand} - {product.model}
+                      {productAny.brand} - {productAny.model}
                     </CardDescription>
                   )}
                 </div>
                 <div className="flex flex-col items-end">
-                  <div className="text-2xl font-bold">${typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(product.price || 0).toFixed(2) || "0.00"}</div>
-                  {product.discount > 0 && (
+                  <div className="text-2xl font-bold">${typeof productAny.price === 'number' ? productAny.price.toFixed(2) : parseFloat(productAny.price || 0).toFixed(2) || "0.00"}</div>
+                  {productAny.discount > 0 && (
                     <div className="flex items-center">
                       <span className="text-sm text-muted-foreground line-through mr-2">
-                        ${((parseFloat(product.price || 0)) / (1 - (product.discount || 0) / 100)).toFixed(2)}
+                        ${((parseFloat(productAny.price || 0)) / (1 - (productAny.discount || 0) / 100)).toFixed(2)}
                       </span>
-                      <Badge className="bg-green-600 hover:bg-green-700">{product.discount}% descuento</Badge>
+                      <Badge className="bg-green-600 hover:bg-green-700">{productAny.discount}% descuento</Badge>
                     </div>
                   )}
                 </div>
@@ -237,23 +240,23 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2 mb-4">
-                {product.categoryId && (
+                {productAny.categoryId && (
                   <Badge variant="outline" className="flex items-center">
                     <Tag className="h-3.5 w-3.5 mr-1.5" />
-                    {getCategoryName(product.categoryId)}
+                    {getCategoryName(productAny.categoryId)}
                   </Badge>
                 )}
 
-                {product.tags &&
-                  product.tags.length > 0 &&
-                  product.tags.map((tag: string, index: number) => (
+                {productAny.tags &&
+                  productAny.tags.length > 0 &&
+                  productAny.tags.map((tag: string, index: number) => (
                     <Badge key={index} variant="secondary">
                       {tag}
                     </Badge>
                   ))}
               </div>
 
-              <p className="text-muted-foreground mb-4">{product.description || "Sin descripción"}</p>
+              <p className="text-muted-foreground mb-4">{productAny.description || "Sin descripción"}</p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <Card className="bg-muted/50">
@@ -262,7 +265,7 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
                     <div>
                       <p className="text-sm text-muted-foreground">Stock Actual</p>
                       <p className="text-lg font-medium">
-                        {product.quantity || 0} {product.unit || "unidades"}
+                        {productAny.quantity || 0} {productAny.unit || "unidades"}
                       </p>
                     </div>
                   </CardContent>
@@ -273,7 +276,7 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
                     <DollarSign className="h-8 w-8 mr-3 text-primary" />
                     <div>
                       <p className="text-sm text-muted-foreground">Costo Unitario</p>
-                      <p className="text-lg font-medium">${typeof product.cost === 'number' ? product.cost.toFixed(2) : parseFloat(product.cost || 0).toFixed(2) || "0.00"}</p>
+                      <p className="text-lg font-medium">${typeof productAny.cost === 'number' ? productAny.cost.toFixed(2) : parseFloat(productAny.cost || 0).toFixed(2) || "0.00"}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -284,8 +287,8 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
                     <div>
                       <p className="text-sm text-muted-foreground">Margen</p>
                       <p className="text-lg font-medium">
-                        {product.cost && product.price
-                          ? `${(((parseFloat(product.price || 0) - parseFloat(product.cost || 0)) / parseFloat(product.price || 0)) * 100).toFixed(2)}%`
+                        {productAny.cost && productAny.price
+                          ? `${(((parseFloat(productAny.price || 0) - parseFloat(productAny.cost || 0)) / parseFloat(productAny.price || 0)) * 100).toFixed(2)}%`
                           : "N/A"}
                       </p>
                     </div>
@@ -295,25 +298,25 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
 
               {/* Alertas */}
               <div className="space-y-3">
-                {(product.quantity || 0) <= (product.minStock || 0) && (
+                {(productAny.quantity || 0) <= (productAny.minStock || 0) && (
                   <div className="flex items-center p-3 rounded-md bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300">
                     <AlertTriangle className="h-5 w-5 mr-2 flex-shrink-0" />
                     <div>
                       <p className="font-medium">Stock bajo</p>
                       <p className="text-sm">
-                        El stock actual ({product.quantity || 0}) está por debajo del mínimo recomendado (
-                        {product.minStock || 0}).
+                        El stock actual ({productAny.quantity || 0}) está por debajo del mínimo recomendado (
+                        {productAny.minStock || 0}).
                       </p>
                     </div>
                   </div>
                 )}
 
-                {product.expirationDate && isExpiringSoon() && (
+                {productAny.expirationDate && isExpiringSoon() && (
                   <div className="flex items-center p-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300">
                     <Clock className="h-5 w-5 mr-2 flex-shrink-0" />
                     <div>
                       <p className="font-medium">Producto próximo a vencer</p>
-                      <p className="text-sm">Este producto vence el {formatDate(product.expirationDate)}.</p>
+                      <p className="text-sm">Este producto vence el {formatDate(productAny.expirationDate)}.</p>
                     </div>
                   </div>
                 )}
@@ -345,29 +348,29 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
                         <TableBody>
                           <TableRow>
                             <TableCell className="font-medium">Nombre</TableCell>
-                            <TableCell>{product.name}</TableCell>
+                            <TableCell>{productAny.name}</TableCell>
                           </TableRow>
-                          {product.brand && (
+                          {productAny.brand && (
                             <TableRow>
                               <TableCell className="font-medium">Marca</TableCell>
-                              <TableCell>{product.brand}</TableCell>
+                              <TableCell>{productAny.brand}</TableCell>
                             </TableRow>
                           )}
-                          {product.model && (
+                          {productAny.model && (
                             <TableRow>
                               <TableCell className="font-medium">Modelo</TableCell>
-                              <TableCell>{product.model}</TableCell>
+                              <TableCell>{productAny.model}</TableCell>
                             </TableRow>
                           )}
                           <TableRow>
                             <TableCell className="font-medium">Categoría</TableCell>
                             <TableCell>
-                              {product.categoryId ? getCategoryName(product.categoryId) : "Sin categoría"}
+                              {productAny.categoryId ? getCategoryName(productAny.categoryId) : "Sin categoría"}
                             </TableCell>
                           </TableRow>
                           <TableRow>
                             <TableCell className="font-medium">Unidad de Medida</TableCell>
-                            <TableCell>{product.unit || "Unidad"}</TableCell>
+                            <TableCell>{productAny.unit || "Unidad"}</TableCell>
                           </TableRow>
                         </TableBody>
                       </Table>
@@ -379,28 +382,28 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
                         <TableBody>
                           <TableRow>
                             <TableCell className="font-medium">Precio de Venta</TableCell>
-                            <TableCell>${typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(product.price || 0).toFixed(2) || "0.00"}</TableCell>
+                            <TableCell>${typeof productAny.price === 'number' ? productAny.price.toFixed(2) : parseFloat(productAny.price || 0).toFixed(2) || "0.00"}</TableCell>
                           </TableRow>
                           <TableRow>
                             <TableCell className="font-medium">Costo</TableCell>
-                            <TableCell>${typeof product.cost === 'number' ? product.cost.toFixed(2) : parseFloat(product.cost || 0).toFixed(2) || "0.00"}</TableCell>
+                            <TableCell>${typeof productAny.cost === 'number' ? productAny.cost.toFixed(2) : parseFloat(productAny.cost || 0).toFixed(2) || "0.00"}</TableCell>
                           </TableRow>
                           <TableRow>
                             <TableCell className="font-medium">Ganancia</TableCell>
-                            <TableCell>${((product.price || 0) - (product.cost || 0)).toFixed(2)}</TableCell>
+                            <TableCell>${((productAny.price || 0) - (productAny.cost || 0)).toFixed(2)}</TableCell>
                           </TableRow>
                           <TableRow>
                             <TableCell className="font-medium">Margen</TableCell>
                             <TableCell>
-                              {product.cost && product.price
-                                ? `${(((product.price - product.cost) / product.price) * 100).toFixed(2)}%`
+                              {productAny.cost && productAny.price
+                                ? `${(((productAny.price - productAny.cost) / productAny.price) * 100).toFixed(2)}%`
                                 : "N/A"}
                             </TableCell>
                           </TableRow>
-                          {product.taxRate > 0 && (
+                          {productAny.taxRate > 0 && (
                             <TableRow>
                               <TableCell className="font-medium">Impuesto</TableCell>
-                              <TableCell>{product.taxRate}%</TableCell>
+                              <TableCell>{productAny.taxRate}%</TableCell>
                             </TableRow>
                           )}
                         </TableBody>
@@ -408,20 +411,20 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
                     </div>
                   </div>
 
-                  {product.description && (
+                  {productAny.description && (
                     <div>
                       <h3 className="text-sm font-medium mb-2">Descripción</h3>
                       <div className="p-3 rounded-md bg-muted">
-                        <p className="whitespace-pre-line">{product.description}</p>
+                        <p className="whitespace-pre-line">{productAny.description}</p>
                       </div>
                     </div>
                   )}
 
-                  {product.tags && product.tags.length > 0 && (
+                  {productAny.tags && productAny.tags.length > 0 && (
                     <div>
                       <h3 className="text-sm font-medium mb-2">Etiquetas</h3>
                       <div className="flex flex-wrap gap-2">
-                        {product.tags.map((tag: string, index: number) => (
+                        {productAny.tags.map((tag: string, index: number) => (
                           <Badge key={index} variant="secondary">
                             {tag}
                           </Badge>
@@ -450,28 +453,28 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
                           <TableRow>
                             <TableCell className="font-medium">Stock Actual</TableCell>
                             <TableCell>
-                              {product.quantity || 0} {product.unit || "unidades"}
+                              {productAny.quantity || 0} {productAny.unit || "unidades"}
                             </TableCell>
                           </TableRow>
                           <TableRow>
                             <TableCell className="font-medium">Stock Mínimo</TableCell>
                             <TableCell>
-                              {product.minStock || 0} {product.unit || "unidades"}
+                              {productAny.minStock || 0} {productAny.unit || "unidades"}
                             </TableCell>
                           </TableRow>
                           <TableRow>
                             <TableCell className="font-medium">Estado</TableCell>
                             <TableCell>
                               <Badge
-                                variant={(product.quantity || 0) <= (product.minStock || 0) ? "destructive" : "outline"}
+                                variant={(productAny.quantity || 0) <= (productAny.minStock || 0) ? "destructive" : "outline"}
                               >
-                                {(product.quantity || 0) <= (product.minStock || 0) ? "Stock Bajo" : "Stock Normal"}
+                                {(productAny.quantity || 0) <= (productAny.minStock || 0) ? "Stock Bajo" : "Stock Normal"}
                               </Badge>
                             </TableCell>
                           </TableRow>
                           <TableRow>
                             <TableCell className="font-medium">Valor en Inventario</TableCell>
-                            <TableCell>${((product.quantity || 0) * (product.cost || 0)).toFixed(2)}</TableCell>
+                            <TableCell>${((productAny.quantity || 0) * (productAny.cost || 0)).toFixed(2)}</TableCell>
                           </TableRow>
                         </TableBody>
                       </Table>
@@ -481,31 +484,31 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
                       <h3 className="text-sm font-medium mb-2">Ubicación y Lote</h3>
                       <Table>
                         <TableBody>
-                          {product.warehouseId && (
+                          {productAny.warehouseId && (
                             <TableRow>
                               <TableCell className="font-medium">Almacén</TableCell>
                               <TableCell>
-                                {product.warehouseId === "default" ? "Almacén Principal" : product.warehouseId}
+                                {productAny.warehouseId === "default" ? "Almacén Principal" : productAny.warehouseId}
                               </TableCell>
                             </TableRow>
                           )}
-                          {product.locationId && (
+                          {productAny.locationId && (
                             <TableRow>
                               <TableCell className="font-medium">Ubicación</TableCell>
-                              <TableCell>{product.locationId}</TableCell>
+                              <TableCell>{productAny.locationId}</TableCell>
                             </TableRow>
                           )}
-                          {product.batchNumber && (
+                          {productAny.batchNumber && (
                             <TableRow>
                               <TableCell className="font-medium">Número de Lote</TableCell>
-                              <TableCell>{product.batchNumber}</TableCell>
+                              <TableCell>{productAny.batchNumber}</TableCell>
                             </TableRow>
                           )}
-                          {product.expirationDate && (
+                          {productAny.expirationDate && (
                             <TableRow>
                               <TableCell className="font-medium">Fecha de Vencimiento</TableCell>
                               <TableCell>
-                                {formatDate(product.expirationDate)}
+                                {formatDate(productAny.expirationDate)}
                                 {isExpiringSoon() && (
                                   <Badge variant="destructive" className="ml-2">
                                     Próximo a vencer
@@ -544,7 +547,7 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {product.variants && product.variants.length > 0 ? (
+                  {productAny.variants && productAny.variants.length > 0 ? (
                     <div className="space-y-4">
                       <Table>
                         <TableHeader>
@@ -554,7 +557,7 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {product.variants.map((variant: any, index: number) => (
+                          {productAny.variants.map((variant: any, index: number) => (
                             <TableRow key={index}>
                               <TableCell className="font-medium">{variant.name}</TableCell>
                               <TableCell>{variant.value}</TableCell>
@@ -589,10 +592,10 @@ const ProductDetailPage = async ({ params }: { params: { agencyId: string; produ
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {product.documents && product.documents.length > 0 ? (
+                  {productAny.documents && productAny.documents.length > 0 ? (
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {product.documents.map((doc: string, index: number) => (
+                        {productAny.documents.map((doc: string, index: number) => (
                           <Card key={index}>
                             <CardContent className="p-4 flex items-center">
                               <FileText className="h-8 w-8 mr-3 text-primary" />

@@ -16,7 +16,7 @@ import { es } from "date-fns/locale"
 import { toast } from "@/components/ui/use-toast"
 import { calculateEmployeePayroll, calculateTotalHours } from "../utils/payroll-calculator"
 import jsPDF from "jspdf"
-import "jspdf-autotable"
+import autoTable from "jspdf-autotable"
 
 interface PDFReportsProps {
     teamMembers: any[]
@@ -161,9 +161,9 @@ export function PDFReports({ teamMembers, schedules, holidays = [], agencyId }: 
             ])
 
             try {
-                doc.autoTable({
-                    head: [["Col1", "Col2"]],
-                    body: [["A", "B"], ["C", "D"]],
+                autoTable(doc, {
+                    head: [["Empleado", "Horas Normales", "Horas Extras", "Horas Nocturnas", "Total a Pagar"]],
+                    body: tableData,
                     startY: 90,
                 });
             } catch (err) {
@@ -399,21 +399,21 @@ export function PDFReports({ teamMembers, schedules, holidays = [], agencyId }: 
                         <Label className="text-base font-medium">Opciones del Reporte</Label>
                         <div className="grid gap-4 md:grid-cols-3">
                             <div className="flex items-center space-x-2">
-                                <Checkbox id="includeCharts" checked={includeCharts} onCheckedChange={setIncludeCharts} />
+                                <Checkbox id="includeCharts" checked={includeCharts} onCheckedChange={(checked) => setIncludeCharts(checked as boolean)} />
                                 <Label htmlFor="includeCharts" className="text-sm">
                                     Incluir gráficos
                                 </Label>
                             </div>
 
                             <div className="flex items-center space-x-2">
-                                <Checkbox id="includeDetails" checked={includeDetails} onCheckedChange={setIncludeDetails} />
+                                <Checkbox id="includeDetails" checked={includeDetails} onCheckedChange={(checked) => setIncludeDetails(checked as boolean)} />
                                 <Label htmlFor="includeDetails" className="text-sm">
                                     Incluir detalles
                                 </Label>
                             </div>
 
                             <div className="flex items-center space-x-2">
-                                <Checkbox id="includeCompliance" checked={includeCompliance} onCheckedChange={setIncludeCompliance} />
+                                <Checkbox id="includeCompliance" checked={includeCompliance} onCheckedChange={(checked) => setIncludeCompliance(checked as boolean)} />
                                 <Label htmlFor="includeCompliance" className="text-sm">
                                     Incluir cumplimiento legal
                                 </Label>

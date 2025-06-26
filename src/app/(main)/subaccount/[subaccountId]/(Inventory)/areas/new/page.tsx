@@ -11,7 +11,7 @@ const NewAreaPage = async ({ params }: { params: { agencyId: string } }) => {
     return redirect("/agency")
   }
 
-  return <AreaForm agencyId={agencyId} />
+  return <AreaForm agencyId={agencyId} isOpen={true} onClose={() => {}} />
 }
 
 export default NewAreaPage

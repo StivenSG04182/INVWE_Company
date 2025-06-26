@@ -58,13 +58,13 @@ export const generateElectronicDocumentXML = async (invoice: Invoice, dianConfig
                 // Aquí irá la firma digital después
                 'sts:DianExtensions': {
                   'sts:InvoiceControl': {
-                    'sts:InvoiceAuthorization': invoice.invoiceResolution || '',
+                    'sts:InvoiceAuthorization': (invoice as any).invoiceResolution || '',
                     'sts:AuthorizationPeriod': {
                       'cbc:StartDate': issueDate,
                       'cbc:EndDate': format(new Date(currentDate.getFullYear() + 1, currentDate.getMonth(), currentDate.getDate()), 'yyyy-MM-dd')
                     },
                     'sts:AuthorizedInvoices': {
-                      'sts:Prefix': invoice.invoicePrefix || '',
+                      'sts:Prefix': (invoice as any).invoicePrefix || '',
                       'sts:From': '1',
                       'sts:To': '100000' // Rango autorizado
                     }
@@ -80,7 +80,7 @@ export const generateElectronicDocumentXML = async (invoice: Invoice, dianConfig
                   'sts:AuthorizationProvider': {
                     'sts:AuthorizationProviderID': { '@_schemeAgencyID': '195', '@_schemeAgencyName': 'CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)', '@_schemeID': '4', '@_schemeName': '31', '#text': '800197268' }
                   },
-                  'sts:QRCode': invoice.qrCode
+                  'sts:QRCode': (invoice as any).qrCode
                 }
               }
             },
@@ -99,12 +99,12 @@ export const generateElectronicDocumentXML = async (invoice: Invoice, dianConfig
         'cbc:ProfileID': 'DIAN 2.1',
         'cbc:ProfileExecutionID': dianConfig.environment === 'PRODUCTION' ? '1' : '2',
         'cbc:ID': invoice.invoiceNumber,
-        'cbc:UUID': { '@_schemeID': '2', '@_schemeName': 'CUFE-SHA384', '#text': invoice.cufe },
+        'cbc:UUID': { '@_schemeID': '2', '@_schemeName': 'CUFE-SHA384', '#text': (invoice as any).cufe },
         'cbc:IssueDate': issueDate,
         'cbc:IssueTime': issueTime,
         'cbc:InvoiceTypeCode': '01', // 01 = Factura de venta
-        'cbc:DocumentCurrencyCode': { '@_listAgencyID': '6', '@_listAgencyName': 'United Nations Economic Commission for Europe', '@_listID': 'ISO 4217 Alpha', '#text': invoice.currency || 'COP' },
-        'cbc:LineCountNumeric': invoice.Items?.length || 0,
+        'cbc:DocumentCurrencyCode': { '@_listAgencyID': '6', '@_listAgencyName': 'United Nations Economic Commission for Europe', '@_listID': 'ISO 4217 Alpha', '#text': (invoice as any).currency || 'COP' },
+        'cbc:LineCountNumeric': (invoice as any).Items?.length || 0,
         
         // Información del emisor
         'cac:AccountingSupplierParty': {
@@ -154,7 +154,7 @@ export const generateElectronicDocumentXML = async (invoice: Invoice, dianConfig
               'cbc:RegistrationName': dianConfig.issuerName,
               'cbc:CompanyID': { '@_schemeAgencyID': '195', '@_schemeAgencyName': 'CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)', '@_schemeID': dianConfig.issuerNIT.slice(-1), '@_schemeName': '31', '#text': dianConfig.issuerNIT },
               'cac:CorporateRegistrationScheme': {
-                'cbc:ID': invoice.invoicePrefix || '',
+                'cbc:ID': (invoice as any).invoicePrefix || '',
                 'cbc:Name': ''
               }
             },
@@ -169,10 +169,10 @@ export const generateElectronicDocumentXML = async (invoice: Invoice, dianConfig
           'cbc:AdditionalAccountID': '2', // 2 = Persona natural
           'cac:Party': {
             'cac:PartyIdentification': {
-              'cbc:ID': { '@_schemeAgencyID': '195', '@_schemeAgencyName': 'CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)', '@_schemeID': '3', '@_schemeName': '13', '#text': invoice.customerTaxId || '222222222222' }
+              'cbc:ID': { '@_schemeAgencyID': '195', '@_schemeAgencyName': 'CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)', '@_schemeID': '3', '@_schemeName': '13', '#text': (invoice as any).customerTaxId || '222222222222' }
             },
             'cac:PartyName': {
-              'cbc:Name': invoice.Customer?.name || 'Cliente Final'
+              'cbc:Name': (invoice as any).Customer?.name || 'Cliente Final'
             },
             'cac:PhysicalLocation': {
               'cac:Address': {
@@ -181,7 +181,7 @@ export const generateElectronicDocumentXML = async (invoice: Invoice, dianConfig
                 'cbc:CountrySubentity': 'Bogotá D.C.',
                 'cbc:CountrySubentityCode': '11',
                 'cac:AddressLine': {
-                  'cbc:Line': invoice.customerAddress || 'Dirección del cliente'
+                  'cbc:Line': (invoice as any).customerAddress || 'Dirección del cliente'
                 },
                 'cac:Country': {
                   'cbc:IdentificationCode': 'CO',
@@ -190,8 +190,8 @@ export const generateElectronicDocumentXML = async (invoice: Invoice, dianConfig
               }
             },
             'cac:PartyTaxScheme': {
-              'cbc:RegistrationName': invoice.Customer?.name || 'Cliente Final',
-              'cbc:CompanyID': { '@_schemeAgencyID': '195', '@_schemeAgencyName': 'CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)', '@_schemeID': '3', '@_schemeName': '13', '#text': invoice.customerTaxId || '222222222222' },
+              'cbc:RegistrationName': (invoice as any).Customer?.name || 'Cliente Final',
+              'cbc:CompanyID': { '@_schemeAgencyID': '195', '@_schemeAgencyName': 'CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)', '@_schemeID': '3', '@_schemeName': '13', '#text': (invoice as any).customerTaxId || '222222222222' },
               'cbc:TaxLevelCode': { '@_listName': 'No aplica', '#text': 'R-99-PN' },
               'cac:RegistrationAddress': {
                 'cbc:ID': '11001',
@@ -199,7 +199,7 @@ export const generateElectronicDocumentXML = async (invoice: Invoice, dianConfig
                 'cbc:CountrySubentity': 'Bogotá D.C.',
                 'cbc:CountrySubentityCode': '11',
                 'cac:AddressLine': {
-                  'cbc:Line': invoice.customerAddress || 'Dirección del cliente'
+                  'cbc:Line': (invoice as any).customerAddress || 'Dirección del cliente'
                 },
                 'cac:Country': {
                   'cbc:IdentificationCode': 'CO',
@@ -212,15 +212,15 @@ export const generateElectronicDocumentXML = async (invoice: Invoice, dianConfig
               }
             },
             'cac:PartyLegalEntity': {
-              'cbc:RegistrationName': invoice.Customer?.name || 'Cliente Final',
-              'cbc:CompanyID': { '@_schemeAgencyID': '195', '@_schemeAgencyName': 'CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)', '@_schemeID': '3', '@_schemeName': '13', '#text': invoice.customerTaxId || '222222222222' }
+              'cbc:RegistrationName': (invoice as any).Customer?.name || 'Cliente Final',
+              'cbc:CompanyID': { '@_schemeAgencyID': '195', '@_schemeAgencyName': 'CO, DIAN (Dirección de Impuestos y Aduanas Nacionales)', '@_schemeID': '3', '@_schemeName': '13', '#text': (invoice as any).customerTaxId || '222222222222' }
             },
             'cac:Contact': {
-              'cbc:ElectronicMail': invoice.customerEmail || 'cliente@example.com'
+              'cbc:ElectronicMail': (invoice as any).customerEmail || 'cliente@example.com'
             },
             'cac:Person': {
-              'cbc:FirstName': invoice.Customer?.name?.split(' ')[0] || 'Cliente',
-              'cbc:FamilyName': invoice.Customer?.name?.split(' ')[1] || 'Final'
+              'cbc:FirstName': (invoice as any).Customer?.name?.split(' ')[0] || 'Cliente',
+              'cbc:FamilyName': (invoice as any).Customer?.name?.split(' ')[1] || 'Final'
             }
           }
         },
@@ -229,15 +229,15 @@ export const generateElectronicDocumentXML = async (invoice: Invoice, dianConfig
         'cac:PaymentMeans': {
           'cbc:ID': '1',
           'cbc:PaymentMeansCode': '10', // 10 = Efectivo
-          'cbc:PaymentDueDate': invoice.dueDate ? format(new Date(invoice.dueDate), 'yyyy-MM-dd') : issueDate
+          'cbc:PaymentDueDate': (invoice as any).dueDate ? format(new Date((invoice as any).dueDate), 'yyyy-MM-dd') : issueDate
         },
         
         // Información de impuestos
         'cac:TaxTotal': {
-          'cbc:TaxAmount': { '@_currencyID': invoice.currency || 'COP', '#text': invoice.tax.toString() },
+          'cbc:TaxAmount': { '@_currencyID': (invoice as any).currency || 'COP', '#text': (invoice as any).tax.toString() },
           'cac:TaxSubtotal': {
-            'cbc:TaxableAmount': { '@_currencyID': invoice.currency || 'COP', '#text': invoice.subtotal.toString() },
-            'cbc:TaxAmount': { '@_currencyID': invoice.currency || 'COP', '#text': invoice.tax.toString() },
+            'cbc:TaxableAmount': { '@_currencyID': (invoice as any).currency || 'COP', '#text': (invoice as any).subtotal.toString() },
+            'cbc:TaxAmount': { '@_currencyID': (invoice as any).currency || 'COP', '#text': (invoice as any).tax.toString() },
             'cac:TaxCategory': {
               'cbc:Percent': '19.00',
               'cac:TaxScheme': {
@@ -250,23 +250,23 @@ export const generateElectronicDocumentXML = async (invoice: Invoice, dianConfig
         
         // Totales legales
         'cac:LegalMonetaryTotal': {
-          'cbc:LineExtensionAmount': { '@_currencyID': invoice.currency || 'COP', '#text': invoice.subtotal.toString() },
-          'cbc:TaxExclusiveAmount': { '@_currencyID': invoice.currency || 'COP', '#text': invoice.subtotal.toString() },
-          'cbc:TaxInclusiveAmount': { '@_currencyID': invoice.currency || 'COP', '#text': (Number(invoice.subtotal) + Number(invoice.tax)).toString() },
-          'cbc:AllowanceTotalAmount': { '@_currencyID': invoice.currency || 'COP', '#text': invoice.discount.toString() },
-          'cbc:PayableAmount': { '@_currencyID': invoice.currency || 'COP', '#text': invoice.total.toString() }
+          'cbc:LineExtensionAmount': { '@_currencyID': (invoice as any).currency || 'COP', '#text': (invoice as any).subtotal.toString() },
+          'cbc:TaxExclusiveAmount': { '@_currencyID': (invoice as any).currency || 'COP', '#text': (invoice as any).subtotal.toString() },
+          'cbc:TaxInclusiveAmount': { '@_currencyID': (invoice as any).currency || 'COP', '#text': (Number((invoice as any).subtotal) + Number((invoice as any).tax)).toString() },
+          'cbc:AllowanceTotalAmount': { '@_currencyID': (invoice as any).currency || 'COP', '#text': (invoice as any).discount.toString() },
+          'cbc:PayableAmount': { '@_currencyID': (invoice as any).currency || 'COP', '#text': (invoice as any).total.toString() }
         },
         
         // Líneas de detalle
-        'cac:InvoiceLine': invoice.Items?.map((item, index) => ({
+        'cac:InvoiceLine': (invoice as any).Items?.map((item, index) => ({
           'cbc:ID': (index + 1).toString(),
           'cbc:InvoicedQuantity': { '@_unitCode': 'EA', '#text': item.quantity.toString() },
-          'cbc:LineExtensionAmount': { '@_currencyID': invoice.currency || 'COP', '#text': (Number(item.unitPrice) * Number(item.quantity)).toString() },
+          'cbc:LineExtensionAmount': { '@_currencyID': (invoice as any).currency || 'COP', '#text': (Number(item.unitPrice) * Number(item.quantity)).toString() },
           'cac:TaxTotal': {
-            'cbc:TaxAmount': { '@_currencyID': invoice.currency || 'COP', '#text': item.tax.toString() },
+            'cbc:TaxAmount': { '@_currencyID': (invoice as any).currency || 'COP', '#text': item.tax.toString() },
             'cac:TaxSubtotal': {
-              'cbc:TaxableAmount': { '@_currencyID': invoice.currency || 'COP', '#text': (Number(item.unitPrice) * Number(item.quantity)).toString() },
-              'cbc:TaxAmount': { '@_currencyID': invoice.currency || 'COP', '#text': item.tax.toString() },
+              'cbc:TaxableAmount': { '@_currencyID': (invoice as any).currency || 'COP', '#text': (Number(item.unitPrice) * Number(item.quantity)).toString() },
+              'cbc:TaxAmount': { '@_currencyID': (invoice as any).currency || 'COP', '#text': item.tax.toString() },
               'cac:TaxCategory': {
                 'cbc:Percent': '19.00',
                 'cac:TaxScheme': {
@@ -283,7 +283,7 @@ export const generateElectronicDocumentXML = async (invoice: Invoice, dianConfig
             }
           },
           'cac:Price': {
-            'cbc:PriceAmount': { '@_currencyID': invoice.currency || 'COP', '#text': item.unitPrice.toString() },
+            'cbc:PriceAmount': { '@_currencyID': (invoice as any).currency || 'COP', '#text': item.unitPrice.toString() },
             'cbc:BaseQuantity': { '@_unitCode': 'EA', '#text': '1' }
           }
         })) || []

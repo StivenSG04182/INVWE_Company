@@ -8,23 +8,27 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/components/ui/use-toast'
 
 // Funciones temporales mientras se implementan las reales
-const getSubAccountSidebarOptions = async (subAccountId: string) => {
-  console.log('Función getSubAccountSidebarOptions pendiente de implementación')
+const getSubAccountSidebarOptions = async (subAccountId: string): Promise<SubAccountSidebarOption[]> => {
+  console.log('Función getSubAccountSidebarOptions pendiente de implementación para subAccountId:', subAccountId)
+  // Retornamos un array vacío por ahora
   return []
 }
 
-const getUserSidebarPermissions = async (permissionId: string) => {
-  console.log('Función getUserSidebarPermissions pendiente de implementación')
+const getUserSidebarPermissions = async (permissionId: string): Promise<SidebarPermission[]> => {
+  console.log('Función getUserSidebarPermissions pendiente de implementación para permissionId:', permissionId)
+  // Retornamos un array vacío por ahora
   return []
 }
 
-const changeSidebarOptionPermission = async (permissionId: string, sidebarOptionId: string, checked: boolean) => {
-  console.log('Función changeSidebarOptionPermission pendiente de implementación')
-  return { success: true }
+const changeSidebarOptionPermission = async (permissionId: string, sidebarOptionId: string, checked: boolean): Promise<{ success: boolean; id?: string }> => {
+  console.log('Función changeSidebarOptionPermission pendiente de implementación:', { permissionId, sidebarOptionId, checked })
+  // Simulamos una respuesta exitosa
+  return { success: true, id: `temp-${Date.now()}` }
 }
 
-const saveActivityLogsNotification = async (data: any) => {
-  console.log('Función saveActivityLogsNotification pendiente de implementación')
+const saveActivityLogsNotification = async (data: { description: string; subaccountId: string; agencyId?: string }): Promise<{ success: boolean }> => {
+  console.log('Función saveActivityLogsNotification pendiente de implementación:', data)
+  // Simulamos una respuesta exitosa
   return { success: true }
 }
 
@@ -230,7 +234,7 @@ const SidebarOptionsPermissions = ({ subAccountId, permissionId }: Props) => {
                         )
                     } else {
                         return [...prev, {
-                            id: response.id,
+                            id: response.id || `temp-${Date.now()}`,
                             permissionId,
                             sidebarOptionId,
                             access: checked

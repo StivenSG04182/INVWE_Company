@@ -81,13 +81,14 @@ const SendInvitation: React.FC<SendInvitationProps> = ({ agencyId }) => {
       console.error("Error al enviar invitación:", error)
 
       // Verificar si es un error de invitación duplicada
+      const errorMessage = error instanceof Error ? error.message : String(error)
       if (
-        (error instanceof Error && error.message.includes("duplicate")) ||
-        error.message.includes("duplicada") ||
-        error.message.includes("ya existe una invitación")
+        errorMessage.includes("duplicate") ||
+        errorMessage.includes("duplicada") ||
+        errorMessage.includes("ya existe una invitación")
       ) {
         toast({
-          variant: "warning",
+          variant: "default",
           title: "Invitación ya enviada",
           description: `Ya existe una invitación pendiente para ${values.email}. No es necesario enviar otra.`,
         })
@@ -96,7 +97,7 @@ const SendInvitation: React.FC<SendInvitationProps> = ({ agencyId }) => {
         toast({
           variant: "destructive",
           title: "Error al enviar invitación",
-          description: error instanceof Error ? error.message : "No se pudo enviar la invitación",
+          description: errorMessage || "No se pudo enviar la invitación",
         })
       }
     } finally {

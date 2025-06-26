@@ -17,10 +17,17 @@ interface StockForecastProps {
     movements?: any[] // Historial de movimientos
 }
 
+interface ForecastDataPoint {
+    date: string
+    stock: number
+    reorderPoint: number
+    minStock: number
+}
+
 export default function StockForecast({ agencyId, products, stocks, movements = [] }: StockForecastProps) {
     const [selectedProduct, setSelectedProduct] = useState<string>("")
     const [forecastPeriod, setForecastPeriod] = useState<string>("30") // días
-    const [forecastData, setForecastData] = useState<any[]>([])
+    const [forecastData, setForecastData] = useState<ForecastDataPoint[]>([])
     const [stockoutDate, setStockoutDate] = useState<Date | null>(null)
     const [daysUntilStockout, setDaysUntilStockout] = useState<number | null>(null)
     const [averageConsumption, setAverageConsumption] = useState<number>(0)
@@ -46,7 +53,7 @@ export default function StockForecast({ agencyId, products, stocks, movements = 
 
         // Obtener el stock actual del producto
         const productStocks = stocksByProduct[selectedProduct] || []
-        const currentStock = productStocks.reduce((sum, stock) => sum + stock.quantity, 0)
+        const currentStock = productStocks.reduce((sum, stock) => sum + (stock.quantity || 0), 0)
 
         // Filtrar movimientos del producto seleccionado (solo salidas)
         const productMovements = movements
@@ -68,7 +75,7 @@ export default function StockForecast({ agencyId, products, stocks, movements = 
         const lastMovementDate = new Date(productMovements[productMovements.length - 1].date)
         const daysDiff = Math.max(1, (lastMovementDate.getTime() - firstMovementDate.getTime()) / (1000 * 60 * 60 * 24))
 
-        const totalConsumed = productMovements.reduce((sum, m) => sum + m.quantity, 0)
+        const totalConsumed = productMovements.reduce((sum, m) => sum + (m.quantity || 0), 0)
         const dailyConsumption = totalConsumed / daysDiff
 
         setAverageConsumption(dailyConsumption)
@@ -76,9 +83,8 @@ export default function StockForecast({ agencyId, products, stocks, movements = 
         // Calcular fecha de agotamiento
         const daysToStockout = dailyConsumption > 0 ? Math.floor(currentStock / dailyConsumption) : null
 
-        let stockoutDateValue = null
         if (daysToStockout !== null) {
-            stockoutDateValue = new Date()
+            const stockoutDateValue = new Date()
             stockoutDateValue.setDate(stockoutDateValue.getDate() + daysToStockout)
             setStockoutDate(stockoutDateValue)
             setDaysUntilStockout(daysToStockout)
@@ -105,8 +111,8 @@ export default function StockForecast({ agencyId, products, stocks, movements = 
         }
 
         // Generar datos para el gráfico de previsión
-        const forecastDays = Number.parseInt(forecastPeriod)
-        const forecastDataPoints = []
+        const forecastDays = Number.parseInt(forecastPeriod) || 30
+        const forecastDataPoints: ForecastDataPoint[] = []
 
         // Punto inicial (hoy)
         const today = new Date()

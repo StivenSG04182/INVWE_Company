@@ -42,6 +42,25 @@ import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
+// Tipo para el cierre de caja
+type CashClosingType = {
+  id: string;
+  date: string;
+  openTime: string;
+  closeTime: string;
+  initialAmount: number;
+  finalAmount: number;
+  cashSales: number;
+  cardSales: number;
+  otherSales: number;
+  totalSales: number;
+  difference: number;
+  status: string;
+  cashier: string;
+  cashierId: string;
+  notes: string;
+}
+
 // Servicio ficticio para obtener datos de cierres de caja
 const getCashClosings = async (agencyId: string) => {
   // Aquí se implementaría la lógica real para obtener datos de MongoDB
@@ -105,9 +124,9 @@ const CashClosingPage = ({ params }: { params: { agencyId: string } }) => {
   const [user, setUser] = useState({ Agency: true })
   const [selectedPeriod, setSelectedPeriod] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedClosing, setSelectedClosing] = useState(null)
+  const [selectedClosing, setSelectedClosing] = useState<CashClosingType | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-  const [cashClosings, setCashClosings] = useState([])
+  const [cashClosings, setCashClosings] = useState<CashClosingType[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   // Simular carga de datos
@@ -159,7 +178,7 @@ const CashClosingPage = ({ params }: { params: { agencyId: string } }) => {
     })
 
   // Función para ver detalles de un cierre
-  const viewClosingDetails = (closing) => {
+  const viewClosingDetails = (closing: CashClosingType) => {
     setSelectedClosing(closing)
     setIsDetailOpen(true)
   }

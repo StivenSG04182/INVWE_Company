@@ -114,11 +114,7 @@ export const WhatsAppBusinessService = {
       const client = await db.client.findUnique({
         where: { id: clientId },
         include: {
-          Agency: {
-            include: {
-              WhatsAppCredentials: true,
-            },
-          },
+          Agency: true,
         },
       });
 
@@ -139,7 +135,8 @@ export const WhatsAppBusinessService = {
       }
 
       // Verificar si la agencia tiene credenciales de WhatsApp configuradas
-      if (!client.Agency?.WhatsAppCredentials) {
+      const credentialsResponse = await this.getCredentials(client.agencyId);
+      if (!credentialsResponse.success) {
         return {
           success: false,
           canReceive: false,
@@ -221,17 +218,15 @@ export const WhatsAppBusinessService = {
 
         // Agregar parámetros de la plantilla si existen
         if (payload.templateParams && Object.keys(payload.templateParams).length > 0) {
-          const components = [];
-          
+          const components: any[] = [];
           // Componente de cuerpo con parámetros
-          const bodyComponent = {
+          const bodyComponent: any = {
             type: "body",
             parameters: Object.entries(payload.templateParams).map(([_, value]) => ({
               type: "text",
               text: value,
             })),
           };
-          
           components.push(bodyComponent);
           requestBody.template.components = components;
         }
@@ -361,17 +356,6 @@ export const WhatsAppBusinessService = {
                 status: "RECEIVED",
                 pqrId,
                 metadata: JSON.stringify(message),
-              },
-            });
-
-            // Crear un mensaje en el PQR
-            await db.message.create({
-              data: {
-                pqrId,
-                content: messageText,
-                sender: "client",
-                timestamp: new Date(),
-                read: false,
               },
             });
 

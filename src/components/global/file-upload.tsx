@@ -60,6 +60,13 @@ const FileUpload = ({ apiEndpoint, onChange, value }: Props) => {
   const handleRetry = () => {
     console.log(`Reintentando carga para endpoint: ${apiEndpoint}`);
     setUploadError(null);
+    setIsUploading(false);
+  };
+
+  const handleManualMode = () => {
+    console.log('Cambiando a modo manual de carga');
+    setUploadError(null);
+    setIsUploading(false);
   };
 
   return (
@@ -83,10 +90,7 @@ const FileUpload = ({ apiEndpoint, onChange, value }: Props) => {
               Intentar de nuevo
             </Button>
             <Button
-              onClick={() => {
-                console.log('Cambiando a modo manual de carga');
-                setUploadError(null);
-              }}
+              onClick={handleManualMode}
               variant="outline"
               size="sm"
             >
@@ -130,7 +134,6 @@ const FileUpload = ({ apiEndpoint, onChange, value }: Props) => {
           }}
           content={{
             label: apiEndpoint === "agencyLogo" ? "Logo de agencia" : "Archivo",
-            buttonLabel: "Seleccionar archivo",
             button({ ready, isUploading }) {
               return (
                 <Button 
@@ -150,8 +153,7 @@ const FileUpload = ({ apiEndpoint, onChange, value }: Props) => {
             }
           }}
           config={{
-            mode: "auto",
-            appendOnFallback: true
+            mode: "auto"
           }}
         />
       )}

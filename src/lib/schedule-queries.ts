@@ -3,7 +3,7 @@
 import { db } from "./db";
 import { v4 as uuidv4 } from "uuid";
 import { revalidatePath } from "next/cache";
-import { User, Schedule, Holiday, Vacation, ScheduleTemplate, Notification } from "@prisma/client";
+import { User, Schedule, Holiday, Notification } from "@prisma/client";
 
 // === EMPLEADOS ===
 export const getTeamMembers = async (agencyId: string) => {
@@ -43,42 +43,21 @@ export const deleteSchedule = async (scheduleId: string) => {
 };
 
 // === PLANTILLAS DE HORARIO ===
-export const getScheduleTemplates = async (agencyId: string) => {
-  return await db.scheduleTemplate.findMany({ where: { agencyId } });
-};
+// export const getScheduleTemplates = async (agencyId: string) => {
+//   return await db.scheduleTemplate.findMany({ where: { agencyId } });
+// };
 
-export const createScheduleTemplate = async (template: Omit<ScheduleTemplate, "id" | "createdAt" | "updatedAt">) => {
-  return await db.scheduleTemplate.create({ data: template });
-};
+// export const createScheduleTemplate = async (template: Omit<ScheduleTemplate, "id" | "createdAt" | "updatedAt">) => {
+//   return await db.scheduleTemplate.create({ data: template });
+// };
 
-export const updateScheduleTemplate = async (templateId: string, data: Partial<ScheduleTemplate>) => {
-  return await db.scheduleTemplate.update({ where: { id: templateId }, data });
-};
+// export const updateScheduleTemplate = async (templateId: string, data: Partial<ScheduleTemplate>) => {
+//   return await db.scheduleTemplate.update({ where: { id: templateId }, data });
+// };
 
-export const deleteScheduleTemplate = async (templateId: string) => {
-  return await db.scheduleTemplate.delete({ where: { id: templateId } });
-};
-
-// === VACACIONES ===
-export const getVacations = async (agencyId: string) => {
-  return await db.vacation.findMany({
-    where: { agencyId },
-    include: { user: true },
-    orderBy: { createdAt: "desc" },
-  });
-};
-
-export const createVacationRequest = async (vacation: Omit<Vacation, "id" | "createdAt" | "updatedAt">) => {
-  return await db.vacation.create({ data: vacation });
-};
-
-export const updateVacationRequest = async (vacationId: string, data: Partial<Vacation>) => {
-  return await db.vacation.update({ where: { id: vacationId }, data });
-};
-
-export const deleteVacationRequest = async (vacationId: string) => {
-  return await db.vacation.delete({ where: { id: vacationId } });
-};
+// export const deleteScheduleTemplate = async (templateId: string) => {
+//   return await db.scheduleTemplate.delete({ where: { id: templateId } });
+// };
 
 // === NOTIFICACIONES ===
 export const getNotifications = async (agencyId: string) => {

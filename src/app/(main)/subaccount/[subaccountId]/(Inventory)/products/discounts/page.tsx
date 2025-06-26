@@ -19,23 +19,20 @@ const DiscountsPage = async ({ params }: { params: { subaccountId: string } }) =
     }
 
     // Obtener productos y categorías
-    let products = []
-    let categories = []
-    let activeDiscounts = []
+    let products: any[] = []
+    let categories: any[] = []
+    let activeDiscounts: any[] = []
 
     try {
-        // Importar el serializador para convertir objetos MongoDB a objetos planos
-        const { serializeMongoArray } = await import("@/lib/serializers")
-
         // Obtener productos, categorías y descuentos usando las nuevas funciones del servidor
         const rawProducts = await getProducts(subaccountId)
         const rawCategories = await getCategories(subaccountId)
         const rawDiscounts = await getActiveDiscounts(subaccountId)
 
-        // Serializar para eliminar métodos y propiedades no serializables
-        products = serializeMongoArray(rawProducts)
-        categories = serializeMongoArray(rawCategories)
-        activeDiscounts = serializeMongoArray(rawDiscounts)
+        // Usar directamente los datos obtenidos
+        products = rawProducts
+        categories = rawCategories
+        activeDiscounts = rawDiscounts
     } catch (error) {
         console.error("Error al cargar datos:", error)
     }

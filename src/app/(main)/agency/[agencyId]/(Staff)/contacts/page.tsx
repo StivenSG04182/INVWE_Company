@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import format from 'date-fns/format'
+import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { Edit, PlusCircle, Users } from 'lucide-react'
 import Link from 'next/link'

@@ -64,7 +64,7 @@ export default async function TransferenciaPage({
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center justify-between">
-                            <div className="text-2xl font-bold">{pageData.products.length}</div>
+                            <div className="text-2xl font-bold">{pageData.products?.length || 0}</div>
                             <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
                                 <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                             </div>
@@ -79,7 +79,7 @@ export default async function TransferenciaPage({
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center justify-between">
-                            <div className="text-2xl font-bold">{pageData.areas.length}</div>
+                            <div className="text-2xl font-bold">{pageData.areas?.length || 0}</div>
                             <div className="h-10 w-10 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
                                 <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                             </div>
@@ -94,8 +94,6 @@ export default async function TransferenciaPage({
                     agencyId={agencyId}
                     type="transferencia"
                     productId={searchParams.productId}
-                    products={pageData.products}
-                    areas={pageData.areas}
                 />
             </Suspense>
         </div>

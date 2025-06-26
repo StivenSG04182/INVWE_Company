@@ -32,8 +32,8 @@ export const TransactionActions = ({ transaction, agencyId }: TransactionActions
                 agencyId,
             })
 
-            if (!result.success) {
-                throw new Error(result.error)
+            if (!result.success || !result.data) {
+                throw new Error(result.error || "No se pudo generar el PDF")
             }
 
             // Crear el blob a partir del buffer
@@ -41,7 +41,7 @@ export const TransactionActions = ({ transaction, agencyId }: TransactionActions
             const url = URL.createObjectURL(blob)
             const a = document.createElement("a")
             a.href = url
-            a.download = result.filename || `Transaccion-${transaction.reference || transaction.id}.pdf`
+            a.download = result.filename || `Transaccion-${transaction.saleNumber || transaction.id}.pdf`
             document.body.appendChild(a)
             a.click()
             document.body.removeChild(a)
@@ -62,8 +62,8 @@ export const TransactionActions = ({ transaction, agencyId }: TransactionActions
                 agencyId,
             })
 
-            if (!result.success) {
-                throw new Error(result.error)
+            if (!result.success || !result.data) {
+                throw new Error(result.error || "No se pudo generar el PDF")
             }
 
             // Crear el blob a partir del buffer

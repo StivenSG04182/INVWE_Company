@@ -18,6 +18,19 @@ interface StockAlertsProps {
     stocks: any[]
 }
 
+interface Alert {
+    id: string
+    productId: string
+    productName: string
+    type: "low" | "high" | "critical" | "out"
+    message: string
+    percentage: number
+    quantity: number
+    timestamp: Date
+    status: "active" | "dismissed"
+    dismissedAt?: Date
+}
+
 export default function StockAlerts({ agencyId, products, stocks }: StockAlertsProps) {
     const { toast } = useToast()
     const [alertsEnabled, setAlertsEnabled] = useState(true)
@@ -25,8 +38,8 @@ export default function StockAlerts({ agencyId, products, stocks }: StockAlertsP
     const [pushNotifications, setPushNotifications] = useState(true)
     const [lowStockThreshold, setLowStockThreshold] = useState(10) // Porcentaje
     const [highStockThreshold, setHighStockThreshold] = useState(75) // Porcentaje
-    const [activeAlerts, setActiveAlerts] = useState<any[]>([])
-    const [alertHistory, setAlertHistory] = useState<any[]>([])
+    const [activeAlerts, setActiveAlerts] = useState<Alert[]>([])
+    const [alertHistory, setAlertHistory] = useState<Alert[]>([])
 
     // Agrupar stocks por producto
     const stocksByProduct = stocks.reduce((acc, stock) => {
@@ -45,23 +58,23 @@ export default function StockAlerts({ agencyId, products, stocks }: StockAlertsP
             return
         }
 
-        const newAlerts = []
+        const newAlerts: Alert[] = []
 
         // Procesar cada producto
         for (const productId in stocksByProduct) {
             const product = products.find((p) => p.id === productId || p._id === productId)
             if (!product) continue
 
-            const productStocks = stocksByProduct[productId]
-            const totalQuantity = productStocks.reduce((sum, stock) => sum + stock.quantity, 0)
+            const productStocks = stocksByProduct[productId] || []
+            const totalQuantity = productStocks.reduce((sum, stock) => sum + (stock.quantity || 0), 0)
 
             // Calcular porcentaje de stock
             let stockPercentage = 0
             if (product.maxStock && product.maxStock > 0) {
                 stockPercentage = (totalQuantity / product.maxStock) * 100
-            } else if (product.minStock) {
+            } else if (product.minStock && product.minStock > 0) {
                 // Estimación basada en minStock
-                stockPercentage = product.minStock > 0 ? (totalQuantity / (product.minStock * 5)) * 100 : 0
+                stockPercentage = (totalQuantity / (product.minStock * 5)) * 100
             }
 
             // Verificar si el stock está bajo o alto
@@ -69,9 +82,9 @@ export default function StockAlerts({ agencyId, products, stocks }: StockAlertsP
                 newAlerts.push({
                     id: `low-${productId}`,
                     productId,
-                    productName: product.name,
+                    productName: product.name || 'Producto sin nombre',
                     type: "low",
-                    message: `Stock bajo para ${product.name}: ${totalQuantity} unidades (${Math.round(stockPercentage)}%)`,
+                    message: `Stock bajo para ${product.name || 'Producto'}: ${totalQuantity} unidades (${Math.round(stockPercentage)}%)`,
                     percentage: stockPercentage,
                     quantity: totalQuantity,
                     timestamp: new Date(),
@@ -81,9 +94,9 @@ export default function StockAlerts({ agencyId, products, stocks }: StockAlertsP
                 newAlerts.push({
                     id: `high-${productId}`,
                     productId,
-                    productName: product.name,
+                    productName: product.name || 'Producto sin nombre',
                     type: "high",
-                    message: `Stock alto para ${product.name}: ${totalQuantity} unidades (${Math.round(stockPercentage)}%)`,
+                    message: `Stock alto para ${product.name || 'Producto'}: ${totalQuantity} unidades (${Math.round(stockPercentage)}%)`,
                     percentage: stockPercentage,
                     quantity: totalQuantity,
                     timestamp: new Date(),
@@ -96,9 +109,9 @@ export default function StockAlerts({ agencyId, products, stocks }: StockAlertsP
                 newAlerts.push({
                     id: `critical-${productId}`,
                     productId,
-                    productName: product.name,
+                    productName: product.name || 'Producto sin nombre',
                     type: "critical",
-                    message: `¡Stock crítico para ${product.name}! Solo quedan ${totalQuantity} unidades.`,
+                    message: `¡Stock crítico para ${product.name || 'Producto'}! Solo quedan ${totalQuantity} unidades.`,
                     percentage: stockPercentage,
                     quantity: totalQuantity,
                     timestamp: new Date(),
@@ -111,9 +124,9 @@ export default function StockAlerts({ agencyId, products, stocks }: StockAlertsP
                 newAlerts.push({
                     id: `out-${productId}`,
                     productId,
-                    productName: product.name,
+                    productName: product.name || 'Producto sin nombre',
                     type: "out",
-                    message: `Sin stock para ${product.name}. Requiere reposición urgente.`,
+                    message: `Sin stock para ${product.name || 'Producto'}. Requiere reposición urgente.`,
                     percentage: 0,
                     quantity: 0,
                     timestamp: new Date(),
@@ -308,7 +321,7 @@ export default function StockAlerts({ agencyId, products, stocks }: StockAlertsP
                                                 </TableCell>
                                                 <TableCell>{alert.message}</TableCell>
                                                 <TableCell>{alert.timestamp.toLocaleString()}</TableCell>
-                                                <TableCell>{alert.dismissedAt.toLocaleString()}</TableCell>
+                                                <TableCell>{alert.dismissedAt?.toLocaleString() || "Nunca"}</TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>

@@ -115,7 +115,7 @@ export function ScheduleTemplates({ agencyId, teamMembers }: ScheduleTemplatesPr
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
     const [isApplyDialogOpen, setIsApplyDialogOpen] = useState(false)
     const [selectedTemplate, setSelectedTemplate] = useState<ScheduleTemplate | null>(null)
-    const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null)
+    const [selectedEmployee, setSelectedEmployee] = useState<string | undefined>(undefined)
 
     // Estado del formulario de creación
     const [formData, setFormData] = useState({

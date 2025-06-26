@@ -325,7 +325,7 @@ const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {providers.map((provider) => (
-                <Card key={provider._id?.toString()} className="overflow-hidden">
+                <Card key={provider.id?.toString()} className="overflow-hidden">
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div>
@@ -361,7 +361,7 @@ const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
                     <div className="flex justify-between items-center mt-6">
                       <span className="text-sm text-muted-foreground">Sin órdenes pendientes</span>
 
-                      <Link href={`/agency/${agencyId}/providers/${provider._id?.toString()}`}>
+                      <Link href={`/agency/${agencyId}/providers/${provider.id?.toString()}`}>
                         <Button variant="outline" size="sm">
                           <Pencil className="h-4 w-4 mr-2" />
                           Editar
@@ -406,7 +406,7 @@ const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
                   </TableHeader>
                   <TableBody>
                     {providers.map((provider) => (
-                      <TableRow key={provider._id?.toString()}>
+                      <TableRow key={provider.id?.toString()}>
                         <TableCell className="font-medium">{provider.name}</TableCell>
                         <TableCell className="hidden md:table-cell">{provider.contactName || "—"}</TableCell>
                         <TableCell className="hidden md:table-cell">
@@ -423,7 +423,7 @@ const ProvidersPage = async ({ params }: { params: { agencyId: string } }) => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Link href={`/agency/${agencyId}/providers/${provider._id?.toString()}`}>
+                            <Link href={`/agency/${agencyId}/providers/${provider.id?.toString()}`}>
                               <Button variant="outline" size="sm">
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Editar

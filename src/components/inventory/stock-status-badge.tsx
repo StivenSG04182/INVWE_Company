@@ -3,8 +3,15 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
+interface Product {
+  quantity?: number;
+  minStock?: number;
+  maxStock?: number;
+  name?: string;
+}
+
 interface StockStatusBadgeProps {
-  product: any;
+  product: Product;
   showTooltip?: boolean;
   className?: string;
 }
@@ -25,7 +32,7 @@ export default function StockStatusBadge({ product, showTooltip = true, classNam
   let status: "bajo" | "normal" | "alto" = "normal";
   let label = "Stock Normal";
   let variant: "destructive" | "default" | "secondary" = "secondary";
-  let icon = null;
+  let icon: React.ReactNode = null;
 
   // Calcular el porcentaje para el tooltip
   const percentage = (quantity / minStock) * 100;

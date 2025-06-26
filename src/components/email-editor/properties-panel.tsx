@@ -195,7 +195,7 @@ export const PropertiesPanel: React.FC = () => {
                   <Label className="text-sm font-medium">Font Size</Label>
                   <div className="flex items-center space-x-2">
                     <Slider
-                      value={[Number.parseInt(selectedElement.styles?.fontSize) || 16]}
+                      value={[Number.parseInt(selectedElement.styles?.fontSize || "16") || 16]}
                       min={8}
                       max={72}
                       step={1}
@@ -203,7 +203,7 @@ export const PropertiesPanel: React.FC = () => {
                       className="flex-1"
                     />
                     <span className="w-12 text-center text-sm">
-                      {Number.parseInt(selectedElement.styles?.fontSize) || 16}px
+                      {Number.parseInt(selectedElement.styles?.fontSize || "16") || 16}px
                     </span>
                   </div>
                 </div>
@@ -230,7 +230,7 @@ export const PropertiesPanel: React.FC = () => {
                   <Label className="text-sm font-medium">Line Height</Label>
                   <div className="flex items-center space-x-2">
                     <Slider
-                      value={[Number.parseFloat(selectedElement.styles?.lineHeight) || 1.5]}
+                      value={[Number.parseFloat(selectedElement.styles?.lineHeight || "1.5") || 1.5]}
                       min={1}
                       max={3}
                       step={0.1}
@@ -238,7 +238,7 @@ export const PropertiesPanel: React.FC = () => {
                       className="flex-1"
                     />
                     <span className="w-12 text-center text-sm">
-                      {Number.parseFloat(selectedElement.styles?.lineHeight) || 1.5}
+                      {Number.parseFloat(selectedElement.styles?.lineHeight || "1.5") || 1.5}
                     </span>
                   </div>
                 </div>
@@ -288,7 +288,7 @@ export const PropertiesPanel: React.FC = () => {
                 <Label className="text-sm font-medium">Border Radius</Label>
                 <div className="flex items-center space-x-2">
                   <Slider
-                    value={[Number.parseInt(selectedElement.styles?.borderRadius) || 0]}
+                    value={[Number.parseInt(selectedElement.styles?.borderRadius || "0") || 0]}
                     min={0}
                     max={50}
                     step={1}
@@ -296,7 +296,7 @@ export const PropertiesPanel: React.FC = () => {
                     className="flex-1"
                   />
                   <span className="w-12 text-center text-sm">
-                    {Number.parseInt(selectedElement.styles?.borderRadius) || 0}px
+                    {Number.parseInt(selectedElement.styles?.borderRadius || "0") || 0}px
                   </span>
                 </div>
               </div>

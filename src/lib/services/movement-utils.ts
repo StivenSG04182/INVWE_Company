@@ -23,12 +23,7 @@ export async function getEntryPageData(agencyId: string, productId?: string) {
       discount: product.discount ? Number(product.discount) : 0,
       taxRate: product.taxRate ? Number(product.taxRate) : 0,
       discountMinimumPrice: product.discountMinimumPrice ? Number(product.discountMinimumPrice) : null,
-      minStock: product.minStock ? Number(product.minStock) : undefined,
-      // Asegurar que los stocks también sean números
-      stocks: product.Stocks ? product.Stocks.map((stock: any) => ({
-        ...stock,
-        quantity: stock.quantity ? Number(stock.quantity) : 0
-      })) : []
+      minStock: product.minStock ? Number(product.minStock) : undefined
     }))
     
     const areas = rawAreas

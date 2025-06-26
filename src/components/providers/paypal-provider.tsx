@@ -9,6 +9,7 @@ export const PayPalProvider = ({ children }: { children: React.ReactNode }) => {
     <PayPalScriptProvider
       options={{
         "client-id": PAYPAL_CLIENT_ID,
+        clientId: PAYPAL_CLIENT_ID,
         currency: "USD",
         intent: "subscription",
       }}

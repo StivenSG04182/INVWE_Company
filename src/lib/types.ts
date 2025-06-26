@@ -3,6 +3,7 @@ import { Contact, Lane, Notification, Prisma, Role, Tag, Ticket, User } from "@p
 import { _getTicketsWithAllRelations, getAuthUserDetails, getFunnels, getMedia, getPipelineDetails, getTicketsWithTags, getUserPermissions } from "./queries";
 import { db } from "./db";
 import { z } from "zod";
+import type Stripe from "stripe";
 
 export type NotificationWithUser =
   | ({

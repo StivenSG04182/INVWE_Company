@@ -150,7 +150,7 @@ export const PaymentsPanel = ({ agencyId }: { agencyId: string }) => {
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">Promedio por Pago</p>
                                 <p className="text-2xl font-bold text-blue-600">
-                                    ${completedPayments > 0 ? (totalAmount / completedPayments).toLocaleString("es-CO") : "0"}
+                                    ${completedPayments > 0 ? (totalAmount / completedPayments).toLocaleString("es-CO", { maximumFractionDigits: 0 }) : "0"}
                                 </p>
                             </div>
                             <Smartphone className="h-8 w-8 text-blue-600" />
@@ -195,8 +195,8 @@ export const PaymentsPanel = ({ agencyId }: { agencyId: string }) => {
                                         <SelectItem value="all">Todos</SelectItem>
                                         <SelectItem value="COMPLETED">Completados</SelectItem>
                                         <SelectItem value="PENDING">Pendientes</SelectItem>
-                                        <SelectItem value="CANCELLED">Cancelados</SelectItem>
                                         <SelectItem value="FAILED">Fallidos</SelectItem>
+                                        <SelectItem value="REFUNDED">Reembolsados</SelectItem>
                                     </SelectContent>
                                 </Select>
 
@@ -207,8 +207,11 @@ export const PaymentsPanel = ({ agencyId }: { agencyId: string }) => {
                                     <SelectContent>
                                         <SelectItem value="all">Todos</SelectItem>
                                         <SelectItem value="CASH">Efectivo</SelectItem>
-                                        <SelectItem value="CARD">Tarjeta</SelectItem>
-                                        <SelectItem value="TRANSFER">Transferencia</SelectItem>
+                                        <SelectItem value="CREDIT_CARD">Tarjeta de Crédito</SelectItem>
+                                        <SelectItem value="DEBIT_CARD">Tarjeta de Débito</SelectItem>
+                                        <SelectItem value="BANK_TRANSFER">Transferencia</SelectItem>
+                                        <SelectItem value="CHECK">Cheque</SelectItem>
+                                        <SelectItem value="ONLINE">En línea</SelectItem>
                                         <SelectItem value="OTHER">Otro</SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -328,10 +331,16 @@ const getMethodText = (method: PaymentMethod): string => {
     switch (method) {
         case "CASH":
             return "Efectivo"
-        case "CARD":
-            return "Tarjeta"
-        case "TRANSFER":
+        case "CREDIT_CARD":
+            return "Tarjeta de Crédito"
+        case "DEBIT_CARD":
+            return "Tarjeta de Débito"
+        case "BANK_TRANSFER":
             return "Transferencia"
+        case "CHECK":
+            return "Cheque"
+        case "ONLINE":
+            return "En línea"
         case "OTHER":
             return "Otro"
         default:
@@ -343,10 +352,18 @@ const getMethodIcon = (method: PaymentMethod) => {
     switch (method) {
         case "CASH":
             return <Banknote className="h-3 w-3 mr-1" />
-        case "CARD":
+        case "CREDIT_CARD":
             return <CreditCard className="h-3 w-3 mr-1" />
-        case "TRANSFER":
+        case "DEBIT_CARD":
+            return <CreditCard className="h-3 w-3 mr-1" />
+        case "BANK_TRANSFER":
             return <Smartphone className="h-3 w-3 mr-1" />
+        case "CHECK":
+            return null
+        case "ONLINE":
+            return null
+        case "OTHER":
+            return null
         default:
             return null
     }
@@ -356,10 +373,16 @@ const getMethodColor = (method: PaymentMethod): string => {
     switch (method) {
         case "CASH":
             return "border-green-200 text-green-800"
-        case "CARD":
+        case "CREDIT_CARD":
             return "border-blue-200 text-blue-800"
-        case "TRANSFER":
+        case "DEBIT_CARD":
+            return "border-blue-200 text-blue-800"
+        case "BANK_TRANSFER":
             return "border-purple-200 text-purple-800"
+        case "CHECK":
+            return "border-gray-200 text-gray-800"
+        case "ONLINE":
+            return "border-gray-200 text-gray-800"
         case "OTHER":
             return "border-gray-200 text-gray-800"
         default:
@@ -373,10 +396,10 @@ const getStatusText = (status: PaymentStatus): string => {
             return "Completado"
         case "PENDING":
             return "Pendiente"
-        case "CANCELLED":
-            return "Cancelado"
         case "FAILED":
             return "Fallido"
+        case "REFUNDED":
+            return "Reembolsado"
         default:
             return "Desconocido"
     }
@@ -388,10 +411,10 @@ const getStatusColor = (status: PaymentStatus): string => {
             return "bg-green-100 text-green-800 border-green-200"
         case "PENDING":
             return "bg-amber-100 text-amber-800 border-amber-200"
-        case "CANCELLED":
-            return "bg-gray-100 text-gray-800 border-gray-200"
         case "FAILED":
             return "bg-red-100 text-red-800 border-red-200"
+        case "REFUNDED":
+            return "bg-gray-100 text-gray-800 border-gray-200"
         default:
             return "bg-gray-100 text-gray-800 border-gray-200"
     }

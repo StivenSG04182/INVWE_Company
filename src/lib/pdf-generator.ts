@@ -61,11 +61,11 @@ export const generateInvoicePDF = async (invoice: InvoiceData, agency?: AgencyDa
     })
 
     // Configurar colores
-    const primaryColor = [37, 99, 235] // #2563eb
-    const secondaryColor = [100, 116, 139] // #64748b
-    const successColor = [22, 163, 74] // #16a34a
-    const warningColor = [234, 88, 12] // #ea580c
-    const dangerColor = [220, 38, 38] // #dc2626
+    const primaryColor: [number, number, number] = [37, 99, 235] // #2563eb
+    const secondaryColor: [number, number, number] = [100, 116, 139] // #64748b
+    const successColor: [number, number, number] = [22, 163, 74] // #16a34a
+    const warningColor: [number, number, number] = [234, 88, 12] // #ea580c
+    const dangerColor: [number, number, number] = [220, 38, 38] // #dc2626
 
     // Función para obtener color del estado
     const getStatusColor = (status: string): [number, number, number] => {
@@ -362,8 +362,8 @@ export const generateTransactionPDF = async (transaction: any, agency?: AgencyDa
       format: "a4",
     })
 
-    const primaryColor = [37, 99, 235]
-    const secondaryColor = [100, 116, 139]
+    const primaryColor: [number, number, number] = [37, 99, 235]
+    const secondaryColor: [number, number, number] = [100, 116, 139]
 
     let yPosition = 20
 

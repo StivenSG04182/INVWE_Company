@@ -49,6 +49,41 @@ const ProductDetailPage = async ({ params }: PageProps) => {
       return redirect(`/agency/${agencyId}/products`)
     }
 
+    // Normalizar campos null a undefined y convertir tipos
+    const normalizedProduct = {
+      ...product,
+      description: product.description ?? undefined,
+      sku: product.sku ?? undefined,
+      barcode: product.barcode ?? undefined,
+      cost: typeof product.cost === 'object' && product.cost !== null && 'toNumber' in product.cost ? product.cost.toNumber() : (product.cost ?? undefined),
+      price: typeof product.price === 'object' && product.price !== null && 'toNumber' in product.price ? product.price.toNumber() : (product.price ?? undefined),
+      minStock: product.minStock ?? undefined,
+      subAccountId: product.subAccountId ?? undefined,
+      categoryId: product.categoryId ?? undefined,
+      brand: product.brand ?? undefined,
+      model: product.model ?? undefined,
+      unit: product.unit ?? undefined,
+      quantity: product.quantity ?? undefined,
+      locationId: product.locationId ?? undefined,
+      warehouseId: product.warehouseId ?? undefined,
+      batchNumber: product.batchNumber ?? undefined,
+      expirationDate: product.expirationDate ? product.expirationDate.toISOString() : undefined,
+      serialNumber: product.serialNumber ?? undefined,
+      warrantyMonths: product.warrantyMonths ?? undefined,
+      discount: typeof product.discount === 'object' && product.discount !== null && 'toNumber' in product.discount ? product.discount.toNumber() : (product.discount ?? undefined),
+      discountStartDate: product.discountStartDate ? product.discountStartDate.toISOString() : undefined,
+      discountEndDate: product.discountEndDate ? product.discountEndDate.toISOString() : undefined,
+      discountMinimumPrice: typeof product.discountMinimumPrice === 'object' && product.discountMinimumPrice !== null && 'toNumber' in product.discountMinimumPrice ? product.discountMinimumPrice.toNumber() : (product.discountMinimumPrice ?? undefined),
+      taxRate: typeof product.taxRate === 'object' && product.taxRate !== null && 'toNumber' in product.taxRate ? product.taxRate.toNumber() : (product.taxRate ?? undefined),
+      supplierId: product.supplierId ?? undefined,
+      variants: Array.isArray(product.variants) ? (product.variants as Array<{ name: string; value: string; }>) : undefined,
+      documents: Array.isArray(product.documents) ? (product.documents as string[]) : undefined,
+      externalIntegrations: product.externalIntegrations ? (product.externalIntegrations as Record<string, string>) : undefined,
+      customFields: product.customFields ? (product.customFields as Record<string, any>) : undefined,
+      createdAt: product.createdAt ? product.createdAt.toISOString() : undefined,
+      updatedAt: product.updatedAt ? product.updatedAt.toISOString() : undefined,
+    };
+
     const formatDate = (dateString: string) => {
       if (!dateString) return "N/A"
       const date = new Date(dateString)
@@ -60,9 +95,9 @@ const ProductDetailPage = async ({ params }: PageProps) => {
     }
 
     const isExpiringSoon = () => {
-      if (!product.expirationDate) return false
+      if (!normalizedProduct.expirationDate) return false
       const today = new Date()
-      const expirationDate = new Date(product.expirationDate)
+      const expirationDate = new Date(normalizedProduct.expirationDate)
       const fiveDaysFromNow = new Date()
       fiveDaysFromNow.setDate(today.getDate() + 5)
 
@@ -86,10 +121,10 @@ const ProductDetailPage = async ({ params }: PageProps) => {
             <Card>
               <CardContent className="p-0">
                 <div className="relative aspect-square">
-                  {product.images && product.images.length > 0 ? (
+                  {normalizedProduct.images && normalizedProduct.images.length > 0 ? (
                     <Image
-                      src={product.images[0] || "/placeholder.svg"}
-                      alt={product.name}
+                      src={normalizedProduct.images[0] || "/placeholder.svg"}
+                      alt={normalizedProduct.name}
                       fill
                       className="object-contain"
                     />
@@ -100,13 +135,13 @@ const ProductDetailPage = async ({ params }: PageProps) => {
                   )}
                 </div>
 
-                {product.images && product.images.length > 1 && (
+                {normalizedProduct.images && normalizedProduct.images.length > 1 && (
                   <div className="grid grid-cols-4 gap-2 p-4">
-                    {product.images.slice(1).map((image: string, index: number) => (
+                    {normalizedProduct.images.slice(1).map((image: string, index: number) => (
                       <div key={index} className="relative aspect-square rounded-md overflow-hidden border">
                         <Image
                           src={image || "/placeholder.svg"}
-                          alt={`${product.name} ${index + 2}`}
+                          alt={`${normalizedProduct.name} ${index + 2}`}
                           fill
                           className="object-cover"
                         />
@@ -132,23 +167,23 @@ const ProductDetailPage = async ({ params }: PageProps) => {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Estado:</span>
-                  <Badge variant={product.isActive !== false ? "default" : "secondary"}>
-                    {product.isActive !== false ? "Activo" : "Inactivo"}
+                  <Badge variant={normalizedProduct.isActive !== false ? "default" : "secondary"}>
+                    {normalizedProduct.isActive !== false ? "Activo" : "Inactivo"}
                   </Badge>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Devoluciones:</span>
-                  <Badge variant={product.isReturnable ? "outline" : "secondary"}>
-                    {product.isReturnable ? "Permitidas" : "No permitidas"}
+                  <Badge variant={normalizedProduct.isReturnable ? "outline" : "secondary"}>
+                    {normalizedProduct.isReturnable ? "Permitidas" : "No permitidas"}
                   </Badge>
                 </div>
 
-                {product.warrantyMonths > 0 && (
+                {normalizedProduct.warrantyMonths && normalizedProduct.warrantyMonths > 0 && (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Garantía:</span>
                     <Badge variant="outline">
-                      {product.warrantyMonths} {product.warrantyMonths === 1 ? "mes" : "meses"}
+                      {normalizedProduct.warrantyMonths} {normalizedProduct.warrantyMonths === 1 ? "mes" : "meses"}
                     </Badge>
                   </div>
                 )}
@@ -157,12 +192,12 @@ const ProductDetailPage = async ({ params }: PageProps) => {
 
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Creado:</span>
-                  <span className="text-sm">{product.createdAt ? formatDate(product.createdAt) : "N/A"}</span>
+                  <span className="text-sm">{normalizedProduct.createdAt ? formatDate(normalizedProduct.createdAt) : "N/A"}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Actualizado:</span>
-                  <span className="text-sm">{product.updatedAt ? formatDate(product.updatedAt) : "N/A"}</span>
+                  <span className="text-sm">{normalizedProduct.updatedAt ? formatDate(normalizedProduct.updatedAt) : "N/A"}</span>
                 </div>
               </CardContent>
             </Card>
@@ -175,32 +210,32 @@ const ProductDetailPage = async ({ params }: PageProps) => {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">SKU:</span>
                   <Badge variant="outline" className="font-mono">
-                    {product.sku}
+                    {normalizedProduct.sku}
                   </Badge>
                 </div>
 
-                {product.barcode && (
+                {normalizedProduct.barcode && (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Código de Barras:</span>
                     <Badge variant="outline" className="font-mono">
-                      {product.barcode}
+                      {normalizedProduct.barcode}
                     </Badge>
                   </div>
                 )}
 
-                {product.serialNumber && (
+                {normalizedProduct.serialNumber && (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Número de Serie:</span>
                     <Badge variant="outline" className="font-mono">
-                      {product.serialNumber}
+                      {normalizedProduct.serialNumber}
                     </Badge>
                   </div>
                 )}
 
-                {product.batchNumber && (
+                {normalizedProduct.batchNumber && (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Número de Lote:</span>
-                    <Badge variant="outline">{product.batchNumber}</Badge>
+                    <Badge variant="outline">{normalizedProduct.batchNumber}</Badge>
                   </div>
                 )}
               </CardContent>
@@ -213,21 +248,21 @@ const ProductDetailPage = async ({ params }: PageProps) => {
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-2xl">{product.name}</CardTitle>
-                    {product.brand && product.model && (
+                    <CardTitle className="text-2xl">{normalizedProduct.name}</CardTitle>
+                    {normalizedProduct.brand && normalizedProduct.model && (
                       <CardDescription className="text-base">
-                        {product.brand} - {product.model}
+                        {normalizedProduct.brand} - {normalizedProduct.model}
                       </CardDescription>
                     )}
                   </div>
                   <div className="flex flex-col items-end">
-                    <div className="text-2xl font-bold">${typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(product.price || 0).toFixed(2) || "0.00"}</div>
-                    {product.discount > 0 && (
+                    <div className="text-2xl font-bold">${typeof normalizedProduct.price === 'number' ? normalizedProduct.price.toFixed(2) : parseFloat(String(normalizedProduct.price || 0)).toFixed(2) || "0.00"}</div>
+                    {normalizedProduct.discount && normalizedProduct.discount > 0 && (
                       <div className="flex items-center">
                         <span className="text-sm text-muted-foreground line-through mr-2">
-                          ${((parseFloat(product.price || 0)) / (1 - (product.discount || 0) / 100)).toFixed(2)}
+                          ${((parseFloat(String(normalizedProduct.price || 0))) / (1 - (normalizedProduct.discount || 0) / 100)).toFixed(2)}
                         </span>
-                        <Badge className="bg-green-600 hover:bg-green-700">{product.discount}% descuento</Badge>
+                        <Badge className="bg-green-600 hover:bg-green-700">{normalizedProduct.discount}% descuento</Badge>
                       </div>
                     )}
                   </div>
@@ -235,23 +270,23 @@ const ProductDetailPage = async ({ params }: PageProps) => {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {product.categoryId && (
+                  {normalizedProduct.categoryId && (
                     <Badge variant="outline" className="flex items-center">
                       <Tag className="h-3.5 w-3.5 mr-1.5" />
-                      {getCategoryName(product.categoryId)}
+                      {normalizedProduct.Category?.name || "Sin categoría"}
                     </Badge>
                   )}
 
-                  {product.tags &&
-                    product.tags.length > 0 &&
-                    product.tags.map((tag: string, index: number) => (
+                  {normalizedProduct.tags &&
+                    normalizedProduct.tags.length > 0 &&
+                    normalizedProduct.tags.map((tag: string, index: number) => (
                       <Badge key={index} variant="secondary">
                         {tag}
                       </Badge>
                     ))}
                 </div>
 
-                <p className="text-muted-foreground mb-4">{product.description || "Sin descripción"}</p>
+                <p className="text-muted-foreground mb-4">{normalizedProduct.description || "Sin descripción"}</p>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <Card className="bg-muted/50">
@@ -260,7 +295,7 @@ const ProductDetailPage = async ({ params }: PageProps) => {
                       <div>
                         <p className="text-sm text-muted-foreground">Stock Actual</p>
                         <p className="text-lg font-medium">
-                          {product.quantity || 0} {product.unit || "unidades"}
+                          {normalizedProduct.quantity || 0} {normalizedProduct.unit || "unidades"}
                         </p>
                       </div>
                     </CardContent>
@@ -271,7 +306,7 @@ const ProductDetailPage = async ({ params }: PageProps) => {
                       <DollarSign className="h-8 w-8 mr-3 text-primary" />
                       <div>
                         <p className="text-sm text-muted-foreground">Costo Unitario</p>
-                        <p className="text-lg font-medium">${typeof product.cost === 'number' ? product.cost.toFixed(2) : parseFloat(product.cost || 0).toFixed(2) || "0.00"}</p>
+                        <p className="text-lg font-medium">${typeof normalizedProduct.cost === 'number' ? normalizedProduct.cost.toFixed(2) : parseFloat(String(normalizedProduct.cost || 0)).toFixed(2) || "0.00"}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -282,8 +317,8 @@ const ProductDetailPage = async ({ params }: PageProps) => {
                       <div>
                         <p className="text-sm text-muted-foreground">Margen</p>
                         <p className="text-lg font-medium">
-                          {product.cost && product.price
-                            ? `${(((parseFloat(product.price || 0) - parseFloat(product.cost || 0)) / parseFloat(product.price || 0)) * 100).toFixed(2)}%`
+                          {normalizedProduct.cost && normalizedProduct.price
+                            ? `${(((parseFloat(String(normalizedProduct.price || 0)) - parseFloat(String(normalizedProduct.cost || 0))) / parseFloat(String(normalizedProduct.price || 0))) * 100).toFixed(2)}%`
                             : "N/A"}
                         </p>
                       </div>
@@ -293,25 +328,25 @@ const ProductDetailPage = async ({ params }: PageProps) => {
 
                 {/* Alertas */}
                 <div className="space-y-3">
-                  {(product.quantity || 0) <= (product.minStock || 0) && (
+                  {(normalizedProduct.quantity || 0) <= (normalizedProduct.minStock || 0) && (
                     <div className="flex items-center p-3 rounded-md bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300">
                       <AlertTriangle className="h-5 w-5 mr-2 flex-shrink-0" />
                       <div>
                         <p className="font-medium">Stock bajo</p>
                         <p className="text-sm">
-                          El stock actual ({product.quantity || 0}) está por debajo del mínimo recomendado (
-                          {product.minStock || 0}).
+                          El stock actual ({normalizedProduct.quantity || 0}) está por debajo del mínimo recomendado (
+                          {normalizedProduct.minStock || 0}).
                         </p>
                       </div>
                     </div>
                   )}
 
-                  {product.expirationDate && isExpiringSoon() && (
+                  {normalizedProduct.expirationDate && isExpiringSoon() && (
                     <div className="flex items-center p-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300">
                       <Clock className="h-5 w-5 mr-2 flex-shrink-0" />
                       <div>
                         <p className="font-medium">Producto próximo a vencer</p>
-                        <p className="text-sm">Este producto vence el {formatDate(product.expirationDate)}.</p>
+                        <p className="text-sm">Este producto vence el {formatDate(normalizedProduct.expirationDate)}.</p>
                       </div>
                     </div>
                   )}
@@ -343,29 +378,29 @@ const ProductDetailPage = async ({ params }: PageProps) => {
                           <TableBody>
                             <TableRow>
                               <TableCell className="font-medium">Nombre</TableCell>
-                              <TableCell>{product.name}</TableCell>
+                              <TableCell>{normalizedProduct.name}</TableCell>
                             </TableRow>
-                            {product.brand && (
+                            {normalizedProduct.brand && (
                               <TableRow>
                                 <TableCell className="font-medium">Marca</TableCell>
-                                <TableCell>{product.brand}</TableCell>
+                                <TableCell>{normalizedProduct.brand}</TableCell>
                               </TableRow>
                             )}
-                            {product.model && (
+                            {normalizedProduct.model && (
                               <TableRow>
                                 <TableCell className="font-medium">Modelo</TableCell>
-                                <TableCell>{product.model}</TableCell>
+                                <TableCell>{normalizedProduct.model}</TableCell>
                               </TableRow>
                             )}
                             <TableRow>
                               <TableCell className="font-medium">Categoría</TableCell>
                               <TableCell>
-                                {product.categoryId ? getCategoryName(product.categoryId) : "Sin categoría"}
+                                {normalizedProduct.categoryId ? normalizedProduct.Category?.name || "Sin categoría" : "Sin categoría"}
                               </TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">Unidad de Medida</TableCell>
-                              <TableCell>{product.unit || "Unidad"}</TableCell>
+                              <TableCell>{normalizedProduct.unit || "Unidad"}</TableCell>
                             </TableRow>
                           </TableBody>
                         </Table>
@@ -377,28 +412,28 @@ const ProductDetailPage = async ({ params }: PageProps) => {
                           <TableBody>
                             <TableRow>
                               <TableCell className="font-medium">Precio de Venta</TableCell>
-                              <TableCell>${typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(product.price || 0).toFixed(2) || "0.00"}</TableCell>
+                              <TableCell>${typeof normalizedProduct.price === 'number' ? normalizedProduct.price.toFixed(2) : parseFloat(String(normalizedProduct.price || 0)).toFixed(2) || "0.00"}</TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">Costo</TableCell>
-                              <TableCell>${typeof product.cost === 'number' ? product.cost.toFixed(2) : parseFloat(product.cost || 0).toFixed(2) || "0.00"}</TableCell>
+                              <TableCell>${typeof normalizedProduct.cost === 'number' ? normalizedProduct.cost.toFixed(2) : parseFloat(String(normalizedProduct.cost || 0)).toFixed(2) || "0.00"}</TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">Ganancia</TableCell>
-                              <TableCell>${((product.price || 0) - (product.cost || 0)).toFixed(2)}</TableCell>
+                              <TableCell>${((normalizedProduct.price || 0) - (normalizedProduct.cost || 0)).toFixed(2)}</TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">Margen</TableCell>
                               <TableCell>
-                                {product.cost && product.price
-                                  ? `${(((product.price - product.cost) / product.price) * 100).toFixed(2)}%`
+                                {normalizedProduct.cost && normalizedProduct.price
+                                  ? `${(((normalizedProduct.price - normalizedProduct.cost) / normalizedProduct.price) * 100).toFixed(2)}%`
                                   : "N/A"}
                               </TableCell>
                             </TableRow>
-                            {product.taxRate > 0 && (
+                            {normalizedProduct.taxRate && normalizedProduct.taxRate > 0 && (
                               <TableRow>
                                 <TableCell className="font-medium">Impuesto</TableCell>
-                                <TableCell>{product.taxRate}%</TableCell>
+                                <TableCell>{normalizedProduct.taxRate}%</TableCell>
                               </TableRow>
                             )}
                           </TableBody>
@@ -406,20 +441,20 @@ const ProductDetailPage = async ({ params }: PageProps) => {
                       </div>
                     </div>
 
-                    {product.description && (
+                    {normalizedProduct.description && (
                       <div>
                         <h3 className="text-sm font-medium mb-2">Descripción</h3>
                         <div className="p-3 rounded-md bg-muted">
-                          <p className="whitespace-pre-line">{product.description}</p>
+                          <p className="whitespace-pre-line">{normalizedProduct.description}</p>
                         </div>
                       </div>
                     )}
 
-                    {product.tags && product.tags.length > 0 && (
+                    {normalizedProduct.tags && normalizedProduct.tags.length > 0 && (
                       <div>
                         <h3 className="text-sm font-medium mb-2">Etiquetas</h3>
                         <div className="flex flex-wrap gap-2">
-                          {product.tags.map((tag: string, index: number) => (
+                          {normalizedProduct.tags.map((tag: string, index: number) => (
                             <Badge key={index} variant="secondary">
                               {tag}
                             </Badge>
@@ -448,28 +483,28 @@ const ProductDetailPage = async ({ params }: PageProps) => {
                             <TableRow>
                               <TableCell className="font-medium">Stock Actual</TableCell>
                               <TableCell>
-                                {product.quantity || 0} {product.unit || "unidades"}
+                                {normalizedProduct.quantity || 0} {normalizedProduct.unit || "unidades"}
                               </TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">Stock Mínimo</TableCell>
                               <TableCell>
-                                {product.minStock || 0} {product.unit || "unidades"}
+                                {normalizedProduct.minStock || 0} {normalizedProduct.unit || "unidades"}
                               </TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">Estado</TableCell>
                               <TableCell>
                                 <Badge
-                                  variant={(product.quantity || 0) <= (product.minStock || 0) ? "destructive" : "outline"}
+                                  variant={(normalizedProduct.quantity || 0) <= (normalizedProduct.minStock || 0) ? "destructive" : "outline"}
                                 >
-                                  {(product.quantity || 0) <= (product.minStock || 0) ? "Stock Bajo" : "Stock Normal"}
+                                  {(normalizedProduct.quantity || 0) <= (normalizedProduct.minStock || 0) ? "Stock Bajo" : "Stock Normal"}
                                 </Badge>
                               </TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium">Valor en Inventario</TableCell>
-                              <TableCell>${((product.quantity || 0) * (product.cost || 0)).toFixed(2)}</TableCell>
+                              <TableCell>${((normalizedProduct.quantity || 0) * (normalizedProduct.cost || 0)).toFixed(2)}</TableCell>
                             </TableRow>
                           </TableBody>
                         </Table>
@@ -479,31 +514,31 @@ const ProductDetailPage = async ({ params }: PageProps) => {
                         <h3 className="text-sm font-medium mb-2">Ubicación y Lote</h3>
                         <Table>
                           <TableBody>
-                            {product.warehouseId && (
+                            {normalizedProduct.warehouseId && (
                               <TableRow>
                                 <TableCell className="font-medium">Almacén</TableCell>
                                 <TableCell>
-                                  {product.warehouseId === "default" ? "Almacén Principal" : product.warehouseId}
+                                  {normalizedProduct.warehouseId === "default" ? "Almacén Principal" : normalizedProduct.warehouseId}
                                 </TableCell>
                               </TableRow>
                             )}
-                            {product.locationId && (
+                            {normalizedProduct.locationId && (
                               <TableRow>
                                 <TableCell className="font-medium">Ubicación</TableCell>
-                                <TableCell>{product.locationId}</TableCell>
+                                <TableCell>{normalizedProduct.locationId}</TableCell>
                               </TableRow>
                             )}
-                            {product.batchNumber && (
+                            {normalizedProduct.batchNumber && (
                               <TableRow>
                                 <TableCell className="font-medium">Número de Lote</TableCell>
-                                <TableCell>{product.batchNumber}</TableCell>
+                                <TableCell>{normalizedProduct.batchNumber}</TableCell>
                               </TableRow>
                             )}
-                            {product.expirationDate && (
+                            {normalizedProduct.expirationDate && (
                               <TableRow>
                                 <TableCell className="font-medium">Fecha de Vencimiento</TableCell>
                                 <TableCell>
-                                  {formatDate(product.expirationDate)}
+                                  {formatDate(normalizedProduct.expirationDate)}
                                   {isExpiringSoon() && (
                                     <Badge variant="destructive" className="ml-2">
                                       Próximo a vencer
@@ -542,7 +577,7 @@ const ProductDetailPage = async ({ params }: PageProps) => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {product.variants && product.variants.length > 0 ? (
+                    {normalizedProduct.variants && normalizedProduct.variants.length > 0 ? (
                       <div className="space-y-4">
                         <Table>
                           <TableHeader>
@@ -552,7 +587,7 @@ const ProductDetailPage = async ({ params }: PageProps) => {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {product.variants.map((variant: any, index: number) => (
+                            {normalizedProduct.variants.map((variant: any, index: number) => (
                               <TableRow key={index}>
                                 <TableCell className="font-medium">{variant.name}</TableCell>
                                 <TableCell>{variant.value}</TableCell>
@@ -587,10 +622,10 @@ const ProductDetailPage = async ({ params }: PageProps) => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {product.documents && product.documents.length > 0 ? (
+                    {normalizedProduct.documents && normalizedProduct.documents.length > 0 ? (
                       <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {product.documents.map((doc: string, index: number) => (
+                          {normalizedProduct.documents.map((doc: string, index: number) => (
                             <Card key={index}>
                               <CardContent className="p-4 flex items-center">
                                 <FileText className="h-8 w-8 mr-3 text-primary" />

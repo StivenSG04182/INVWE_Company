@@ -74,10 +74,12 @@ export const duplicateEmailTemplate = async (templateId: string) => {
 
         const copy = await db.emailTemplate.create({
             data: {
-                ...original,
-                id: undefined,
                 name: `${original.name} (copia)`,
-                status: 'DRAFT',
+                description: original.description,
+                content: original.content as any,
+                thumbnail: original.thumbnail,
+                status: 'DRAFT' as EmailTemplateStatus,
+                category: original.category,
                 Agency: { connect: { id: original.agencyId } },
             },
         })

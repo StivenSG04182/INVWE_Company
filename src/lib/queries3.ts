@@ -431,7 +431,11 @@ export const getPayments = async ({
                 ...(subAccountId ? { subAccountId } : {}),
             },
             include: {
-                Invoice: true,
+                Invoice: {
+                    include: {
+                        Customer: true,
+                    },
+                },
             },
             orderBy: {
                 createdAt: "desc",
@@ -452,7 +456,11 @@ export const getPaymentById = async (paymentId: string) => {
                 id: paymentId,
             },
             include: {
-                Invoice: true,
+                Invoice: {
+                    include: {
+                        Customer: true,
+                    },
+                },
             },
         });
         return payment;

@@ -55,6 +55,9 @@ const LaunchPad = async ({params, searchParams}: Props) => {
       if (searchParams.code) {
         if (!subaccountDetails.connectAccountId) {
           try {
+            if (!stripe) {
+              throw new Error('Stripe instance not initialized. STRIPE_SECRET_KEY is missing.')
+            }
             const response = await stripe.oauth.token({
               grant_type: 'authorization_code',
               code: searchParams.code,

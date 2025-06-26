@@ -168,7 +168,7 @@ export function HoursTrackingModal({ isOpen, onClose, employeeId, employeeName, 
 
     // Calcular sugerencias automáticas
     const getSuggestions = () => {
-        const suggestions = []
+        const suggestions: { type: HourEntry["type"]; hours: number; description: string }[] = []
         const today = new Date()
         const dayOfWeek = today.getDay()
 

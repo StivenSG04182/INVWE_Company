@@ -514,7 +514,7 @@ const MenuOptions = ({
                         <SidebarOptionItem
                           key={option.id}
                           option={option}
-                          defaultOpen={defaultOpen}
+                          defaultOpen={defaultOpen || false}
                           expandedOptionId={expandedOptionId}
                           setExpandedOptionId={setExpandedOptionId}
                         />
@@ -537,7 +537,7 @@ const MenuOptions = ({
                           <SidebarOptionItem
                             key={option.id}
                             option={option}
-                            defaultOpen={defaultOpen}
+                            defaultOpen={defaultOpen || false}
                             expandedOptionId={expandedOptionId}
                             setExpandedOptionId={setExpandedOptionId}
                           />

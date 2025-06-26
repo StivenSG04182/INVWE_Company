@@ -79,7 +79,7 @@ const PaymentsPage = async ({ params }: { params: { agencyId: string } }) => {
           </div>
           <div className="bg-background p-4 rounded-md border">
             <h3 className="font-medium">Tiendas</h3>
-            <p className="text-2xl font-bold">{agency.SubAccount.length}</p>
+            <p className="text-2xl font-bold">0</p>
           </div>
         </div>
 
@@ -133,13 +133,13 @@ const PaymentsPage = async ({ params }: { params: { agencyId: string } }) => {
                   </thead>
                   <tbody>
                     {payments.map((payment) => {
-                      const subAccount = agency.SubAccount.find(sa => sa.id === payment.subAccountId);
+                      const subAccount = null;
                       return (
                         <tr key={payment.id} className="border-b hover:bg-muted/50">
                           <td className="px-4 py-2">{payment.reference || '-'}</td>
                           <td className="px-4 py-2">{payment.Invoice?.invoiceNumber || '-'}</td>
                           <td className="px-4 py-2">{payment.Invoice?.Customer?.name || 'Sin cliente'}</td>
-                          <td className="px-4 py-2">{subAccount?.name || 'Principal'}</td>
+                          <td className="px-4 py-2">Principal</td>
                           <td className="px-4 py-2">{new Date(payment.createdAt).toLocaleDateString()}</td>
                           <td className="px-4 py-2">{formatPrice(Number(payment.amount))}</td>
                           <td className="px-4 py-2">

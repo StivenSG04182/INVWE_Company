@@ -53,13 +53,13 @@ export const getDashboardData = async (subaccountId: string) => {
         const activeProducts = products.filter(product => product.active).length;
 
         const lowStockProducts = products.filter(product => {
-            const totalStock = product.stocks.reduce((sum, stock) => sum + stock.quantity, 0);
-            return product.minStock && totalStock <= product.minStock;
+            const totalStock = typeof product.quantity === "number" ? product.quantity : 0;
+            return typeof product.minStock === "number" && totalStock <= product.minStock;
         }).length;
 
         const inventoryValue = products.reduce((total, product) => {
-            const totalStock = product.stocks.reduce((sum, stock) => sum + stock.quantity, 0);
-            return total + (product.price * totalStock);
+            const totalStock = typeof product.quantity === "number" ? product.quantity : 0;
+            return total + (Number(product.price) * totalStock);
         }, 0);
 
         return {
@@ -86,8 +86,8 @@ export const getSubaccountMovements = async (subaccountId: string, limit: number
             },
         },
         include: {
-            product: true,
-            area: true,
+            Product: true,
+            Area: true,
         },
         orderBy: {
             createdAt: 'desc',
@@ -101,13 +101,6 @@ export const getSubaccountProducts = async (subaccountId: string) => {
         where: {
             subAccountId: subaccountId,
         },
-        include: {
-            stocks: {
-                include: {
-                    area: true,
-                },
-            },
-        },
     });
 };
 
@@ -116,18 +109,12 @@ export const getSubaccountAreas = async (subaccountId: string) => {
         where: {
             subAccountId: subaccountId,
         },
-        include: {
-            stocks: {
-                include: {
-                    product: true,
-                },
-            },
-        },
     });
 };
 
 export const createSubaccountMovement = async (
     subaccountId: string,
+    agencyId: string,
     data: {
         type: 'entrada' | 'salida' | 'transferencia';
         quantity: number;
@@ -139,52 +126,28 @@ export const createSubaccountMovement = async (
         data: {
             ...data,
             subAccountId: subaccountId,
-        },
-    });
-};
-
-export const updateSubaccountStock = async (
-    subaccountId: string,
-    stockId: string,
-    quantity: number
-) => {
-    return await db.stock.update({
-        where: {
-            id: stockId,
-            subAccountId: subaccountId,
-        },
-        data: {
-            quantity,
+            agencyId,
         },
     });
 };
 
 export const createSubaccountProduct = async (
     subaccountId: string,
+    agencyId: string,
     data: {
         name: string;
         description?: string;
         price: number;
         minStock?: number;
-        stocks?: {
-            areaId: string;
-            quantity: number;
-        }[];
+        quantity?: number;
+        sku: string;
     }
 ) => {
     return await db.product.create({
         data: {
             ...data,
             subAccountId: subaccountId,
-            stocks: {
-                create: data.stocks?.map(stock => ({
-                    ...stock,
-                    subAccountId: subaccountId,
-                })),
-            },
-        },
-        include: {
-            stocks: true,
+            agencyId,
         },
     });
 };
@@ -211,6 +174,7 @@ export const updateSubaccountProduct = async (
 
 export const createSubaccountArea = async (
     subaccountId: string,
+    agencyId: string,
     data: {
         name: string;
         description?: string;
@@ -220,6 +184,7 @@ export const createSubaccountArea = async (
         data: {
             ...data,
             subAccountId: subaccountId,
+            agencyId,
         },
     });
 };
@@ -245,20 +210,13 @@ export const getSubaccountStats = async (subaccountId: string) => {
         where: {
             subAccountId: subaccountId,
         },
-        include: {
-            stocks: {
-                include: {
-                    product: true,
-                },
-            },
-        },
     });
 
-    const areaValues = areaStats.map(area => ({
+    // No hay stocks por área, así que no se puede calcular el valor por área basado en stocks
+    // Se puede dejar vacío o calcular de otra forma si se requiere
+    const areaValues: { name: string; value: number }[] = areaStats.map(area => ({
         name: area.name,
-        value: area.stocks.reduce((total, stock) =>
-            total + (stock.quantity * stock.product.price), 0
-        ),
+        value: 0,
     }));
 
     return {
@@ -279,13 +237,6 @@ export const searchSubaccountProducts = async (
                 { description: { contains: searchTerm, mode: 'insensitive' } },
             ],
         },
-        include: {
-            stocks: {
-                include: {
-                    area: true,
-                },
-            },
-        },
     });
 };
 
@@ -297,13 +248,10 @@ export const getLowStockProducts = async (subaccountId: string) => {
                 not: null,
             },
         },
-        include: {
-            stocks: true,
-        },
     });
 
     return products.filter(product => {
-        const totalStock = product.stocks.reduce((sum, stock) => sum + stock.quantity, 0);
+        const totalStock = typeof product.quantity === "number" ? product.quantity : 0;
         return totalStock <= (product.minStock || 0);
     });
 };

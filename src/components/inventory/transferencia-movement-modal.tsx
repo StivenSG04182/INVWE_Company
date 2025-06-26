@@ -41,16 +41,13 @@ export default function TransferenciaMovementModal({
                     ...product,
                     price: Number(product.price) || 0,
                     cost: Number(product.cost) || 0,
-                    stocks: (product.Stocks || []).map((stock: any) => ({
-                        ...stock,
-                        quantity: Number(stock.quantity) || 0
-                    }))
                 }))
 
                 setProducts(processedProducts)
-                setAreas(rawAreas)
+                setAreas(rawAreas || [])
             } catch (error) {
                 console.error("Error al cargar datos:", error)
+                // Aquí podrías mostrar un toast de error si lo deseas
             } finally {
                 setIsLoading(false)
             }
@@ -122,9 +119,6 @@ export default function TransferenciaMovementModal({
                             agencyId={agencyId}
                             type="transferencia"
                             productId={productId}
-                            products={products}
-                            areas={areas}
-                            onComplete={onClose}
                         />
                     )}
                 </div>

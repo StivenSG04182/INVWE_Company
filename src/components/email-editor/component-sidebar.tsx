@@ -67,7 +67,7 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
 
   return (
     <div
-      ref={drag}
+      ref={drag as any}
       className={`group relative flex items-start gap-3 p-3 rounded-lg cursor-move border border-border/50 hover:border-primary/50 hover:bg-accent/50 transition-all duration-200 ${
         isDragging ? "opacity-50 scale-95" : ""
       }`}

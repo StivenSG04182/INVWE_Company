@@ -105,11 +105,11 @@ const PaymentGatewayModal = ({
       }
     }
 
-    if (status?.isValid && status?.status === 'connected') {
+    if (status?.success && status?.isConnected) {
       return <CheckCircleIcon size={24} className="text-primary" />
     }
     
-    if (status?.status === 'error') {
+    if (status?.error) {
       return <XCircleIcon size={24} className="text-destructive" />
     }
 
@@ -170,16 +170,16 @@ const PaymentGatewayModal = ({
                   <div className="flex items-center gap-2">
                     {getGatewayStatusIcon(gateway.id)}
                     <div className="flex flex-col items-end gap-1">
-                      {gatewayStatus[gateway.id]?.status === 'error' && (
+                      {gatewayStatus[gateway.id]?.error && (
                         <p className="text-xs text-destructive">
                           Error de conexión
                         </p>
                       )}
                       <Button
                         onClick={() => handleGatewaySelect(gateway.id)}
-                        variant={(gatewayStatus[gateway.id]?.isValid && gatewayStatus[gateway.id]?.status === 'connected') ? "outline" : "default"}
+                        variant={(gatewayStatus[gateway.id]?.success && gatewayStatus[gateway.id]?.isConnected) ? "outline" : "default"}
                       >
-                        {(gatewayStatus[gateway.id]?.isValid && gatewayStatus[gateway.id]?.status === 'connected') ? 'Reconectar' : 'Conectar'}
+                        {(gatewayStatus[gateway.id]?.success && gatewayStatus[gateway.id]?.isConnected) ? 'Reconectar' : 'Conectar'}
                       </Button>
                     </div>
                   </div>

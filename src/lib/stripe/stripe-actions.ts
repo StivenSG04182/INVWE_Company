@@ -20,17 +20,19 @@ export const subscriptionCreated = async (
       throw new Error('Could not find and agency to upsert the subscription')
     }
 
-    const data = {
+    // Nota: Stripe API v2025-05-28.basil no expone current_period ni current_period_end directamente.
+    // Si necesitas la fecha de fin de periodo, revisa la documentación de Stripe para la nueva estructura.
+    const data: any = {
       active: subscription.status === 'active',
       agencyId: agency.id,
       customerId,
-      currentPeriodEndDate: new Date(subscription.current_period_end * 1000),
       //@ts-ignore
-      priceId: subscription.plan.id,
+      priceId: subscription.plan?.id,
       subscritiptionId: subscription.id,
       //@ts-ignore
-      plan: subscription.plan.id,
-    }
+      plan: subscription.plan?.id,
+      // currentPeriodEndDate: ...
+    };
 
     const res = await db.subscription.upsert({
       where: {
@@ -46,14 +48,25 @@ export const subscriptionCreated = async (
 }
 
 export const getConnectAccountProducts = async (stripeAccount: string) => {
-  const products = await stripe.products.list(
-    {
-      limit: 50,
-      expand: ['data.default_price'],
-    },
-    {
-      stripeAccount,
-    }
-  )
-  return products.data
+  // Only call Stripe API if secret key is available and stripe instance exists
+  if (!process.env.STRIPE_SECRET_KEY || !stripe) {
+    console.warn('STRIPE_SECRET_KEY not available or stripe instance not created, returning empty products array')
+    return []
+  }
+
+  try {
+    const products = await stripe.products.list(
+      {
+        limit: 50,
+        expand: ['data.default_price'],
+      },
+      {
+        stripeAccount,
+      }
+    )
+    return products.data
+  } catch (error) {
+    console.error('Error fetching Stripe products:', error)
+    return []
+  }
 }

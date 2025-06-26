@@ -49,33 +49,47 @@ interface AgencyData {
     logo?: string
 }
 
+// Compatibilidad Buffer para Node.js ESM y browser
+let MyBuffer: typeof Buffer
+try {
+  MyBuffer = Buffer
+} catch {
+  // @ts-ignore
+  MyBuffer = (await import('buffer')).Buffer
+}
+
+// Extiende el tipado de jsPDF para lastAutoTable
+declare global {
+  interface jsPDF {
+    lastAutoTable?: { finalY?: number }
+  }
+}
+
 export const generateTransactionPDF = async (transaction: TransactionData, agency?: AgencyData): Promise<Buffer> => {
     const doc = new jsPDF()
 
     // Configuración de colores
-    const primaryColor = [59, 130, 246] // Blue-500
-    const secondaryColor = [107, 114, 128] // Gray-500
-    const textColor = [17, 24, 39] // Gray-900
+    const primaryColor: [number, number, number] = [59, 130, 246] // Blue-500
+    const secondaryColor: [number, number, number] = [107, 114, 128] // Gray-500
+    const textColor: [number, number, number] = [17, 24, 39] // Gray-900
 
     let yPos = 25
 
     // Logo de la agencia si está disponible
     if (agency?.logo) {
-        try {
-            const img = new Image()
-            img.src = agency.logo
-            await new Promise((resolve, reject) => {
-                img.onload = resolve
-                img.onerror = reject
-            })
-
-            const imgWidth = 40
-            const imgHeight = (img.height * imgWidth) / img.width
-            doc.addImage(agency.logo, "PNG", 20, yPos - 10, imgWidth, imgHeight)
-            yPos += imgHeight + 5
-        } catch (error) {
-            console.error("Error al cargar el logo:", error)
-            yPos = 25
+        // Solo se soportan imágenes en formato base64 DataURL
+        if (agency.logo.startsWith('data:image')) {
+            try {
+                // Se asume que el logo es un PNG base64 válido
+                const imgWidth = 40
+                // Altura fija por defecto (no se puede calcular sin cargar la imagen en Node)
+                const imgHeight = 20
+                doc.addImage(agency.logo, 'PNG', 20, yPos - 10, imgWidth, imgHeight)
+                yPos += imgHeight + 5
+            } catch (error) {
+                console.error('Error al agregar el logo:', error)
+                yPos = 25
+            }
         }
     }
 
@@ -184,8 +198,8 @@ export const generateTransactionPDF = async (transaction: TransactionData, agenc
         },
     })
 
-    // @ts-ignore
-    const finalY = doc.lastAutoTable.finalY || 180
+    // @ts-expect-error: lastAutoTable es agregado por autotable
+    const finalY = doc.lastAutoTable?.finalY || 180
 
     // Totales
     const totalsStartY = finalY + 20
@@ -221,8 +235,8 @@ export const generateTransactionPDF = async (transaction: TransactionData, agenc
     doc.text(`Generado el ${new Date().toLocaleString("es-CO")}`, 20, pageHeight - 15)
 
     // Convertir a Buffer
-    const pdfBuffer = Buffer.from(doc.output("arraybuffer"))
-    return pdfBuffer
+    const pdfBuffer = MyBuffer.from(doc.output('arraybuffer'))
+    return pdfBuffer as Buffer
 }
 
 const getTransactionStatusText = (status: string): string => {

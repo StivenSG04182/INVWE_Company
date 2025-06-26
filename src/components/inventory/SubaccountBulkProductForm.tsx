@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
@@ -20,13 +20,23 @@ interface SubaccountBulkProductFormProps {
     subaccountId: string
 }
 
+interface Product {
+    name: string
+    sku: string
+    price: string
+    cost: string
+    minStock: string
+    categoryId: string
+    productImage: string
+}
+
 export default function SubaccountBulkProductForm({ subaccountId }: SubaccountBulkProductFormProps) {
     const router = useRouter()
     const { toast } = useToast()
     const [isLoading, setIsLoading] = useState(false)
     const [activeTab, setActiveTab] = useState("manual")
     const [csvData, setCsvData] = useState<any[]>([])
-    const [manualProducts, setManualProducts] = useState([
+    const [manualProducts, setManualProducts] = useState<Product[]>([
         {
             name: "",
             sku: "",
@@ -42,7 +52,7 @@ export default function SubaccountBulkProductForm({ subaccountId }: SubaccountBu
     const [csvFile, setCsvFile] = useState<File | null>(null)
 
     // Cargar categorías al montar el componente
-    useState(() => {
+    useEffect(() => {
         const fetchData = async () => {
             try {
                 // Cargar categorías
@@ -67,7 +77,15 @@ export default function SubaccountBulkProductForm({ subaccountId }: SubaccountBu
     }, [subaccountId, toast])
 
     const handleAddProduct = () => {
-        setManualProducts([...manualProducts, { name: "", sku: "", price: "", cost: "", minStock: "", categoryId: "" }])
+        setManualProducts([...manualProducts, { 
+            name: "", 
+            sku: "", 
+            price: "", 
+            cost: "", 
+            minStock: "", 
+            categoryId: "",
+            productImage: ""
+        }])
     }
 
     const handleRemoveProduct = (index: number) => {
@@ -141,7 +159,7 @@ export default function SubaccountBulkProductForm({ subaccountId }: SubaccountBu
         setIsLoading(true)
 
         try {
-            let productsToSubmit = []
+            let productsToSubmit: (Product & { subaccountId: string })[] = []
 
             if (activeTab === "manual") {
                 // Validar productos manuales

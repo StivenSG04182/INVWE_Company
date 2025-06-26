@@ -36,7 +36,7 @@ export const sendTransactionEmail = async (
 ) => {
     try {
         // Obtener información de la agencia
-        const agency = await db.agency.findUnique({
+        const agency = await (db as any).agency.findUnique({
             where: { id: agencyId },
             select: {
                 name: true,
@@ -59,14 +59,14 @@ export const sendTransactionEmail = async (
 
         // Obtener configuración de email
         const emailConfig: EmailConfig = {
-            host: agency.DianConfig?.emailHost || process.env.SMTP_HOST || "smtp.gmail.com",
-            port: agency.DianConfig?.emailPort || Number.parseInt(process.env.SMTP_PORT || "587"),
-            secure: agency.DianConfig?.emailSecure || process.env.SMTP_SECURE === "true",
+            host: (agency as any).DianConfig?.emailHost || process.env.SMTP_HOST || "smtp.gmail.com",
+            port: (agency as any).DianConfig?.emailPort || Number.parseInt(process.env.SMTP_PORT || "587"),
+            secure: (agency as any).DianConfig?.emailSecure || process.env.SMTP_SECURE === "true",
             auth: {
-                user: agency.DianConfig?.emailUser || process.env.SMTP_USER || "",
-                pass: agency.DianConfig?.emailPassword || process.env.SMTP_PASS || "",
+                user: (agency as any).DianConfig?.emailUser || process.env.SMTP_USER || "",
+                pass: (agency as any).DianConfig?.emailPassword || process.env.SMTP_PASS || "",
             },
-            from: agency.DianConfig?.emailFrom || agency.companyEmail || process.env.SMTP_FROM || "",
+            from: (agency as any).DianConfig?.emailFrom || agency.companyEmail || process.env.SMTP_FROM || "",
         }
 
         // Generar PDF de la transacción
@@ -264,7 +264,7 @@ export const sendInvoiceEmail = async (invoice: any, agencyId: string) => {
         }
 
         // Obtener información de la agencia
-        const agency = await db.agency.findUnique({
+        const agency = await (db as any).agency.findUnique({
             where: { id: agencyId },
             select: {
                 name: true,
@@ -287,18 +287,18 @@ export const sendInvoiceEmail = async (invoice: any, agencyId: string) => {
 
         // Obtener configuración de email de la agencia o usar la configuración DIAN si existe
         const emailConfig: EmailConfig = {
-            host: agency.DianConfig?.emailHost || process.env.SMTP_HOST || "smtp.gmail.com",
-            port: agency.DianConfig?.emailPort || Number.parseInt(process.env.SMTP_PORT || "587"),
-            secure: agency.DianConfig?.emailSecure || process.env.SMTP_SECURE === "true",
+            host: (agency as any).DianConfig?.emailHost || process.env.SMTP_HOST || "smtp.gmail.com",
+            port: (agency as any).DianConfig?.emailPort || Number.parseInt(process.env.SMTP_PORT || "587"),
+            secure: (agency as any).DianConfig?.emailSecure || process.env.SMTP_SECURE === "true",
             auth: {
-                user: agency.DianConfig?.emailUser || process.env.SMTP_USER || "",
-                pass: agency.DianConfig?.emailPassword || process.env.SMTP_PASS || "",
+                user: (agency as any).DianConfig?.emailUser || process.env.SMTP_USER || "",
+                pass: (agency as any).DianConfig?.emailPassword || process.env.SMTP_PASS || "",
             },
-            from: agency.DianConfig?.emailFrom || agency.companyEmail || process.env.SMTP_FROM || "",
+            from: (agency as any).DianConfig?.emailFrom || agency.companyEmail || process.env.SMTP_FROM || "",
         }
 
         // Verificar si existe una plantilla personalizada para facturas
-        const emailTemplate = await db.emailTemplate.findFirst({
+        const emailTemplate = await (db as any).emailTemplate.findFirst({
             where: {
                 agencyId: agencyId,
                 type: "INVOICE",
@@ -324,7 +324,7 @@ export const sendInvoiceEmail = async (invoice: any, agencyId: string) => {
             subject: `Factura ${invoice.invoiceNumber} - ${agency.name}`,
             html: emailTemplate
                 ? renderEmailTemplate(emailTemplate.content, { invoice, agency })
-                : generateDefaultEmailTemplate(invoice, agency),
+                : `<h1>Factura ${invoice.invoiceNumber}</h1><p>Adjunta encontrará su factura.</p>`,
             attachments: [
                 {
                     filename: `Factura-${invoice.invoiceNumber}.pdf`,
@@ -339,7 +339,7 @@ export const sendInvoiceEmail = async (invoice: any, agencyId: string) => {
         console.log("Email enviado:", info.messageId)
 
         // Registrar el envío en la base de datos
-        await db.invoiceEmailLog.create({
+        await (db as any).invoiceEmailLog.create({
             data: {
                 invoiceId: invoice.id,
                 email: invoice.Customer.email,
@@ -406,7 +406,7 @@ const renderEmailTemplate = (templateContent: any, data: { invoice: any; agency:
     }
 
     // Si no se puede procesar, usar la plantilla por defecto
-    return generateDefaultEmailTemplate(data.invoice, data.agency)
+    return `<h1>Factura ${data.invoice.invoiceNumber}</h1><p>Adjunta encontrará su factura.</p>`
 }
 
 // Función para convertir el contenido del editor a HTML
@@ -559,7 +559,7 @@ interface EmailTemplateUpdate {
 // Funciones CRUD para plantillas de correo
 export const createEmailTemplate = async (data: EmailTemplateCreate) => {
     try {
-        const template = await db.emailTemplate.create({
+        const template = await (db as any).emailTemplate.create({
             data: {
                 name: data.name,
                 description: data.description,
@@ -583,7 +583,7 @@ export const createEmailTemplate = async (data: EmailTemplateCreate) => {
 
 export const updateEmailTemplate = async (id: string, data: EmailTemplateUpdate) => {
     try {
-        const template = await db.emailTemplate.update({
+        const template = await (db as any).emailTemplate.update({
             where: { id },
             data
         })
@@ -596,7 +596,7 @@ export const updateEmailTemplate = async (id: string, data: EmailTemplateUpdate)
 
 export const deleteEmailTemplate = async (id: string) => {
     try {
-        await db.emailTemplate.delete({
+        await (db as any).emailTemplate.delete({
             where: { id }
         })
         return true
@@ -612,7 +612,7 @@ export const getEmailTemplates = async (agencyId: string, filters?: {
     isActive?: boolean
 }) => {
     try {
-        const templates = await db.emailTemplate.findMany({
+        const templates = await (db as any).emailTemplate.findMany({
             where: {
                 agencyId,
                 ...filters
@@ -630,7 +630,7 @@ export const getEmailTemplates = async (agencyId: string, filters?: {
 
 export const getEmailTemplateById = async (id: string) => {
     try {
-        const template = await db.emailTemplate.findUnique({
+        const template = await (db as any).emailTemplate.findUnique({
             where: { id }
         })
         return template

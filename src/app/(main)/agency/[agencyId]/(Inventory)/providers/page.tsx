@@ -14,7 +14,7 @@ const ProvidersPageWrapper = async ({ params }: { params: { agencyId: string } }
 
   const providers = await getProviders(agencyId)
 
-  return <ProvidersPage providers={providers} agencyId={agencyId} />
+  return <ProvidersPage agencyId={agencyId} />
 }
 
 export default ProvidersPageWrapper

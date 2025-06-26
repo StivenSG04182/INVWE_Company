@@ -14,6 +14,10 @@ export const withCache = async <T>(
     if (cached) return cached;
 
     const result = await fn();
-    cache.set(key, result, ttl);
+    if (ttl !== undefined) {
+        cache.set(key, result, ttl);
+    } else {
+        cache.set(key, result);
+    }
     return result;
 };

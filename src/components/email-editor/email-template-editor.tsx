@@ -50,7 +50,7 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({ agencyId, tem
           const template = await getEmailTemplateById(templateId)
           setTemplateName(template.name)
           setTemplateDescription(template.description || "")
-          loadTemplate(template.content, templateId)
+          loadTemplate((template.content as any[]) || [], templateId)
         } catch (error) {
           toast.error("Error al cargar la plantilla")
           console.error(error)

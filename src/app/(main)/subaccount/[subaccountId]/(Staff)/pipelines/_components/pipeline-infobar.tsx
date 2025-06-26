@@ -24,7 +24,7 @@ const PipelineInfoBar = ({pipelineId, subAccountId, pipelines}: Props) => {
 
     const handleClickCreatePipeline = () => {
         setOpenModal(
-            <CustomModal title="Create Pipeline">
+            <CustomModal title="Create Pipeline" subheading="Create a new pipeline for your team">
                 <CreatePipelineForm subAccountId={subAccountId} />
             </CustomModal>
         )

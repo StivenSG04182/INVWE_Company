@@ -579,7 +579,7 @@ export const saveMessage = async (data: MessageData) => {
     }
 
     // Crear el mensaje en la base de datos
-    const message = await db.message.create({
+    const message = await (db as any).message.create({
         data: {
             content: data.content,
             sender: data.sender,
@@ -640,7 +640,7 @@ export const saveMessage = async (data: MessageData) => {
 
 // Obtiene todos los mensajes de un PQR
 export const getMessagesByPQR = async (pqrId: string) => {
-    return await db.message.findMany({
+    return await (db as any).message.findMany({
         where: {
             pqrId
         },
