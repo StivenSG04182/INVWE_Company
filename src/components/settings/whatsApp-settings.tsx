@@ -79,7 +79,7 @@ export default function WhatsAppSettings({ params }: WhatsAppSettingsProps) {
           <CardHeader>
             <CardTitle>Integración con WhatsApp Business Cloud API</CardTitle>
             <CardDescription>
-              Configura la integración con la API de WhatsApp Business Cloud para enviar y recibir mensajes.
+              Configura la integración con la API de WhatsApp Business Cloud para enviar mensajes.
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
@@ -139,21 +139,18 @@ export default function WhatsAppSettings({ params }: WhatsAppSettingsProps) {
                   onChange={handleChange}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Un token secreto para verificar las solicitudes de webhook entrantes.
+                  Un token secreto para verificar las solicitudes de webhook entrantes (opcional).
                 </p>
               </div>
 
               <div className="rounded-md bg-blue-50 p-4">
                 <div className="flex">
                   <div className="ml-3">
-                    <h3 className="text-sm font-medium text-blue-800">Configuración del Webhook</h3>
+                    <h3 className="text-sm font-medium text-blue-800">Configuración de Mensajes</h3>
                     <div className="mt-2 text-sm text-blue-700">
                       <p>
-                        Para recibir mensajes de WhatsApp, configura el siguiente URL como webhook en tu panel de
-                        WhatsApp Business:
-                      </p>
-                      <p className="mt-2 font-mono bg-blue-100 p-2 rounded">
-                        {`${process.env.NEXT_PUBLIC_URL || window.location.origin}/api/webhooks/whatsapp?agency=${agencyId}`}
+                        Una vez configurado, podrás enviar mensajes a tus clientes directamente desde el sistema.
+                        Los mensajes se enviarán automáticamente cuando respondas a PQRs de clientes.
                       </p>
                     </div>
                   </div>
