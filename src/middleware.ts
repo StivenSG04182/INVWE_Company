@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 // This example protects all routes including api/trpc routes
 // Please edit this to allow other routes to be public as needed.
 // See https://clerk.com/docs/references/nextjs/auth-middleware for more information about configuring your Middleware
-const isPublicRoute = createRouteMatcher(['/site', '/api/uploadthing', '/api/webhook', '/site(.*)'])
+const isPublicRoute = createRouteMatcher(['/site', '/api/uploadthing', '/agency(.*)', '/site(.*)', '/agency'])
 
 export default clerkMiddleware((auth, req) => {
   if (isPublicRoute(req)) {
