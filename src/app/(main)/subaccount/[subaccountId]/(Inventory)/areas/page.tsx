@@ -1,6 +1,6 @@
 import { getAuthUserDetails } from "@/lib/queries"
 import { redirect } from "next/navigation"
-import { AreaService } from "@/lib/services/inventory-service"
+import { getAreas } from "@/lib/queries2"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -19,19 +19,19 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
+const AreasPage = async ({ params }: { params: { subaccountId: string } }) => {
   const user = await getAuthUserDetails()
   if (!user) return redirect("/sign-in")
 
-  const agencyId = params.agencyId
+  const subaccountId = params.subaccountId
   if (!user.Agency) {
     return redirect("/agency")
   }
 
-  // Obtener áreas de MongoDB
+  // Obtener áreas usando queries2.ts
   let areas: any[] = []
   try {
-    areas = await AreaService.getAreas(agencyId)
+    areas = await getAreas(user.Agency.id, subaccountId)
   } catch (error) {
     console.error("Error al cargar áreas:", error)
   }
@@ -90,7 +90,7 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Link href={`/agency/${agencyId}/areas/new`}>
+          <Link href={`/agency/${user.Agency.id}/areas/new`}>
             <Button size="sm">
               <Plus className="h-4 w-4 mr-2" />
               Nueva Área
@@ -265,7 +265,7 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                 <p className="text-muted-foreground text-center mb-6">
                   Cree su primera área para comenzar a organizar su inventario.
                 </p>
-                <Link href={`/agency/${agencyId}/areas/new`}>
+                <Link href={`/agency/${user.Agency.id}/areas/new`}>
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
                     Nueva Área
@@ -301,13 +301,13 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                       <Grid3X3 className="h-12 w-12 text-muted-foreground/30" />
                     )}
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <Link href={`/agency/${agencyId}/areas/${area._id}`}>
+                      <Link href={`/agency/${user.Agency!.id}/areas/${area._id}`}>
                         <Button size="sm" variant="secondary">
                           <Edit className="h-4 w-4 mr-2" />
                           Editar
                         </Button>
                       </Link>
-                      <Link href={`/agency/${agencyId}/stock?areaId=${area._id}`}>
+                      <Link href={`/agency/${user.Agency!.id}/stock?areaId=${area._id}`}>
                         <Button size="sm" variant="secondary">
                           <Package className="h-4 w-4 mr-2" />
                           Ver Stock
@@ -342,7 +342,7 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                   <p className="text-muted-foreground text-center mb-6">
                     Cree su primera área para comenzar a organizar su inventario.
                   </p>
-                  <Link href={`/agency/${agencyId}/areas/new`}>
+                  <Link href={`/agency/${user.Agency.id}/areas/new`}>
                     <Button>
                       <Plus className="h-4 w-4 mr-2" />
                       Nueva Área
@@ -369,13 +369,13 @@ const AreasPage = async ({ params }: { params: { agencyId: string } }) => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Link href={`/agency/${agencyId}/areas/workspace?areaId=${area._id}`}>
+                            <Link href={`/agency/${user.Agency!.id}/areas/workspace?areaId=${area._id}`}>
                               <Button variant="outline" size="sm">
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Editar
                               </Button>
                             </Link>
-                            <Link href={`/agency/${agencyId}/stock?areaId=${area._id}`}>
+                            <Link href={`/agency/${user.Agency!.id}/stock?areaId=${area._id}`}>
                               <Button variant="outline" size="sm">
                                 <Eye className="h-4 w-4 mr-2" />
                                 Ver Stock

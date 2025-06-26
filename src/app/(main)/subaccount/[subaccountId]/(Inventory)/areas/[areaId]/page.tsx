@@ -1,42 +1,41 @@
 import { getAuthUserDetails } from "@/lib/queries"
 import { redirect } from "next/navigation"
-import { AreaService } from "@/lib/services/inventory-service"
+ import { getAreas } from "@/lib/queries2"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft } from "lucide-react"
 import { AreaVisualEditorWrapper } from "./components"
 
-const WorkspaceEditorPage = async ({ params }: { params: { agencyId: string, areaId: string } }) => {
+const WorkspaceEditorPage = async ({ params }: { params: { subaccountId: string, areaId: string } }) => {
   const user = await getAuthUserDetails()
   if (!user) return redirect("/sign-in")
 
-  const agencyId = params.agencyId
+  const subaccountId = params.subaccountId
   const areaId = params.areaId
 
   if (!user.Agency) {
     return redirect("/agency")
   }
 
-
   // Obtener el área específica
   let area: any = null
   try {
-    const areas = await AreaService.getAreas(agencyId)
-    area = areas.find((a: any) => a._id === areaId)
+    const areas = await getAreas(user.Agency.id, subaccountId)
+    area = areas.find((a: any) => a.id === areaId) || null
   } catch (error) {
     console.error("Error al cargar el área:", error)
   }
 
   if (!area) {
-    return redirect(`/agency/${agencyId}/areas`)
+    return redirect(`/subaccount/${subaccountId}/areas`)
   }
 
   return (
     <div className="container mx-auto p-4">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <Link href={`/agency/${agencyId}/areas`}>
+          <Link href={`/subaccount/${subaccountId}/areas`}>
             <Button variant="outline" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -47,7 +46,7 @@ const WorkspaceEditorPage = async ({ params }: { params: { agencyId: string, are
 
       <AreaVisualEditorWrapper 
         areaId={areaId} 
-        agencyId={agencyId} 
+        agencyId={user.Agency.id} 
         initialLayout={area.layout || { items: [] }} 
       />
 

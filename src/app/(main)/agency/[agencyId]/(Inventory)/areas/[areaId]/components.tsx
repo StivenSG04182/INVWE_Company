@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { AreaVisualEditor } from '@/components/inventory/AreaVisualEditor'
 import { toast } from 'sonner'
+import { updateArea } from '@/lib/queries2'
 
 type AreaVisualEditorWrapperProps = {
   areaId: string
@@ -22,20 +23,14 @@ export const AreaVisualEditorWrapper = ({
     try {
       setIsLoading(true)
       
-      // Realizar la petición para actualizar el layout del área
-      const response = await fetch(`/api/inventory/${agencyId}/areas/${areaId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ layout }),
-      })
+      // Usar la función de queries2.ts en lugar de la API
+      const updatedArea = await updateArea(areaId, { layout })
 
-      if (!response.ok) {
+      if (!updatedArea) {
         throw new Error('Error al guardar el layout')
       }
 
-      return await response.json()
+      toast.success('Layout guardado correctamente')
     } catch (error) {
       console.error('Error al guardar el layout:', error)
       toast.error('Error al guardar el layout')

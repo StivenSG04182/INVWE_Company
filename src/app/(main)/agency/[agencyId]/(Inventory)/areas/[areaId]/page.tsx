@@ -1,6 +1,6 @@
 import { getAuthUserDetails } from "@/lib/queries"
 import { redirect } from "next/navigation"
-import { AreaService } from "@/lib/services/inventory-service"
+import { getAreas } from "@/lib/queries2"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,8 +22,8 @@ const WorkspaceEditorPage = async ({ params }: { params: { agencyId: string, are
   // Obtener el área específica
   let area: any = null
   try {
-    const areas = await AreaService.getAreas(agencyId)
-    area = areas.find((a: any) => a._id === areaId) || null
+    const areas = await getAreas(agencyId)
+    area = areas.find((a: any) => a.id === areaId) || null
   } catch (error) {
     console.error("Error al cargar el área:", error)
   }
