@@ -1,6 +1,6 @@
 import { getAuthUserDetails } from "@/lib/queries"
 import { redirect } from "next/navigation"
-import { db } from "@/lib/db"
+import { getPaymentById } from "@/lib/client-queries"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatPrice } from "@/lib/utils"
@@ -17,22 +17,8 @@ const PaymentDetailsPage = async ({ params }: { params: { agencyId: string; paym
         return redirect("/agency")
     }
 
-    // Obtener detalles del pago
-    const payment = await db.payment.findUnique({
-        where: {
-            id: paymentId,
-            agencyId: agencyId,
-        },
-        include: {
-            Invoice: {
-                include: {
-                    Customer: true,
-                    Items: true,
-                },
-            },
-            SubAccount: true,
-        },
-    })
+    // Obtener detalles del pago usando la función de client-queries
+    const payment = await getPaymentById(agencyId, paymentId)
 
     if (!payment) {
         return redirect(`/agency/${agencyId}/finance?tab=payments`)

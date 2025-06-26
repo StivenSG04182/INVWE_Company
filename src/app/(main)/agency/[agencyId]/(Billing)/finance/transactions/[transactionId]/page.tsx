@@ -1,5 +1,5 @@
 import { getAuthUserDetails } from "@/lib/queries"
-import { db } from "@/lib/db"
+import { getTransactionById } from "@/lib/client-queries"
 import { notFound, redirect } from "next/navigation"
 import { TransactionDetailView } from "@/components/finance/transaction-detail-view"
 
@@ -25,24 +25,8 @@ export default async function TransactionDetailPage({ params }: TransactionDetai
         return redirect("/unauthorized")
     }
 
-    // Obtener la transacción con todas las relaciones
-    const transaction = await db.sale.findUnique({
-        where: {
-            id: params.transactionId,
-            agencyId: params.agencyId,
-        },
-        include: {
-            Customer: true,
-            Cashier: true,
-            Area: true,
-            Items: {
-                include: {
-                    Product: true,
-                },
-            },
-            SubAccount: true,
-        },
-    })
+    // Obtener la transacción usando la función de client-queries
+    const transaction = await getTransactionById(params.agencyId, params.transactionId)
 
     if (!transaction) {
         notFound()

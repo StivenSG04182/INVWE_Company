@@ -1,6 +1,6 @@
 import { getAuthUserDetails } from "@/lib/queries"
 import { redirect } from "next/navigation"
-import { db } from "@/lib/db"
+import { getInvoiceById } from "@/lib/client-queries"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatPrice } from "@/lib/utils"
@@ -17,28 +17,8 @@ const InvoiceDetailsPage = async ({ params }: { params: { agencyId: string; invo
         return redirect("/agency")
     }
 
-    // Obtener detalles de la factura
-    const invoice = await db.invoice.findUnique({
-        where: {
-            id: invoiceId,
-            agencyId: agencyId,
-        },
-        include: {
-            Customer: true,
-            Items: {
-                include: {
-                    Product: true,
-                },
-            },
-            Payments: true,
-            Taxes: {
-                include: {
-                    Tax: true,
-                },
-            },
-            SubAccount: true,
-        },
-    })
+    // Obtener detalles de la factura usando la función de client-queries
+    const invoice = await getInvoiceById(agencyId, invoiceId)
 
     if (!invoice) {
         return redirect(`/agency/${agencyId}/finance?tab=invoices`)

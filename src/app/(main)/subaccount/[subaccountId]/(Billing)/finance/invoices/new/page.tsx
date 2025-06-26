@@ -1,7 +1,7 @@
 import { getAuthUserDetails, getAgencyDetails } from "@/lib/queries"
 import { getClientsForPOS } from "@/lib/queries2"
 import { redirect } from "next/navigation"
-import { db } from "@/lib/db"
+import { getActiveProductsForInvoicing, getTaxesForAgency, getDianConfigForAgency } from "@/lib/client-queries"
 import { InvoiceForm } from "@/components/forms/invoice-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -35,40 +35,14 @@ const NewInvoicePage = async ({ params }: { params: { agencyId: string } }) => {
     address: client.address || undefined
   }))
 
-  // Obtener productos con información de descuentos
-  const products = await db.product.findMany({
-    where: {
-      agencyId: agencyId,
-      active: true,
-    },
-    select: {
-      id: true,
-      name: true,
-      price: true,
-      description: true,
-      discount: true,
-      discountStartDate: true,
-      discountEndDate: true,
-      discountMinimumPrice: true,
-    },
-  })
+  // Obtener productos con información de descuentos usando la función de client-queries
+  const products = await getActiveProductsForInvoicing(agencyId)
 
-  // Obtener impuestos
-  const taxes = await db.tax.findMany({
-    where: {
-      agencyId: agencyId,
-    },
-    select: {
-      id: true,
-      name: true,
-      rate: true,
-    },
-  })
+  // Obtener impuestos usando la función de client-queries
+  const taxes = await getTaxesForAgency(agencyId)
   
   // Verificar si la agencia tiene configuración DIAN para facturación electrónica
-  const dianConfig = await db.dianConfig.findUnique({
-    where: { agencyId: agencyId },
-  })
+  const dianConfig = await getDianConfigForAgency(agencyId)
 
   return (
     <div className="flex flex-col gap-6 p-4">

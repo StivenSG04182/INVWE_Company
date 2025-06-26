@@ -1,5 +1,5 @@
 import { getAuthUserDetails } from "@/lib/queries"
-import { db } from "@/lib/db"
+import { getInvoiceById } from "@/lib/client-queries"
 import { notFound, redirect } from "next/navigation"
 import { InvoiceDetailView } from "@/components/finance/invoice-detail-view"
 
@@ -23,28 +23,8 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
         return redirect("/unauthorized")
     }
 
-    // Obtener la factura con todas las relaciones
-    const invoice = await db.invoice.findUnique({
-        where: {
-            id: params.invoiceId,
-            agencyId: params.agencyId,
-        },
-        include: {
-            Customer: true,
-            Items: {
-                include: {
-                    Product: true,
-                },
-            },
-            Payments: true,
-            Taxes: {
-                include: {
-                    Tax: true,
-                },
-            },
-            SubAccount: true,
-        },
-    })
+    // Obtener la factura usando la función de client-queries
+    const invoice = await getInvoiceById(params.agencyId, params.invoiceId)
 
     if (!invoice) {
         notFound()

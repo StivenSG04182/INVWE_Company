@@ -831,3 +831,145 @@ export const sendEmailMessage = async (pqrId: string, subject: string, message: 
         };
     }
 };
+
+// FUNCIONES PARA FACTURAS
+
+// Obtiene una factura por ID con todas sus relaciones
+export const getInvoiceById = async (agencyId: string, invoiceId: string) => {
+    try {
+        return await db.invoice.findUnique({
+            where: {
+                id: invoiceId,
+                agencyId: agencyId,
+            },
+            include: {
+                Customer: true,
+                Items: {
+                    include: {
+                        Product: true,
+                    },
+                },
+                Payments: true,
+                Taxes: {
+                    include: {
+                        Tax: true,
+                    },
+                },
+                SubAccount: true,
+            },
+        });
+    } catch (error) {
+        console.error("Error al obtener factura:", error);
+        throw error;
+    }
+};
+
+// Obtiene productos activos para facturación
+export const getActiveProductsForInvoicing = async (agencyId: string) => {
+    try {
+        return await db.product.findMany({
+            where: {
+                agencyId: agencyId,
+                active: true,
+            },
+            select: {
+                id: true,
+                name: true,
+                price: true,
+                description: true,
+                discount: true,
+                discountStartDate: true,
+                discountEndDate: true,
+                discountMinimumPrice: true,
+            },
+        });
+    } catch (error) {
+        console.error("Error al obtener productos:", error);
+        throw error;
+    }
+};
+
+// Obtiene impuestos de una agencia
+export const getTaxesForAgency = async (agencyId: string) => {
+    try {
+        return await db.tax.findMany({
+            where: {
+                agencyId: agencyId,
+            },
+            select: {
+                id: true,
+                name: true,
+                rate: true,
+            },
+        });
+    } catch (error) {
+        console.error("Error al obtener impuestos:", error);
+        throw error;
+    }
+};
+
+// Obtiene configuración DIAN de una agencia
+export const getDianConfigForAgency = async (agencyId: string) => {
+    try {
+        return await db.dianConfig.findUnique({
+            where: { agencyId: agencyId },
+        });
+    } catch (error) {
+        console.error("Error al obtener configuración DIAN:", error);
+        throw error;
+    }
+};
+
+// FUNCIONES PARA PAGOS
+
+// Obtiene un pago por ID con todas sus relaciones
+export const getPaymentById = async (agencyId: string, paymentId: string) => {
+    try {
+        return await db.payment.findUnique({
+            where: {
+                id: paymentId,
+                agencyId: agencyId,
+            },
+            include: {
+                Invoice: {
+                    include: {
+                        Customer: true,
+                        Items: true,
+                    },
+                },
+                SubAccount: true,
+            },
+        });
+    } catch (error) {
+        console.error("Error al obtener pago:", error);
+        throw error;
+    }
+};
+
+// FUNCIONES PARA TRANSACCIONES
+
+// Obtiene una transacción por ID con todas sus relaciones
+export const getTransactionById = async (agencyId: string, transactionId: string) => {
+    try {
+        return await db.sale.findUnique({
+            where: {
+                id: transactionId,
+                agencyId: agencyId,
+            },
+            include: {
+                Customer: true,
+                Cashier: true,
+                Area: true,
+                Items: {
+                    include: {
+                        Product: true,
+                    },
+                },
+                SubAccount: true,
+            },
+        });
+    } catch (error) {
+        console.error("Error al obtener transacción:", error);
+        throw error;
+    }
+};
