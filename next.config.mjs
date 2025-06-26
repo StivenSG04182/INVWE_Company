@@ -5,9 +5,17 @@ const nextConfig = {
     },
     reactStrictMode: false,
     output: 'standalone',
+    async redirects(){
+      return [
+        {
+          source: '/',
+          destination: '/site',
+          permanent: true,
+        },
+      ]
+    },
     webpack: (config, { isServer }) => {
       if (!isServer) {
-        // Configuración para módulos de Node.js en el navegador
         config.resolve.fallback = {
           ...config.resolve.fallback,
           net: false,
