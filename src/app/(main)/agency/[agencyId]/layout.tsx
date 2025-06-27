@@ -24,11 +24,33 @@ const layout = async ({children, params}: Props) => {
     return redirect('/agency')
   }
 
-  if(
-    user.privateMetadata.role !== 'AGENCY_OWNER' &&
-    user.privateMetadata.role !== 'AGENCY_ADMIN'
-  )
+  // Log para debugging (solo en desarrollo)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Agency Layout Debug:', {
+      userId: user.id,
+      userEmail: user.emailAddresses[0]?.emailAddress,
+      privateMetadata: user.privateMetadata,
+      agencyId: agencyId,
+      paramsAgencyId: params.agencyId,
+      role: user.privateMetadata.role,
+      isAgencyOwner: user.privateMetadata.role === 'AGENCY_OWNER',
+      isAgencyAdmin: user.privateMetadata.role === 'AGENCY_ADMIN'
+    })
+  }
+
+  // Verificar permisos con mejor manejo de errores
+  const userRole = user.privateMetadata.role
+  const hasAgencyAccess = userRole === 'AGENCY_OWNER' || userRole === 'AGENCY_ADMIN'
+  
+  if (!hasAgencyAccess) {
+    console.error('Access denied for user:', {
+      userId: user.id,
+      email: user.emailAddresses[0]?.emailAddress,
+      role: userRole,
+      agencyId: params.agencyId
+    })
     return <Unauthorized/>
+  }
 
     let allNoti: any = []
     const notifications = await getNotificationAndUser(agencyId)
