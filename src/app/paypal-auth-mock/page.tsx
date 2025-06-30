@@ -18,8 +18,8 @@ export default function PayPalAuthMockPage() {
     const [error, setError] = useState('');
 
     // Obtener los parámetros de la URL
-    const redirectUri = searchParams.get('redirect_uri');
-    const state = searchParams.get('state'); // agencyId
+    const redirectUri = searchParams?.get('redirect_uri');
+    const state = searchParams?.get('state'); // agencyId
 
     // Verificar que tenemos los parámetros necesarios
     useEffect(() => {

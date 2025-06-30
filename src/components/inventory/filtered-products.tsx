@@ -44,11 +44,11 @@ export function FilteredProducts({ agencyId, products, categories, subAccounts }
 
     // Aplicar filtros de URL al cargar
     useEffect(() => {
-        const category = searchParams.get("category")
-        const subaccount = searchParams.get("subaccount")
-        const search = searchParams.get("search")
-        const sort = searchParams.get("sort")
-        const view = searchParams.get("view")
+        const category = searchParams?.get("category")
+        const subaccount = searchParams?.get("subaccount")
+        const search = searchParams?.get("search")
+        const sort = searchParams?.get("sort")
+        const view = searchParams?.get("view")
 
         if (category) setSelectedCategory(category)
         if (subaccount) setSelectedSubaccount(subaccount)

@@ -4,7 +4,7 @@ const nextConfig = {
       domains: ['img.clerk.com', 'images.unsplash.com', 'utfs.io', 'images.pexels.com'], // Agrega el dominio de Pexels aquí
     },
     reactStrictMode: false,
-    output: 'standalone',
+    // output: 'standalone', // Comentado temporalmente para desarrollo
     async redirects(){
       return [
         {

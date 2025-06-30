@@ -13,13 +13,14 @@ export function TemplateFilters() {
     const router = useRouter()
     const searchParams = useSearchParams()
 
-    const currentSearch = searchParams.get("search") ?? ""
-    const currentStatus = searchParams.get("status") ?? "all"
+    const currentSearch = searchParams?.get("search") ?? ""
+    const currentStatus = searchParams?.get("status") ?? "all"
 
     const deferredSearch = useDeferredValue(currentSearch)
 
     const updateURL = useCallback(
         (key: string, value: string) => {
+            if (!searchParams) return
             const params = new URLSearchParams(searchParams.toString())
             if (value && value !== "all") {
                 params.set(key, value)

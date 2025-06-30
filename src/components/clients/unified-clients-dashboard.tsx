@@ -15,15 +15,18 @@ export default function UnifiedClientsDashboard({ agencyId, user }: { agencyId: 
     const pathname = usePathname()
     const searchParams = useSearchParams()
     const [activeTab, setActiveTab] = useState(() => {
-        const tab = searchParams.get("tab")
+        const tab = searchParams?.get("tab")
         return tab && ["directory", "crm", "pqr"].includes(tab) ? tab : "directory"
     })
-    const [selectedClientId, setSelectedClientId] = useState<string | null>(searchParams.get("clientId"))
+    const [selectedClientId, setSelectedClientId] = useState<string | null>(() => {
+        return searchParams?.get("clientId") || null
+    })
     const clientsDirectoryRef = useRef<any>(null)
     const [clients, setClients] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
+        if (!searchParams) return
         const newSearchParams = new URLSearchParams(searchParams)
         newSearchParams.set("tab", activeTab)
         if (selectedClientId) {

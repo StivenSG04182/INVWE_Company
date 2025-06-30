@@ -72,11 +72,11 @@ export async function GET(req: NextRequest) {
         }
 
         const { searchParams } = new URL(req.url)
-        const agencyId = searchParams.get("agencyId")
-        const subAccountId = searchParams.get("subAccountId")
-        const areaId = searchParams.get("areaId")
-        const categoryId = searchParams.get("categoryId")
-        const search = searchParams.get("search")
+        const agencyId = searchParams?.get("agencyId")
+        const subAccountId = searchParams?.get("subAccountId")
+        const areaId = searchParams?.get("areaId")
+        const categoryId = searchParams?.get("categoryId")
+        const search = searchParams?.get("search")
 
         if (!agencyId) {
             return NextResponse.json({ success: false, error: "ID de agencia requerido" }, { status: 400 })

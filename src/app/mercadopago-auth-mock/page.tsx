@@ -18,9 +18,9 @@ export default function MercadoPagoAuthMockPage() {
     const [error, setError] = useState('');
 
     // Obtener los parámetros de la URL
-    const redirectUri = searchParams.get('redirect_uri');
-    const state = searchParams.get('state'); // agencyId
-    const scope = searchParams.get('scope');
+    const redirectUri = searchParams?.get('redirect_uri');
+    const state = searchParams?.get('state'); // agencyId
+    const scope = searchParams?.get('scope');
 
     // Verificar que tenemos los parámetros necesarios
     useEffect(() => {

@@ -8,6 +8,7 @@ import { Toaster as SonnarToaster} from '@/components/ui/sonner'
 import { PayPalProvider } from '@/components/providers/paypal-provider'
 import { ClerkProvider } from '@clerk/nextjs'
 import { twMerge } from "tailwind-merge";
+import { SocketProvider } from '@/providers/socketio-provider';
 
 const font = DM_Sans({ subsets: ["latin"] });
 
@@ -47,9 +48,11 @@ export default function RootLayout({
               disableTransitionOnChange
               >
                 <ModalProvider>
-                {children}
-                <Toaster/>
-                <SonnarToaster position="bottom-left"></SonnarToaster>
+                  <SocketProvider>
+                    {children}
+                    <Toaster/>
+                    <SonnarToaster position="bottom-left"></SonnarToaster>
+                  </SocketProvider>
                 </ModalProvider>
               </ThemeProvider>
             </PayPalProvider>

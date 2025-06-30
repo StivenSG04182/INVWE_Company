@@ -13,9 +13,10 @@ import { TrendingUp, FileText, CreditCard, Receipt, DollarSign, CheckCircle, Clo
 export const UnifiedFinanceDashboard = ({ agencyId }: { agencyId: string }) => {
     const searchParams = useSearchParams()
     const router = useRouter()
-    const defaultTab = searchParams.get("tab") || "invoices"
+    const defaultTab = searchParams?.get("tab") || "invoices"
 
     const handleTabChange = (value: string) => {
+        if (!searchParams) return
         const params = new URLSearchParams(searchParams)
         params.set("tab", value)
         router.push(`?${params.toString()}`, { scroll: false })
