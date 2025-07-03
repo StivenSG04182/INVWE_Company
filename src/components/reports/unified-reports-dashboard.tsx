@@ -40,10 +40,11 @@ export default function UnifiedReportsDashboard({ agencyId, user }: UnifiedRepor
 
     // Formatos de exportación disponibles
     const exportFormats = [
-        { name: "PDF", icon: "📄", format: "PDF", description: "Documento portable" },
-        { name: "Excel", icon: "📊", format: "EXCEL", description: "Hoja de cálculo" },
-        { name: "CSV", icon: "📝", format: "CSV", description: "Valores separados por comas" },
-        { name: "JSON", icon: "🔢", format: "JSON", description: "Datos estructurados" },
+        { name: "PDF", icon: "📄", format: "PDF", description: "Documento PDF" },
+        { name: "WORD", icon: "📄", format: "WORD", description: "Documento de Microsoft Word" },
+        { name: "EXCEL", icon: "📊", format: "EXCEL", description: "Hoja de cálculo de Microsoft Excel" },
+        { name: "CSV", icon: "📝", format: "CSV", description: "Valores separados por comas (CSV)" },
+        { name: "PNG", icon: "🔢", format: "PNG", description: "Imagen PNG" },
     ]
 
     const tabConfig = {
@@ -118,12 +119,34 @@ export default function UnifiedReportsDashboard({ agencyId, user }: UnifiedRepor
     const handleExport = async (format: string) => {
         try {
             setIsExporting(true)
-            await exportReportData(agencyId, activeTab, format, dateRange)
-
-            toast({
-                title: "Reporte exportado",
-                description: `El reporte se ha exportado en formato ${format}`,
-            })
+            const result = await exportReportData(agencyId, activeTab, format, dateRange)
+            if (result && result.fileBase64 && result.fileName && result.mimeType) {
+                // Convertir base64 a Blob
+                const byteCharacters = atob(result.fileBase64)
+                const byteNumbers = new Array(byteCharacters.length)
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i)
+                }
+                const byteArray = new Uint8Array(byteNumbers)
+                const blob = new Blob([byteArray], { type: result.mimeType })
+                // Crear enlace temporal y disparar descarga
+                const url = window.URL.createObjectURL(blob)
+                const a = document.createElement("a")
+                a.href = url
+                a.download = result.fileName
+                document.body.appendChild(a)
+                a.click()
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(url)
+                    document.body.removeChild(a)
+                }, 100)
+                toast({
+                    title: "Reporte exportado",
+                    description: `El reporte se ha exportado en formato ${format}`,
+                })
+            } else {
+                throw new Error("No se pudo generar el archivo para exportar.")
+            }
         } catch (error) {
             toast({
                 title: "Error",
