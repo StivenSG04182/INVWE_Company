@@ -33,6 +33,13 @@ export default clerkMiddleware((auth, req) => {
 
   if (customSubDomain) {
     console.log('🔍 Middleware - Custom subdomain detected:', customSubDomain)
+    
+    // Si la ruta es de subaccount, no hacer rewrite para evitar conflictos
+    if (pathname.startsWith('/subaccount')) {
+      console.log('🔍 Middleware - Subaccount route detected, skipping subdomain rewrite')
+      return NextResponse.next()
+    }
+    
     return NextResponse.rewrite(
       new URL(`/${customSubDomain}${pathWithSearchParams}`, req.url)
     )
