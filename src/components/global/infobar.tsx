@@ -5,7 +5,7 @@ import { UserButton } from "@clerk/nextjs"
 import { useState, useEffect } from "react"
 import { twMerge } from "tailwind-merge"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "../ui/sheet"
-import { Bell, Check, Clock, Filter, MoreHorizontal } from "lucide-react"
+import { Bell, Check, Clock, Filter, MoreHorizontal, Trash2 } from "lucide-react"
 import type { Role } from "@prisma/client"
 import { Card, CardContent } from "../ui/card"
 import { Switch } from "../ui/switch"
@@ -17,26 +17,37 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs"
 import { motion, AnimatePresence } from "framer-motion"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
+import { useToast } from "../ui/use-toast"
+import { 
+  markNotificationAsRead, 
+  markAllNotificationsAsRead, 
+  deleteNotification,
+  deleteAllNotifications,
+  getUnreadNotificationCount
+} from "@/lib/notification-queries"
 
 type Props = {
   notifications: NotificationWithUser
   role?: Role
   className?: string
   subAccountId?: string
+  agencyId?: string
 }
 
-const InfoBar = ({ notifications, subAccountId, className, role }: Props) => {
+const InfoBar = ({ notifications, subAccountId, className, role, agencyId }: Props) => {
   const [allNotifications, setAllNotifications] = useState<NotificationWithUser>([])
   const [showAll, setShowAll] = useState(true)
   const [isOpen, setIsOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [activeTab, setActiveTab] = useState("all")
+  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     if (notifications) {
       setAllNotifications(notifications)
-      // Count unread notifications - assuming read status is tracked elsewhere
-      const count = notifications.length // Remove .filter((n) => !n.read) for now
+      // Contar notificaciones no leídas
+      const count = notifications.filter((n) => !n.isRead).length
       setUnreadCount(count)
     }
   }, [notifications])
@@ -54,41 +65,145 @@ const InfoBar = ({ notifications, subAccountId, className, role }: Props) => {
     setShowAll((prev) => !prev)
   }
 
-  const handleMarkAllRead = () => {
-    // In a real app, you would call an API to mark notifications as read
-    // For now, we'll just update the local state
-    setAllNotifications((prev) =>
-      prev?.map((notification) => ({
-        ...notification,
-        // read: true, // Remove this for now as read property doesn't exist
-      })) || [],
-    )
-    setUnreadCount(0)
+  const handleMarkAllRead = async () => {
+    if (!agencyId) return
+    
+    setIsLoading(true)
+    try {
+      await markAllNotificationsAsRead(agencyId, subAccountId)
+      
+      // Actualizar estado local
+      setAllNotifications((prev) =>
+        prev?.map((notification) => ({
+          ...notification,
+          isRead: true,
+          readAt: new Date(),
+        })) || [],
+      )
+      setUnreadCount(0)
+      
+      toast({
+        title: "Notificaciones marcadas como leídas",
+        description: "Todas las notificaciones han sido marcadas como leídas",
+      })
+    } catch (error) {
+      console.error('Error marking notifications as read:', error)
+      toast({
+        title: "Error",
+        description: "No se pudieron marcar las notificaciones como leídas",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleMarkAsRead = (id: string) => {
-    setAllNotifications((prev) =>
-      prev?.map((notification) => (notification.id === id ? { ...notification } : notification)) || [],
-    )
-    setUnreadCount((prev) => Math.max(0, prev - 1))
+  const handleMarkAsRead = async (id: string) => {
+    setIsLoading(true)
+    try {
+      await markNotificationAsRead(id)
+      
+      // Actualizar estado local
+      setAllNotifications((prev) =>
+        prev?.map((notification) => 
+          notification.id === id 
+            ? { ...notification, isRead: true, readAt: new Date() }
+            : notification
+        ) || [],
+      )
+      setUnreadCount((prev) => Math.max(0, prev - 1))
+      
+      toast({
+        title: "Notificación marcada como leída",
+        description: "La notificación ha sido marcada como leída",
+      })
+    } catch (error) {
+      console.error('Error marking notification as read:', error)
+      toast({
+        title: "Error",
+        description: "No se pudo marcar la notificación como leída",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleDeleteNotification = async (id: string) => {
+    setIsLoading(true)
+    try {
+      await deleteNotification(id)
+      
+      // Actualizar estado local
+      setAllNotifications((prev) => prev?.filter((notification) => notification.id !== id) || [])
+      
+      // Actualizar contador si la notificación no estaba leída
+      const notification = allNotifications?.find(n => n.id === id)
+      if (notification && !notification.isRead) {
+        setUnreadCount((prev) => Math.max(0, prev - 1))
+      }
+      
+      toast({
+        title: "Notificación eliminada",
+        description: "La notificación ha sido eliminada",
+      })
+    } catch (error) {
+      console.error('Error deleting notification:', error)
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la notificación",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleDeleteAllNotifications = async () => {
+    if (!agencyId) return
+    
+    setIsLoading(true)
+    try {
+      await deleteAllNotifications(agencyId, subAccountId)
+      
+      // Actualizar estado local
+      setAllNotifications([])
+      setUnreadCount(0)
+      
+      toast({
+        title: "Notificaciones eliminadas",
+        description: "Todas las notificaciones han sido eliminadas",
+      })
+    } catch (error) {
+      console.error('Error deleting all notifications:', error)
+      toast({
+        title: "Error",
+        description: "No se pudieron eliminar las notificaciones",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const getTimeAgo = (date: Date) => {
     const now = new Date()
     const diffInSeconds = Math.floor((now.getTime() - new Date(date).getTime()) / 1000)
 
-    if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`
-    return `${Math.floor(diffInSeconds / 86400)} days ago`
+    if (diffInSeconds < 60) return `${diffInSeconds} segundos`
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutos`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} horas`
+    return `${Math.floor(diffInSeconds / 86400)} días`
   }
 
   const filteredNotifications = () => {
     if (activeTab === "unread") {
-      return allNotifications?.filter((n) => true) || [] // Remove read check for now
+      return allNotifications?.filter((n) => !n.isRead) || []
     }
     return allNotifications || []
   }
+
+  const notificationsList = allNotifications ?? [];
 
   return (
     <>
@@ -127,9 +242,27 @@ const InfoBar = ({ notifications, subAccountId, className, role }: Props) => {
                           <SheetTitle className="text-xl">Notificaciones</SheetTitle>
                           <div className="flex items-center gap-2">
                             {unreadCount > 0 && (
-                              <Button variant="ghost" size="sm" onClick={handleMarkAllRead} className="text-xs h-8">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={handleMarkAllRead} 
+                                className="text-xs h-8"
+                                disabled={isLoading}
+                              >
                                 <Check size={14} className="mr-1" />
-                                Marcar todo lo leído
+                                Marcar todo como leído
+                              </Button>
+                            )}
+                            {notificationsList.length > 0 && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={handleDeleteAllNotifications} 
+                                className="text-xs h-8 text-destructive"
+                                disabled={isLoading}
+                              >
+                                <Trash2 size={14} className="mr-1" />
+                                Eliminar todo
                               </Button>
                             )}
                             <DropdownMenu>
@@ -193,6 +326,7 @@ const InfoBar = ({ notifications, subAccountId, className, role }: Props) => {
                                 <Card
                                   className={twMerge(
                                     "rounded-none border-x-0 border-t-0 relative",
+                                    !notification.isRead && "bg-muted/30"
                                   )}
                                 >
                                   <CardContent className="p-4 flex gap-3">
@@ -234,12 +368,23 @@ const InfoBar = ({ notifications, subAccountId, className, role }: Props) => {
                                               </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                              <DropdownMenuItem
-                                                onClick={() => handleMarkAsRead(notification.id)}
+                                              {!notification.isRead && (
+                                                <DropdownMenuItem
+                                                  onClick={() => handleMarkAsRead(notification.id)}
+                                                  disabled={isLoading}
+                                                >
+                                                  <Check size={14} className="mr-2" />
+                                                  Marcar como leído
+                                                </DropdownMenuItem>
+                                              )}
+                                              <DropdownMenuItem 
+                                                onClick={() => handleDeleteNotification(notification.id)}
+                                                disabled={isLoading}
+                                                className="text-destructive"
                                               >
-                                                Marcar como leído
+                                                <Trash2 size={14} className="mr-2" />
+                                                Eliminar
                                               </DropdownMenuItem>
-                                              <DropdownMenuItem className="text-destructive">Eliminar</DropdownMenuItem>
                                             </DropdownMenuContent>
                                           </DropdownMenu>
                                         </div>

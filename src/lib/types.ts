@@ -17,6 +17,14 @@ export type NotificationWithUser =
         role: Role
         agencyId: string | null
       }
+      SubAccount?: {
+        id: string
+        name: string
+      } | null
+      isRead: boolean
+      isDeleted: boolean
+      readAt?: Date | null
+      deletedAt?: Date | null
     } & Notification)[]
   | undefined
 

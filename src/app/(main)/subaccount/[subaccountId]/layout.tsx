@@ -85,11 +85,12 @@ const SubaccountLayout = async ({ children, params }: Props) => {
         />
 
         <div className="md:pl-[300px]">
-          <InfoBar
-            notifications={notifications}
-            role={user.privateMetadata.role as Role}
-            subAccountId={params.subaccountId as string}
-          />
+                  <InfoBar
+          notifications={notifications}
+          role={user.privateMetadata.role as Role}
+          subAccountId={params.subaccountId as string}
+          agencyId={agencyId}
+        />
           <div className="relative">{children}</div>
         </div>
       </div>
