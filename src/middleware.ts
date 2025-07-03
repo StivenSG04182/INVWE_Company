@@ -7,12 +7,17 @@ import { NextResponse } from 'next/server'
 const isPublicRoute = createRouteMatcher(['/site', '/api/uploadthing', '/agency(.*)', '/site(.*)', '/agency'])
 
 export default clerkMiddleware((auth, req) => {
+  const url = req.nextUrl
+  const pathname = url.pathname
+  
+  console.log('🔍 Middleware - Processing:', pathname)
+  
   if (isPublicRoute(req)) {
+    console.log('🔍 Middleware - Public route, allowing access')
     return NextResponse.next()
   }
 
   //rewrite for domains
-  const url = req.nextUrl
   const searchParams = url.searchParams.toString()
   let hostname = req.headers
 
@@ -27,12 +32,14 @@ export default clerkMiddleware((auth, req) => {
     .filter(Boolean)[0]
 
   if (customSubDomain) {
+    console.log('🔍 Middleware - Custom subdomain detected:', customSubDomain)
     return NextResponse.rewrite(
       new URL(`/${customSubDomain}${pathWithSearchParams}`, req.url)
     )
   }
 
   if (url.pathname === '/sign-in' || url.pathname === '/sign-up') {
+    console.log('🔍 Middleware - Redirecting sign-in/sign-up to agency')
     return NextResponse.redirect(new URL(`/agency/sign-in`, req.url))
   }
 
@@ -40,6 +47,7 @@ export default clerkMiddleware((auth, req) => {
     url.pathname === '/site' ||
     (url.pathname === '/site' && url.host === process.env.NEXT_PUBLIC_DOMAIN)
   ) {
+    console.log('🔍 Middleware - Rewriting site route')
     return NextResponse.rewrite(new URL('/site', req.url))
   }
 
@@ -47,8 +55,12 @@ export default clerkMiddleware((auth, req) => {
     url.pathname.startsWith('/agency') ||
     url.pathname.startsWith('/subaccount')
   ) {
+    console.log('🔍 Middleware - Agency/Subaccount route, allowing access')
     return NextResponse.rewrite(new URL(`${pathWithSearchParams}`, req.url))
   }
+  
+  console.log('🔍 Middleware - Default case, allowing access')
+  return NextResponse.next()
 })
 
 export const config = {

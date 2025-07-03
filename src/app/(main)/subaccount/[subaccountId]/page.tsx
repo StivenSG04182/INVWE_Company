@@ -35,30 +35,43 @@ const MovementsSkeleton = () => (
 )
 
 const SubAccountPageId = async ({ params }: Props) => {
-  const subaccount = await db.subAccount.findUnique({
-    where: { id: params.subaccountId },
-    include: { Agency: true },
-  })
-
-  if (!subaccount) {
-    return (
-      <BlurPage>
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>No se encontró la subcuenta especificada</AlertDescription>
-        </Alert>
-      </BlurPage>
-    )
-  }
-
+  console.log('🔍 SubAccountPageId - Starting with params:', params)
+  
   try {
+    console.log('🔍 Looking for subaccount with ID:', params.subaccountId)
+    
+    const subaccount = await db.subAccount.findUnique({
+      where: { id: params.subaccountId },
+      include: { Agency: true },
+    })
+
+    console.log('🔍 Subaccount found:', !!subaccount, subaccount?.name)
+
+    if (!subaccount) {
+      console.log('❌ Subaccount not found')
+      return (
+        <BlurPage>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>No se encontró la subcuenta especificada</AlertDescription>
+          </Alert>
+        </BlurPage>
+      )
+    }
+
+    console.log('🔍 Getting dashboard data...')
     // Obtener datos del dashboard y movimientos usando las funciones correctas
     const dashboardData = await getDashboardData(params.subaccountId)
+    console.log('🔍 Dashboard data:', dashboardData)
+    
+    console.log('🔍 Getting movements...')
     const movements = await getSubaccountMovements(params.subaccountId)
+    console.log('🔍 Movements count:', movements?.length || 0)
 
     const { totalProducts, activeProducts, lowStockProducts, inventoryValue } = dashboardData
 
+    console.log('✅ SubAccountPageId - Rendering successfully')
     return (
       <BlurPage>
         <Suspense fallback={<DashboardSkeleton />}>
@@ -232,7 +245,7 @@ const SubAccountPageId = async ({ params }: Props) => {
       </BlurPage>
     )
   } catch (error) {
-    console.error('Error al cargar datos del dashboard:', error)
+    console.error('❌ Error al cargar datos del dashboard:', error)
     return (
       <BlurPage>
         <Alert variant="destructive">
@@ -240,6 +253,8 @@ const SubAccountPageId = async ({ params }: Props) => {
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
             Ocurrió un error al cargar los datos del dashboard. Por favor, intenta de nuevo más tarde.
+            <br />
+            <strong>Error:</strong> {error instanceof Error ? error.message : String(error)}
           </AlertDescription>
         </Alert>
       </BlurPage>
