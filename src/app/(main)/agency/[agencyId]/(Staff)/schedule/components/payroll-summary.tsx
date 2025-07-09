@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Download, FileSpreadsheet, Info, AlertTriangle } from "lucide-react"
+import { Download, FileSpreadsheet, Info, AlertTriangle, Clock } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { calculateEmployeePayroll, LEGAL_CONSTANTS } from "../utils/payroll-calculator"
@@ -21,9 +21,14 @@ export function PayrollSummary({ teamMembers, schedules, holidays }: PayrollSumm
     const [selectedPeriod, setSelectedPeriod] = useState("current-month")
     const [selectedEmployee, setSelectedEmployee] = useState("all")
 
+    // Verificar si hay datos disponibles
+    const hasSchedules = schedules && schedules.length > 0
+    const hasTeamMembers = teamMembers && teamMembers.length > 0
+
     // Calcular la nómina para cada empleado
     const payrollData = teamMembers.map((employee) => {
         const employeeSchedules = schedules.filter((s) => s.userId === employee.id)
+        
         return {
             ...employee,
             payroll: calculateEmployeePayroll(employeeSchedules, holidays, selectedPeriod),
@@ -82,6 +87,27 @@ export function PayrollSummary({ teamMembers, schedules, holidays }: PayrollSumm
                 </div>
             </CardHeader>
             <CardContent className="pb-2">
+                {/* Mostrar mensaje cuando no hay datos */}
+                {!hasSchedules && hasTeamMembers && (
+                    <Alert className="mb-4">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                            No hay horarios asignados para calcular la nómina. 
+                            Asigna horarios a los empleados desde el calendario para ver los cálculos de nómina.
+                        </AlertDescription>
+                    </Alert>
+                )}
+
+                {!hasTeamMembers && (
+                    <Alert className="mb-4">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                            No hay empleados registrados en la agencia. 
+                            Agrega empleados para poder asignar horarios y calcular nóminas.
+                        </AlertDescription>
+                    </Alert>
+                )}
+
                 {/* Alertas de cumplimiento */}
                 {complianceIssues.length > 0 && (
                     <Alert variant="destructive" className="mb-4">
@@ -100,7 +126,19 @@ export function PayrollSummary({ teamMembers, schedules, holidays }: PayrollSumm
                     </TabsList>
 
                     <TabsContent value="summary" className="space-y-4 pt-4">
-                        <div className="space-y-3">
+                        {!hasSchedules ? (
+                            <div className="text-center py-8 text-muted-foreground">
+                                <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                <h4 className="font-medium mb-2">Sin datos de nómina</h4>
+                                <p className="text-sm">
+                                    No hay horarios asignados para calcular la nómina.
+                                </p>
+                                <p className="text-xs mt-2">
+                                    Asigna horarios desde el calendario para ver los cálculos de nómina.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Horas normales:</span>
                                 <span className="font-medium">{totalRegularHours.toFixed(1)} hrs</span>
@@ -194,11 +232,23 @@ export function PayrollSummary({ teamMembers, schedules, holidays }: PayrollSumm
                                 <span className="text-primary">${totalAmount.toLocaleString("es-CO")}</span>
                             </div>
                         </div>
+                        )}
                     </TabsContent>
 
                     <TabsContent value="details" className="pt-4">
                         <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
-                            {filteredPayroll.length > 0 ? (
+                            {!hasSchedules ? (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                    <h4 className="font-medium mb-2">Sin horarios asignados</h4>
+                                    <p className="text-sm">
+                                        No hay horarios asignados para mostrar detalles de nómina.
+                                    </p>
+                                    <p className="text-xs mt-2">
+                                        Ve al calendario y asigna horarios a los empleados para ver los cálculos detallados.
+                                    </p>
+                                </div>
+                            ) : filteredPayroll.length > 0 ? (
                                 filteredPayroll.map((employee) => (
                                     <div key={employee.id} className="space-y-2 pb-3 border-b last:border-0">
                                         <div className="font-medium flex items-center justify-between">
@@ -292,10 +342,12 @@ export function PayrollSummary({ teamMembers, schedules, holidays }: PayrollSumm
                     <FileSpreadsheet className="h-4 w-4 mr-2" />
                     Vista previa
                 </Button>
-                <Button size="sm">
-                    <Download className="h-4 w-4 mr-2" />
-                    Exportar
-                </Button>
+                <div className="flex gap-2">
+                    <Button size="sm">
+                        <Download className="h-4 w-4 mr-2" />
+                        Exportar
+                    </Button>
+                </div>
             </CardFooter>
         </Card>
     )

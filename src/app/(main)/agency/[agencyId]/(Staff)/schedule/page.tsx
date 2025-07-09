@@ -55,7 +55,7 @@ const SchedulePage = async ({ params }: { params: { agencyId: string } }) => {
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Dashboard</span>
           </TabsTrigger>
-          <TabsTrigger value="employees" className="flex items-center gap-2">
+          {/* <TabsTrigger value="employees" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Empleados</span>
           </TabsTrigger>
@@ -66,7 +66,7 @@ const SchedulePage = async ({ params }: { params: { agencyId: string } }) => {
           <TabsTrigger value="reports" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">Reportes</span>
-          </TabsTrigger>
+          </TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6">

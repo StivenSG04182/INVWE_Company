@@ -2,6 +2,21 @@
 
 import { db } from "./db"
 
+// Función de utilidad para normalizar tipos de movimiento
+const normalizeMovementType = (type: string): string => {
+    const normalized = type.toLowerCase()
+    switch (normalized) {
+        case 'entrada':
+            return 'entrada'
+        case 'salida':
+            return 'salida'
+        case 'transferencia':
+            return 'transferencia'
+        default:
+            return type // Mantener el valor original si no es reconocido
+    }
+}
+
 // Tipos para los datos del dashboard
 export interface DashboardData {
     productsCount: number
@@ -96,9 +111,10 @@ export const getDashboardData = async (agencyId: string): Promise<DashboardData>
 
             // Calcular stock basado en movimientos
             product.Movements.forEach((movement) => {
-                if (movement.type === "ENTRADA") {
+                const normalizedType = normalizeMovementType(movement.type)
+                if (normalizedType === "entrada") {
                     currentStock += movement.quantity
-                } else if (movement.type === "SALIDA") {
+                } else if (normalizedType === "salida") {
                     currentStock -= movement.quantity
                 }
             })
@@ -127,8 +143,12 @@ export const getDashboardData = async (agencyId: string): Promise<DashboardData>
         }, 0)
 
         // Calcular movimientos por tipo
-        const entriesCount = movements.filter((m) => m.type === "ENTRADA").length
-        const exitsCount = movements.filter((m) => m.type === "SALIDA").length
+        const entriesCount = movements.filter((m) => 
+            normalizeMovementType(m.type) === "entrada"
+        ).length
+        const exitsCount = movements.filter((m) => 
+            normalizeMovementType(m.type) === "salida"
+        ).length
 
         // Procesar movimientos recientes para mostrar
         const recentMovements = movements.slice(0, 10).map((movement) => ({
@@ -161,7 +181,7 @@ export const getDashboardData = async (agencyId: string): Promise<DashboardData>
             area.Movements.forEach((movement) => {
                 areaProducts.add(movement.productId)
                 const product = movement.Product
-                if (product && movement.type === "ENTRADA") {
+                if (product && normalizeMovementType(movement.type) === "entrada") {
                     totalValue += Number(product.price) * movement.quantity
                 }
             })

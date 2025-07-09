@@ -65,7 +65,7 @@ export default async function MovementDetailPage({ params }: MovementDetailPageP
         <div className="container mx-auto py-6 space-y-6">
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="sm" asChild>
-                    <Link href={`/agency/${params.agencyId}/(Inventory)?tab=movements`}>
+                    <Link href={`/agency/${params.agencyId}/movements`}>
                         <ArrowLeft className="h-4 w-4 mr-2" />
                         Volver
                     </Link>
@@ -133,12 +133,12 @@ export default async function MovementDetailPage({ params }: MovementDetailPageP
 
                     <div className="flex gap-4">
                         <Button asChild>
-                            <Link href={`/agency/${params.agencyId}/(Inventory)?tab=product&productId=${movement.Product.id}`}>
+                            <Link href={`/agency/${params.agencyId}/products/${movement.Product.id}`}>
                                 Ver Producto
                             </Link>
                         </Button>
                         <Button variant="outline" asChild>
-                            <Link href={`/agency/${params.agencyId}/areas/workspace?areaId=${movement.Area.id}`}>
+                            <Link href={`/agency/${params.agencyId}/areas`}>
                                 Ver Área
                             </Link>
                         </Button>

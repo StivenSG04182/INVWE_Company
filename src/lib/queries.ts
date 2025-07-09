@@ -416,7 +416,7 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             { name: "Empleados", icon: "person", link: `/agency/${agency.id}/(Staff)/team` },
             { name: "Horarios & Nómina", icon: "calendar", link: `/agency/${agency.id}/(Staff)/schedule` },
             { name: "Contactos", icon: "contact", link: `/agency/${agency.id}/(Staff)/contacts` },
-            { name: "Objetivos", icon: "flag", link: `/agency/${agency.id}/(Staff)/pipelines` },
+            /* { name: "Objetivos", icon: "flag", link: `/agency/${agency.id}/(Staff)/pipelines` }, */
 
             // 8. Comunicaciones
             /* { name: "Comunicaciones", icon: "messages", link: "#" },

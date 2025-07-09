@@ -9,7 +9,7 @@ const createStripeInstance = () => {
   }
   
   return new Stripe(secretKey, {
-    apiVersion: '2025-05-28.basil',
+    apiVersion: '2025-06-30.basil',
     appInfo: {
       name: 'INVWE App',
       version: '0.1.0',
