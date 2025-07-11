@@ -86,7 +86,7 @@ export function Header() {
                                     </Link>
                                 </Button>
                                 <Button asChild className="bg-[#899735] hover:bg-[#899735]/90 text-white">
-                                    <Link href="/agency">
+                                    <Link href="/agency/sign-in">
                                         Iniciar Sesión
                                     </Link>
                                 </Button>
@@ -140,7 +140,7 @@ export function Header() {
                                         </Button>
                                     </SignUpButton>
                                     <Button asChild className="w-full bg-[#899735] hover:bg-[#899735]/90 text-white">
-                                        <Link href="/agency" className="w-full">
+                                        <Link href="/agency/sign-in" className="w-full">
                                             Iniciar Sesión
                                         </Link>
                                     </Button>

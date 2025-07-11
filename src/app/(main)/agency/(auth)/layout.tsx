@@ -49,11 +49,11 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="mt-8 text-center">
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Al continuar, aceptas nuestros{" "}
-              <a href="#" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
+              <a href="@/app/site/terminos/page.tsx" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
                 Términos de Servicio
               </a>{" "}
               y{" "}
-              <a href="#" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
+              <a href="@/app/site/condiciones/page.tsx" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
                 Política de Privacidad
               </a>
             </p>
