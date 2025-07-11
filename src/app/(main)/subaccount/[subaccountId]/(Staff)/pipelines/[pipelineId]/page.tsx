@@ -42,11 +42,11 @@ const PipelinePage = async ({params}: Props) => {
       <div>
         <TabsTrigger
         value='view'>
-          Pipeline View
+          Vista de objetivos
         </TabsTrigger>
         <TabsTrigger
         value='settings'>
-          Settings
+          Ajustes
         </TabsTrigger>
       </div>
     </TabsList>
