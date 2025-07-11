@@ -41,7 +41,7 @@ const Page = async ({
   const authUser = await currentUser();
 
   if (!authUser) {
-    return redirect("/sign-in");
+    return redirect("/agency/sign-in");
   }
 
   return (
