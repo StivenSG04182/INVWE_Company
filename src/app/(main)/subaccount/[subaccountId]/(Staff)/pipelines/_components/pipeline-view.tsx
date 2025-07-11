@@ -47,8 +47,8 @@ const PipelineView = ({
     const handleAddLane = () => {
         setOpen(
           <CustomModal
-            title=" Create A Lane"
-            subheading="Lanes allow you to group tickets"
+            title=" Crear un objetivo"
+            subheading="Los objetivos permiten agrupar entradas"
           >
             <LaneForm pipelineId={pipelineId} />
           </CustomModal>
@@ -140,7 +140,7 @@ const PipelineView = ({
             onClick={handleAddLane}
           >
             <Plus size={15} />
-            Create Lane
+            Crear objetivo
           </Button>
         </div>
         <Droppable

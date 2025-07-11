@@ -79,8 +79,8 @@ const PipelineLane: React.FC<PipelaneLaneProps> = ({
   const handleCreateTicket = () => {
     setOpen(
       <CustomModal
-        title="Create A Ticket"
-        subheading="Tickets are a great way to keep track of tasks"
+        title="Crear un ticket"
+        subheading="Los tickets son una excelente manera de hacer seguimiento de tareas"
       >
         <TicketForm
           getNewTicket={addNewTicket}
@@ -94,7 +94,7 @@ const PipelineLane: React.FC<PipelaneLaneProps> = ({
   const handleEditLane = () => {
     setOpen(
       <CustomModal
-        title="Edit Lane Details"
+        title="Editar detalles del objetivo"
         subheading=""
       >
         <CreateLaneForm
@@ -110,7 +110,7 @@ const PipelineLane: React.FC<PipelaneLaneProps> = ({
       const response = await deleteLane(laneDetails.id)
       await saveActivityLogsNotification({
         agencyId: undefined,
-        description: `Deleted a lane | ${response?.name}`,
+        description: `Se eliminó un objetivo | ${response?.name}`,
         subaccountId,
       })
       router.refresh()
@@ -206,12 +206,12 @@ const PipelineLane: React.FC<PipelaneLaneProps> = ({
                   </Droppable>
 
                   <DropdownMenuContent>
-                    <DropdownMenuLabel>Options</DropdownMenuLabel>
+                    <DropdownMenuLabel>Opciones</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <AlertDialogTrigger>
                       <DropdownMenuItem className="flex items-center gap-2">
                         <Trash size={15} />
-                        Delete
+                        Eliminar objetivo
                       </DropdownMenuItem>
                     </AlertDialogTrigger>
 
@@ -220,34 +220,33 @@ const PipelineLane: React.FC<PipelaneLaneProps> = ({
                       onClick={handleEditLane}
                     >
                       <Edit size={15} />
-                      Edit
+                      Editar objetivo
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="flex items-center gap-2"
                       onClick={handleCreateTicket}
                     >
                       <PlusCircleIcon size={15} />
-                      Create Ticket
+                      Crear ticket
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </div>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>
-                      Are you absolutely sure?
+                      ¿Estás absolutamente seguro?
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete
-                      your account and remove your data from our servers.
+                      Esta acción no se puede deshacer. Esto eliminará permanentemente el objetivo y sus datos asociados.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter className="flex items-center">
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
                     <AlertDialogAction
                       className="bg-destructive"
                       onClick={handleDeleteLane}
                     >
-                      Continue
+                      Continuar
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

@@ -34,38 +34,37 @@ const PipelineSettings = ({
       <div>
         <div className="flex items-center justify-between mb-4">
           <AlertDialogTrigger asChild>
-            <Button variant={'destructive'}>Delete Pipeline</Button>
+            <Button variant={'destructive'}>Eliminar objetivo</Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete your
-                account and remove your data from our servers.
+                Esta acción no se puede deshacer. Esto eliminará permanentemente el objetivo y sus datos asociados.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="items-center">
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
               <AlertDialogAction
                 onClick={async () => {
                   try {
                     await deletePipeline(pipelineId)
                     //Challenge: Activity log
                     toast({
-                      title: 'Deleted',
-                      description: 'Pipeline is deleted',
+                      title: 'Eliminado',
+                      description: 'El objetivo ha sido eliminado',
                     })
                     router.replace(`/subaccount/${subaccountId}/pipelines`)
                   } catch (error) {
                     toast({
                       variant: 'destructive',
-                      title: 'Oppse!',
-                      description: 'Could Delete Pipeline',
+                      title: '¡Ups!',
+                      description: 'No se pudo eliminar el objetivo',
                     })
                   }
                 }}
               >
-                Delete
+                Eliminar
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

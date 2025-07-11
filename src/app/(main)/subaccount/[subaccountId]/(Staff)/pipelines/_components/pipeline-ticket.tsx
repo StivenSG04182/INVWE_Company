@@ -49,7 +49,7 @@ const PipelineTicket = ({
         const handleClickEdit = async () => {
             setOpen(
               <CustomModal
-                title="Update Ticket Details"
+                title="Actualizar detalles del ticket"
                 subheading=""
               >
                 <TicketForm
@@ -69,13 +69,13 @@ const PipelineTicket = ({
               setAllTickets((tickets) => tickets.filter((t) => t.id !== ticket.id))
               const response = await deleteTicket(ticket.id)
               toast({
-                title: 'Deleted',
-                description: 'Deleted ticket from lane.',
+                title: 'Eliminado',
+                description: 'Ticket eliminado del objetivo.',
               })
         
               await saveActivityLogsNotification({
                 agencyId: undefined,
-                description: `Deleted a ticket | ${response?.name}`,
+                description: `Se eliminó un ticket | ${response?.name}`,
                 subaccountId: subaccountId,
               })
         
@@ -83,8 +83,8 @@ const PipelineTicket = ({
             } catch (error) {
               toast({
                 variant: 'destructive',
-                title: 'Oppse!',
-                description: 'Could not delete the ticket.',
+                title: '¡Ups!',
+                description: 'No se pudo eliminar el ticket.',
               })
             }
           }
@@ -142,7 +142,7 @@ const PipelineTicket = ({
                                 <HoverCardTrigger asChild>
                                     <div className="p-2 text-muted-foreground flex gap-2 hover:bg-muted transition-all rounded-lg cursor-pointer items-center">
                                         <LinkIcon/>
-                                        <span className='text-xs font-bold'>CONTACT</span>
+                                        <span className='text-xs font-bold'>CONTACTO</span>
                                     </div>
                                 </HoverCardTrigger>
                                 <HoverCardContent side='right' className='w-fit'>
@@ -163,7 +163,7 @@ const PipelineTicket = ({
                                     <div className="flex items-center pt-2">
                                     <Contact2 className="mr-2 h-4 w-4 opacity-70" />
                                     <span className="text-xs text-muted-foreground">
-                                        Joined{' '}
+                                        Se unió el{' '}
                                         {ticket.Customer?.createdAt.toLocaleDateString()}
                                     </span>
                                     </div>
@@ -187,8 +187,8 @@ const PipelineTicket = ({
                       <div className="flex flex-col justify-center">
                         <span className="text-sm text-muted-foreground">
                           {ticket.assignedUserId
-                            ? 'Assigned to'
-                            : 'Not Assigned'}
+                            ? 'Asignado a'
+                            : 'No asignado'}
                         </span>
                         {ticket.assignedUserId && (
                           <span className="text-xs w-28  overflow-ellipsis overflow-hidden whitespace-nowrap text-muted-foreground">
@@ -206,12 +206,12 @@ const PipelineTicket = ({
                     </span>
                         </CardFooter>
                         <DropdownMenuContent>
-                    <DropdownMenuLabel>Options</DropdownMenuLabel>
+                    <DropdownMenuLabel>Opciones</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <AlertDialogTrigger>
                       <DropdownMenuItem className="flex items-center gap-2">
                         <Trash size={15} />
-                        Delete Ticket
+                        Eliminar ticket
                       </DropdownMenuItem>
                     </AlertDialogTrigger>
                     <DropdownMenuItem
@@ -219,27 +219,26 @@ const PipelineTicket = ({
                       onClick={handleClickEdit}
                     >
                       <Edit size={15} />
-                      Edit Ticket
+                      Editar ticket
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                     </Card>
                     <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>
-                      Are you absolutely sure?
+                      ¿Estás absolutamente seguro?
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete
-                      the ticket and remove it from our servers.
+                      Esta acción no se puede deshacer. Esto eliminará permanentemente el ticket y lo eliminará de nuestros servidores.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter className="flex items-center">
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
                     <AlertDialogAction
                       className="bg-destructive"
                       onClick={handleDeleteTicket}
                     >
-                      Delete
+                      Eliminar
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

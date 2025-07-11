@@ -113,21 +113,21 @@ const TicketForm = ({laneId, subaccountId, getNewTicket}: Props) => {
         
               await saveActivityLogsNotification({
                 agencyId: undefined,
-                description: `Updated a ticket | ${response?.name}`,
+                description: `Ticket actualizado | ${response?.name}`,
                 subaccountId,
               })
         
               toast({
-                title: 'Success',
-                description: 'Saved  details',
+                title: 'Éxito',
+                description: 'Detalles guardados',
               })
               if (response) getNewTicket(response)
               router.refresh()
             } catch (error) {
               toast({
                 variant: 'destructive',
-                title: 'Oppse!',
-                description: 'Could not save pipeline details',
+                title: '¡Ups!',
+                description: 'No se pudieron guardar los detalles del objetivo',
               })
             }
             setClose()
@@ -136,7 +136,7 @@ const TicketForm = ({laneId, subaccountId, getNewTicket}: Props) => {
   return (
     <Card className='w-full'>
       <CardHeader>
-        <CardTitle>Ticket Details</CardTitle>
+        <CardTitle>Detalles del ticket</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -148,10 +148,10 @@ const TicketForm = ({laneId, subaccountId, getNewTicket}: Props) => {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Ticket Name</FormLabel>
+                  <FormLabel>Nombre del ticket</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Name"
+                      placeholder="Nombre"
                       {...field}
                     />
                   </FormControl>
@@ -165,10 +165,10 @@ const TicketForm = ({laneId, subaccountId, getNewTicket}: Props) => {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Descripción</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Description"
+                      placeholder="Descripción"
                       {...field}
                     />
                   </FormControl>
@@ -182,10 +182,10 @@ const TicketForm = ({laneId, subaccountId, getNewTicket}: Props) => {
               name="value"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Ticket Value</FormLabel>
+                  <FormLabel>Valor del ticket</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Value"
+                      placeholder="Valor"
                       {...field}
                     />
                   </FormControl>
@@ -193,14 +193,14 @@ const TicketForm = ({laneId, subaccountId, getNewTicket}: Props) => {
                 </FormItem>
               )}
             />
-            <h3>Add Tags</h3>
+            <h3>Agregar etiquetas</h3>
             {/* WIP : Add Tag creator */}
             <TagCreator
               subAccountId={subaccountId}
               getSelectedTags={setTags}
               defaultTags={defaultData.ticket?.Tags || []}
             />
-            <FormLabel>Assigned To Team Member</FormLabel>
+            <FormLabel>Asignar a miembro del equipo</FormLabel>
             <Select
               onValueChange={setAssignedTo}
               defaultValue={assignedTo}
@@ -217,7 +217,7 @@ const TicketForm = ({laneId, subaccountId, getNewTicket}: Props) => {
                       </Avatar>
 
                       <span className="text-sm text-muted-foreground">
-                        Not Assigned
+                        No asignado
                       </span>
                     </div>
                   }
@@ -248,7 +248,7 @@ const TicketForm = ({laneId, subaccountId, getNewTicket}: Props) => {
                 ))}
               </SelectContent>
             </Select>
-            <FormLabel>Customer</FormLabel>
+            <FormLabel>Cliente</FormLabel>
             <Popover>
               <PopoverTrigger
               asChild
@@ -259,14 +259,14 @@ const TicketForm = ({laneId, subaccountId, getNewTicket}: Props) => {
                 role='combobox'
                 className='justify-between'
                 >
-                {contact ? contactList.find((c) => c.id ===contact)?.name : 'Select Customer....'}
+                {contact ? contactList.find((c) => c.id ===contact)?.name : 'Seleccionar cliente...'}
                 <ChevronDownIcon className='ml-2 h-4 w-4 shrink-0 opacity-50'/>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className='w-[400px] p-0'>
               <Command>
                   <CommandInput
-                    placeholder="Search..."
+                    placeholder="Buscar..."
                     className="h-9"
                     value={search}
                     onChangeCapture={async (value) => {
@@ -284,7 +284,7 @@ const TicketForm = ({laneId, subaccountId, getNewTicket}: Props) => {
                       }, 1000)
                     }}
                   />
-                  <CommandEmpty>No Customer found.</CommandEmpty>
+                  <CommandEmpty>No se encontró cliente.</CommandEmpty>
                   <CommandGroup>
                     {contactList.map((c) => (
                       <CommandItem
@@ -313,7 +313,7 @@ const TicketForm = ({laneId, subaccountId, getNewTicket}: Props) => {
             className='w-20 mt-4'
             disabled={isLoading}
             type='submit'
-            >{form.formState.isSubmitting ? <Loading /> : 'Save'}</Button>
+            >{form.formState.isSubmitting ? <Loading /> : 'Guardar'}</Button>
           </form>
         </Form>
       </CardContent>
