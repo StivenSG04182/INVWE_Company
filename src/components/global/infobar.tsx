@@ -5,7 +5,7 @@ import { UserButton } from "@clerk/nextjs"
 import { useState, useEffect } from "react"
 import { twMerge } from "tailwind-merge"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "../ui/sheet"
-import { Bell, Check, Clock, Filter, MoreHorizontal, Trash2 } from "lucide-react"
+import { Bell, Check, Clock, FileQuestion, Filter, ShieldQuestion, MoreHorizontal, Trash2 } from "lucide-react"
 import type { Role } from "@prisma/client"
 import { Card, CardContent } from "../ui/card"
 import { Switch } from "../ui/switch"
@@ -213,6 +213,21 @@ const InfoBar = ({ notifications, subAccountId, className, role, agencyId }: Pro
           className,
         )}
       >
+        <div>
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              <Button variant="outline" size="icon" >
+                <ShieldQuestion size={25} />
+                <span className="sr-only">help</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => window.open('https://invwe.site/site/documentation', '_blank')}> Documentación </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => window.open('https://invwe.site/site/contacto', '_blank')}> Contáctanos </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
         <div className="flex items-center gap-3 ml-auto">
           <TooltipProvider>
             <Tooltip>
