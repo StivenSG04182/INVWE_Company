@@ -120,7 +120,7 @@ export default function SobreNosotrosPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2">
             <div className="relative h-64 lg:h-96">
               <Image
-                src="https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg"
+                src="/images/nosotros/logoNatulanda.png"
                 alt="Natulanda - Productos naturales"
                 fill
                 className="object-cover"
@@ -249,30 +249,6 @@ export default function SobreNosotrosPage() {
             </div>
           </div>
         </div>
-
-        {/* Stats */}
-        <Card className="about-card bg-[#486283] text-white">
-          <CardContent className="p-12">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
-              <div>
-                <div className="text-4xl font-bold mb-2">6+</div>
-                <div className="text-lg opacity-90">Años de Experiencia</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold mb-2">10,000+</div>
-                <div className="text-lg opacity-90">Clientes Satisfechos</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold mb-2">50+</div>
-                <div className="text-lg opacity-90">Proveedores Locales</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold mb-2">200+</div>
-                <div className="text-lg opacity-90">Productos Naturales</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )

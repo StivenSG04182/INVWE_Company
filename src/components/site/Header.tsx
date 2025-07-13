@@ -22,7 +22,6 @@ export function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const { items } = useCart()
     const { isSignedIn } = useAuth()
-    const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
 
     return (
         <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-sm border-b border-[#486283]/20">
@@ -57,14 +56,6 @@ export function Header() {
                 <div className="flex items-center space-x-4">
                     {/* Cart */}
                     <Link href="/site/productos" className="relative">
-                        <Button variant="ghost" size="sm" className="relative">
-                            <ShoppingCart className="h-5 w-5" />
-                            {itemCount > 0 && (
-                                <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-[#899735] text-white text-xs">
-                                    {itemCount}
-                                </Badge>
-                            )}
-                        </Button>
                     </Link>
 
                     {/* Auth Buttons en desktop */}

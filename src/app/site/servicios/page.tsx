@@ -20,20 +20,7 @@ const services = [
       'Productos a granel',
       'Certificación de calidad'
     ],
-    image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg'
-  },
-  {
-    icon: Truck,
-    title: 'Entrega a Domicilio',
-    description: 'Servicio de entrega rápida y segura para que recibas tus productos naturales en casa.',
-    features: [
-      'Entrega en 24-48 horas',
-      'Empaque ecológico',
-      'Seguimiento en tiempo real',
-      'Entrega gratuita en pedidos grandes',
-      'Horarios flexibles'
-    ],
-    image: 'https://images.pexels.com/photos/4386321/pexels-photo-4386321.jpeg'
+    image: '/images/servicios/quinoa.png'
   },
   {
     icon: GraduationCap,
@@ -46,7 +33,7 @@ const services = [
       'Consultas nutricionales',
       'Material educativo gratuito'
     ],
-    image: 'https://images.pexels.com/photos/1181534/pexels-photo-1181534.jpeg'
+    image: '/images/servicios/nutricional.webp'
   },
   {
     icon: Stethoscope,
@@ -59,20 +46,7 @@ const services = [
       'Recomendaciones de productos',
       'Consultas virtuales disponibles'
     ],
-    image: 'https://images.pexels.com/photos/5327585/pexels-photo-5327585.jpeg'
-  },
-  {
-    icon: Users,
-    title: 'Ventas Corporativas',
-    description: 'Soluciones especiales para empresas que quieren promover la alimentación saludable.',
-    features: [
-      'Descuentos por volumen',
-      'Productos personalizados',
-      'Programas de bienestar empresarial',
-      'Entrega programada',
-      'Facturación empresarial'
-    ],
-    image: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg'
+    image: '/images/servicios/asesoria.webp'
   },
   {
     icon: Headphones,
@@ -85,7 +59,7 @@ const services = [
       'Seguimiento post-venta',
       'Garantía de satisfacción'
     ],
-    image: 'https://images.pexels.com/photos/3760263/pexels-photo-3760263.jpeg'
+    image: '/images/servicios/atencion_cliente.webp'
   }
 ]
 
@@ -168,15 +142,6 @@ export default function ServiciosPage() {
                       ))}
                     </ul>
                   </div>
-
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <Button className="bg-[#899735] hover:bg-[#899735]/90 text-white">
-                      Solicitar Información
-                    </Button>
-                    <Button variant="outline" className="border-[#486283] text-[#486283]">
-                      Ver Detalles
-                    </Button>
-                  </div>
                 </CardContent>
               </div>
             </Card>
@@ -218,26 +183,6 @@ export default function ServiciosPage() {
           </div>
         </div>
 
-        {/* CTA Section */}
-        <Card className="service-card mt-20 bg-[#486283] text-white">
-          <CardContent className="p-12 text-center">
-            <h2 className="text-3xl font-bold mb-6">
-              ¿Listo para Comenzar tu Transformación?
-            </h2>
-            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-              Nuestro equipo de expertos está listo para acompañarte en tu 
-              camino hacia una vida más saludable y plena.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button className="bg-[#899735] hover:bg-[#899735]/90 text-white px-8 py-3">
-                Agendar Consulta Gratuita
-              </Button>
-              <Button variant="outline" className="border-white text-white hover:bg-white hover:text-[#486283] px-8 py-3">
-                Ver Productos
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )

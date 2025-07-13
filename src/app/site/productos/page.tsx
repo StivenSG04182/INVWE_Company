@@ -24,61 +24,61 @@ interface Product {
 const products: Product[] = [
   {
     id: '1',
-    name: 'Flor de Caléndula',
-    price: 15000,
-    image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg',
-    category: 'Flores',
-    description: 'Flor de caléndula natural, perfecta para infusiones y uso medicinal.',
-    benefits: ['Antiinflamatoria', 'Cicatrizante', 'Antioxidante']
+    name: 'Yogurt de Almendras',
+    price: 13600,
+    image: '/images/productos/Yogurt_almendras.webp',
+    category: 'Lacteos',
+    description: 'Yogurt a base de almendras, ideal para suplementar la lactosa.',
+    benefits: ['Bajo en grasas', 'Antioxidante']
   },
   {
     id: '2',
-    name: 'Orégano Premium',
-    price: 12000,
-    image: 'https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg',
-    category: 'Especias',
-    description: 'Orégano de la mejor calidad, ideal para condimentar tus comidas.',
-    benefits: ['Antibacteriano', 'Digestivo', 'Rico en antioxidantes']
+    name: 'Mango Deshidratado',
+    price: 2500,
+    image: '/images/productos/mango_deshidratado.avif',
+    category: 'Frutas Secas',
+    description: 'Mango deshidratado azucarado, ideal para snacks.',
+    benefits: ['Digestivo', 'Rico en antioxidantes']
   },
   {
     id: '3',
-    name: 'Anís Estrellado',
-    price: 18000,
-    image: 'https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg',
-    category: 'Especias',
-    description: 'Anís estrellado aromático y delicioso para infusiones.',
-    benefits: ['Digestivo', 'Expectorante', 'Aromático']
+    name: 'Quinoa',
+    price: 11300,
+    image: '/images/productos/quinoa.png',
+    category: 'Semillas',
+    description: 'Quinoa perfecta para complementar tus comidas y dar un toque nutricional.',
+    benefits: ['Digestivo', 'Expectorante']
   },
   {
     id: '4',
-    name: 'Manzanilla Orgánica',
-    price: 14000,
-    image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg',
-    category: 'Flores',
-    description: 'Manzanilla orgánica para relajación y bienestar.',
-    benefits: ['Relajante', 'Digestiva', 'Antiinflamatoria']
+    name: 'Seitan',
+    price: 50000,
+    image: '/images/productos/seitan.webp',
+    category: 'Proteinas/Suplementos',
+    description: 'alternativa vegana a la carne, suplemento alimentario.',
+    benefits: ['Digestiva', 'Antiinflamatoria']
   },
   {
     id: '5',
-    name: 'Frutas Deshidratadas Mix',
-    price: 25000,
-    image: 'https://images.pexels.com/photos/1132047/pexels-photo-1132047.jpeg',
-    category: 'Frutas',
-    description: 'Mezcla de frutas deshidratadas naturales sin azúcar añadida.',
-    benefits: ['Rica en fibra', 'Energética', 'Sin conservantes']
+    name: 'Semillas de Girasol',
+    price: 600,
+    image: '/images/productos/semillas_girasol.avif',
+    category: 'Semillas',
+    description: 'Semillas de girasol perfectas para snacks.',
+    benefits: ['Rica en fibra', 'Energética']
   },
   {
     id: '6',
-    name: 'Té Verde Orgánico',
-    price: 20000,
-    image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg',
-    category: 'Tés',
-    description: 'Té verde orgánico de alta calidad con propiedades antioxidantes.',
-    benefits: ['Antioxidante', 'Energizante', 'Quema grasa']
+    name: 'Tofu',
+    price: 5000,
+    image: '/images/productos/tofu.webp',
+    category: 'Proteinas/Suplementos',
+    description: 'suplemento vegetariano, remplazo de la carne.',
+    benefits: ['Antioxidante', 'Digestivo']
   }
 ]
 
-const categories = ['Todas', 'Flores', 'Especias', 'Frutas', 'Tés']
+const categories = ['Todas', 'Lacteos', 'Frutas Secas', 'Semillas', 'Proteinas/Suplementos']
 
 export default function ProductosPage() {
   const [selectedCategory, setSelectedCategory] = useState('Todas')
@@ -212,14 +212,6 @@ export default function ProductosPage() {
                   <span className="text-2xl font-bold text-[#899735]">
                     {formatPrice(product.price)}
                   </span>
-                  
-                  <Button
-                    onClick={() => handleAddToCart(product)}
-                    className="bg-[#486283] hover:bg-[#486283]/90 text-white transition-all duration-300 hover:scale-105"
-                  >
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Agregar
-                  </Button>
                 </div>
               </CardContent>
             </Card>

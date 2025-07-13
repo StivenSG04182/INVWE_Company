@@ -11,9 +11,9 @@ import { Calendar, User, ArrowRight } from 'lucide-react'
 const blogPosts = [
   {
     id: 1,
-    title: 'Los Beneficios de la Caléndula para tu Salud',
-    excerpt: 'Descubre todas las propiedades medicinales de esta maravillosa flor y cómo puede mejorar tu bienestar.',
-    image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg',
+    title: 'Quinoa: El Grano de Oro para tu Bienestar',
+    excerpt: 'Descubre cómo la quinoa puede aportar proteínas completas y nutrientes esenciales a tu dieta diaria, mejorando tu energía y vitalidad.',
+    image: '/images/blog/quinoa.png',
     category: 'Salud Natural',
     author: 'María González',
     date: '15 Enero 2024',
@@ -21,9 +21,9 @@ const blogPosts = [
   },
   {
     id: 2,
-    title: 'Orégano: Más que una Especia',
-    excerpt: 'Conoce los usos medicinales del orégano y cómo incorporarlo en tu rutina diaria de bienestar.',
-    image: 'https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg',
+    title: 'Seitán: Proteína Vegetal para una Dieta Equilibrada',
+    excerpt: 'Conoce los beneficios del seitán, cómo prepararlo en casa y disfrutarlo como alternativa deliciosa a la carne.',
+    image: '/images/blog/seitan.webp',
     category: 'Especias',
     author: 'Ana Martínez',
     date: '12 Enero 2024',
@@ -31,9 +31,9 @@ const blogPosts = [
   },
   {
     id: 3,
-    title: 'Alimentación Consciente: Una Guía Completa',
-    excerpt: 'Aprende los principios básicos de la alimentación consciente y cómo transformar tu relación con la comida.',
-    image: 'https://images.pexels.com/photos/1132047/pexels-photo-1132047.jpeg',
+    title: 'Tofu: Versatilidad y Nutrición en tu Cocina',
+    excerpt: 'Aprende a incorporar tofu en tus recetas diarias para aprovechar sus propiedades nutritivas y su gran capacidad de adaptación a cualquier plato.',
+    image: '/images/blog/tofu.webp',
     category: 'Nutrición',
     author: 'Carlos Rodríguez',
     date: '10 Enero 2024',
@@ -41,9 +41,9 @@ const blogPosts = [
   },
   {
     id: 4,
-    title: 'Infusiones para Cada Momento del Día',
-    excerpt: 'Descubre qué infusiones son perfectas para energizarte por la mañana o relajarte por la noche.',
-    image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg',
+    title: 'Semillas de Girasol: Pequeñas pero Poderosas',
+    excerpt: 'Todo lo que necesitas saber para incluir semillas de girasol en tu alimentación y beneficiarte de sus nutrientes esenciales.',
+    image: '/images/blog/semillas_girasol.avif',
     category: 'Infusiones',
     author: 'Luis Herrera',
     date: '8 Enero 2024',
@@ -51,9 +51,9 @@ const blogPosts = [
   },
   {
     id: 5,
-    title: 'Frutas Deshidratadas: Snacks Saludables',
-    excerpt: 'Todo lo que necesitas saber sobre las frutas deshidratadas y sus beneficios nutricionales.',
-    image: 'https://images.pexels.com/photos/1132047/pexels-photo-1132047.jpeg',
+    title: 'Mango Deshidratado: Un Snack Natural y Energético',
+    excerpt: 'Descubre por qué el mango deshidratado es una excelente opción para un snack saludable y lleno de sabor.',
+    image: '/images/blog/mango_deshidratado.avif',
     category: 'Nutrición',
     author: 'María González',
     date: '5 Enero 2024',
@@ -61,18 +61,15 @@ const blogPosts = [
   },
   {
     id: 6,
-    title: 'Cómo Crear tu Huerto de Hierbas Medicinales',
-    excerpt: 'Guía paso a paso para cultivar tus propias hierbas medicinales en casa.',
-    image: 'https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg',
+    title: 'Yogurt de Almendras: Alternativa Vegetal y Deliciosa',
+    excerpt: 'Aprende los beneficios del yogurt de almendras y cómo incluirlo en desayunos, postres o snacks nutritivos.',
+    image: '/images/blog/Yogurt_almendras.webp',
     category: 'Cultivo',
     author: 'Ana Martínez',
     date: '3 Enero 2024',
     readTime: '10 min'
   }
 ]
-
-const categories = ['Todas', 'Salud Natural', 'Especias', 'Nutrición', 'Infusiones', 'Cultivo']
-
 export default function BlogPage() {
   useEffect(() => {
     gsap.fromTo('.blog-header', 
@@ -107,20 +104,6 @@ export default function BlogPage() {
             productos naturales y bienestar integral.
           </p>
         </div>
-
-        {/* Categories */}
-        <div className="flex flex-wrap justify-center gap-4 mb-12">
-          {categories.map((category) => (
-            <Badge 
-              key={category} 
-              variant="outline" 
-              className="px-4 py-2 cursor-pointer hover:bg-[#486283] hover:text-white transition-colors"
-            >
-              {category}
-            </Badge>
-          ))}
-        </div>
-
         {/* Featured Post */}
         <Card className="blog-card mb-12 overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-2">
@@ -153,13 +136,6 @@ export default function BlogPage() {
                 </div>
                 <span>{blogPosts[0].readTime} lectura</span>
               </div>
-              <Link 
-                href={`/blog/${blogPosts[0].id}`}
-                className="inline-flex items-center gap-2 text-[#486283] hover:text-[#899735] font-medium transition-colors"
-              >
-                Leer más
-                <ArrowRight className="h-4 w-4" />
-              </Link>
             </CardContent>
           </div>
         </Card>
@@ -200,40 +176,10 @@ export default function BlogPage() {
                   </div>
                   <span>{post.readTime}</span>
                 </div>
-
-                <Link 
-                  href={`/blog/${post.id}`}
-                  className="inline-flex items-center gap-2 text-[#486283] hover:text-[#899735] font-medium transition-colors text-sm"
-                >
-                  Leer más
-                  <ArrowRight className="h-3 w-3" />
-                </Link>
               </CardContent>
             </Card>
           ))}
         </div>
-
-        {/* Newsletter Subscription */}
-        <Card className="mt-16 bg-[#486283] text-white">
-          <CardContent className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">
-              Suscríbete a nuestro newsletter
-            </h2>
-            <p className="mb-6 opacity-90">
-              Recibe los últimos artículos y consejos sobre vida saludable directamente en tu correo.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="Tu correo electrónico"
-                className="flex-1 px-4 py-2 rounded-lg text-black"
-              />
-              <button className="bg-[#899735] hover:bg-[#899735]/90 px-6 py-2 rounded-lg font-medium transition-colors">
-                Suscribirse
-              </button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )

@@ -7,22 +7,22 @@ import Link from 'next/link'
 
 const featuredProducts = [
     {
-        name: 'Flor de Caléndula',
-        description: 'Una maravilla de la naturaleza con propiedades antiinflamatorias y cicatrizantes excepcionales.',
-        image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg',
-        benefits: ['Antiinflamatoria', 'Cicatrizante', 'Antioxidante']
+        name: 'Quinoa',
+        description: 'Quinoa perfecta para complementar tus comidas y dar un toque nutricional.',
+        image: '/images/productos_destacados/quinoa.png',
+        benefits: ['Digestivo', 'Rico en antioxidantes']
     },
     {
-        name: 'Orégano Premium',
-        description: 'Orégano de la mejor calidad con increíbles beneficios medicinales y culinarios.',
-        image: 'https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg',
-        benefits: ['Antibacteriano', 'Digestivo', 'Aromático']
+        name: 'seitan',
+        description: 'alternativa vegana a la carne, suplemento alimentario.',
+        image: '/images/productos_destacados/seitan.webp',
+        benefits: ['Digestiva', 'Antiinflamatoria']
     },
     {
-        name: 'Anís Estrellado',
-        description: 'Poderoso, delicioso y aromático. Perfecto para infusiones y uso medicinal.',
-        image: 'https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg',
-        benefits: ['Digestivo', 'Expectorante', 'Relajante']
+        name: 'tofu',
+        description: 'suplemento vegetariano, remplazo de la carne.',
+        image: '/images/productos_destacados/tofu.webp',
+        benefits: ['Antioxidante', 'Digestivo']
     }
 ]
 
@@ -71,11 +71,6 @@ export function ProductShowcase() {
                                             ))}
                                         </div>
                                     </div>
-                                    <Link href="/productos">
-                                        <Button className="bg-[#899735] hover:bg-[#899735]/90 text-white w-fit">
-                                            Ver en Tienda
-                                        </Button>
-                                    </Link>
                                 </CardContent>
                             </div>
                         </Card>

@@ -30,27 +30,6 @@ const faqData = [
     ]
   },
   {
-    category: 'Pedidos y Envíos',
-    questions: [
-      {
-        question: '¿Cuánto tiempo tarda en llegar mi pedido?',
-        answer: 'Los pedidos dentro de Bogotá llegan en 1-2 días hábiles. Para otras ciudades principales, el tiempo de entrega es de 3-5 días hábiles. Te enviaremos un código de seguimiento una vez que tu pedido sea despachado.'
-      },
-      {
-        question: '¿Cuál es el costo de envío?',
-        answer: 'El costo de envío varía según la ubicación y el peso del pedido. Ofrecemos envío gratuito para pedidos superiores a $80,000 dentro de Bogotá y $120,000 para el resto del país.'
-      },
-      {
-        question: '¿Puedo cambiar o cancelar mi pedido?',
-        answer: 'Puedes cancelar o modificar tu pedido dentro de las primeras 2 horas después de realizarlo. Una vez que el pedido esté en proceso de empaque, no podremos hacer cambios.'
-      },
-      {
-        question: '¿Hacen entregas los fines de semana?',
-        answer: 'Actualmente no realizamos entregas los fines de semana. Nuestro horario de entrega es de lunes a viernes de 8:00 AM a 6:00 PM, y sábados de 9:00 AM a 2:00 PM solo en Bogotá.'
-      }
-    ]
-  },
-  {
     category: 'Pagos y Facturación',
     questions: [
       {

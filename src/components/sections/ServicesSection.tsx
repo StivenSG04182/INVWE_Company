@@ -5,11 +5,6 @@ import { Truck, Users, GraduationCap, Stethoscope } from 'lucide-react'
 
 const services = [
     {
-        icon: Truck,
-        title: 'Entrega a Domicilio',
-        description: 'Recibe tus productos naturales directamente en tu hogar con nuestro servicio de entrega rápida y segura.'
-    },
-    {
         icon: Users,
         title: 'Asesoría Personalizada',
         description: 'Nuestros expertos te guían para elegir los productos más adecuados según tus necesidades de salud.'

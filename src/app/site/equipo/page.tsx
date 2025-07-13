@@ -134,23 +134,6 @@ export default function EquipoPage() {
             </Card>
           ))}
         </div>
-
-        {/* Call to Action */}
-        <div className="text-center mt-16 p-8 bg-white rounded-lg shadow-lg">
-          <h2 className="text-2xl font-bold text-[#486283] mb-4">
-            ¿Quieres formar parte de nuestro equipo?
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Estamos siempre buscando personas apasionadas por la vida saludable y natural.
-          </p>
-          <a 
-            href="mailto:trabajo@natulanda.com"
-            className="inline-flex items-center gap-2 bg-[#899735] text-white px-6 py-3 rounded-lg hover:bg-[#899735]/90 transition-colors duration-300"
-          >
-            <Mail className="h-4 w-4" />
-            Envía tu CV
-          </a>
-        </div>
       </div>
     </div>
   )
