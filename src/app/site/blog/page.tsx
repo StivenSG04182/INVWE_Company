@@ -13,7 +13,7 @@ const blogPosts = [
     id: 1,
     title: 'Los Beneficios de la Caléndula para tu Salud',
     excerpt: 'Descubre todas las propiedades medicinales de esta maravillosa flor y cómo puede mejorar tu bienestar.',
-    image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg',
+    image: '/public/images/payment-gateways/epayco-logo.png',
     category: 'Salud Natural',
     author: 'María González',
     date: '15 Enero 2024',
