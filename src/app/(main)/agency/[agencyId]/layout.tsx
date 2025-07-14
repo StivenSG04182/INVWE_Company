@@ -1,5 +1,5 @@
 import Unauthorized from '@/components/unauthorized'
-import { getNotificationAndUser, verifyAndAcceptInvitation } from '@/lib/queries'
+import { getAgencyDetails, getNotificationAndUser, verifyAndAcceptInvitation } from '@/lib/queries'
 import { currentUser } from '@clerk/nextjs/server'
 import Sidebar from '@/components/sidebar'
 import { redirect } from 'next/navigation'
@@ -23,6 +23,8 @@ const layout = async ({children, params}: Props) => {
   if(!agencyId){
     return redirect('/agency')
   }
+
+const agencyDetails = (await getAgencyDetails(agencyId)) ?? undefined
 
   // Log para debugging (solo en desarrollo)
   if (process.env.NODE_ENV === 'development') {
@@ -67,6 +69,7 @@ const layout = async ({children, params}: Props) => {
           notifications={allNoti}
           role={allNoti.User?.role}
           agencyId={params.agencyId}
+          agencyDetails={agencyDetails}
           />
           <div className='relative'>
           <BlurPage>
