@@ -5,8 +5,8 @@ import { UserButton } from "@clerk/nextjs"
 import { useState, useEffect } from "react"
 import { twMerge } from "tailwind-merge"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "../ui/sheet"
-import { Bell, Check, Clock, FileQuestion, Filter, ShieldQuestion, MoreHorizontal, Trash2 } from "lucide-react"
-import type { Role } from "@prisma/client"
+import { Bell, Check, Clock, Filter, ShieldQuestion, MoreHorizontal, Trash2 } from "lucide-react"
+import type { Agency, Role } from "@prisma/client"
 import { Card, CardContent } from "../ui/card"
 import { Switch } from "../ui/switch"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
@@ -25,6 +25,8 @@ import {
   deleteAllNotifications,
   getUnreadNotificationCount
 } from "@/lib/notification-queries"
+import ContactSettingsContent from "../settings/contact-settings"
+import { Dialog, DialogTrigger, DialogContent } from "../ui/dialog"
 
 type Props = {
   notifications: NotificationWithUser
@@ -32,9 +34,10 @@ type Props = {
   className?: string
   subAccountId?: string
   agencyId?: string
+  agencyDetails?: Agency
 }
 
-const InfoBar = ({ notifications, subAccountId, className, role, agencyId }: Props) => {
+const InfoBar = ({ notifications, subAccountId, className, role, agencyId, agencyDetails }: Props) => {
   const [allNotifications, setAllNotifications] = useState<NotificationWithUser>([])
   const [showAll, setShowAll] = useState(true)
   const [isOpen, setIsOpen] = useState(false)
@@ -42,6 +45,7 @@ const InfoBar = ({ notifications, subAccountId, className, role, agencyId }: Pro
   const [activeTab, setActiveTab] = useState("all")
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
+  const [contactOpen, setContactOpen] = useState(false)
 
   useEffect(() => {
     if (notifications) {
@@ -204,9 +208,26 @@ const InfoBar = ({ notifications, subAccountId, className, role, agencyId }: Pro
   }
 
   const notificationsList = allNotifications ?? [];
+  console.log("agencyDetails", agencyDetails)
+
 
   return (
     <>
+      <Dialog open={contactOpen} onOpenChange={setContactOpen}>
+        <DialogContent className="w-full max-w-4xl sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl max-h-[90vh] overflow-y-auto p-6 rounded-xl">
+          {agencyId && agencyDetails ? (
+            <ContactSettingsContent
+              agencyId={agencyId}
+              agencyDetails={agencyDetails}
+              planType="general"
+            />
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              No se pudo cargar el formulario de contacto. Faltan datos de la agencia.
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       <div
         className={twMerge(
           "fixed z-[20] md:left-[300px] left-0 right-0 top-0 p-4 bg-background/80 backdrop-blur-md flex gap-4 items-center border-b-[1px]",
@@ -223,7 +244,9 @@ const InfoBar = ({ notifications, subAccountId, className, role, agencyId }: Pro
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem onClick={() => window.open('https://invwe.site/site/documentation', '_blank')}> Documentación </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.open('https://invwe.site/site/contacto', '_blank')}> Contáctanos </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setContactOpen(true)}>
+                Contáctanos
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
