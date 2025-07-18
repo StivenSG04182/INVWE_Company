@@ -421,9 +421,9 @@ export const upsertAgency = async (agency: Agency, price?: Plan) => {
             // 8. Comunicaciones
             /* { name: "Comunicaciones", icon: "messages", link: "#" },
             { name: "Campañas", icon: "send", link: `/agency/${agency.id}/(Communications)/campaigns` },
-            { name: "Bandeja de entrada", icon: "messages", link: `/agency/${agency.id}/(Communications)/inbox` },
-            { name: "Medios", icon: "database", link: `/agency/${agency.id}/(Communications)/media` },
-            { name: "Chat", icon: "messages", link: `/agency/${agency.id}/(Communications)/chat` }, */
+            { name: "Bandeja de entrada", icon: "messages", link: `/agency/${agency.id}/(Communications)/inbox` }, */
+            { name: "Medios", icon: "database", link: `/agency/${agency.id}/(Communications)/media` }, 
+            /* { name: "Chat", icon: "messages", link: `/agency/${agency.id}/(Communications)/chat` }, */
 
             // 9. Reportes & Analíticas
             { name: "Reportes & Analíticas", icon: "chartLine", link: `/agency/${agency.id}/(Reports)/reports-all` },
